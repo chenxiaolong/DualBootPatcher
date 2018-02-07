@@ -95,7 +95,6 @@
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
-
 - name: Tecno L8 Lite
   id: l8_lite
   codenames:
@@ -164,6 +163,51 @@
       - /dev/block/platform/mtk-msdc.0/by-name/boot
       - /dev/block/mmcblk0p7
     recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+- name: Tecno W5 Lite
+  id: W5Lite
+  codenames:
+    - Tecno_W5_Lite
+    - tecno_w5_lite
+    - W5_Lite
+    - W5Lite
+    - w5lite
+    - W5
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p20
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/recovery
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/mmcblk0p8
 

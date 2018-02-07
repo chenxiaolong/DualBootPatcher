@@ -42,7 +42,7 @@
         android:text="@string/patcher_partconfig_title" />
 
     <android.support.v7.widget.AppCompatSpinner
-        android:id="@+id/spinner_rom_id"
+        android:id="@+id/spinner_location"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/card_v7_normal_view_margin_top" />
@@ -58,7 +58,7 @@
         android:orientation="horizontal" />
 
     <android.support.v7.widget.AppCompatEditText
-        android:id="@+id/rom_id_named_slot_id"
+        android:id="@+id/template_suffix"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/install_location_named_slot_id_hint"
@@ -72,7 +72,7 @@
         android:text="@string/patcher_partconfig_desc_title" />
 
     <TextView
-        android:id="@+id/rom_id_desc"
+        android:id="@+id/location_desc"
         style="@style/card_v7_message"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

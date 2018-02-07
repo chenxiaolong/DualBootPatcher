@@ -40,7 +40,16 @@
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
       - /dev/block/mmcblk0p8
 
-
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
 
 - name: Elephone P9000
   id: p9000
@@ -68,7 +77,16 @@
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
       - /dev/block/mmcblk0p1
 
-
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 80
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Elephone Vowney Lite
   id: Vowney_Lite
@@ -94,3 +112,14 @@
     recovery:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBA_8888
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi

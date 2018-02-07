@@ -114,6 +114,15 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p32
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
 - name: Motorola Moto G (2014 LTE)
   id: thea
   codenames:
@@ -147,6 +156,14 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p33
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
 - name: Motorola Moto G (2015)
   id: osprey
   codenames:
@@ -172,6 +189,16 @@
     recovery:
       - /dev/block/platform/soc.0/by-name/recovery
       - /dev/block/mmcblk0p32
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
 
 - name: Motorola Moto G4 Play
   id: harpia
@@ -209,6 +236,16 @@
       - /dev/block/platform/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p32
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
+
 - name: Motorola Moto E (1st gen)
   id: condor
   codenames:
@@ -239,6 +276,15 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p32
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Motorola Moto E 3G (2nd Gen)
   id: otus
@@ -269,6 +315,15 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p33
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Motorola Moto E 4G (2nd Gen)
   id: surnia
@@ -289,23 +344,270 @@
 
   block_devs:
     base_dirs:
+      - /dev/block/bootdevice/by-name
       - /dev/block/platform/msm_sdcc.1/by-name
     system:
+      - /dev/block/bootdevice/by-name/system
       - /dev/block/platform/msm_sdcc.1/by-name/system
       - /dev/block/mmcblk0p41
     cache:
+      - /dev/block/bootdevice/by-name/cache
       - /dev/block/platform/msm_sdcc.1/by-name/cache
       - /dev/block/mmcblk0p42
     data:
+      - /dev/block/bootdevice/by-name/userdata
       - /dev/block/platform/msm_sdcc.1/by-name/userdata
       - /dev/block/mmcblk0p43
     boot:
+      - /dev/block/bootdevice/by-name/boot
       - /dev/block/platform/msm_sdcc.1/by-name/boot
       - /dev/block/mmcblk0p33
     recovery:
+      - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p34
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Motorola Moto E4 (MediaTek)
+  id: woods
+  codenames:
+    - woods
+    - woods_f
+    - woods_retail
+    - XT1762
+    - XT1760
+    - e4
+    - E4
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p25
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p26
+    data:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      - /dev/block/mmcblk0p5
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/lk
+      - /dev/block/mmcblk0p9
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/logo
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/para
+      - /dev/block/mmcblk0p15
+      - /dev/block/platform/mtk-msdc.0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee1
+      - /dev/block/mmcblk0p16
+      - /dev/block/platform/mtk-msdc.0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee2
+      - /dev/block/mmcblk0p18
+      - /dev/block/platform/mtk-msdc.0/by-name/efuse
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/efuse
+      - /dev/block/mmcblk0p28
+      - /dev/block/platform/mtk-msdc.0/by-name/otp
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/otp
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH 
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 160
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+- name: Motorola Moto E4 (Qualcomm)
+  id: perry
+  codenames:
+    - perry
+    - XT1765
+    - XT1766
+    - XT1768
+    - e4
+    - E4
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+    extra:
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/bootdevice/by-name/oem
+      - /dev/block/bootdevice/by-name/persist
+      - /dev/block/bootdevice/by-name/misc
+      - /dev/block/bootdevice/by-name/keymaster
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
+
+- name: Motorola Moto E4 Plus (MediaTek)
+  id: nicklaus
+  codenames:
+    - nicklaus
+    - nicklaus_retail
+    - XT1773
+    - XT1772
+    - XT1770
+    - e4_plus
+    - E4_Plus
+    - E4 Plus
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p25
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p26
+    data:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      - /dev/block/mmcblk0p5
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/lk
+      - /dev/block/mmcblk0p9
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/logo
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/para
+      - /dev/block/mmcblk0p15
+      - /dev/block/platform/mtk-msdc.0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee1
+      - /dev/block/mmcblk0p16
+      - /dev/block/platform/mtk-msdc.0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee2
+      - /dev/block/mmcblk0p18
+      - /dev/block/platform/mtk-msdc.0/by-name/efuse
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/efuse
+      - /dev/block/mmcblk0p28
+      - /dev/block/platform/mtk-msdc.0/by-name/otp
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/otp
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH 
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 160
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+- name: Motorola Moto E4 Plus (Qualcomm)
+  id: owens
+  codenames:
+    - owens
+    - e4_plus
+    - E4_Plus
+    - E4 Plus
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+    extra:
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/bootdevice/by-name/oem
+      - /dev/block/bootdevice/by-name/persist
+      - /dev/block/bootdevice/by-name/misc
+      - /dev/block/bootdevice/by-name/keymaster
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
 
 - name: Motorola Moto X (2013)
   id: ghost
@@ -343,6 +645,17 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
 
 - name: Motorola Moto X (2014)
   id: victara
@@ -368,6 +681,7 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p34
+
   boot_ui:
     supported: true
     flags:
@@ -419,6 +733,14 @@
       - /dev/block/platform/soc.0/f9824900.sdhci/by-name/modem
       - /dev/block/mmcblk0p1
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
 
 - name: Motorola Droid Turbo
   id: quark
@@ -451,6 +773,52 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p37
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
+
+- name: Motorola Moto X Pro
+  id: shamu_t
+  codenames:
+    - shamu_t
+    - shamu_cn
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p40
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p39
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p41
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p36
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p37
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    default_brightness: 80
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
 
 - name: Motorola Moto G4 & G4 Plus Edition
   id: athene
@@ -494,6 +862,16 @@
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p29
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    theme: portrait_hdpi
 
 - name: Motorola Moto Z Play
   id: addison
@@ -527,6 +905,18 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p38
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Motorola Moto Z
   id: griffin
@@ -562,7 +952,17 @@
       - /dev/block/platform/624000.ufshc/by-name/recovery
       - /dev/block/sda14
       
-      
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 80
+    theme: portrait_hdpi
+
 - name: Motorola Moto G5 Plus
   id: potter
   codenames:
@@ -594,3 +994,151 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p38
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
+
+- name: Motorola Moto C (4G)
+  id: namath
+  codenames:
+    - namath_54
+    - namath
+    - Moto_C
+    - XT1754
+    - XT1755
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/mmcblk0p21
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/lk
+      - /dev/block/mmcblk0p5
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+
+- name: Moto E4
+  id: perry
+  codenames:
+    - perry
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs: 
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p53
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p52
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p54
+      - /dev/block/dm-0
+      - /dev/block/bootdevice/by-name/metadata
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p37
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p38
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
+
+- name: Motorola Moto G5
+  id: cedric
+  codenames:
+    - cedric
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p53
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p52
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p54
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p37
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p38
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi

@@ -20,7 +20,9 @@
 #ifndef _ADB_SYSDEPS_H
 #define _ADB_SYSDEPS_H
 
+#include <cerrno>
 #include <cstdarg>
+#include <cstring>
 
 #include <fcntl.h>
 #include <pthread.h>

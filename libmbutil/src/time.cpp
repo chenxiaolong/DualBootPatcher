@@ -21,16 +21,15 @@
 
 #include <ctime>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 uint64_t current_time_ms()
 {
     struct timespec res;
     clock_gettime(CLOCK_REALTIME, &res);
-    return 1000u * res.tv_sec + res.tv_nsec / 1e6;
+    return 1000ull * static_cast<uint64_t>(res.tv_sec)
+            + static_cast<uint64_t>(res.tv_nsec) / 1000000;
 }
 
 /*!
@@ -72,5 +71,4 @@ std::string format_time(const std::string &format)
     return result;
 }
 
-}
 }

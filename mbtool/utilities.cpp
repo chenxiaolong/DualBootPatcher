@@ -28,9 +28,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "minizip/zip.h"
-#include "minizip/ioandroid.h"
+#include "mz.h"
+#include "mz_strm_android.h"
+#include "mz_strm_buf.h"
+#include "mz_zip.h"
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/device.h"
@@ -136,21 +139,21 @@ static bool utilities_switch_rom(const char *rom_id, bool force)
     SwitchRomResult ret = switch_rom(
             rom_id, *it, device.block_dev_base_dirs(), force);
     switch (ret) {
-    case SwitchRomResult::SUCCEEDED:
+    case SwitchRomResult::Succeeded:
         LOGD("SUCCEEDED");
         break;
-    case SwitchRomResult::FAILED:
+    case SwitchRomResult::Failed:
         LOGD("FAILED");
         break;
-    case SwitchRomResult::CHECKSUM_INVALID:
+    case SwitchRomResult::ChecksumInvalid:
         LOGD("CHECKSUM_INVALID");
         break;
-    case SwitchRomResult::CHECKSUM_NOT_FOUND:
+    case SwitchRomResult::ChecksumNotFound:
         LOGD("CHECKSUM_NOT_FOUND");
         break;
     }
 
-    return ret == SwitchRomResult::SUCCEEDED;
+    return ret == SwitchRomResult::Succeeded;
 }
 
 static bool utilities_wipe_system(const char *rom_id)
@@ -252,36 +255,79 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
     data->assign(str_data.begin(), str_data.end());
 }
 
-class AromaGenerator : public util::FTSWrapper
+class AromaGenerator : public util::FtsWrapper
 {
 public:
     AromaGenerator(std::string path, std::string zippath)
-        : FTSWrapper(std::move(path), FTS_GroupSpecialFiles),
+        : FtsWrapper(std::move(path), util::FtsFlag::GroupSpecialFiles),
         _zippath(std::move(zippath))
     {
     }
 
-    virtual bool on_pre_execute() override
+    bool on_pre_execute() override
     {
-        zlib_filefunc64_def zFunc;
-        memset(&zFunc, 0, sizeof(zFunc));
-        fill_android_filefunc64(&zFunc);
-        _zf = zipOpen2_64(_zippath.c_str(), 0, nullptr, &zFunc);
-        if (!_zf) {
-            LOGE("%s: Failed to open for writing", _zippath.c_str());
+        if (!mz_stream_android_create(&_stream)) {
+            LOGE("Failed to create base stream");
             return false;
         }
+
+        auto destroy_stream = finally([&] {
+            mz_stream_delete(&_stream);
+        });
+
+        if (!mz_stream_buffered_create(&_buf_stream)) {
+            LOGE("Failed to create buffered stream");
+            return false;
+        }
+
+        auto destroy_buf_stream = finally([&] {
+            mz_stream_delete(&_buf_stream);
+        });
+
+        if (mz_stream_set_base(_buf_stream, _stream) != MZ_OK) {
+            LOGD("Failed to set base stream for buffered stream");
+            return false;
+        }
+
+        if (mz_stream_open(_buf_stream, _zippath.c_str(),
+                           MZ_OPEN_MODE_READWRITE | MZ_OPEN_MODE_CREATE) != MZ_OK) {
+            LOGE("%s: Failed to open stream", _zippath.c_str());
+            return false;
+        }
+
+        auto close_stream = finally([&] {
+            mz_stream_close(_buf_stream);
+        });
+
+        _handle = mz_zip_open(_buf_stream, MZ_OPEN_MODE_WRITE);
+        if (!_handle) {
+            LOGE("%s: Failed to open zip", _zippath.c_str());
+            return false;
+        }
+
+        auto close_zip = finally([&]{
+            mz_zip_close(_handle);
+        });
+
+        close_zip.dismiss();
+        close_stream.dismiss();
+        destroy_buf_stream.dismiss();
+        destroy_stream.dismiss();
 
         return true;
     }
 
-    virtual bool on_post_execute(bool success) override
+    bool on_post_execute(bool success) override
     {
         (void) success;
-        return zipClose(_zf, nullptr) == ZIP_OK;
+        bool ret = mz_zip_close(_handle) == MZ_OK
+                && mz_stream_close(_buf_stream) == MZ_OK;
+        mz_stream_delete(&_buf_stream);
+        mz_stream_delete(&_stream);
+        return ret;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
         std::string name = std::string(_curr->fts_path).substr(_path.size() + 1);
         LOGD("%s -> %s", _curr->fts_path, name.c_str());
@@ -290,76 +336,72 @@ public:
             std::vector<unsigned char> data;
             if (!util::file_read_all(_curr->fts_accpath, data)) {
                 LOGE("Failed to read: %s", _curr->fts_path);
-                return false;
+                return Action::Fail;
             }
 
             generate_aroma_config(&data);
 
             name = "META-INF/com/google/android/aroma-config";
             bool ret = add_file(name, data);
-            return ret ? Action::FTS_OK : Action::FTS_Fail;
+            return ret ? Action::Ok : Action::Fail;
         } else {
             bool ret = add_file(name, _curr->fts_accpath);
-            return ret ? Action::FTS_OK : Action::FTS_Fail;
+            return ret ? Action::Ok : Action::Fail;
         }
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         LOGW("Ignoring symlink when creating zip: %s", _curr->fts_path);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
         LOGW("Ignoring special file when creating zip: %s", _curr->fts_path);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
 private:
-    zipFile _zf;
+    void *_stream;
+    void *_buf_stream;
+    void *_handle;
     std::string _zippath;
 
     bool add_file(const std::string &name,
                   const std::vector<unsigned char> &contents)
     {
-        // Obviously never true, but we'll keep it here just in case
-        bool zip64 = (uint64_t) contents.size() >= ((1ull << 32) - 1);
+        mz_zip_file file_info = {};
+        file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
+        file_info.filename = const_cast<char *>(name.c_str());
+        file_info.filename_size = static_cast<uint16_t>(name.size());
 
-        zip_fileinfo zi;
-        memset(&zi, 0, sizeof(zi));
-
-        int ret = zipOpenNewFileInZip2_64(
-            _zf,                    // file
-            name.c_str(),           // filename
-            &zi,                    // zip_fileinfo
-            nullptr,                // extrafield_local
-            0,                      // size_extrafield_local
-            nullptr,                // extrafield_global
-            0,                      // size_extrafield_global
-            nullptr,                // comment
-            Z_DEFLATED,             // method
-            Z_DEFAULT_COMPRESSION,  // level
-            0,                      // raw
-            zip64                   // zip64
-        );
-
-        if (ret != ZIP_OK) {
+        int ret = mz_zip_entry_write_open(_handle, &file_info,
+                                          MZ_COMPRESS_LEVEL_DEFAULT, nullptr);
+        if (ret != MZ_OK) {
             LOGW("minizip: Failed to add file (error code: %d): [memory]", ret);
-
             return false;
         }
+
+        auto close_inner_write = finally([&] {
+            mz_zip_entry_close(_handle);
+        });
 
         // Write data to file
-        ret = zipWriteInFileInZip(_zf, contents.data(), contents.size());
-        if (ret != ZIP_OK) {
+        int n = mz_zip_entry_write(_handle, contents.data(),
+                                   static_cast<uint32_t>(contents.size()));
+        if (n < 0 || static_cast<size_t>(n) != contents.size()) {
             LOGW("minizip: Failed to write data (error code: %d): [memory]", ret);
-            zipCloseFileInZip(_zf);
-
             return false;
         }
 
-        zipCloseFileInZip(_zf);
+        close_inner_write.dismiss();
+
+        ret = mz_zip_entry_close(_handle);
+        if (ret != MZ_OK) {
+            LOGE("minizip: Failed to close inner file (error code: %d): [memory]", ret);
+            return false;
+        }
 
         return true;
     }
@@ -381,62 +423,50 @@ private:
             return false;
         }
 
-        uint64_t size;
-        lseek64(fd, 0, SEEK_END);
-        size = lseek64(fd, 0, SEEK_CUR);
-        lseek64(fd, 0, SEEK_SET);
+        mz_zip_file file_info = {};
+        file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
+        file_info.filename = const_cast<char *>(name.c_str());
+        file_info.filename_size = static_cast<uint16_t>(name.size());
+        file_info.external_fa = (sb.st_mode & 0777) << 16;
 
-        bool zip64 = size >= ((1ull << 32) - 1);
-
-        zip_fileinfo zi;
-        memset(&zi, 0, sizeof(zi));
-        zi.external_fa = (sb.st_mode & 0777) << 16;
-
-        int ret = zipOpenNewFileInZip2_64(
-            _zf,                    // file
-            name.c_str(),           // filename
-            &zi,                    // zip_fileinfo
-            nullptr,                // extrafield_local
-            0,                      // size_extrafield_local
-            nullptr,                // extrafield_global
-            0,                      // size_extrafield_global
-            nullptr,                // comment
-            Z_DEFLATED,             // method
-            Z_DEFAULT_COMPRESSION,  // level
-            0,                      // raw
-            zip64                   // zip64
-        );
-
-        if (ret != ZIP_OK) {
+        int  ret = mz_zip_entry_write_open(_handle, &file_info,
+                                           MZ_COMPRESS_LEVEL_DEFAULT, nullptr);
+        if (ret != MZ_OK) {
             LOGW("minizip: Failed to add file (error code: %d): %s",
                  ret, path.c_str());
             return false;
         }
 
+        auto close_inner_write = finally([&] {
+            mz_zip_entry_close(_handle);
+        });
+
         // Write data to file
-        char buf[32768];
+        char buf[UINT16_MAX];
         ssize_t n;
 
         while ((n = read(fd, buf, sizeof(buf))) > 0) {
-            ret = zipWriteInFileInZip(_zf, buf, n);
-            if (ret != ZIP_OK) {
-                LOGW("minizip: Failed to write data (error code: %d): %s",
-                     ret, path.c_str());
-                zipCloseFileInZip(_zf);
-
+            auto n_written = mz_zip_entry_write(
+                    _handle, buf, static_cast<uint32_t>(n));
+            if (static_cast<int>(n) != n_written) {
+                LOGW("minizip: Failed to write data: %s", path.c_str());
                 return false;
             }
         }
 
         if (n < 0) {
-            zipCloseFileInZip(_zf);
-
             LOGE("%s: Failed to read file: %s",
                  path.c_str(), strerror(errno));
             return false;
         }
 
-        zipCloseFileInZip(_zf);
+        close_inner_write.dismiss();
+
+        ret = mz_zip_entry_close(_handle);
+        if (ret != MZ_OK) {
+            LOGE("minizip: Failed to close inner file: %s", path.c_str());
+            return false;
+        }
 
         return true;
     }

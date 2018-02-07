@@ -32,9 +32,7 @@
 
 #define LOG_TAG "mbutil/path"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 std::string get_cwd()
@@ -96,7 +94,7 @@ bool read_link(const std::string &path, std::string &out)
         }
     }
 
-    buf[len] = '\0';
+    buf[static_cast<size_t>(len)] = '\0';
     out.assign(buf.data());
     return true;
 }
@@ -350,5 +348,4 @@ bool path_exists(const std::string &path, bool follow_symlinks)
     return (follow_symlinks ? stat : lstat)(path.c_str(), &sb) == 0;
 }
 
-}
 }

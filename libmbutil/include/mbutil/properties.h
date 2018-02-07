@@ -22,14 +22,13 @@
 #include <string>
 #include <unordered_map>
 
-#include "mbutil/integer.h"
+#include "mbcommon/integer.h"
+
 #include "mbutil/external/system_properties.h"
 
 struct timespec;
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 typedef void (*PropertyListCb)(const std::string &key,
@@ -60,28 +59,13 @@ std::string property_get_string(const std::string &key,
                                 const std::string &default_value);
 bool property_get_bool(const std::string &key, bool default_value);
 
-template<typename SNumType>
-inline SNumType property_get_snum(const std::string &key,
-                                  SNumType default_value)
+template<typename IntType>
+inline IntType property_get_num(const std::string &key, IntType default_value)
 {
     std::string value;
-    SNumType result;
+    IntType result;
 
-    if (property_get(key, value) && str_to_snum(value.c_str(), 10, &result)) {
-        return result;
-    }
-
-    return default_value;
-}
-
-template<typename UNumType>
-inline UNumType property_get_unum(const std::string &key,
-                                  UNumType default_value)
-{
-    std::string value;
-    UNumType result;
-
-    if (property_get(key, value) && str_to_unum(value.c_str(), 10, &result)) {
+    if (property_get(key, value) && str_to_num(value.c_str(), 10, result)) {
         return result;
     }
 
@@ -105,32 +89,16 @@ std::string property_file_get_string(const std::string &path,
 bool property_file_get_bool(const std::string &path, const std::string &key,
                             bool default_value);
 
-template<typename SNumType>
-inline SNumType property_file_get_snum(const std::string &path,
-                                       const std::string &key,
-                                       SNumType default_value)
+template<typename IntType>
+inline IntType property_file_get_num(const std::string &path,
+                                     const std::string &key,
+                                     IntType default_value)
 {
     std::string value;
-    SNumType result;
+    IntType result;
 
     if (property_file_get(path, key, value)
-            && str_to_snum(value.c_str(), 10, &result)) {
-        return result;
-    }
-
-    return default_value;
-}
-
-template<typename UNumType>
-inline UNumType property_file_get_unum(const std::string &path,
-                                       const std::string &key,
-                                       UNumType default_value)
-{
-    std::string value;
-    UNumType result;
-
-    if (property_file_get(path, key, value)
-            && str_to_unum(value.c_str(), 10, &result)) {
+            && str_to_num(value.c_str(), 10, result)) {
         return result;
     }
 
@@ -146,5 +114,4 @@ bool property_file_get_all(const std::string &path,
 bool property_file_write_all(const std::string &path,
                              const std::unordered_map<std::string, std::string> &map);
 
-}
 }

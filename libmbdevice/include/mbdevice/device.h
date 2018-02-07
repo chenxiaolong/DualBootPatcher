@@ -19,31 +19,26 @@
 
 #pragma once
 
-#include <memory>
+#include <string>
 #include <vector>
 
 #include "mbcommon/common.h"
+
+#include "mbdevice/device_p.h"
 #include "mbdevice/flags.h"
 
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
-class DevicePrivate;
 class MB_EXPORT Device
 {
-    MB_DECLARE_PRIVATE(Device)
-
 public:
     Device();
-    Device(const Device &device);
-    Device(Device &&device);
-    virtual ~Device();
+    ~Device();
 
-    void operator=(const Device &device);
-    void operator=(Device &&device);
+    MB_DEFAULT_COPY_CONSTRUCT_AND_ASSIGN(Device)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Device)
 
     std::string id() const;
     void set_id(std::string id);
@@ -137,8 +132,8 @@ public:
     bool operator==(const Device &other) const;
 
 private:
-    std::unique_ptr<DevicePrivate> _priv_ptr;
+    detail::BaseOptions m_base;
+    detail::TwOptions m_tw;
 };
 
-}
 }

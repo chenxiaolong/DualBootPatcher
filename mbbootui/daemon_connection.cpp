@@ -17,6 +17,7 @@
 
 #include "daemon_connection.h"
 
+#include <cerrno>
 #include <cstring>
 
 #include <sys/socket.h>
@@ -87,7 +88,7 @@ public:
         std::vector<Rom> roms;
 
         if (response->roms()) {
-            for (auto const &mb_rom : *response->roms()) {
+            for (auto const *mb_rom : *response->roms()) {
                 roms.emplace_back();
                 if (mb_rom->id()) {
                     roms.back().id = mb_rom->id()->str();
@@ -175,16 +176,16 @@ public:
         SwitchRomResult srr;
         switch (response->result()) {
         case v3::MbSwitchRomResult_SUCCEEDED:
-            srr = SwitchRomResult::SUCCEEDED;
+            srr = SwitchRomResult::Succeeded;
             break;
         case v3::MbSwitchRomResult_FAILED:
-            srr = SwitchRomResult::FAILED;
+            srr = SwitchRomResult::Failed;
             break;
         case v3::MbSwitchRomResult_CHECKSUM_INVALID:
-            srr = SwitchRomResult::CHECKSUM_INVALID;
+            srr = SwitchRomResult::ChecksumInvalid;
             break;
         case v3::MbSwitchRomResult_CHECKSUM_NOT_FOUND:
-            srr = SwitchRomResult::CHECKSUM_NOT_FOUND;
+            srr = SwitchRomResult::ChecksumNotFound;
             break;
         default:
             return false;
@@ -314,7 +315,7 @@ private:
             return false;
         }
 
-        result = static_cast<typename std::remove_reference<Result>::type>(
+        result = static_cast<std::remove_reference_t<Result>>(
                 response->response());
         return true;
     }
@@ -340,7 +341,7 @@ bool MbtoolConnection::connect()
     }
 
     int fd;
-    struct sockaddr_un addr;
+    sockaddr_un addr = {};
 
     fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (fd < 0) {
@@ -355,15 +356,14 @@ bool MbtoolConnection::connect()
     char abs_name[] = "\0" SOCKET_ADDRESS;
     size_t abs_name_len = sizeof(abs_name) - 1;
 
-    memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_LOCAL;
     memcpy(addr.sun_path, abs_name, abs_name_len);
 
     // Calculate correct length so the trailing junk is not included in the
     // abstract socket name
-    socklen_t addr_len = offsetof(struct sockaddr_un, sun_path) + abs_name_len;
+    socklen_t addr_len = offsetof(sockaddr_un, sun_path) + abs_name_len;
 
-    if (::connect(fd, (struct sockaddr *) &addr, addr_len) < 0) {
+    if (::connect(fd, reinterpret_cast<sockaddr *>(&addr), addr_len) < 0) {
         LOGE("Failed to connect to socket: %s", strerror(errno));
         return false;
     }

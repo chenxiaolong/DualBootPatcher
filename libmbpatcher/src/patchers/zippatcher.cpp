@@ -31,88 +31,48 @@
 #include "mblog/logging.h"
 #include "mbpio/delete.h"
 
+#include "mbpatcher/autopatchers/magiskpatcher.h"
+#include "mbpatcher/autopatchers/mountcmdpatcher.h"
+#include "mbpatcher/autopatchers/standardpatcher.h"
 #include "mbpatcher/patcherconfig.h"
 #include "mbpatcher/private/fileutils.h"
 #include "mbpatcher/private/miniziputils.h"
-#include "mbpatcher/private/stringutils.h"
 
 // minizip
-#include "minizip/unzip.h"
-#include "minizip/zip.h"
+#include "mz_zip.h"
 
 #define LOG_TAG "mbpatcher/patchers/zippatcher"
 
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
-/*! \cond INTERNAL */
-class ZipPatcherPrivate
-{
-public:
-    PatcherConfig *pc;
-    const FileInfo *info;
-
-    uint64_t bytes;
-    uint64_t max_bytes;
-    uint64_t files;
-    uint64_t max_files;
-
-    volatile bool cancelled;
-
-    ErrorCode error;
-
-    // Callbacks
-    ZipPatcher::ProgressUpdatedCallback progress_cb;
-    ZipPatcher::FilesUpdatedCallback files_cb;
-    ZipPatcher::DetailsUpdatedCallback details_cb;
-    void *userdata;
-
-    // Patching
-    MinizipUtils::UnzCtx *z_input = nullptr;
-    MinizipUtils::ZipCtx *z_output = nullptr;
-    std::vector<AutoPatcher *> auto_patchers;
-
-    bool patch_zip();
-
-    bool pass1(const std::string &temporary_dir,
-               const std::unordered_set<std::string> &exclude);
-    bool pass2(const std::string &temporary_dir,
-               const std::unordered_set<std::string> &files);
-    bool open_input_archive();
-    void close_input_archive();
-    bool open_output_archive();
-    void close_output_archive();
-
-    void update_progress(uint64_t bytes, uint64_t maxBytes);
-    void update_files(uint64_t files, uint64_t maxFiles);
-    void update_details(const std::string &msg);
-
-    static void la_progress_cb(uint64_t bytes, void *userData);
-};
-/*! \endcond */
-
 
 const std::string ZipPatcher::Id("ZipPatcher");
 
 
-ZipPatcher::ZipPatcher(PatcherConfig * const pc)
-    : _priv_ptr(new ZipPatcherPrivate())
+ZipPatcher::ZipPatcher(PatcherConfig &pc)
+    : m_pc(pc)
+    , m_info(nullptr)
+    , m_bytes(0)
+    , m_max_bytes(0)
+    , m_files(0)
+    , m_max_files(0)
+    , m_cancelled(false)
+    , m_error()
+    , m_progress_cb(nullptr)
+    , m_files_cb(nullptr)
+    , m_details_cb(nullptr)
+    , m_userdata(nullptr)
+    , m_z_input(nullptr)
+    , m_z_output(nullptr)
 {
-    MB_PRIVATE(ZipPatcher);
-    priv->pc = pc;
 }
 
-ZipPatcher::~ZipPatcher()
-{
-}
+ZipPatcher::~ZipPatcher() = default;
 
 ErrorCode ZipPatcher::error() const
 {
-    MB_PRIVATE(const ZipPatcher);
-    return priv->error;
+    return m_error;
 }
 
 std::string ZipPatcher::id() const
@@ -122,14 +82,12 @@ std::string ZipPatcher::id() const
 
 void ZipPatcher::set_file_info(const FileInfo * const info)
 {
-    MB_PRIVATE(ZipPatcher);
-    priv->info = info;
+    m_info = info;
 }
 
 void ZipPatcher::cancel_patching()
 {
-    MB_PRIVATE(ZipPatcher);
-    priv->cancelled = true;
+    m_cancelled = true;
 }
 
 bool ZipPatcher::patch_file(ProgressUpdatedCallback progress_cb,
@@ -137,42 +95,41 @@ bool ZipPatcher::patch_file(ProgressUpdatedCallback progress_cb,
                             DetailsUpdatedCallback details_cb,
                             void *userdata)
 {
-    MB_PRIVATE(ZipPatcher);
-    priv->cancelled = false;
+    m_cancelled = false;
 
-    assert(priv->info != nullptr);
+    assert(m_info != nullptr);
 
-    priv->progress_cb = progress_cb;
-    priv->files_cb = files_cb;
-    priv->details_cb = details_cb;
-    priv->userdata = userdata;
+    m_progress_cb = progress_cb;
+    m_files_cb = files_cb;
+    m_details_cb = details_cb;
+    m_userdata = userdata;
 
-    priv->bytes = 0;
-    priv->max_bytes = 0;
-    priv->files = 0;
-    priv->max_files = 0;
+    m_bytes = 0;
+    m_max_bytes = 0;
+    m_files = 0;
+    m_max_files = 0;
 
-    bool ret = priv->patch_zip();
+    bool ret = patch_zip();
 
-    priv->progress_cb = nullptr;
-    priv->files_cb = nullptr;
-    priv->details_cb = nullptr;
-    priv->userdata = nullptr;
+    m_progress_cb = nullptr;
+    m_files_cb = nullptr;
+    m_details_cb = nullptr;
+    m_userdata = nullptr;
 
-    for (auto *p : priv->auto_patchers) {
-        priv->pc->destroy_auto_patcher(p);
+    for (auto *p : m_auto_patchers) {
+        m_pc.destroy_auto_patcher(p);
     }
-    priv->auto_patchers.clear();
+    m_auto_patchers.clear();
 
-    if (priv->z_input != nullptr) {
-        priv->close_input_archive();
+    if (m_z_input != nullptr) {
+        close_input_archive();
     }
-    if (priv->z_output != nullptr) {
-        priv->close_output_archive();
+    if (m_z_output != nullptr) {
+        close_output_archive();
     }
 
-    if (priv->cancelled) {
-        priv->error = ErrorCode::PatchingCancelled;
+    if (m_cancelled) {
+        m_error = ErrorCode::PatchingCancelled;
         return false;
     }
 
@@ -185,26 +142,23 @@ struct CopySpec
     std::string target;
 };
 
-bool ZipPatcherPrivate::patch_zip()
+bool ZipPatcher::patch_zip()
 {
     std::unordered_set<std::string> exclude_from_pass1;
 
-    auto *standard_ap = pc->create_auto_patcher("StandardPatcher", info);
-    if (!standard_ap) {
-        error = ErrorCode::AutoPatcherCreateError;
-        return false;
-    }
+    for (auto const &id : {
+        StandardPatcher::Id,
+        MountCmdPatcher::Id,
+        MagiskPatcher::Id,
+    }) {
+        auto *ap = m_pc.create_auto_patcher(id, *m_info);
+        if (!ap) {
+            m_error = ErrorCode::AutoPatcherCreateError;
+            return false;
+        }
 
-    auto *mount_cmd_ap = pc->create_auto_patcher("MountCmdPatcher", info);
-    if (!mount_cmd_ap) {
-        error = ErrorCode::AutoPatcherCreateError;
-        return false;
-    }
+        m_auto_patchers.push_back(ap);
 
-    auto_patchers.push_back(standard_ap);
-    auto_patchers.push_back(mount_cmd_ap);
-
-    for (auto *ap : auto_patchers) {
         // AutoPatcher files should be excluded from the first pass
         for (auto const &file : ap->existing_files()) {
             exclude_from_pass1.insert(file);
@@ -216,25 +170,24 @@ bool ZipPatcherPrivate::patch_zip()
         return false;
     }
 
-    zipFile zf = MinizipUtils::ctx_get_zip_file(z_output);
+    void *handle = MinizipUtils::ctx_get_zip_handle(m_z_output);
 
-    if (cancelled) return false;
+    if (m_cancelled) return false;
 
     MinizipUtils::ArchiveStats stats;
-    auto result = MinizipUtils::archive_stats(info->input_path(), &stats,
-                                              std::vector<std::string>());
+    auto result = MinizipUtils::archive_stats(m_info->input_path(), stats, {});
     if (result != ErrorCode::NoError) {
-        error = result;
+        m_error = result;
         return false;
     }
 
-    max_bytes = stats.total_size;
+    m_max_bytes = stats.total_size;
 
-    if (cancelled) return false;
+    if (m_cancelled) return false;
 
-    std::string arch_dir(pc->data_directory());
+    std::string arch_dir(m_pc.data_directory());
     arch_dir += "/binaries/android/";
-    arch_dir += info->device().architecture();
+    arch_dir += m_info->device().architecture();
 
     std::vector<CopySpec> to_copy {
         {
@@ -244,10 +197,10 @@ bool ZipPatcherPrivate::patch_zip()
             arch_dir + "/mbtool_recovery.sig",
             "META-INF/com/google/android/update-binary.sig"
         }, {
-            pc->data_directory() + "/scripts/bb-wrapper.sh",
+            m_pc.data_directory() + "/scripts/bb-wrapper.sh",
             "multiboot/bb-wrapper.sh"
         }, {
-            pc->data_directory() + "/scripts/bb-wrapper.sh.sig",
+            m_pc.data_directory() + "/scripts/bb-wrapper.sh.sig",
             "multiboot/bb-wrapper.sh.sig"
         }
     };
@@ -270,8 +223,8 @@ bool ZipPatcherPrivate::patch_zip()
 
     // +1 for info.prop
     // +1 for device.json
-    max_files = stats.files + to_copy.size() + 2;
-    update_files(files, max_files);
+    m_max_files = stats.files + to_copy.size() + 2;
+    update_files(m_files, m_max_files);
 
     if (!open_input_archive()) {
         return false;
@@ -279,72 +232,72 @@ bool ZipPatcherPrivate::patch_zip()
 
     // Create temporary dir for extracted files for autopatchers
     std::string temp_dir =
-            FileUtils::create_temporary_dir(pc->temp_directory());
+            FileUtils::create_temporary_dir(m_pc.temp_directory());
 
     if (!pass1(temp_dir, exclude_from_pass1)) {
-        io::deleteRecursively(temp_dir);
+        io::delete_recursively(temp_dir);
         return false;
     }
 
-    if (cancelled) return false;
+    if (m_cancelled) return false;
 
     // On the second pass, run the autopatchers on the rest of the files
 
     if (!pass2(temp_dir, exclude_from_pass1)) {
-        io::deleteRecursively(temp_dir);
+        io::delete_recursively(temp_dir);
         return false;
     }
 
-    io::deleteRecursively(temp_dir);
+    io::delete_recursively(temp_dir);
 
     for (const CopySpec &spec : to_copy) {
-        if (cancelled) return false;
+        if (m_cancelled) return false;
 
-        update_files(++files, max_files);
+        update_files(++m_files, m_max_files);
         update_details(spec.target);
 
-        result = MinizipUtils::add_file(zf, spec.target, spec.source);
+        result = MinizipUtils::add_file(handle, spec.target, spec.source);
         if (result != ErrorCode::NoError) {
-            error = result;
+            m_error = result;
             return false;
         }
     }
 
-    if (cancelled) return false;
+    if (m_cancelled) return false;
 
-    update_files(++files, max_files);
+    update_files(++m_files, m_max_files);
     update_details("multiboot/info.prop");
 
     const std::string info_prop =
-            ZipPatcher::create_info_prop(pc, info->rom_id(), false);
+            ZipPatcher::create_info_prop(m_info->rom_id(), false);
     result = MinizipUtils::add_file(
-            zf, "multiboot/info.prop",
+            handle, "multiboot/info.prop",
             std::vector<unsigned char>(info_prop.begin(), info_prop.end()));
     if (result != ErrorCode::NoError) {
-        error = result;
+        m_error = result;
         return false;
     }
 
-    if (cancelled) return false;
+    if (m_cancelled) return false;
 
-    update_files(++files, max_files);
+    update_files(++m_files, m_max_files);
     update_details("multiboot/device.json");
 
     std::string json;
-    if (!device::device_to_json(info->device(), json)) {
-        error = ErrorCode::MemoryAllocationError;
+    if (!device::device_to_json(m_info->device(), json)) {
+        m_error = ErrorCode::MemoryAllocationError;
         return false;
     }
 
     result = MinizipUtils::add_file(
-            zf, "multiboot/device.json",
+            handle, "multiboot/device.json",
             std::vector<unsigned char>(json.begin(), json.end()));
     if (result != ErrorCode::NoError) {
-        error = result;
+        m_error = result;
         return false;
     }
 
-    if (cancelled) return false;
+    if (m_cancelled) return false;
 
     return true;
 }
@@ -357,61 +310,66 @@ bool ZipPatcherPrivate::patch_zip()
  * - Files needed by an AutoPatcher are extracted to the temporary directory.
  * - Otherwise, the file is copied directly to the output zip.
  */
-bool ZipPatcherPrivate::pass1(const std::string &temporary_dir,
-                              const std::unordered_set<std::string> &exclude)
+bool ZipPatcher::pass1(const std::string &temporary_dir,
+                       const std::unordered_set<std::string> &exclude)
 {
-    unzFile uf = MinizipUtils::ctx_get_unz_file(z_input);
-    zipFile zf = MinizipUtils::ctx_get_zip_file(z_output);
+    void *h_in = MinizipUtils::ctx_get_zip_handle(m_z_input);
+    void *h_out = MinizipUtils::ctx_get_zip_handle(m_z_output);
 
-    int ret = unzGoToFirstFile(uf);
-    if (ret != UNZ_OK) {
-        error = ErrorCode::ArchiveReadHeaderError;
+    int ret = mz_zip_goto_first_entry(h_in);
+    if (ret != MZ_OK && ret != MZ_END_OF_LIST) {
+        m_error = ErrorCode::ArchiveReadHeaderError;
         return false;
     }
 
-    do {
-        if (cancelled) return false;
+    if (ret != MZ_END_OF_LIST) {
+        do {
+            if (m_cancelled) return false;
 
-        unz_file_info64 fi;
-        std::string cur_file;
+            mz_zip_file *file_info;
 
-        if (!MinizipUtils::get_info(uf, &fi, &cur_file)) {
-            error = ErrorCode::ArchiveReadHeaderError;
-            return false;
-        }
-
-        update_files(++files, max_files);
-        update_details(cur_file);
-
-        // Skip files that should be patched and added in pass 2
-        if (exclude.find(cur_file) != exclude.end()) {
-            if (!MinizipUtils::extract_file(uf, temporary_dir)) {
-                error = ErrorCode::ArchiveReadDataError;
+            ret = mz_zip_entry_get_info(h_in, &file_info);
+            if (ret != MZ_OK) {
+                m_error = ErrorCode::ArchiveReadHeaderError;
                 return false;
             }
-            continue;
-        }
 
-        // Rename the installer for mbtool
-        if (cur_file == "META-INF/com/google/android/update-binary") {
-            cur_file = "META-INF/com/google/android/update-binary.orig";
-        }
+            std::string cur_file{file_info->filename, file_info->filename_size};
 
-        if (!MinizipUtils::copy_file_raw(uf, zf, cur_file, &la_progress_cb, this)) {
-            LOGW("minizip: Failed to copy raw data: %s", cur_file.c_str());
-            error = ErrorCode::ArchiveWriteDataError;
+            update_files(++m_files, m_max_files);
+            update_details(cur_file);
+
+            // Skip files that should be patched and added in pass 2
+            if (exclude.find(cur_file) != exclude.end()) {
+                if (!MinizipUtils::extract_file(h_in, temporary_dir)) {
+                    m_error = ErrorCode::ArchiveReadDataError;
+                    return false;
+                }
+                continue;
+            }
+
+            // Rename the installer for mbtool
+            if (cur_file == "META-INF/com/google/android/update-binary") {
+                cur_file = "META-INF/com/google/android/update-binary.orig";
+            }
+
+            if (!MinizipUtils::copy_file_raw(
+                    h_in, h_out, cur_file, &la_progress_cb, this)) {
+                LOGW("minizip: Failed to copy raw data: %s", cur_file.c_str());
+                m_error = ErrorCode::ArchiveWriteDataError;
+                return false;
+            }
+
+            m_bytes += file_info->uncompressed_size;
+        } while ((ret = mz_zip_goto_next_entry(h_in)) == MZ_OK);
+
+        if (ret != MZ_END_OF_LIST) {
+            m_error = ErrorCode::ArchiveReadHeaderError;
             return false;
         }
-
-        bytes += fi.uncompressed_size;
-    } while ((ret = unzGoToNextFile(uf)) == UNZ_OK);
-
-    if (ret != UNZ_END_OF_LIST_OF_FILE) {
-        error = ErrorCode::ArchiveReadHeaderError;
-        return false;
     }
 
-    if (cancelled) return false;
+    if (m_cancelled) return false;
 
     return true;
 }
@@ -424,15 +382,15 @@ bool ZipPatcherPrivate::pass1(const std::string &temporary_dir,
  * - Patch files in the temporary directory using the AutoPatchers and add the
  *   resulting files to the output zip
  */
-bool ZipPatcherPrivate::pass2(const std::string &temporary_dir,
-                              const std::unordered_set<std::string> &files)
+bool ZipPatcher::pass2(const std::string &temporary_dir,
+                       const std::unordered_set<std::string> &files)
 {
-    zipFile zf = MinizipUtils::ctx_get_zip_file(z_output);
+    void *handle = MinizipUtils::ctx_get_zip_handle(m_z_output);
 
-    for (auto *ap : auto_patchers) {
-        if (cancelled) return false;
+    for (auto *ap : m_auto_patchers) {
+        if (m_cancelled) return false;
         if (!ap->patch_files(temporary_dir)) {
-            error = ap->error();
+            m_error = ap->error();
             return false;
         }
     }
@@ -440,124 +398,123 @@ bool ZipPatcherPrivate::pass2(const std::string &temporary_dir,
     // TODO Headers are being discarded
 
     for (auto const &file : files) {
-        if (cancelled) return false;
+        if (m_cancelled) return false;
 
         ErrorCode ret;
 
         if (file == "META-INF/com/google/android/update-binary") {
             ret = MinizipUtils::add_file(
-                    zf,
+                    handle,
                     "META-INF/com/google/android/update-binary.orig",
-                      temporary_dir + "/" + file);
+                    temporary_dir + "/" + file);
         } else {
             ret = MinizipUtils::add_file(
-                    zf,
+                    handle,
                     file,
-                      temporary_dir + "/" + file);
+                    temporary_dir + "/" + file);
         }
 
         if (ret == ErrorCode::FileOpenError) {
             LOGW("File does not exist in temporary directory: %s", file.c_str());
         } else if (ret != ErrorCode::NoError) {
-            error = ret;
+            m_error = ret;
             return false;
         }
     }
 
-    if (cancelled) return false;
+    if (m_cancelled) return false;
 
     return true;
 }
 
-bool ZipPatcherPrivate::open_input_archive()
+bool ZipPatcher::open_input_archive()
 {
-    assert(z_input == nullptr);
+    assert(m_z_input == nullptr);
 
-    z_input = MinizipUtils::open_input_file(info->input_path());
+    m_z_input = MinizipUtils::open_zip_file(m_info->input_path(),
+                                            ZipOpenMode::Read);
 
-    if (!z_input) {
+    if (!m_z_input) {
         LOGE("minizip: Failed to open for reading: %s",
-             info->input_path().c_str());
-        error = ErrorCode::ArchiveReadOpenError;
+             m_info->input_path().c_str());
+        m_error = ErrorCode::ArchiveReadOpenError;
         return false;
     }
 
     return true;
 }
 
-void ZipPatcherPrivate::close_input_archive()
+void ZipPatcher::close_input_archive()
 {
-    assert(z_input != nullptr);
+    assert(m_z_input != nullptr);
 
-    int ret = MinizipUtils::close_input_file(z_input);
-    if (ret != UNZ_OK) {
+    int ret = MinizipUtils::close_zip_file(m_z_input);
+    if (ret != MZ_OK) {
         LOGW("minizip: Failed to close archive (error code: %d)", ret);
     }
 
-    z_input = nullptr;
+    m_z_input = nullptr;
 }
 
-bool ZipPatcherPrivate::open_output_archive()
+bool ZipPatcher::open_output_archive()
 {
-    assert(z_output == nullptr);
+    assert(m_z_output == nullptr);
 
-    z_output = MinizipUtils::open_output_file(info->output_path());
+    m_z_output = MinizipUtils::open_zip_file(m_info->output_path(),
+                                             ZipOpenMode::Write);
 
-    if (!z_output) {
+    if (!m_z_output) {
         LOGE("minizip: Failed to open for writing: %s",
-             info->output_path().c_str());
-        error = ErrorCode::ArchiveWriteOpenError;
+             m_info->output_path().c_str());
+        m_error = ErrorCode::ArchiveWriteOpenError;
         return false;
     }
 
     return true;
 }
 
-void ZipPatcherPrivate::close_output_archive()
+void ZipPatcher::close_output_archive()
 {
-    assert(z_output != nullptr);
+    assert(m_z_output != nullptr);
 
-    int ret = MinizipUtils::close_output_file(z_output);
-    if (ret != ZIP_OK) {
+    int ret = MinizipUtils::close_zip_file(m_z_output);
+    if (ret != MZ_OK) {
         LOGW("minizip: Failed to close archive (error code: %d)", ret);
     }
 
-    z_output = nullptr;
+    m_z_output = nullptr;
 }
 
-void ZipPatcherPrivate::update_progress(uint64_t bytes, uint64_t max_bytes)
+void ZipPatcher::update_progress(uint64_t bytes, uint64_t max_bytes)
 {
-    if (progress_cb) {
-        progress_cb(bytes, max_bytes, userdata);
+    if (m_progress_cb) {
+        m_progress_cb(bytes, max_bytes, m_userdata);
     }
 }
 
-void ZipPatcherPrivate::update_files(uint64_t files, uint64_t max_files)
+void ZipPatcher::update_files(uint64_t files, uint64_t max_files)
 {
-    if (files_cb) {
-        files_cb(files, max_files, userdata);
+    if (m_files_cb) {
+        m_files_cb(files, max_files, m_userdata);
     }
 }
 
-void ZipPatcherPrivate::update_details(const std::string &msg)
+void ZipPatcher::update_details(const std::string &msg)
 {
-    if (details_cb) {
-        details_cb(msg, userdata);
+    if (m_details_cb) {
+        m_details_cb(msg, m_userdata);
     }
 }
 
-void ZipPatcherPrivate::la_progress_cb(uint64_t bytes, void *userdata)
+void ZipPatcher::la_progress_cb(uint64_t bytes, void *userdata)
 {
-    auto *priv = static_cast<ZipPatcherPrivate *>(userdata);
-    priv->update_progress(priv->bytes + bytes, priv->max_bytes);
+    auto *p = static_cast<ZipPatcher *>(userdata);
+    p->update_progress(p->m_bytes + bytes, p->m_max_bytes);
 }
 
-std::string ZipPatcher::create_info_prop(const PatcherConfig * const pc,
-                                         const std::string &rom_id,
+std::string ZipPatcher::create_info_prop(const std::string &rom_id,
                                          bool always_patch_ramdisk)
 {
-    (void) pc;
-
     std::string out;
 
     out +=
@@ -610,5 +567,4 @@ std::string ZipPatcher::create_info_prop(const PatcherConfig * const pc,
     return out;
 }
 
-}
 }

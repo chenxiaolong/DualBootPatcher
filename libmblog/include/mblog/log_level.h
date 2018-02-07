@@ -19,9 +19,7 @@
 
 #pragma once
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 enum class LogLevel
@@ -33,5 +31,4 @@ enum class LogLevel
     Verbose
 };
 
-}
 }

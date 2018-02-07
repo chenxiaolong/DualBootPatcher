@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -29,27 +29,27 @@
 #include "mbutil/string.h"
 
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
-FTSWrapper::FTSWrapper(std::string path, int flags)
+FtsWrapper::FtsWrapper(std::string path, FtsFlags flags)
+    : _path(std::move(path))
+    , _flags(flags)
+    , _ftsp(nullptr)
+    , _curr(nullptr)
+    , _root(nullptr)
+    , _ran(false)
 {
-    _path = std::move(path);
-
-    // Flags
-    _flags = flags;
 }
 
-FTSWrapper::~FTSWrapper()
+FtsWrapper::~FtsWrapper()
 {
     if (_ftsp) {
         fts_close(_ftsp);
     }
 }
 
-bool FTSWrapper::run()
+bool FtsWrapper::run()
 {
     if (_ran) {
         _error_msg = "Already ran";
@@ -59,20 +59,19 @@ bool FTSWrapper::run()
 
     bool ret = true;
     int fts_flags = 0;
-    int result;
 
     // Don't change directories
     fts_flags += FTS_NOCHDIR;
 
     // Don't follow symlinks by default
-    if (_flags & FTS_FollowSymlinks) {
+    if (_flags & FtsFlag::FollowSymlinks) {
         fts_flags |= FTS_LOGICAL;
     } else {
         fts_flags |= FTS_PHYSICAL;
     }
 
     // Don't cross mountpoint boundaries by default
-    if ((_flags & FTS_CrossMountPointBoundaries) == 0) {
+    if (!(_flags & FtsFlag::CrossMountPointBoundaries)) {
         fts_flags |= FTS_XDEV;
     }
 
@@ -82,11 +81,11 @@ bool FTSWrapper::run()
     }
 
     // We only support traversal of one tree
-    char *files[] = { (char *) _path.c_str(), nullptr };
+    char *files[] = { const_cast<char *>(_path.c_str()), nullptr };
 
     _ftsp = fts_open(files, fts_flags, nullptr);
     if (!_ftsp) {
-        format(_error_msg, "fts_open failed: %s", strerror(errno));
+        _error_msg = format("fts_open failed: %s", strerror(errno));
         ret = false;
     }
 
@@ -95,8 +94,8 @@ bool FTSWrapper::run()
         case FTS_NS:  // no stat()
         case FTS_DNR: // directory not read
         case FTS_ERR: { // other error
-            format(_error_msg, "fts_read error: %s",
-                   strerror(_curr->fts_errno));
+            _error_msg = format("fts_read error: %s",
+                                strerror(_curr->fts_errno));
             ret = false;
             break;
         }
@@ -114,18 +113,18 @@ bool FTSWrapper::run()
 
         // Current path hook
         _error_msg = "Handler returned failure";
-        result = on_changed_path();
-        if (result & FTS_Fail) {
+        Actions result = on_changed_path();
+        if (result & Action::Fail) {
             ret = false;
         }
-        if (result & FTS_Next) {
+        if (result & Action::Next) {
             continue;
         }
-        if (result & FTS_Skip) {
+        if (result & Action::Skip) {
             fts_set(_ftsp, _curr, FTS_SKIP);
             continue;
         }
-        if (result & FTS_Stop) {
+        if (result & Action::Stop) {
             break;
         }
 
@@ -139,7 +138,7 @@ bool FTSWrapper::run()
         case FTS_SL:
         case FTS_SLNONE: result = on_reached_symlink(); break;
         case FTS_DEFAULT:
-            if (_flags & FTS_GroupSpecialFiles) {
+            if (_flags & FtsFlag::GroupSpecialFiles) {
                 result = on_reached_special_file();
             } else {
                 switch (_curr->fts_statp->st_mode & S_IFMT) {
@@ -147,20 +146,20 @@ bool FTSWrapper::run()
                 case S_IFCHR: result = on_reached_character_device(); break;
                 case S_IFIFO: result = on_reached_fifo(); break;
                 case S_IFSOCK: result = on_reached_socket(); break;
-                default: result = Action::FTS_Skip; break;
+                default: result = Action::Skip; break;
                 }
             }
         }
 
         // Handle result
-        if (result & FTS_Fail) {
+        if (result & Action::Fail) {
             ret = false;
         }
-        if (result & FTS_Skip) {
+        if (result & Action::Skip) {
             fts_set(_ftsp, _curr, FTS_SKIP);
             continue;
         }
-        if (result & FTS_Stop) {
+        if (result & Action::Stop) {
             break;
         }
     }
@@ -172,70 +171,69 @@ bool FTSWrapper::run()
     return ret;
 }
 
-std::string FTSWrapper::error()
+std::string FtsWrapper::error()
 {
     return _error_msg;
 }
 
-bool FTSWrapper::on_pre_execute() {
+bool FtsWrapper::on_pre_execute() {
     return true;
 }
 
-bool FTSWrapper::on_post_execute(bool success)
+bool FtsWrapper::on_post_execute(bool success)
 {
     (void) success;
     return true;
 }
 
-int FTSWrapper::on_changed_path()
+FtsWrapper::Actions FtsWrapper::on_changed_path()
 {
-    return Action::FTS_OK;
+    return Action::Ok;
 }
 
-int FTSWrapper::on_reached_directory_pre()
+FtsWrapper::Actions FtsWrapper::on_reached_directory_pre()
 {
-    return Action::FTS_OK;
+    return Action::Ok;
 }
 
-int FTSWrapper::on_reached_directory_post()
+FtsWrapper::Actions FtsWrapper::on_reached_directory_post()
 {
-    return Action::FTS_OK;
+    return Action::Ok;
 }
 
-int FTSWrapper::on_reached_file()
+FtsWrapper::Actions FtsWrapper::on_reached_file()
 {
-    return Action::FTS_OK;
+    return Action::Ok;
 }
 
-int FTSWrapper::on_reached_symlink()
+FtsWrapper::Actions FtsWrapper::on_reached_symlink()
 {
-    return Action::FTS_OK;
+    return Action::Ok;
 }
 
-int FTSWrapper::on_reached_special_file()
+FtsWrapper::Actions FtsWrapper::on_reached_special_file()
 {
-    return Action::FTS_OK;
+    return Action::Ok;
 }
 
-int FTSWrapper::on_reached_block_device()
+FtsWrapper::Actions FtsWrapper::on_reached_block_device()
 {
-    return Action::FTS_OK;
+    return Action::Ok;
 }
 
-int FTSWrapper::on_reached_character_device()
+FtsWrapper::Actions FtsWrapper::on_reached_character_device()
 {
-    return Action::FTS_OK;
+    return Action::Ok;
 }
 
-int FTSWrapper::on_reached_fifo()
+FtsWrapper::Actions FtsWrapper::on_reached_fifo()
 {
-    return Action::FTS_OK;
+    return Action::Ok;
 }
 
-int FTSWrapper::on_reached_socket()
+FtsWrapper::Actions FtsWrapper::on_reached_socket()
 {
-    return Action::FTS_OK;
+    return Action::Ok;
 }
 
-}
 }

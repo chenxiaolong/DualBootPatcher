@@ -23,9 +23,7 @@
 
 #include <sepol/policydb/policydb.h>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 constexpr char SELINUX_ENFORCE_FILE[]           = "/sys/fs/selinux/enforce";
@@ -38,12 +36,12 @@ constexpr char SELINUX_DEFAULT_POLICY_FILE[]    = "/sepolicy";
 
 enum class SELinuxAttr
 {
-    CURRENT,
-    EXEC,
-    FSCREATE,
-    KEYCREATE,
-    PREV,
-    SOCKCREATE,
+    Current,
+    Exec,
+    FsCreate,
+    KeyCreate,
+    Prev,
+    SockCreate,
 };
 
 bool selinux_read_policy(const std::string &path, policydb_t *pdb);
@@ -65,5 +63,4 @@ bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
 bool selinux_set_process_attr(pid_t pid, SELinuxAttr attr,
                               const std::string &context);
 
-}
 }

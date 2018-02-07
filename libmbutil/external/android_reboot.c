@@ -104,7 +104,7 @@ static void remount_ro(void)
 }
 
 
-int android_reboot(int cmd, const char *arg)
+int android_reboot(unsigned int cmd, const char *arg)
 {
     int ret = 0;
     int reason = -1;
@@ -132,8 +132,9 @@ int android_reboot(int cmd, const char *arg)
     if (reason != -1) {
         ret = reboot(reason);
     } else {
-        ret = syscall(__NR_reboot, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
-                      LINUX_REBOOT_CMD_RESTART2, arg);
+        ret = (int) syscall(__NR_reboot, LINUX_REBOOT_MAGIC1,
+                            LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART2,
+                            arg);
     }
 
     return ret;

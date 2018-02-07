@@ -24,8 +24,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <cutils/properties.h>
-
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
@@ -41,6 +39,10 @@
 #include "infomanager.hpp"
 #include "twrp-functions.hpp"
 #include "variables.h"
+
+// _FORTIFY_SOURCE=2 doesn't play well with Clang and the NDK
+#undef __BIONIC_FORTIFY
+#include <cutils/properties.h>
 
 #define LOG_TAG "mbbootui/data"
 

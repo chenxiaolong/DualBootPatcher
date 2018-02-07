@@ -35,16 +35,7 @@ target_include_directories(
     mbbootui-gui
     PRIVATE
     ..
-    ${MBP_LIBPIXELFLINGER_INCLUDES}
     ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
-)
-
-set_target_properties(
-    mbbootui-gui
-    PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED 1
-    POSITION_INDEPENDENT_CODE 1
 )
 
 target_compile_options(
@@ -76,12 +67,11 @@ set_source_files_properties(
 target_link_libraries(
     mbbootui-gui
     PRIVATE
+    interface.global.CXXVersion
     mbbootui-minui
     mbbootui-minzip
     mbdevice-static
     mblog-static
     mbutil-static
-    ${MBP_LIBPIXELFLINGER_LIBRARIES}
-    ${MBP_LIBUTILS_LIBRARIES}
-    ${MBP_LIBCUTILS_LIBRARIES}
+    AndroidSystemCore::Cutils
 )

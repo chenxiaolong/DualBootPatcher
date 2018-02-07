@@ -32,6 +32,8 @@
 #endif
 
 #include "mbcommon/error.h"
+#include "mbcommon/error_code.h"
+#include "mbcommon/finally.h"
 
 namespace mb
 {
@@ -56,18 +58,21 @@ static wchar_t * win32_convert_to_wcs(UINT code_page,
         goto done;
     }
 
-    n = MultiByteToWideChar(code_page, 0, in_buf, in_size, nullptr, 0);
+    n = MultiByteToWideChar(code_page, 0, in_buf, static_cast<int>(in_size),
+                            nullptr, 0);
     if (n == 0) {
         goto done;
     }
 
     // n does not include the NULL-terminator if the input did not contain one
-    out_buf = static_cast<wchar_t *>(malloc((n + 1) * sizeof(wchar_t)));
+    out_buf = static_cast<wchar_t *>(malloc(
+            static_cast<size_t>(n + 1) * sizeof(wchar_t)));
     if (!out_buf) {
         goto done;
     }
 
-    n = MultiByteToWideChar(code_page, 0, in_buf, in_size, out_buf, n);
+    n = MultiByteToWideChar(code_page, 0, in_buf, static_cast<int>(in_size),
+                            out_buf, n);
     if (n == 0) {
         goto done;
     }
@@ -105,20 +110,21 @@ static char * win32_convert_to_mbs(UINT code_page,
         goto done;
     }
 
-    n = WideCharToMultiByte(code_page, 0, in_buf, in_size, nullptr, 0, nullptr,
-                            nullptr);
+    n = WideCharToMultiByte(code_page, 0, in_buf, static_cast<int>(in_size),
+                            nullptr, 0, nullptr, nullptr);
     if (n == 0) {
         goto done;
     }
 
     // n does not include the NULL-terminator if the input did not contain one
-    out_buf = static_cast<char *>(malloc((n + 1) * sizeof(char)));
+    out_buf = static_cast<char *>(malloc(
+            static_cast<size_t>(n + 1) * sizeof(char)));
     if (!out_buf) {
         goto done;
     }
 
-    n = WideCharToMultiByte(code_page, 0, in_buf, in_size, out_buf, n, nullptr,
-                            nullptr);
+    n = WideCharToMultiByte(code_page, 0, in_buf, static_cast<int>(in_size),
+                            out_buf, n, nullptr, nullptr);
     if (n == 0) {
         goto done;
     }
@@ -136,6 +142,11 @@ done:
     }
 
     return result;
+}
+
+static inline std::error_code get_system_error_code()
+{
+    return ec_from_win32();
 }
 
 #else
@@ -260,35 +271,32 @@ done:
     return result;
 }
 
+static inline std::error_code get_system_error_code()
+{
+    return ec_from_errno();
+}
+
 #endif
 
-bool mbs_to_wcs_n(std::wstring &out, const char *str, size_t len)
+oc::result<std::wstring> mbs_to_wcs_n(const char *str, size_t len)
 {
 #ifdef _WIN32
     wchar_t *result = win32_convert_to_wcs(CP_ACP, str, len);
 #else
     char *c_result = iconv_convert(ICONV_CODE_DEFAULT, ICONV_CODE_WCHAR_T,
                                    str, len * sizeof(char));
-    wchar_t *result = reinterpret_cast<wchar_t *>(c_result);
+    auto result = reinterpret_cast<wchar_t *>(c_result);
 #endif
+    auto free_result = finally([&] { free(result); });
 
     if (!result) {
-        return false;
+        return get_system_error_code();
     }
 
-    out = result;
-    free(result);
-    return true;
-}
-
-std::wstring mbs_to_wcs_n(const char *str, size_t len)
-{
-    std::wstring result;
-    mbs_to_wcs_n(result, str, len);
     return result;
 }
 
-bool wcs_to_mbs_n(std::string &out, const wchar_t *str, size_t len)
+oc::result<std::string> wcs_to_mbs_n(const wchar_t *str, size_t len)
 {
 #ifdef _WIN32
     char *result = win32_convert_to_mbs(CP_ACP, str, len);
@@ -297,50 +305,34 @@ bool wcs_to_mbs_n(std::string &out, const wchar_t *str, size_t len)
                                  reinterpret_cast<const char *>(str),
                                  len * sizeof(wchar_t));
 #endif
+    auto free_result = finally([&] { free(result); });
 
     if (!result) {
-        return false;
+        return get_system_error_code();
     }
 
-    out = result;
-    free(result);
-    return true;
-}
-
-std::string wcs_to_mbs_n(const wchar_t *str, size_t len)
-{
-    std::string result;
-    wcs_to_mbs_n(result, str, len);
     return result;
 }
 
-bool utf8_to_wcs_n(std::wstring &out, const char *str, size_t len)
+oc::result<std::wstring> utf8_to_wcs_n(const char *str, size_t len)
 {
 #ifdef _WIN32
     wchar_t *result = win32_convert_to_wcs(CP_UTF8, str, len);
 #else
     char *c_result = iconv_convert(ICONV_CODE_UTF_8, ICONV_CODE_WCHAR_T,
                                    str, len * sizeof(char));
-    wchar_t *result = reinterpret_cast<wchar_t *>(c_result);
+    auto result = reinterpret_cast<wchar_t *>(c_result);
 #endif
+    auto free_result = finally([&] { free(result); });
 
     if (!result) {
-        return false;
+        return get_system_error_code();
     }
 
-    out = result;
-    free(result);
-    return true;
-}
-
-std::wstring utf8_to_wcs_n(const char *str, size_t len)
-{
-    std::wstring result;
-    utf8_to_wcs_n(result, str, len);
     return result;
 }
 
-bool wcs_to_utf8_n(std::string &out, const wchar_t *str, size_t len)
+oc::result<std::string> wcs_to_utf8_n(const wchar_t *str, size_t len)
 {
 #ifdef _WIN32
     char *result = win32_convert_to_mbs(CP_UTF8, str, len);
@@ -349,99 +341,51 @@ bool wcs_to_utf8_n(std::string &out, const wchar_t *str, size_t len)
                                  reinterpret_cast<const char *>(str),
                                  len * sizeof(wchar_t));
 #endif
+    auto free_result = finally([&] { free(result); });
 
     if (!result) {
-        return false;
+        return get_system_error_code();
     }
 
-    out = result;
-    free(result);
-    return true;
-}
-
-std::string wcs_to_utf8_n(const wchar_t *str, size_t len)
-{
-    std::string result;
-    wcs_to_utf8_n(result, str, len);
     return result;
 }
 
-bool mbs_to_wcs(std::wstring &out, const char *str)
-{
-    return mbs_to_wcs_n(out, str, strlen(str));
-}
-
-bool mbs_to_wcs(std::wstring &out, const std::string &str)
-{
-    return mbs_to_wcs_n(out, str.data(), str.size());
-}
-
-std::wstring mbs_to_wcs(const char *str)
+oc::result<std::wstring> mbs_to_wcs(const char *str)
 {
     return mbs_to_wcs_n(str, strlen(str));
 }
 
-std::wstring mbs_to_wcs(const std::string &str)
+oc::result<std::wstring> mbs_to_wcs(const std::string &str)
 {
     return mbs_to_wcs_n(str.data(), str.size());
 }
 
-bool wcs_to_mbs(std::string &out, const wchar_t *str)
-{
-    return wcs_to_mbs_n(out, str, wcslen(str));
-}
-
-bool wcs_to_mbs(std::string &out, const std::wstring &str)
-{
-    return wcs_to_mbs_n(out, str.data(), str.size());
-}
-
-std::string wcs_to_mbs(const wchar_t *str)
+oc::result<std::string> wcs_to_mbs(const wchar_t *str)
 {
     return wcs_to_mbs_n(str, wcslen(str));
 }
 
-std::string wcs_to_mbs(const std::wstring &str)
+oc::result<std::string> wcs_to_mbs(const std::wstring &str)
 {
     return wcs_to_mbs_n(str.data(), str.size());
 }
 
-bool utf8_to_wcs(std::wstring &out, const char *str)
-{
-    return utf8_to_wcs_n(out, str, strlen(str));
-}
-
-bool utf8_to_wcs(std::wstring &out, const std::string &str)
-{
-    return utf8_to_wcs_n(out, str.data(), str.size());
-}
-
-std::wstring utf8_to_wcs(const char *str)
+oc::result<std::wstring> utf8_to_wcs(const char *str)
 {
     return utf8_to_wcs_n(str, strlen(str));
 }
 
-std::wstring utf8_to_wcs(const std::string &str)
+oc::result<std::wstring> utf8_to_wcs(const std::string &str)
 {
     return utf8_to_wcs_n(str.data(), str.size());
 }
 
-bool wcs_to_utf8(std::string &out, const wchar_t *str)
-{
-    return wcs_to_utf8_n(out, str, wcslen(str));
-}
-
-bool wcs_to_utf8(std::string &out, const std::wstring &str)
-{
-    return wcs_to_utf8_n(out, str.data(), str.size());
-}
-
-std::string wcs_to_utf8(const wchar_t *str)
+oc::result<std::string> wcs_to_utf8(const wchar_t *str)
 {
     return wcs_to_utf8_n(str, wcslen(str));
 }
 
-std::string wcs_to_utf8(const std::wstring &str)
+oc::result<std::string> wcs_to_utf8(const std::wstring &str)
 {
     return wcs_to_utf8_n(str.data(), str.size());
 }

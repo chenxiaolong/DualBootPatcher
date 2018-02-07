@@ -48,9 +48,7 @@
 
 #define DELETED_SUFFIX " (deleted)"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
@@ -64,9 +62,10 @@ static std::string unescape_octals(const std::string &in)
                 && *(it + 1) >= '0' && *(it + 1) <= '7'
                 && *(it + 2) >= '0' && *(it + 2) <= '7'
                 && *(it + 3) >= '0' && *(it + 3) <= '7') {
-            result += ((*(it + 1) - '0') << 6)
+            result += static_cast<char>(
+                    ((*(it + 1) - '0') << 6)
                     | ((*(it + 2) - '0') << 3)
-                    | (*(it + 3) - '0');
+                    | (*(it + 3) - '0'));
             it += 4;
         } else {
             result += *it;
@@ -143,7 +142,7 @@ bool is_mounted(const std::string &mountpoint)
 bool unmount_all(const std::string &dir)
 {
     std::vector<std::string> to_unmount;
-    int failed;
+    int failed = 0;
 
     for (int tries = 0; tries < MAX_UNMOUNT_TRIES; ++tries) {
         failed = 0;
@@ -219,7 +218,7 @@ bool mount(const std::string &source, const std::string &target,
             }
             if (fstype == "auto"
                     && (S_ISREG(sb.st_mode) || S_ISBLK(sb.st_mode))) {
-                optional<std::string> detected;
+                std::optional<std::string> detected;
                 if (!blkid_get_fs_type(source, detected) || !detected) {
                     return false;
                 } else if (*detected == "ext") {
@@ -339,5 +338,4 @@ bool mount_get_avail_size(const std::string &path, uint64_t &size)
     return true;
 }
 
-}
 }

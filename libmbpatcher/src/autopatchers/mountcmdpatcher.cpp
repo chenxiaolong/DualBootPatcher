@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,24 +21,13 @@
 
 #include <cstring>
 
+#include "mbcommon/string.h"
+
 #include "mbpatcher/private/fileutils.h"
-#include "mbpatcher/private/stringutils.h"
 
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
-/*! \cond INTERNAL */
-class MountCmdPatcherPrivate
-{
-public:
-    const PatcherConfig *pc;
-    const FileInfo *info;
-};
-/*! \endcond */
-
 
 const std::string MountCmdPatcher::Id = "MountCmdPatcher";
 
@@ -50,22 +39,17 @@ static const std::string InstallerScript =
         "installer.sh";
 
 
-MountCmdPatcher::MountCmdPatcher(const PatcherConfig * const pc,
-                                 const FileInfo * const info)
-    : _priv_ptr(new MountCmdPatcherPrivate())
+MountCmdPatcher::MountCmdPatcher(const PatcherConfig &pc, const FileInfo &info)
 {
-    MB_PRIVATE(MountCmdPatcher);
-    priv->pc = pc;
-    priv->info = info;
+    (void) pc;
+    (void) info;
 }
 
-MountCmdPatcher::~MountCmdPatcher()
-{
-}
+MountCmdPatcher::~MountCmdPatcher() = default;
 
 ErrorCode MountCmdPatcher::error() const
 {
-    return ErrorCode();
+    return {};
 }
 
 std::string MountCmdPatcher::id() const
@@ -97,9 +81,9 @@ static bool patch_file(const std::string &path)
         return false;
     }
 
-    std::vector<std::string> lines = StringUtils::split(contents, '\n');
+    auto lines = split(contents, '\n');
 
-    for (std::string &line : lines) {
+    for (auto &line : lines) {
         const char *ptr = line.data();
 
         // Skip whitespace
@@ -107,11 +91,11 @@ static bool patch_file(const std::string &path)
 
         if ((strncmp(ptr, "mount", 5) == 0 && space_or_end(ptr + 5))
                 || (strncmp(ptr, "umount", 6) == 0 && space_or_end(ptr + 6))) {
-            line.insert(ptr - line.data(), "/sbin/");
+            line.insert(static_cast<size_t>(ptr - line.data()), "/sbin/");
         }
     }
 
-    contents = StringUtils::join(lines, "\n");
+    contents = join(lines, "\n");
     FileUtils::write_from_string(path, contents);
 
     return true;
@@ -126,5 +110,4 @@ bool MountCmdPatcher::patch_files(const std::string &directory)
     return true;
 }
 
-}
 }

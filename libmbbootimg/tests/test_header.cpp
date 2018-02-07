@@ -22,7 +22,6 @@
 #include <memory>
 
 #include "mbbootimg/header.h"
-#include "mbbootimg/header_p.h"
 
 using namespace mb::bootimg;
 
@@ -417,18 +416,6 @@ TEST(BootImgHeaderTest, CheckMoveConstructAndAssign)
         auto entrypoint_address = header2.entrypoint_address();
         ASSERT_TRUE(entrypoint_address);
         ASSERT_EQ(*entrypoint_address, 0x8000u);
-
-        ASSERT_FALSE(header.board_name());
-        ASSERT_FALSE(header.kernel_cmdline());
-        ASSERT_FALSE(header.page_size());
-        ASSERT_FALSE(header.kernel_address());
-        ASSERT_FALSE(header.ramdisk_address());
-        ASSERT_FALSE(header.secondboot_address());
-        ASSERT_FALSE(header.kernel_tags_address());
-        ASSERT_FALSE(header.sony_ipl_address());
-        ASSERT_FALSE(header.sony_rpm_address());
-        ASSERT_FALSE(header.sony_appsbl_address());
-        ASSERT_FALSE(header.entrypoint_address());
     }
 
     {
@@ -482,18 +469,6 @@ TEST(BootImgHeaderTest, CheckMoveConstructAndAssign)
         auto entrypoint_address = header2.entrypoint_address();
         ASSERT_TRUE(entrypoint_address);
         ASSERT_EQ(*entrypoint_address, 0x8000u);
-
-        ASSERT_FALSE(header.board_name());
-        ASSERT_FALSE(header.kernel_cmdline());
-        ASSERT_FALSE(header.page_size());
-        ASSERT_FALSE(header.kernel_address());
-        ASSERT_FALSE(header.ramdisk_address());
-        ASSERT_FALSE(header.secondboot_address());
-        ASSERT_FALSE(header.kernel_tags_address());
-        ASSERT_FALSE(header.sony_ipl_address());
-        ASSERT_FALSE(header.sony_rpm_address());
-        ASSERT_FALSE(header.sony_appsbl_address());
-        ASSERT_FALSE(header.entrypoint_address());
     }
 }
 

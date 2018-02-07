@@ -25,9 +25,11 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/fd.h"
-#include "mbcommon/file/fd_p.h"
 
-struct MockFdFileFuncs : public mb::FdFileFuncs
+using namespace mb;
+using namespace mb::detail;
+
+struct MockFdFileFuncs : public FdFileFuncs
 {
     // fcntl.h
 #ifdef _WIN32
@@ -41,7 +43,7 @@ struct MockFdFileFuncs : public mb::FdFileFuncs
 
     // unistd.h
     MOCK_METHOD1(fn_close, int(int fd));
-    MOCK_METHOD2(fn_ftruncate64, int(int fd, off_t length));
+    MOCK_METHOD2(fn_ftruncate64, int(int fd, off64_t length));
     MOCK_METHOD3(fn_lseek64, off64_t(int fd, off64_t offset, int whence));
     MOCK_METHOD3(fn_read, ssize_t(int fd, void *buf, size_t count));
     MOCK_METHOD3(fn_write, ssize_t(int fd, const void *buf, size_t count));
@@ -94,38 +96,28 @@ struct MockFdFileFuncs : public mb::FdFileFuncs
     }
 };
 
-class TestableFdFilePrivate : public mb::FdFilePrivate
+class TestableFdFile : public FdFile
 {
 public:
-    TestableFdFilePrivate(mb::FdFileFuncs *funcs) : mb::FdFilePrivate(funcs)
-    {
-    }
-};
-
-class TestableFdFile : public mb::FdFile
-{
-public:
-    MB_DECLARE_PRIVATE(TestableFdFile)
-
-    TestableFdFile(mb::FdFileFuncs *funcs)
-        : mb::FdFile(new TestableFdFilePrivate(funcs))
+    TestableFdFile(FdFileFuncs *funcs)
+        : FdFile(funcs)
     {
     }
 
-    TestableFdFile(mb::FdFileFuncs *funcs, int fd, bool owned)
-        : mb::FdFile(new TestableFdFilePrivate(funcs), fd, owned)
+    TestableFdFile(FdFileFuncs *funcs, int fd, bool owned)
+        : FdFile(funcs, fd, owned)
     {
     }
 
-    TestableFdFile(mb::FdFileFuncs *funcs,
-                   const std::string &filename, mb::FileOpenMode mode)
-        : mb::FdFile(new TestableFdFilePrivate(funcs), filename, mode)
+    TestableFdFile(FdFileFuncs *funcs,
+                   const std::string &filename, FileOpenMode mode)
+        : FdFile(funcs, filename, mode)
     {
     }
 
-    TestableFdFile(mb::FdFileFuncs *funcs,
-                   const std::wstring &filename, mb::FileOpenMode mode)
-        : mb::FdFile(new TestableFdFilePrivate(funcs), filename, mode)
+    TestableFdFile(FdFileFuncs *funcs,
+                   const std::wstring &filename, FileOpenMode mode)
+        : FdFile(funcs, filename, mode)
     {
     }
 
@@ -153,7 +145,7 @@ TEST_F(FileFdTest, OpenFilenameMbsSuccess)
 #endif
 
     TestableFdFile file(&_funcs);
-    ASSERT_TRUE(file.open("x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(file.open("x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileFdTest, OpenFilenameMbsFailure)
@@ -169,16 +161,20 @@ TEST_F(FileFdTest, OpenFilenameMbsFailure)
 #endif
 
     TestableFdFile file(&_funcs);
-    ASSERT_FALSE(file.open("x", mb::FileOpenMode::READ_ONLY));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    auto result = file.open("x", FileOpenMode::ReadOnly);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::io_error);
 }
 
+#ifndef NDEBUG
 TEST_F(FileFdTest, OpenFilenameMbsInvalidMode)
 {
-    TestableFdFile file(&_funcs);
-    ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
+    ASSERT_DEATH({
+        TestableFdFile file(&_funcs);
+        ASSERT_FALSE(file.open("x", static_cast<FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FileFdTest, OpenFilenameWcsSuccess)
 {
@@ -194,7 +190,7 @@ TEST_F(FileFdTest, OpenFilenameWcsSuccess)
 #endif
 
     TestableFdFile file(&_funcs);
-    ASSERT_TRUE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(file.open(L"x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileFdTest, OpenFilenameWcsFailure)
@@ -210,16 +206,20 @@ TEST_F(FileFdTest, OpenFilenameWcsFailure)
 #endif
 
     TestableFdFile file(&_funcs);
-    ASSERT_FALSE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    auto result = file.open(L"x", FileOpenMode::ReadOnly);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::io_error);
 }
 
+#ifndef NDEBUG
 TEST_F(FileFdTest, OpenFilenameWcsInvalidMode)
 {
-    TestableFdFile file(&_funcs);
-    ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
+    ASSERT_DEATH({
+        TestableFdFile file(&_funcs);
+        ASSERT_FALSE(file.open(L"x", static_cast<FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FileFdTest, OpenFstatFailed)
 {
@@ -227,8 +227,9 @@ TEST_F(FileFdTest, OpenFstatFailed)
             .Times(1);
 
     TestableFdFile file(&_funcs);
-    ASSERT_FALSE(file.open(0, false));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    auto result = file.open(0, false);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::io_error);
 }
 
 TEST_F(FileFdTest, OpenDirectory)
@@ -242,8 +243,9 @@ TEST_F(FileFdTest, OpenDirectory)
                                      testing::Return(0)));
 
     TestableFdFile file(&_funcs);
-    ASSERT_FALSE(file.open(0, false));
-    ASSERT_EQ(file.error(), std::errc::is_a_directory);
+    auto result = file.open(0, false);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::is_a_directory);
 }
 
 TEST_F(FileFdTest, OpenFile)
@@ -294,8 +296,9 @@ TEST_F(FileFdTest, CloseFailure)
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
-    ASSERT_FALSE(file.close());
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    auto result = file.close();
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::io_error);
 }
 
 TEST_F(FileFdTest, ReadSuccess)
@@ -311,9 +314,9 @@ TEST_F(FileFdTest, ReadSuccess)
     ASSERT_TRUE(file.is_open());
 
     char c;
-    size_t n;
-    ASSERT_TRUE(file.read(&c, 1, n));
-    ASSERT_EQ(n, 1u);
+    auto n = file.read(&c, 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), 1u);
 }
 
 #if SIZE_MAX > SSIZE_MAX
@@ -329,9 +332,9 @@ TEST_F(FileFdTest, ReadSuccessMaxSize)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    size_t n;
-    ASSERT_TRUE(file.read(nullptr, static_cast<size_t>(SSIZE_MAX) + 1, n));
-    ASSERT_EQ(n, static_cast<size_t>(SSIZE_MAX));
+    auto n = file.read(nullptr, static_cast<size_t>(SSIZE_MAX) + 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), static_cast<size_t>(SSIZE_MAX));
 }
 #endif
 
@@ -348,9 +351,9 @@ TEST_F(FileFdTest, ReadEof)
     ASSERT_TRUE(file.is_open());
 
     char c;
-    size_t n;
-    ASSERT_TRUE(file.read(&c, 1, n));
-    ASSERT_EQ(n, 0u);
+    auto n = file.read(&c, 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), 0u);
 }
 
 TEST_F(FileFdTest, ReadFailure)
@@ -365,9 +368,9 @@ TEST_F(FileFdTest, ReadFailure)
     ASSERT_TRUE(file.is_open());
 
     char c;
-    size_t n;
-    ASSERT_FALSE(file.read(&c, 1, n));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    auto n = file.read(&c, 1);
+    ASSERT_FALSE(n);
+    ASSERT_EQ(n.error(), std::errc::io_error);
 }
 
 TEST_F(FileFdTest, ReadFailureEINTR)
@@ -383,9 +386,9 @@ TEST_F(FileFdTest, ReadFailureEINTR)
     ASSERT_TRUE(file.is_open());
 
     char c;
-    size_t n;
-    ASSERT_FALSE(file.read(&c, 1, n));
-    ASSERT_EQ(file.error(), std::errc::interrupted);
+    auto n = file.read(&c, 1);
+    ASSERT_FALSE(n);
+    ASSERT_EQ(n.error(), std::errc::interrupted);
 }
 
 TEST_F(FileFdTest, WriteSuccess)
@@ -400,9 +403,9 @@ TEST_F(FileFdTest, WriteSuccess)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    size_t n;
-    ASSERT_TRUE(file.write("x", 1, n));
-    ASSERT_EQ(n, 1u);
+    auto n = file.write("x", 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), 1u);
 }
 
 #if SIZE_MAX > SSIZE_MAX
@@ -418,9 +421,9 @@ TEST_F(FileFdTest, WriteSuccessMaxSize)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    size_t n;
-    ASSERT_TRUE(file.write(nullptr, static_cast<size_t>(SSIZE_MAX) + 1, n));
-    ASSERT_EQ(n, static_cast<size_t>(SSIZE_MAX));
+    auto n = file.write(nullptr, static_cast<size_t>(SSIZE_MAX) + 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), static_cast<size_t>(SSIZE_MAX));
 }
 #endif
 
@@ -436,9 +439,9 @@ TEST_F(FileFdTest, WriteEof)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    size_t n;
-    ASSERT_TRUE(file.write("x", 1, n));
-    ASSERT_EQ(n, 0u);
+    auto n = file.write("x", 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), 0u);
 }
 
 TEST_F(FileFdTest, WriteFailure)
@@ -452,9 +455,9 @@ TEST_F(FileFdTest, WriteFailure)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    size_t n;
-    ASSERT_FALSE(file.write("x", 1, n));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    auto n = file.write("x", 1);
+    ASSERT_FALSE(n);
+    ASSERT_EQ(n.error(), std::errc::io_error);
 }
 
 TEST_F(FileFdTest, WriteFailureEINTR)
@@ -469,9 +472,9 @@ TEST_F(FileFdTest, WriteFailureEINTR)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    size_t n;
-    ASSERT_FALSE(file.write("x", 1, n));
-    ASSERT_EQ(file.error(), std::errc::interrupted);
+    auto n = file.write("x", 1);
+    ASSERT_FALSE(n);
+    ASSERT_EQ(n.error(), std::errc::interrupted);
 }
 
 TEST_F(FileFdTest, SeekSuccess)
@@ -485,9 +488,9 @@ TEST_F(FileFdTest, SeekSuccess)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    uint64_t offset;
-    ASSERT_TRUE(file.seek(10, SEEK_SET, &offset));
-    ASSERT_EQ(offset, 10u);
+    auto offset = file.seek(10, SEEK_SET);
+    ASSERT_TRUE(offset);
+    ASSERT_EQ(offset.value(), 10u);
 }
 
 #define LFS_SIZE (10ULL * 1024 * 1024 * 1024)
@@ -503,9 +506,9 @@ TEST_F(FileFdTest, SeekSuccessLargeFile)
     ASSERT_TRUE(file.is_open());
 
     // Ensure that the types (off_t, etc.) are large enough for LFS
-    uint64_t offset;
-    ASSERT_TRUE(file.seek(LFS_SIZE, SEEK_SET, &offset));
-    ASSERT_EQ(offset, LFS_SIZE);
+    auto offset = file.seek(LFS_SIZE, SEEK_SET);
+    ASSERT_TRUE(offset);
+    ASSERT_EQ(offset.value(), LFS_SIZE);
 }
 #undef LFS_SIZE
 
@@ -519,8 +522,9 @@ TEST_F(FileFdTest, SeekFseekFailed)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    auto offset = file.seek(10, SEEK_SET);
+    ASSERT_FALSE(offset);
+    ASSERT_EQ(offset.error(), std::errc::io_error);
 }
 
 TEST_F(FileFdTest, TruncateSuccess)
@@ -547,6 +551,7 @@ TEST_F(FileFdTest, TruncateFailed)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_FALSE(file.truncate(1024));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    auto result = file.truncate(1024);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::io_error);
 }

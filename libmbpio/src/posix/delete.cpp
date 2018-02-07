@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -24,16 +24,15 @@
 
 #include <ftw.h>
 
+#include "mbcommon/string.h"
+
 #include "mbpio/error.h"
-#include "mbpio/private/string.h"
 
-namespace io
-{
-namespace posix
+namespace mb::io::posix
 {
 
-static int deleteCbNftw(const char *fpath, const struct stat *sb,
-                        int typeflag, struct FTW *ftwbuf)
+static int _delete_cb(const char *fpath, const struct stat *sb,
+                      int typeflag, struct FTW *ftwbuf)
 {
     (void) sb;
     (void) typeflag;
@@ -41,16 +40,15 @@ static int deleteCbNftw(const char *fpath, const struct stat *sb,
 
     int ret = remove(fpath);
     if (ret < 0) {
-        setLastError(Error::PlatformError, priv::format(
+        set_last_error(Error::PlatformError, mb::format(
                 "%s: Failed to remove: %s", fpath, strerror(errno)));
     }
     return ret;
 }
 
-bool deleteRecursively(const std::string &path)
+bool delete_recursively(const std::string &path)
 {
-    return nftw(path.c_str(), deleteCbNftw, 64, FTW_DEPTH | FTW_PHYS);
+    return nftw(path.c_str(), _delete_cb, 64, FTW_DEPTH | FTW_PHYS) == 0;
 }
 
-}
 }

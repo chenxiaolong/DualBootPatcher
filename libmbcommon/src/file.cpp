@@ -25,28 +25,17 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "mbcommon/file_p.h"
-#include "mbcommon/string.h"
-
-#define GET_PIMPL_OR_RETURN(RETVAL) \
-    MB_PRIVATE(File); \
-    do { \
-        if (!priv) { \
-            return RETVAL; \
-        } \
-    } while (0)
+#include "mbcommon/finally.h"
 
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
     do { \
-        if (!(priv->state & (STATES))) { \
-            set_error(make_error_code(FileError::InvalidState), \
-                      "%s: Invalid state: "\
-                      "expected 0x%" PRIx16 ", actual: 0x%" PRIx16, \
-                      __func__, static_cast<uint16_t>(STATES), \
-                      static_cast<uint16_t>(priv->state)); \
+        if (!(m_state & (STATES))) { \
             return RETVAL; \
         } \
     } while (0)
+
+#define ENSURE_STATE_OR_RETURN_ERROR(STATES) \
+    ENSURE_STATE_OR_RETURN(STATES, FileError::InvalidState)
 
 // File documentation
 
@@ -58,15 +47,7 @@
 namespace mb
 {
 
-/*! \cond INTERNAL */
-FilePrivate::FilePrivate()
-{
-}
-
-FilePrivate::~FilePrivate()
-{
-}
-/*! \endcond */
+using namespace detail;
 
 /*!
  * \class File
@@ -75,29 +56,17 @@ FilePrivate::~FilePrivate()
  */
 
 /*!
- * \var File::_priv_ptr
+ * \var File::m_state
  *
- * \brief Pointer to pimpl object
+ * \brief State of the File handle
  */
 
 /*!
  * \brief Construct new File handle.
  */
-File::File() : _priv_ptr(new FilePrivate())
+File::File() : m_state(FileState::New)
 {
-    MB_PRIVATE(File);
-
-    priv->state = FileState::NEW;
 }
-
-/*! \cond INTERNAL */
-File::File(FilePrivate *priv_) : _priv_ptr(priv_)
-{
-    MB_PRIVATE(File);
-
-    priv->state = FileState::NEW;
-}
-/*! \endcond */
 
 /*!
  * \brief Destroy a File handle.
@@ -105,15 +74,15 @@ File::File(FilePrivate *priv_) : _priv_ptr(priv_)
  * If the handle has not been closed, it will be closed. Since this is the
  * destructor, it is not possible to get the result of the file close operation.
  * To get the result of the file close operation, call File::close() manually.
+ *
+ * If the File object has been moved, no action will be taken.
  */
 File::~File()
 {
-    MB_PRIVATE(File);
-
     // We can't call a virtual function (on_close()) from the destructor, so we
     // must ensure that subclasses will call close().
-    if (priv) {
-        assert(priv->state == FileState::NEW);
+    if (m_state != FileState::Moved) {
+        assert(m_state == FileState::New);
     }
 }
 
@@ -124,14 +93,15 @@ File::~File()
  * back to a useful state by assigning from a valid object. For example:
  *
  * \code{.cpp}
- * mb::StandardFile file1("foo.txt", mb::FileOpenMode::READ_ONLY);
- * mb::StandardFile file2("bar.txt", mb::FileOpenMode::READ_ONLY);
+ * mb::StandardFile file1("foo.txt", mb::FileOpenMode::ReadOnly);
+ * mb::StandardFile file2("bar.txt", mb::FileOpenMode::ReadOnly);
  * file1 = std::move(file2);
- * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::READ_ONLY);
+ * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::ReadOnly);
  * \endcode
  */
-File::File(File &&other) : _priv_ptr(std::move(other._priv_ptr))
+File::File(File &&other) noexcept : m_state(other.m_state)
 {
+    other.m_state = FileState::Moved;
 }
 
 /*!
@@ -144,17 +114,18 @@ File::File(File &&other) : _priv_ptr(std::move(other._priv_ptr))
  * back to a useful state by assigning from a valid object. For example:
  *
  * \code{.cpp}
- * mb::StandardFile file1("foo.txt", mb::FileOpenMode::READ_ONLY);
- * mb::StandardFile file2("bar.txt", mb::FileOpenMode::READ_ONLY);
+ * mb::StandardFile file1("foo.txt", mb::FileOpenMode::ReadOnly);
+ * mb::StandardFile file2("bar.txt", mb::FileOpenMode::ReadOnly);
  * file1 = std::move(file2);
- * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::READ_ONLY);
+ * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::ReadOnly);
  * \endcode
  */
-File & File::operator=(File &&rhs)
+File & File::operator=(File &&rhs) noexcept
 {
-    close();
+    (void) close();
 
-    _priv_ptr = std::move(rhs._priv_ptr);
+    m_state = rhs.m_state;
+    rhs.m_state = FileState::Moved;
 
     return *this;
 }
@@ -165,24 +136,28 @@ File & File::operator=(File &&rhs)
  * Once the handle has been opened, the file operation functions, such as
  * File::read(), are available to use.
  *
+ * For subclass member functions that call open(), only open the file if state()
+ * is FileState::New. Always call through to open(), regardless of state(), to
+ * get an appropriate error code.
+ *
  * \note This function should generally only be called by subclasses. Most
  *       subclasses will provide a variant of this function that can take
  *       parameters, such as a filename.
  *
- * \return Whether the file handle is successfully opened
+ * \return Nothing if the file handle is successfully opened. Otherwise, the
+ *         error code.
  */
-bool File::open()
+oc::result<void> File::open()
 {
-    GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::NEW, false);
+    ENSURE_STATE_OR_RETURN_ERROR(FileState::New);
 
     auto ret = on_open();
 
     if (ret) {
-        priv->state = FileState::OPENED;
+        m_state = FileState::Opened;
     } else {
         // If the file was not successfully opened, then close it
-        on_close();
+        (void) on_close();
     }
 
     return ret;
@@ -196,23 +171,23 @@ bool File::open()
  * for opening another file.
  *
  * \return
- *   * True if no error was encountered when closing the handle.
- *   * False if the handle is opened and an error occurs while closing the file
+ *   * Nothing if no error was encountered when closing the handle.
+ *   * An error code if the handle is opened and an error occurs while closing
+ *     the file
  */
-bool File::close()
+oc::result<void> File::close()
 {
-    GET_PIMPL_OR_RETURN(false);
+    ENSURE_STATE_OR_RETURN_ERROR(~FileStates(FileState::Moved));
 
-    auto ret = true;
+    auto reset_state = finally([&] {
+        m_state = FileState::New;
+    });
 
-    // Avoid double-closing or closing nothing
-    if (priv->state != FileState::NEW) {
-        ret = on_close();
+    if (m_state == FileState::New) {
+        return oc::success();
     }
 
-    priv->state = FileState::NEW;
-
-    return ret;
+    return on_close();
 }
 
 /*!
@@ -222,31 +197,31 @@ bool File::close()
  *
  * \code{.cpp}
  * char buf[10240];
- * int ret;
- * size_t n;
  *
- * while ((ret = file.read(buf, sizeof(buf), &n)) && n >= 0) {
- *     fwrite(buf, 1, n, stdout);
- * }
+ * while (true) {
+ *     auto n = file.read(buf, sizeof(buf));
+ *     if (!n) {
+ *         printf("Failed to read file: %s\n", n.error().message().c_str());
+ *         ...
+ *     } else if (n == 0) {
+ *         break;
+ *     }
  *
- * if (!ret) {
- *     printf("Failed to read file: %s\n", file.error_string(file).c_str());
+ *     fwrite(buf, 1, n.value(), stdout);
  * }
  * \endcode
  *
  * \param[out] buf Buffer to read into
  * \param[in] size Buffer size
- * \param[out] bytes_read Output number of bytes that were read. 0 indicates end
- *                        of file.
  *
- * \return Whether some bytes were read or EOF was reached
+ * \return Number of bytes read if some bytes were read or EOF was reached.
+ *         Otherwise, the error code.
  */
-bool File::read(void *buf, size_t size, size_t &bytes_read)
+oc::result<size_t> File::read(void *buf, size_t size)
 {
-    GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::OPENED, false);
+    ENSURE_STATE_OR_RETURN_ERROR(FileState::Opened);
 
-    return on_read(buf, size, bytes_read);
+    return on_read(buf, size);
 }
 
 /*!
@@ -255,52 +230,41 @@ bool File::read(void *buf, size_t size, size_t &bytes_read)
  * Example usage:
  *
  * \code{.cpp}
- * size_t n;
- *
- * if (!file.write(file, buf, sizeof(buf), &bytesWritten)) {
- *     printf("Failed to write file: %s\n", file.error_string().c_str());
+ * auto n = file.write(buf, sizeof(buf));
+ * if (!n) {
+ *     printf("Failed to write file: %s\n", n.error().message().c_str());
+ * } else {
+ *     printf("Wrote %zu bytes\n", n.value());
  * }
  * \endcode
  *
- * \param[in] buf Buffer to write from
- * \param[in] size Buffer size
- * \param[out] bytes_written Output number of bytes that were written.
+ * \param buf Buffer to write from
+ * \param size Buffer size
  *
- * \return Whether some bytes were successfully written
+ * \return Number of bytes that were written if some bytes were successfully
+ *         written or EOF was reached. Otherwise, the error code.
  */
-bool File::write(const void *buf, size_t size, size_t &bytes_written)
+oc::result<size_t> File::write(const void *buf, size_t size)
 {
-    GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::OPENED, false);
+    ENSURE_STATE_OR_RETURN_ERROR(FileState::Opened);
 
-    return on_write(buf, size, bytes_written);
+    return on_write(buf, size);
 }
 
 /*!
  * \brief Set file position of a File handle.
  *
- * \param[in] offset File position offset
- * \param[in] whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
- * \param[out] new_offset Output new file offset. This parameter can be NULL.
+ * \param offset File position offset
+ * \param whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
  *
- * \return Whether the file position was successfully set
+ * \return New file offset if the file position was successfully set. Otherwise,
+ *         the error code.
  */
-bool File::seek(int64_t offset, int whence, uint64_t *new_offset)
+oc::result<uint64_t> File::seek(int64_t offset, int whence)
 {
-    GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::OPENED, false);
+    ENSURE_STATE_OR_RETURN_ERROR(FileState::Opened);
 
-    uint64_t new_offset_temp;
-
-    auto ret = on_seek(offset, whence, new_offset_temp);
-
-    if (ret) {
-        if (new_offset) {
-            *new_offset = new_offset_temp;
-        }
-    }
-
-    return ret;
+    return on_seek(offset, whence);
 }
 
 /*!
@@ -312,12 +276,12 @@ bool File::seek(int64_t offset, int whence, uint64_t *new_offset)
  *
  * \param size New size of file
  *
- * \return Whether the file size was successfully changed
+ * \return Nothing if the file size was successfully changed. Otherwise, the
+ *         error code.
  */
-bool File::truncate(uint64_t size)
+oc::result<void> File::truncate(uint64_t size)
 {
-    GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::OPENED, false);
+    ENSURE_STATE_OR_RETURN_ERROR(FileState::Opened);
 
     return on_truncate(size);
 }
@@ -329,8 +293,7 @@ bool File::truncate(uint64_t size)
  */
 bool File::is_open()
 {
-    GET_PIMPL_OR_RETURN(false);
-    return priv->state == FileState::OPENED;
+    return m_state == FileState::Opened;
 }
 
 /*!
@@ -343,106 +306,45 @@ bool File::is_open()
  */
 bool File::is_fatal()
 {
-    GET_PIMPL_OR_RETURN(false);
-    return priv->state == FileState::FATAL;
+    return m_state == FileState::Fatal;
 }
 
 /*!
  * \brief Set whether file is fatal state
  *
- * This function can only be called if the file is opened.
+ * This function only has an effect if the file is opened.
  *
  * If the file is in the fatal state, the only valid operation is to call
  * close().
- *
- * \return Whether the fatal state was successfully set
  */
-bool File::set_fatal(bool fatal)
+void File::set_fatal()
 {
-    GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::OPENED | FileState::FATAL, false);
-
-    priv->state = fatal ? FileState::FATAL : FileState::OPENED;
-    return true;
-}
-
-/*!
- * \brief Get error code for a failed operation.
- *
- * \note The return value is undefined if an operation did not fail.
- *
- * \return Error code for failed operation. Test against FileError or std::errc.
- */
-std::error_code File::error()
-{
-    GET_PIMPL_OR_RETURN({});
-
-    return priv->error_code;
-}
-
-/*!
- * \brief Get error string for a failed operation.
- *
- * \note The return value is undefined if an operation did not fail.
- *
- * \return Error string for failed operation. The string contents may be
- *         undefined.
- */
-std::string File::error_string()
-{
-    GET_PIMPL_OR_RETURN({});
-
-    return priv->error_string;
-}
-
-/*!
- * \brief Set error string for a failed operation.
- *
- * \sa File::set_error_v()
- *
- * \param ec Error code
- * \param fmt `printf()`-style format string
- * \param ... `printf()`-style format arguments
- *
- * \return Whether the error was successfully set
- */
-bool File::set_error(std::error_code ec, const char *fmt, ...)
-{
-    bool ret;
-    va_list ap;
-
-    va_start(ap, fmt);
-    ret = set_error_v(ec, fmt, ap);
-    va_end(ap);
-
-    return ret;
-}
-
-/*!
- * \brief Set error string for a failed operation.
- *
- * \sa File::set_error()
- *
- * \param ec Error code
- * \param fmt `printf()`-style format string
- * \param ap `printf()`-style format arguments as a va_list
- *
- * \return Whether the error was successfully set
- */
-bool File::set_error_v(std::error_code ec, const char *fmt, va_list ap)
-{
-    GET_PIMPL_OR_RETURN(false);
-
-    priv->error_code = ec;
-
-    if (!format_v(priv->error_string, fmt, ap)) {
-        return false;
+    if (m_state == FileState::Opened) {
+        m_state = FileState::Fatal;
     }
+}
 
-    priv->error_string += ": ";
-    priv->error_string += ec.message();
+/*!
+ * \brief Get current state of the File handle
+ *
+ * \return State of the File handle
+ */
+FileState File::state()
+{
+    return m_state;
+}
 
-    return true;
+/*!
+ * \brief Set state of the File handle
+ *
+ * \warning Be very careful with this function. File makes certain guarantees to
+ *          subclasses that could be broken if the state is changed.
+ *
+ * \param state New state of the File handle
+ */
+void File::set_state(FileState state)
+{
+    m_state = state;
 }
 
 /*!
@@ -453,16 +355,16 @@ bool File::set_error_v(std::error_code ec, const char *fmt, va_list ap)
  *
  * The method should return:
  *
- *   * True if the file was successfully opened
- *   * False and set specific error if an error occurred
+ *   * Nothing if the file was successfully opened
+ *   * A specific error if an error occurred
  *
- * If this method is not overridden, it will simply return true.
+ * If this method is not overridden, it will simply return nothing.
  *
- * \return Always returne true
+ * \return Always returns nothing
  */
-bool File::on_open()
+oc::result<void> File::on_open()
 {
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -481,8 +383,8 @@ bool File::on_open()
  *
  * This method should return:
  *
- *   * True if the file was successfully closed
- *   * False and set specific error if an error occurred
+ *   * Nothing if the file was successfully closed
+ *   * A specific error if an error occurred
  *
  * \note Regardless of the return value, the file handle will be considered as
  *       closed and the file handle will allow opening another file.
@@ -490,13 +392,13 @@ bool File::on_open()
  * It is guaranteed that no other callbacks will be called, except for
  * on_open(), after this method returns.
  *
- * If this method is not overridden, it will simply return true.
+ * If this method is not overridden, it will simply return nothing.
  *
- * \return Always returns true
+ * \return Always returns nothing
  */
-bool File::on_close()
+oc::result<void> File::on_close()
 {
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -507,33 +409,26 @@ bool File::on_close()
  *
  * This method should return:
  *
- *   * True if some bytes were read or EOF was reached
- *   * False and set error to std::errc::interrupted if the same operation
- *     should be reattempted
- *   * False and set error to FileError::UnsupportedRead if the file does not
- *     support reading
- *   * False and set specific error for all other cases
+ *   * The number of bytes read if some bytes were successfully read or EOF was
+ *     reached
+ *   * std::errc::interrupted if the same operation should be reattempted
+ *   * FileError::UnsupportedRead if the file does not support reading
+ *   * A specific error for all other cases
  *
- * If this method is not overridden, it will simply return false and set the
- * error to FileError::UnsupportedRead.
+ * If this method is not overridden, it will simply return
+ * FileError::UnsupportedRead.
  *
  * \param[out] buf Buffer to read into
  * \param[in] size Buffer size
- * \param[out] bytes_read Output number of bytes that were read. 0 indicates end
- *                        of file. This parameter is guaranteed to be non-NULL.
  *
- * \return Always returns false and sets the error to
- *         #FileError::UnsupportedRead
+ * \return Always returns #FileError::UnsupportedRead
  */
-bool File::on_read(void *buf, size_t size, size_t &bytes_read)
+oc::result<size_t> File::on_read(void *buf, size_t size)
 {
     (void) buf;
     (void) size;
-    (void) bytes_read;
 
-    set_error(make_error_code(FileError::UnsupportedRead),
-              "%s: Read callback not supported", __func__);
-    return false;
+    return FileError::UnsupportedRead;
 }
 
 /*!
@@ -544,33 +439,26 @@ bool File::on_read(void *buf, size_t size, size_t &bytes_read)
  *
  * This method should return:
  *
- *   * True if some bytes were written
- *   * False and set error to std::errc::interrupted if the same operation
- *     should be reattempted
- *   * False and set error to FileError::UnsupportedWrite if the file does not
- *     support writing
- *   * False and set specific error for all other cases
+ *   * The number of bytes written if some bytes were successfully written or
+ *     EOF was reached
+ *   * std::errc::interrupted if the same operation should be reattempted
+ *   * FileError::UnsupportedWrite if the file does not support writing
+ *   * A specific error for all other cases
  *
- * If this method is not overridden, it will simply return false and set the
- * error to FileError::UnsupportedWrite.
+ * If this method is not overridden, it will simply return
+ * FileError::UnsupportedWrite.
  *
- * \param[in] buf Buffer to write from
- * \param[in] size Buffer size
- * \param[out] bytes_written Output number of bytes that were written. This
- *                           parameter is guaranteed to be non-NULL.
+ * \param buf Buffer to write from
+ * \param size Buffer size
  *
- * \return Always returns false and sets the error to
- *         #FileError::UnsupportedWrite
+ * \return Always returns #FileError::UnsupportedWrite
  */
-bool File::on_write(const void *buf, size_t size, size_t &bytes_written)
+oc::result<size_t> File::on_write(const void *buf, size_t size)
 {
     (void) buf;
     (void) size;
-    (void) bytes_written;
 
-    set_error(make_error_code(FileError::UnsupportedWrite),
-              "%s: Write callback not supported", __func__);
-    return false;
+    return FileError::UnsupportedWrite;
 }
 
 /*!
@@ -581,62 +469,52 @@ bool File::on_write(const void *buf, size_t size, size_t &bytes_written)
  *
  * This method should return:
  *
- *   * True if the file position was successfully set
- *   * False and set error to FileError::UnsupportedSeek if the file does not
- *     support seeking
- *   * False and set specific error for all other cases
+ *   * The new file position if the file position was successfully set
+ *   * FileError::UnsupportedSeek if the file does not support seeking
+ *   * A specific error for all other cases
  *
- * If this method is not overridden, it will simply return false and set the
- * error to FileError::UnsupportedSeek.
+ * If this method is not overridden, it will simply return
+ * FileError::UnsupportedSeek.
  *
- * \param[in] offset File position offset
- * \param[in] whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
- * \param[out] new_offset Output new file offset
+ * \param offset File position offset
+ * \param whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
  *
- * \return Always returns false and sets the error to
- *         #FileError::UnsupportedSeek
+ * \return Always returns #FileError::UnsupportedSeek
  */
-bool File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+oc::result<uint64_t> File::on_seek(int64_t offset, int whence)
 {
     (void) offset;
     (void) whence;
-    (void) new_offset;
 
-    set_error(make_error_code(FileError::UnsupportedSeek),
-              "%s: Seek callback not supported", __func__);
-    return false;
+    return FileError::UnsupportedSeek;
 }
 
 /*!
  * \brief File truncate callback
  *
  * Subclasses should override this method to implement the code needed to
- * truncate to extend the file size.
+ * truncate or extend the file size.
  *
  * \note This callback must *not* change the file position.
  *
  * This method should return:
  *
- *   * True if the file size was successfully changed
- *   * False and set error to FileError::UnsupportedTruncate if the file does
- *     not support truncation
- *   * False and set specific error for all other cases
+ *   * Nothing if the file size was successfully changed
+ *   * FileError::UnsupportedTruncate if the file does not support truncation
+ *   * A specific error for all other cases
  *
- * If this method is not overridden, it will simply return false and set the
- * error to FileError::UnsupportedTruncate.
+ * If this method is not overridden, it will simply return
+ * FileError::UnsupportedTruncate.
  *
  * \param size New size of file
  *
- * \return Always returns false and sets the error to
- *         #FileError::UnsupportedTruncate
+ * \return Always returns #FileError::UnsupportedTruncate
  */
-bool File::on_truncate(uint64_t size)
+oc::result<void> File::on_truncate(uint64_t size)
 {
     (void) size;
 
-    set_error(make_error_code(FileError::UnsupportedTruncate),
-              "%s: Truncate callback not supported", __func__);
-    return false;
+    return FileError::UnsupportedTruncate;
 }
 
 }

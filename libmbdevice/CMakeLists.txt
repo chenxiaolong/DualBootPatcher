@@ -1,23 +1,5 @@
 set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
-set(MBDEVICE_SOURCES
-    src/device.cpp
-    src/json.cpp
-    src/schema.cpp
-    src/capi/device.cpp
-    src/capi/json.cpp
-    ${generated_dir}/schemas_gen.cpp
-)
-
-set(MBDEVICE_TESTS_SOURCES
-    # Helpers
-    tests/main.cpp
-    # Tests
-    tests/test_device.cpp
-    tests/test_flags.cpp
-    tests/test_json.cpp
-)
-
 set(MBDEVICE_SCHEMAS
     schemas/device.json
     schemas/device_list.json
@@ -57,8 +39,6 @@ add_custom_command(
     VERBATIM
 )
 
-add_definitions(-DMBDEVICE_BUILD)
-
 set(variants)
 
 if(MBP_TARGET_HAS_BUILDS)
@@ -73,13 +53,19 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbdevice-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBDEVICE_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBDEVICE_SOURCES})
-    endif()
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/device.cpp
+        src/json.cpp
+        src/schema.cpp
+        src/capi/device.cpp
+        src/capi/json.cpp
+        ${generated_dir}/schemas_gen.cpp
+    )
 
     # Includes
     target_include_directories(
@@ -95,37 +81,19 @@ foreach(variant ${variants})
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
     endif()
 
-    # Export symbols
-    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
-
-    # Win32 DLL export
-    if(${variant} STREQUAL shared)
-        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
-    endif()
-
-    # Build with -fPIC
-    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
-    # Target C99
-    if(NOT MSVC)
-        set_target_properties(
-            ${lib_target}
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-            C_STANDARD 99
-            C_STANDARD_REQUIRED 1
-        )
-    endif()
-
     # Set library name
     set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbdevice)
 
     # Link dependencies
     target_link_libraries(
         ${lib_target}
-        PUBLIC mbcommon-${variant}
-        PRIVATE rapidjson
+        PUBLIC
+        mbcommon-${variant}
+        PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
+        $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
+        rapidjson
     )
 
     # Install shared library
@@ -144,26 +112,22 @@ if(variants AND MBP_ENABLE_TESTS)
     # Build tests
     add_executable(
         mbdevice_tests
-        ${MBDEVICE_TESTS_SOURCES}
+        # Helpers
+        tests/main.cpp
+        # Tests
+        tests/test_device.cpp
+        tests/test_flags.cpp
+        tests/test_json.cpp
     )
 
     # Link dependencies
     target_link_libraries(
         mbdevice_tests
+        interface.global.CXXVersion
         mbdevice-static
         gtest
         gtest_main
     )
-
-    # Target C++11
-    if(NOT MSVC)
-        set_target_properties(
-            mbdevice_tests
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
 
     # Add to ctest
     add_test(
@@ -176,24 +140,10 @@ endif()
 if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     add_executable(schemas2cpp schemas2cpp.cpp)
 
-    set_target_properties(
-        schemas2cpp
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-    )
-
-    if(NOT MSVC)
-        set_target_properties(
-            schemas2cpp
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
-
     target_link_libraries(
         schemas2cpp
         PRIVATE
+        interface.global.CXXVersion
         mbcommon-shared # Headers only
         rapidjson
     )

@@ -51,7 +51,6 @@
       - fbdev
     theme: portrait_hdpi
 
-
 - name: OnePlus 2
   id: OnePlus2
   codenames:
@@ -104,7 +103,6 @@
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
 
-
 - name: OnePlus 3
   id: OnePlus3
   codenames:
@@ -146,7 +144,6 @@
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 80
 
-
 - name: OnePlus 3T
   id: OnePlus3T
   codenames:
@@ -178,6 +175,11 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc/624000.ufshc/by-name/recovery
       - /dev/block/sde21
+     #Trust Zone
+    extra:
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/platform/soc/624000.ufshc/by-name/tz
+      - /dev/block/sde3
 
   boot_ui:
     supported: true
@@ -188,7 +190,6 @@
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 80
-
 
 - name: OnePlus X
   id: onyx
@@ -223,6 +224,16 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p16
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
+
 - name: OnePlus 5
   id: OnePlus5
   codenames:
@@ -256,3 +267,48 @@
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 240
+
+- name: OnePlus 5T
+  id: OnePlus5T
+  codenames:
+    - OnePlus5T
+    - OnePlus5t
+    - dumpling
+    - A5010
+    - op5t
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/624000.ufshc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/1da4000.ufshc/by-name
+      - /dev/block/sde21
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cache
+      - /dev/block/sda3
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/userdata
+      - /dev/block/sda13
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/boot
+      - /dev/block/sde19
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
+      - /dev/block/sde22
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    default_brightness: 255

@@ -35,6 +35,16 @@
     extra:
       - /dev/block/bootdevice/by-name/modem
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 100
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Nubia Z11 mini
   id: nx529j
@@ -75,7 +85,16 @@
       - /dev/block/bootdevice/by-name/recovery2
       - /dev/block/bootdevice/by-name/tz
       
-      
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
+
 - name: Nubia Z11 miniS
   id: NX549J
   codenames:
@@ -114,12 +133,24 @@
       - /dev/block/bootdevice/by-name/recovery2
       - /dev/block/bootdevice/by-name/tz
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
 
 - name: Nubia Z9Max(NX510J)
   id: NX510J
   codenames:
     - NX510J
     - nx510j
+    - NX518J
   architecture: arm64-v8a
   block_devs:
     base_dirs:
@@ -135,7 +166,7 @@
       - /dev/block/platform/f9824900.sdhci/by-name/cache
       - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p31
-    
+
     data:
       - /dev/block/platform/f9824900.sdhci/by-name/userdata
       - /dev/block/bootdevice/by-name/userdata
@@ -158,7 +189,16 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/bootdevice/by-name/tz
       
-    
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
+
 - name: Nubia Z9 mini
   id: NX511J
   codenames:
@@ -198,6 +238,15 @@
       - /dev/block/bootdevice/by-name/recovery2
       - /dev/block/bootdevice/by-name/tz
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
 
 - name: Nubia Z11 Max
   id: NX523J_V1
@@ -223,6 +272,16 @@
     recovery:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p22
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
 
 - name: Nubia Z17&Z17mini
   id: NX563J

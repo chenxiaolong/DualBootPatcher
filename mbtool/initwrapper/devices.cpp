@@ -90,7 +90,7 @@ static mode_t get_device_perm(const char *path,
 }
 
 static void make_device(const char *path,
-                        const char *upath MB_UNUSED,
+                        const char *upath [[maybe_unused]],
                         int block, int major, int minor,
                         const std::vector<std::string> &links)
 {
@@ -851,7 +851,7 @@ void device_init(bool dry_run_)
     dry_run = dry_run_;
 
     bootdevice[0] = '\0';
-    mb::optional<std::string> value;
+    std::optional<std::string> value;
     if (mb::util::kernel_cmdline_get_option("androidboot.bootdevice", value)
             && value) {
         strlcpy(bootdevice, value->c_str(), sizeof(bootdevice));

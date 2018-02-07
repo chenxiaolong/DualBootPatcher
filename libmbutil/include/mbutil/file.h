@@ -22,9 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 bool create_empty_file(const std::string &path);
@@ -39,5 +37,4 @@ bool file_read_all(const std::string &path,
 
 bool get_blockdev_size(const std::string &path, uint64_t &size_out);
 
-}
 }

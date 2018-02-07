@@ -19,6 +19,8 @@
 
 #include "mbdevice/json.h"
 
+#include <array>
+
 #include <cassert>
 #include <cstring>
 
@@ -34,9 +36,7 @@
 
 using namespace rapidjson;
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 using DeviceFlagMapping = std::pair<const char *, DeviceFlag>;
@@ -125,13 +125,14 @@ static void process_device_flags(Device &device, const Value &node)
         auto const &str = get_string(item);
         DeviceFlags old_flags = flags;
 
-        for (auto const &item : g_device_flag_mappings) {
-            if (str == item.first) {
-                flags |= item.second;
+        for (auto const &mapping : g_device_flag_mappings) {
+            if (str == mapping.first) {
+                flags |= mapping.second;
                 break;
             }
         }
 
+        (void) old_flags;
         assert(flags != old_flags);
     }
 
@@ -146,13 +147,14 @@ static void process_boot_ui_flags(Device &device, const Value &node)
         auto const &str = get_string(item);
         TwFlags old_flags = flags;
 
-        for (auto const &item : g_tw_flag_mappings) {
-            if (str == item.first) {
-                flags |= item.second;
+        for (auto const &mapping : g_tw_flag_mappings) {
+            if (str == mapping.first) {
+                flags |= mapping.second;
                 break;
             }
         }
 
+        (void) old_flags;
         assert(flags != old_flags);
     }
 
@@ -613,5 +615,4 @@ bool device_to_json(const Device &device, std::string &json)
     return true;
 }
 
-}
 }

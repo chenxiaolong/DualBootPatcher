@@ -129,35 +129,29 @@ static bool validate_and_write(Document &d, const SchemaDocument &sd,
     GenericSchemaValidator<SchemaDocument, Writer> sv(sd, writer);
     if (!d.Accept(sv)) {
         if (!sv.IsValid()) {
-            StringBuffer sb;
-            fprintf(stderr, "Schema validation failed:\n");
-            sv.GetInvalidSchemaPointer().StringifyUriFragment(sb);
-            fprintf(stderr, "- Schema URI: %s\n", sb.GetString());
-            sb.Clear();
-            fprintf(stderr, "- Schema keyword: %s\n", sv.GetInvalidSchemaKeyword());
-            sv.GetInvalidDocumentPointer().StringifyUriFragment(sb);
-            fprintf(stderr, "- Document URI: %s\n", sb.GetString());
+            char write_buf[65536];
+            FileWriteStream os(stderr, write_buf, sizeof(write_buf));
+            PrettyWriter<FileWriteStream> error_writer(os);
 
-            // Try to dump parent
-            std::string ref{sb.GetString(), sb.GetSize()};
-            auto pos = ref.rfind("/");
-            if (pos != std::string::npos) {
-                ref.erase(pos);
-            }
+            // Copy error data to add context
+            Value error(sv.GetError(), d.GetAllocator());
 
-            if (Value *value = Pointer(ref).Get(d)) {
-                fprintf(stderr, "Parent of offending JSON value:\n");
+            for (auto &item : error.GetObject()) {
+                auto const &instance_ref = item.value["instanceRef"];
+                Pointer instance_ptr(instance_ref.GetString(),
+                                     instance_ref.GetStringLength());
 
-                char write_buf[65536];
-                FileWriteStream os(stderr, write_buf, sizeof(write_buf));
-                PrettyWriter<FileWriteStream> writer(os);
-
-                if (!value->Accept(writer)) {
-                    fprintf(stderr, "Failed to write JSON snippet\n");
+                if (auto const *value = instance_ptr.Get(d)) {
+                    item.value.AddMember("instanceData",
+                                         Value(*value, d.GetAllocator()),
+                                         d.GetAllocator());
                 }
-
-                fputc('\n', stderr);
             }
+
+            fprintf(stderr, "Schema validation failed:\n");
+            error.Accept(error_writer);
+            os.Put('\n');
+            os.Flush();
         } else {
             fprintf(stderr, "Failed to write JSON\n");
         }

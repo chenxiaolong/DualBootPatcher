@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.7)
 
 # Add our custom module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
 project(DualBootPatcher CXX C ASM)
 set(MBP_VERSION_MAJOR 9)
-set(MBP_VERSION_MINOR 2)
+set(MBP_VERSION_MINOR 3)
 set(MBP_VERSION_PATCH 0)
 set(MBP_VERSION "${MBP_VERSION_MAJOR}.${MBP_VERSION_MINOR}.${MBP_VERSION_PATCH}")
 
@@ -50,16 +50,15 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL android-system)
     # r13 bug: ANDROID_NDK_RELEASE has newline at the end
     string(REGEX REPLACE "^r(.+)[\r\n]+$" "\\1" ndk_release "${ANDROID_NDK_RELEASE}")
-    set(ndk_min_version 150.0)
-    set(ndk_max_version 153.0)
+    set(ndk_min_version 161.0)
+    set(ndk_max_version 162.0)
 
     # FIXME: Due to https://github.com/android-ndk/ndk/issues/222, we need a
     # custom toolchain file. Since we can't guarantee that the custom toolchain
     # file will work with newer versions of the NDK, we'll depend on an exact
     # version.
     set(ndk_version_whitelist
-        150.4075724
-        152.4203891
+        161.4479499
     )
 
     if(DEFINED ndk_version_whitelist
@@ -171,6 +170,12 @@ include(cmake/ConfigSigning.cmake)
 # Build target config
 include(${MBP_TARGET_CONFIG_FILE})
 
+# Implicit system include directories
+include(cmake/ImplicitIncludeDirs.cmake)
+
+# Helper functions to backup/restore variables
+include(cmake/VariableBackup.cmake)
+
 # Compile and link flags
 include(cmake/CompilerFlags.cmake)
 
@@ -204,6 +209,8 @@ add_subdirectory(utilities)
 add_subdirectory(signtool)
 add_subdirectory(devicesgen)
 add_subdirectory(android)
+
+add_cxx_hack_to_all_targets()
 
 # Must go after signtool since it references SIGNTOOL_COMMAND
 configure_file(

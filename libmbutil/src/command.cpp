@@ -39,9 +39,7 @@
 
 #define LOG_COMMANDS 0
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 static inline int safely_close(int &fd)
@@ -58,7 +56,7 @@ static inline int safely_close(int &fd)
 
 static inline void log_command(const std::string &path,
                                const std::vector<std::string> argv,
-                               const optional<std::vector<std::string>> envp)
+                               const std::optional<std::vector<std::string>> envp)
 {
     LOGD("Running executable: %s", path.c_str());
 
@@ -118,7 +116,7 @@ bool command_start(CommandCtx &ctx)
 
     log_command(ctx.path,
                 ctx.log_argv ? ctx.argv : std::vector<std::string>{},
-                ctx.log_envp ? ctx.envp : optional<std::vector<std::string>>{});
+                ctx.log_envp ? ctx.envp : std::optional<std::vector<std::string>>{});
 
     // Create stdout/stderr pipe if output callback is provided
     if (ctx.redirect_stdio) {
@@ -322,7 +320,7 @@ bool command_raw_reader(CommandCtx &ctx, CmdRawCb cb, void *userdata)
                     // Potential EOF (n == 0) here on some non-Linux systems,
                     // which is fine since it's not possible to reach both the
                     // POLLHUP block and this block
-                    cb(buf, n, is_stderr, userdata);
+                    cb(buf, static_cast<size_t>(n), is_stderr, userdata);
                 }
             }
         }
@@ -394,7 +392,7 @@ static void command_line_reader_cb(const char *data, size_t size, bool error,
         }
 
         // ptr now points to the character after the last newline
-        size_t consumed = ptr - buf;
+        size_t consumed = static_cast<size_t>(ptr - buf);
         if (consumed == 0 && used == cap) {
             // If nothing was consumed and the buffer is full, then the line is
             // too long.
@@ -421,7 +419,7 @@ bool command_line_reader(CommandCtx &ctx, CmdLineCb cb, void *userdata)
 
 int run_command(const std::string &path,
                 const std::vector<std::string> &argv,
-                const optional<std::vector<std::string>> &envp,
+                const std::optional<std::vector<std::string>> &envp,
                 const std::string &chroot_dir,
                 CmdLineCb cb,
                 void *userdata)
@@ -449,5 +447,4 @@ int run_command(const std::string &path,
     return command_wait(ctx);
 }
 
-}
 }

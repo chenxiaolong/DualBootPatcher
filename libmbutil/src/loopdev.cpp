@@ -45,9 +45,7 @@
 #define MAX_LOOPDEVS    1024
 
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 /*!
@@ -76,7 +74,8 @@ static int find_loopdev_by_loop_control()
     char loopdev[64];
     sprintf(loopdev, LOOP_FMT, n);
 
-    if (mknod(loopdev, S_IFBLK | 0644, makedev(7, n)) < 0 && errno != EEXIST) {
+    if (mknod(loopdev, S_IFBLK | 0644, static_cast<dev_t>(makedev(7, n))) < 0
+            && errno != EEXIST) {
         return -1;
     }
 
@@ -100,12 +99,13 @@ static int find_loopdev_by_scanning(void)
     // Avoid /dev/block/loop0 since some installers (ahem, SuperSU) are
     // hardcoded to use it
     for (int n = 1; n < MAX_LOOPDEVS; ++n) {
-        struct loop_info64 loopinfo;
+        loop_info64 loopinfo;
         struct stat sb;
 
         sprintf(loopdev, LOOP_FMT, n);
 
-        if (mknod(loopdev, S_IFBLK | 0644, makedev(7, n)) < 0) {
+        if (mknod(loopdev, S_IFBLK | 0644,
+                  static_cast<dev_t>(makedev(7, n))) < 0) {
             if (errno != EEXIST) {
                 continue;
             }
@@ -168,7 +168,7 @@ bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
     int ffd = -1;
     int lfd = -1;
 
-    struct loop_info64 loopinfo;
+    loop_info64 loopinfo = {};
 
     if ((ffd = open(file.c_str(), ro ? O_RDONLY : O_RDWR)) < 0) {
         return false;
@@ -186,7 +186,6 @@ bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
         close(lfd);
     });
 
-    memset(&loopinfo, 0, sizeof(struct loop_info64));
     strlcpy(reinterpret_cast<char *>(loopinfo.lo_file_name), file.c_str(),
             LO_NAME_SIZE);
     loopinfo.lo_offset = offset;
@@ -214,5 +213,4 @@ bool loopdev_remove_device(const std::string &loopdev)
     return ret == 0;
 }
 
-}
 }

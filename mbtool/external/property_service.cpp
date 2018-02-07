@@ -30,6 +30,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <sys/mman.h>
 #include <sys/poll.h>
 #include <sys/select.h>

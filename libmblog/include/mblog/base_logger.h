@@ -24,9 +24,7 @@
 #include "mblog/log_level.h"
 #include "mblog/log_record.h"
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 class MB_EXPORT BaseLogger
@@ -40,5 +38,4 @@ public:
     virtual bool formatted() = 0;
 };
 
-}
 }

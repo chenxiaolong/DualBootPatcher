@@ -31,51 +31,49 @@
 
 #define LOG_TAG "mbutil/delete"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
-class RecursiveDeleter : public FTSWrapper {
+class RecursiveDeleter : public FtsWrapper {
 public:
     RecursiveDeleter(std::string path)
-        : FTSWrapper(path, FTS_GroupSpecialFiles)
+        : FtsWrapper(std::move(path), FtsFlag::GroupSpecialFiles)
     {
     }
 
-    virtual int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
         // Do nothing. Need depth-first search, so directories are deleted in
         // on_reached_directory_post()
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
 private:
     bool delete_path()
     {
         if (remove(_curr->fts_accpath) < 0) {
-            format(_error_msg, "%s: Failed to remove: %s",
-                   _curr->fts_path, strerror(errno));
+            _error_msg = format("%s: Failed to remove: %s",
+                                _curr->fts_path, strerror(errno));
             LOGE("%s", _error_msg.c_str());
             return false;
         }
@@ -95,5 +93,4 @@ bool delete_recursive(const std::string &path)
     return deleter.run();
 }
 
-}
 }

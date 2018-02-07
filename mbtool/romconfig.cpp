@@ -19,6 +19,8 @@
 
 #include "romconfig.h"
 
+#include <cerrno>
+
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include <rapidjson/filereadstream.h>
@@ -36,7 +38,8 @@
 #define CONFIG_KEY_PACKAGE_ID              "pkg_id"
 #define CONFIG_KEY_SHARE_DATA              "share_data"
 
-namespace mb {
+namespace mb
+{
 
 /*
  * Example JSON structure:

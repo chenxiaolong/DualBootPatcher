@@ -22,13 +22,14 @@
 #include <memory>
 #include <string>
 
-#include <cstdarg>
 #include <cstddef>
 
 #include "mbcommon/common.h"
+#include "mbcommon/outcome.h"
 
 #include "mbbootimg/defs.h"
 #include "mbbootimg/writer_error.h"
+#include "mbbootimg/writer_p.h"
 
 namespace mb
 {
@@ -40,57 +41,60 @@ namespace bootimg
 class Entry;
 class Header;
 
-class WriterPrivate;
 class MB_EXPORT Writer
 {
-    MB_DECLARE_PRIVATE(Writer)
-
 public:
     Writer();
     ~Writer();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Writer)
 
-    Writer(Writer &&other);
-    Writer & operator=(Writer &&rhs);
+    Writer(Writer &&other) noexcept;
+    Writer & operator=(Writer &&rhs) noexcept;
 
     // Open/close
-    int open_filename(const std::string &filename);
-    int open_filename_w(const std::wstring &filename);
-    int open(std::unique_ptr<File> file);
-    int open(File *file);
-    int close();
+    oc::result<void> open_filename(const std::string &filename);
+    oc::result<void> open_filename_w(const std::wstring &filename);
+    oc::result<void> open(std::unique_ptr<File> file);
+    oc::result<void> open(File *file);
+    oc::result<void> close();
 
     // Operations
-    int get_header(Header &header);
-    int write_header(const Header &header);
-    int get_entry(Entry &entry);
-    int write_entry(const Entry &entry);
-    int write_data(const void *buf, size_t size, size_t &bytes_written);
+    oc::result<void> get_header(Header &header);
+    oc::result<void> write_header(const Header &header);
+    oc::result<void> get_entry(Entry &entry);
+    oc::result<void> write_entry(const Entry &entry);
+    oc::result<size_t> write_data(const void *buf, size_t size);
 
     // Format operations
     int format_code();
     std::string format_name();
-    int set_format_by_code(int code);
-    int set_format_by_name(const std::string &name);
+    oc::result<void> set_format_by_code(int code);
+    oc::result<void> set_format_by_name(const std::string &name);
 
     // Specific formats
-    int set_format_android();
-    int set_format_bump();
-    int set_format_loki();
-    int set_format_mtk();
-    int set_format_sony_elf();
+    oc::result<void> set_format_android();
+    oc::result<void> set_format_bump();
+    oc::result<void> set_format_loki();
+    oc::result<void> set_format_mtk();
+    oc::result<void> set_format_sony_elf();
 
-    // Error handling functions
-    std::error_code error();
-    std::string error_string();
-    int set_error(std::error_code ec);
-    MB_PRINTF(3, 4)
-    int set_error(std::error_code ec, const char *fmt, ...);
-    int set_error_v(std::error_code ec, const char *fmt, va_list ap);
+    // Writer state
+    bool is_open();
+    bool is_fatal();
+    void set_fatal();
 
 private:
-    std::unique_ptr<WriterPrivate> _priv_ptr;
+    oc::result<void> register_format(std::unique_ptr<detail::FormatWriter> format);
+
+    // Global state
+    detail::WriterState m_state;
+
+    // File
+    std::unique_ptr<File> m_owned_file;
+    File *m_file;
+
+    std::unique_ptr<detail::FormatWriter> m_format;
 };
 
 }

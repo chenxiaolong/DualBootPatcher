@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -36,9 +36,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "minizip/ioandroid.h"
-#include "minizip/ioapi_buf.h"
-#include "minizip/unzip.h"
+#include "mz.h"
+#include "mz_strm_android.h"
+#include "mz_strm_buf.h"
+#include "mz_zip.h"
 
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
@@ -200,7 +201,7 @@ static bool stop_daemon()
 }
 
 static util::CmdlineIterAction set_kernel_properties_cb(const std::string &name,
-                                                        const optional<std::string> &value,
+                                                        const std::optional<std::string> &value,
                                                         void *userdata)
 {
     (void) userdata;
@@ -208,7 +209,7 @@ static util::CmdlineIterAction set_kernel_properties_cb(const std::string &name,
     if (starts_with(name, "androidboot.") && name.size() > 12 && value) {
         char buf[PROP_NAME_MAX];
         int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name.c_str() + 12);
-        if (n >= 0 && n < (int) sizeof(buf)) {
+        if (n >= 0 && n < static_cast<int>(sizeof(buf))) {
             property_set(buf, *value);
         }
     }
@@ -349,7 +350,8 @@ static bool fix_file_contexts(const char *path)
             fputc('#', fp_new.get());
         }
 
-        if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
+        if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
+                != static_cast<size_t>(read)) {
             LOGE("%s: Failed to write file: %s",
                  new_path.c_str(), strerror(errno));
             return false;
@@ -380,7 +382,7 @@ static bool fix_binary_file_contexts(const char *path)
     SigVerifyResult result;
     result = verify_signature("/sbin/file-contexts-tool",
                               "/sbin/file-contexts-tool.sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("%s: Invalid signature", "/sbin/file-contexts-tool");
         return false;
     }
@@ -491,7 +493,8 @@ static bool add_mbtool_services(bool enable_appsync)
             fputs("import /init.multiboot.rc\n", fp_new.get());
         }
 
-        if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
+        if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
+                != static_cast<size_t>(read)) {
             LOGE("Failed to write to /init.rc.new: %s", strerror(errno));
             return false;
         }
@@ -822,16 +825,12 @@ static std::string find_fstab()
 
             // Replace ${ro.hardware}
             if (fstab.find("${ro.hardware}") != std::string::npos) {
-                optional<std::string> hardware;
-                util::kernel_cmdline_get_option("androidboot.hardware", hardware);
-                util::replace_all(fstab, "${ro.hardware}",
-                                  hardware ? *hardware : "");
+                util::replace_all(fstab, "${ro.hardware}", hardware);
             }
 
             LOGD("Found fstab during search: %s", fstab.c_str());
 
             // Check if fstab exists
-            struct stat sb;
             if (stat(fstab.c_str(), &sb) < 0) {
                 LOGE("Failed to stat fstab %s: %s",
                      fstab.c_str(), strerror(errno));
@@ -858,7 +857,7 @@ static std::string find_fstab()
 
 static unsigned long get_api_version()
 {
-    return util::property_file_get_unum<unsigned long>(
+    return util::property_file_get_num<unsigned long>(
             "/system/build.prop", "ro.build.version.sdk", 0);
 }
 
@@ -925,38 +924,62 @@ static bool disable_spota()
 
 static bool extract_zip(const char *source, const char *target)
 {
-    unzFile uf;
-    zlib_filefunc64_def zFunc;
-    ourbuffer_t iobuf;
+    void *stream;
+    if (!mz_stream_android_create(&stream)) {
+        LOGE("Failed to create base stream");
+        return false;
+    }
 
-    memset(&zFunc, 0, sizeof(zFunc));
-    memset(&iobuf, 0, sizeof(iobuf));
+    auto destroy_stream = finally([&] {
+        mz_stream_delete(&stream);
+    });
 
-    fill_android_filefunc64(&iobuf.filefunc64);
-    fill_buffer_filefunc64(&zFunc, &iobuf);
+    void *buf_stream;
+    if (!mz_stream_buffered_create(&buf_stream)) {
+        LOGE("Failed to create buffered stream");
+        return false;
+    }
 
-    uf = unzOpen2_64(source, &zFunc);
-    if (!uf) {
+    auto destroy_buf_stream = finally([&] {
+        mz_stream_delete(&buf_stream);
+    });
+
+    if (mz_stream_set_base(buf_stream, stream) != MZ_OK) {
+        LOGE("Failed to set base stream for buffered stream");
+        return false;
+    }
+
+    if (mz_stream_open(buf_stream, source, MZ_OPEN_MODE_READ) != MZ_OK) {
+        LOGE("%s: Failed to open stream", source);
+        return false;
+    }
+
+    auto close_stream = finally([&] {
+        mz_stream_close(buf_stream);
+    });
+
+    auto *handle = mz_zip_open(buf_stream, MZ_OPEN_MODE_READ);
+    if (!handle) {
         LOGE("%s: Failed to open zip", source);
         return false;
     }
 
     auto close_zip = finally([&]{
-        unzClose(uf);
+        mz_zip_close(handle);
     });
 
-    if (unzLocateFile(uf, "exec", nullptr) != UNZ_OK) {
+    if (mz_zip_locate_entry(handle, "exec", nullptr) != MZ_OK) {
         LOGE("%s: Failed to find 'exec' in zip", source);
         return false;
     }
 
-    if (unzOpenCurrentFile(uf) != UNZ_OK) {
+    if (mz_zip_entry_read_open(handle, 0, nullptr) != MZ_OK) {
         LOGE("%s: Failed to open file in zip", source);
         return false;
     }
 
-    auto close_inner_file = finally([&]{
-        unzCloseCurrentFile(uf);
+    auto close_inner_file = finally([&] {
+        mz_zip_entry_close(handle);
     });
 
     std::string target_file(target);
@@ -971,22 +994,27 @@ static bool extract_zip(const char *source, const char *target)
         return false;
     }
 
-    char buf[8192];
+    auto close_fp = finally([&] {
+        fclose(fp);
+    });
+
+    char buf[UINT16_MAX];
     int bytes_read;
 
-    while ((bytes_read = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
-        size_t bytes_written = fwrite(buf, 1, bytes_read, fp);
+    while ((bytes_read = mz_zip_entry_read(handle, buf, sizeof(buf))) > 0) {
+        size_t bytes_written = fwrite(buf, 1, static_cast<size_t>(bytes_read),
+                                      fp);
         if (bytes_written == 0) {
-            bool ret = !ferror(fp);
-            fclose(fp);
-            return ret;
+            LOGE("%s: Truncated write", target);
+            return false;
         }
     }
     if (bytes_read != 0) {
         LOGE("%s: Failed before reaching inner file's EOF", source);
-        fclose(fp);
         return false;
     }
+
+    close_fp.dismiss();
 
     if (fclose(fp) < 0) {
         LOGE("%s: Error when closing file: %s",
@@ -1035,7 +1063,7 @@ static bool launch_boot_menu()
     // Verify boot UI signature
     SigVerifyResult result;
     result = verify_signature(BOOT_UI_ZIP_PATH, BOOT_UI_ZIP_PATH ".sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("%s: Invalid signature", BOOT_UI_ZIP_PATH);
         return false;
     }
@@ -1228,11 +1256,12 @@ int init_main(int argc, char *argv[])
     LOGV("ROM ID is: %s", rom_id.c_str());
 
     // Mount system, cache, and external SD from fstab file
-    int flags = MOUNT_FLAG_REWRITE_FSTAB
-            | MOUNT_FLAG_MOUNT_SYSTEM
-            | MOUNT_FLAG_MOUNT_CACHE
-            | MOUNT_FLAG_MOUNT_DATA
-            | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
+    MountFlags flags =
+            MountFlag::RewriteFstab
+            | MountFlag::MountSystem
+            | MountFlag::MountCache
+            | MountFlag::MountData
+            | MountFlag::MountExternalSd;
     if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGE("Failed to mount fstab");
         critical_failure();
@@ -1250,7 +1279,7 @@ int init_main(int argc, char *argv[])
     selinux_mount();
     // Load pre-boot policy
     patch_sepolicy(util::SELINUX_DEFAULT_POLICY_FILE, util::SELINUX_LOAD_FILE,
-                   SELinuxPatch::PRE_BOOT);
+                   SELinuxPatch::PreBoot);
 
     // Mount ROM (bind mount directory or mount images, etc.)
     if (!mount_rom(rom)) {
@@ -1290,7 +1319,7 @@ int init_main(int argc, char *argv[])
     if (stat(util::SELINUX_DEFAULT_POLICY_FILE, &sb) == 0) {
         if (!patch_sepolicy(util::SELINUX_DEFAULT_POLICY_FILE,
                             util::SELINUX_DEFAULT_POLICY_FILE,
-                            SELinuxPatch::MAIN)) {
+                            SELinuxPatch::Main)) {
             LOGW("%s: Failed to patch policy",
                  util::SELINUX_DEFAULT_POLICY_FILE);
             critical_failure();

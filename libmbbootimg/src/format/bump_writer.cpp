@@ -21,27 +21,18 @@
 
 #include "mbbootimg/writer_p.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 /*!
  * \brief Set Bump boot image output format
  *
- * \return
- *   * #RET_OK if the format is successfully set
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-int Writer::set_format_bump()
+oc::result<void> Writer::set_format_bump()
 {
-    using namespace android;
-
-    MB_PRIVATE(Writer);
-
-    std::unique_ptr<FormatWriter> format{new AndroidFormatWriter(*this, true)};
-    return priv->register_format(std::move(format));
+    return register_format(
+            std::make_unique<android::AndroidFormatWriter>(*this, true));
 }
 
-}
 }

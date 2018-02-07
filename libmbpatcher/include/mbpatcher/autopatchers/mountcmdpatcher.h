@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,41 +19,32 @@
 
 #pragma once
 
-#include <memory>
-
 #include "mbpatcher/patcherconfig.h"
 #include "mbpatcher/patcherinterface.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
-class MountCmdPatcherPrivate;
 class MountCmdPatcher : public AutoPatcher
 {
-    MB_DECLARE_PRIVATE(MountCmdPatcher)
-
 public:
-    explicit MountCmdPatcher(const PatcherConfig * const pc,
-                             const FileInfo * const info);
-    ~MountCmdPatcher();
+    MountCmdPatcher(const PatcherConfig &pc, const FileInfo &info);
+    virtual ~MountCmdPatcher();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MountCmdPatcher)
+    MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(MountCmdPatcher)
 
     static const std::string Id;
 
-    virtual ErrorCode error() const override;
+    ErrorCode error() const override;
 
-    virtual std::string id() const override;
+    std::string id() const override;
 
-    virtual std::vector<std::string> new_files() const override;
-    virtual std::vector<std::string> existing_files() const override;
+    std::vector<std::string> new_files() const override;
+    std::vector<std::string> existing_files() const override;
 
-    virtual bool patch_files(const std::string &directory) override;
-
-private:
-    std::unique_ptr<MountCmdPatcherPrivate> _priv_ptr;
+    bool patch_files(const std::string &directory) override;
 };
 
-}
 }

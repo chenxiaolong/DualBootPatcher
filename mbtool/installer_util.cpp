@@ -20,6 +20,7 @@
 #include "installer_util.h"
 
 #include <memory>
+#include <optional>
 
 #include <cerrno>
 #include <cstdio>
@@ -262,7 +263,8 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
 
         if (archive_entry_size(entry.get()) > 0) {
             while ((n = archive_read_data(ain.get(), buf, sizeof(buf))) > 0) {
-                if (archive_write_data(aout.get(), buf, n) != n) {
+                if (archive_write_data(aout.get(), buf, static_cast<size_t>(n))
+                        != n) {
                     LOGE("Failed to write archive entry data: %s",
                          archive_error_string(aout.get()));
                     return false;
@@ -294,7 +296,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
     // std::string is guaranteed to be contiguous in C++11
-    if (!mkdtemp(&tmpdir[0])) {
+    if (!mkdtemp(tmpdir.data())) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }
@@ -308,65 +310,76 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     Header header;
     Entry in_entry;
     Entry out_entry;
-    int ret;
-
-    // Open input boot image
-    ret = reader.enable_format_all();
-    if (ret != RET_OK) {
-        LOGE("Failed to enable input boot image formats: %s",
-             reader.error_string().c_str());
-        return false;
-    }
-    ret = reader.open_filename(input_file);
-    if (ret != RET_OK) {
-        LOGE("%s: Failed to open boot image for reading: %s",
-             input_file.c_str(), reader.error_string().c_str());
-        return false;
-    }
-
-    // Open output boot image
-    ret = writer.set_format_by_code(reader.format_code());
-    if (ret != RET_OK) {
-        LOGE("Failed to set output boot image format: %s",
-             writer.error_string().c_str());
-        return false;
-    }
-    ret = writer.open_filename(output_file);
-    if (ret != RET_OK) {
-        LOGE("%s: Failed to open boot image for writing: %s",
-             output_file.c_str(), writer.error_string().c_str());
-        return false;
-    }
 
     // Debug
     LOGD("Patching boot image");
     LOGD("- Input: %s", input_file.c_str());
     LOGD("- Output: %s", output_file.c_str());
+
+    // Open input boot image
+    auto ret = reader.enable_format_all();
+    if (!ret) {
+        LOGE("Failed to enable input boot image formats: %s",
+             ret.error().message().c_str());
+        return false;
+    }
+    ret = reader.open_filename(input_file);
+    if (!ret) {
+        LOGE("%s: Failed to open boot image for reading: %s",
+             input_file.c_str(), ret.error().message().c_str());
+        return false;
+    }
+
+    // Open output boot image
+    ret = writer.set_format_by_code(reader.format_code());
+    if (!ret) {
+        LOGE("Failed to set output boot image format: %s",
+             ret.error().message().c_str());
+        return false;
+    }
+    ret = writer.open_filename(output_file);
+    if (!ret) {
+        LOGE("%s: Failed to open boot image for writing: %s",
+             output_file.c_str(), ret.error().message().c_str());
+        return false;
+    }
+
+    // Debug
     LOGD("- Format: %s", reader.format_name().c_str());
 
     // Copy header
     ret = reader.read_header(header);
-    if (ret != RET_OK) {
+    if (!ret) {
         LOGE("%s: Failed to read header: %s",
-             input_file.c_str(), reader.error_string().c_str());
+             input_file.c_str(), ret.error().message().c_str());
         return false;
     }
     ret = writer.write_header(header);
-    if (ret != RET_OK) {
+    if (!ret) {
         LOGE("%s: Failed to write header: %s",
-             output_file.c_str(), writer.error_string().c_str());
+             output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
     // Write entries
-    while ((ret = writer.get_entry(out_entry)) == RET_OK) {
+    while (true) {
+        ret = writer.get_entry(out_entry);
+        if (!ret) {
+            if (ret.error() == WriterError::EndOfEntries) {
+                break;
+            }
+            LOGE("%s: Failed to get entry: %s",
+                 output_file.c_str(), ret.error().message().c_str());
+            return false;
+        }
+
         auto type = out_entry.type();
 
         // Write entry metadata
         ret = writer.write_entry(out_entry);
-        if (ret != RET_OK) {
+        if (!ret) {
             LOGE("%s: Failed to write entry: %s",
-                 output_file.c_str(), writer.error_string().c_str());
+                 output_file.c_str(), ret.error().message().c_str());
             return false;
         }
 
@@ -377,13 +390,16 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
             }
         } else {
             ret = reader.go_to_entry(in_entry, *type);
-            if (ret == RET_EOF) {
-                LOGV("Skipping non existent boot image entry: %d", *type);
-                continue;
-            } else if (ret != RET_OK) {
-                LOGE("%s: Failed to go to entry: %d: %s",
-                     input_file.c_str(), *type, reader.error_string().c_str());
-                return false;
+            if (!ret) {
+                if (ret.error() == ReaderError::EndOfEntries) {
+                    LOGV("Skipping non existent boot image entry: %d", *type);
+                    continue;
+                } else {
+                    LOGE("%s: Failed to go to entry: %d: %s",
+                         input_file.c_str(), *type,
+                         ret.error().message().c_str());
+                    return false;
+                }
             }
 
             if (type == ENTRY_TYPE_RAMDISK) {
@@ -439,9 +455,10 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         }
     }
 
-    if (writer.close() != RET_OK) {
+    ret = writer.close();
+    if (!ret) {
         LOGE("%s: Failed to close boot image: %s",
-             output_file.c_str(), writer.error_string().c_str());
+             output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
@@ -460,7 +477,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
 
     std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
-    if (!mkdtemp(&tmpdir[0])) {
+    if (!mkdtemp(tmpdir.data())) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }
@@ -538,66 +555,69 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
 
     StandardFile fin;
     StandardFile fout;
-    // TODO: Replace with std::optional after switching to C++17
-    std::pair<bool, uint64_t> offset;
+    std::optional<uint64_t> offset;
 
     // Open input file
-    if (!fin.open(input_file, FileOpenMode::READ_ONLY)) {
+    auto open_ret = fin.open(input_file, FileOpenMode::ReadOnly);
+    if (!open_ret) {
         LOGE("%s: Failed to open for reading: %s",
-             input_file.c_str(), fin.error_string().c_str());
+             input_file.c_str(), open_ret.error().message().c_str());
         return false;
     }
 
     // Open output file
-    if (!fout.open(output_file, FileOpenMode::WRITE_ONLY)) {
+    open_ret = fout.open(output_file, FileOpenMode::WriteOnly);
+    if (!open_ret) {
         LOGE("%s: Failed to open for writing: %s",
-             output_file.c_str(), fout.error_string().c_str());
+             output_file.c_str(), open_ret.error().message().c_str());
         return false;
     }
 
     // Replace pattern
-    auto result_cb = [](File &file, void *userdata, uint64_t offset)
-            -> FileSearchAction {
+    auto result_cb = [](File &file, void *userdata, uint64_t offset_)
+            -> oc::result<FileSearchAction> {
         (void) file;
-        std::pair<bool, uint64_t> *ptr =
-                static_cast<std::pair<bool, uint64_t> *>(userdata);
-        ptr->first = true;
-        ptr->second = offset;
+        auto ptr = static_cast<std::optional<uint64_t> *>(userdata);
+        *ptr = offset_;
         return FileSearchAction::Stop;
     };
 
-    if (!file_search(fin, -1, -1, 0, source_pattern, sizeof(source_pattern), 1,
-                     result_cb, &offset)) {
+    auto search_ret = file_search(fin, {}, {}, 0, source_pattern,
+                                  sizeof(source_pattern), 1, result_cb,
+                                  &offset);
+    if (!search_ret) {
         LOGE("%s: Error when searching for pattern: %s",
-             input_file.c_str(), fin.error_string().c_str());
+             input_file.c_str(), search_ret.error().message().c_str());
         return false;
     }
 
     // Copy data
-    if (!fin.seek(0, SEEK_SET, nullptr)) {
+    auto seek_ret = fin.seek(0, SEEK_SET);
+    if (!seek_ret) {
         LOGE("%s: Failed to seek to beginning: %s",
-             input_file.c_str(), fin.error_string().c_str());
+             input_file.c_str(), seek_ret.error().message().c_str());
         return false;
     }
 
-    if (offset.first) {
-        LOGD("RKP pattern found at offset: 0x%" PRIx64, offset.second);
+    if (offset) {
+        LOGD("RKP pattern found at offset: 0x%" PRIx64, *offset);
 
-        if (!copy_file_to_file(fin, fout, offset.second)) {
+        if (!copy_file_to_file(fin, fout, *offset)) {
             return false;
         }
 
-        if (!fin.seek(sizeof(source_pattern), SEEK_CUR, nullptr)) {
+        seek_ret = fin.seek(sizeof(source_pattern), SEEK_CUR);
+        if (!seek_ret) {
             LOGE("%s: Failed to skip pattern: %s",
-                 input_file.c_str(), fin.error_string().c_str());
+                 input_file.c_str(), seek_ret.error().message().c_str());
             return false;
         }
 
-        size_t n;
-        if (!file_write_fully(fout, target_pattern, sizeof(target_pattern), n)
-                || n != sizeof(target_pattern)) {
+        auto ret = file_write_exact(fout, target_pattern,
+                                    sizeof(target_pattern));
+        if (!ret) {
             LOGE("%s: Failed to write target pattern: %s",
-                 output_file.c_str(), fout.error_string().c_str());
+                 output_file.c_str(), ret.error().message().c_str());
             return false;
         }
     }
@@ -606,9 +626,10 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         return false;
     }
 
-    if (!fout.close()) {
+    auto close_ret = fout.close();
+    if (!close_ret) {
         LOGE("%s: Failed to close file: %s",
-             output_file.c_str(), fout.error_string().c_str());
+             output_file.c_str(), close_ret.error().message().c_str());
         return false;
     }
 
@@ -654,18 +675,20 @@ bool InstallerUtil::replace_file(const std::string &replace,
 bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
 {
     char buf[10240];
-    size_t n;
 
     while (to_copy > 0) {
-        size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
+        size_t to_read = static_cast<size_t>(
+                std::min<uint64_t>(to_copy, sizeof(buf)));
 
-        if (!file_read_fully(fin, buf, to_read, n) || n != to_read) {
-            LOGE("Failed to read data: %s", fin.error_string().c_str());
+        auto n = file_read_retry(fin, buf, to_read);
+        if (!n || n.value() != to_read) {
+            LOGE("Failed to read data: %s", n.error().message().c_str());
             return false;
         }
 
-        if (!file_write_fully(fout, buf, to_read, n) || n != to_read) {
-            LOGE("Failed to write data: %s", fout.error_string().c_str());
+        n = file_write_retry(fout, buf, to_read);
+        if (!n || n.value() != to_read) {
+            LOGE("Failed to write data: %s", n.error().message().c_str());
             return false;
         }
 
@@ -678,20 +701,20 @@ bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
 bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
 {
     char buf[10240];
-    size_t n_read;
-    size_t n_written;
 
     while (true) {
-        if (!file_read_fully(fin, buf, sizeof(buf), n_read)) {
-            LOGE("Failed to read data: %s", fin.error_string().c_str());
+        auto n_read = file_read_retry(fin, buf, sizeof(buf));
+        if (!n_read) {
+            LOGE("Failed to read data: %s", n_read.error().message().c_str());
             return false;
-        } else if (n_read == 0) {
+        } else if (n_read.value() == 0) {
             break;
         }
 
-        if (!file_write_fully(fout, buf, n_read, n_written)
-                || n_written != n_read) {
-            LOGE("Failed to write data: %s", fout.error_string().c_str());
+        auto n_written = file_write_retry(fout, buf, n_read.value());
+        if (!n_written || n_written.value() != n_read.value()) {
+            LOGE("Failed to write data: %s",
+                 n_written.error().message().c_str());
             return false;
         }
     }

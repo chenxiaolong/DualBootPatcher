@@ -21,9 +21,7 @@
 
 #include "mbdevice/device.h"
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 enum class JsonErrorType : uint16_t
@@ -55,5 +53,4 @@ MB_EXPORT bool device_list_from_json(const std::string &json,
 
 MB_EXPORT bool device_to_json(const Device &device, std::string &json);
 
-}
 }

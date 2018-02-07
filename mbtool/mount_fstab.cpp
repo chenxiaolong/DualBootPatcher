@@ -88,7 +88,7 @@ namespace mb
  *
  * \return Whether some fstab entry was successfully mounted at the mount point
  */
-static bool create_dir_and_mount(const std::vector<util::fstab_rec> &recs,
+static bool create_dir_and_mount(const std::vector<util::FstabRec> &recs,
                                  const char *mount_point, mode_t perms)
 {
     if (recs.empty()) {
@@ -110,7 +110,7 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec> &recs,
     }
 
     // Try mounting each until we find one that works
-    for (const util::fstab_rec &rec : recs) {
+    for (const util::FstabRec &rec : recs) {
         LOGD("Attempting to mount(%s, %s, %s, %lu, %s)",
              rec.blk_device.c_str(), mount_point, rec.fs_type.c_str(),
              rec.flags, rec.fs_options.c_str());
@@ -148,10 +148,10 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec> &recs,
  * \brief Get list of generic /system fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec>
+static std::vector<util::FstabRec>
 generic_fstab_system_entries(const Device &device)
 {
-    std::vector<util::fstab_rec> result;
+    std::vector<util::FstabRec> result;
 
     for (auto const &path : device.system_block_devs()) {
         result.emplace_back();
@@ -171,10 +171,10 @@ generic_fstab_system_entries(const Device &device)
  * \brief Get list of generic /cache fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec>
+static std::vector<util::FstabRec>
 generic_fstab_cache_entries(const Device &device)
 {
-    std::vector<util::fstab_rec> result;
+    std::vector<util::FstabRec> result;
 
     for (auto const &path : device.cache_block_devs()) {
         result.emplace_back();
@@ -194,10 +194,10 @@ generic_fstab_cache_entries(const Device &device)
  * \brief Get list of generic /data fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec>
+static std::vector<util::FstabRec>
 generic_fstab_data_entries(const Device &device)
 {
-    std::vector<util::fstab_rec> result;
+    std::vector<util::FstabRec> result;
 
     for (auto const &path : device.data_block_devs()) {
         result.emplace_back();
@@ -258,12 +258,12 @@ static bool mount_exfat_fuse(const char *source, const char *target)
     // Check signatures
     SigVerifyResult result;
     result = verify_signature("/sbin/fsck.exfat", "/sbin/fsck.exfat.sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("Invalid fsck.exfat signature");
         return false;
     }
     result = verify_signature("/sbin/mount.exfat", "/sbin/mount.exfat.sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("Invalid mount.exfat signature");
         return false;
     }
@@ -314,7 +314,8 @@ static bool mount_exfat_kernel(const char *source, const char *target)
             "uid=%d,gid=%d,fmask=%o,dmask=%o,namecase=0",
             uid, uid, 0007, 0007);
     // For Motorola: utf8
-    int flags = MS_NODEV
+    unsigned long flags =
+            MS_NODEV
             | MS_NOSUID
             | MS_DIRSYNC
             | MS_NOEXEC;
@@ -338,7 +339,8 @@ static bool mount_vfat(const char *source, const char *target)
     std::string args = format(
             "utf8,uid=%d,gid=%d,fmask=%o,dmask=%o,shortname=mixed",
             uid, uid, 0007, 0007);
-    int flags = MS_NODEV
+    unsigned long flags =
+            MS_NODEV
             | MS_NOSUID
             | MS_DIRSYNC
             | MS_NOEXEC
@@ -394,7 +396,7 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
         }
     }
 
-    optional<std::string> fstype;
+    std::optional<std::string> fstype;
     if (!util::blkid_get_fs_type(block_dev, fstype)) {
         LOGE("%s: Failed to detect filesystem type: %s",
              block_dev, strerror(errno));
@@ -457,7 +459,7 @@ static std::vector<std::string> split_patterns(const char *patterns)
  * This will *not* do anything if the system wasn't booted using initwrapper.
  * It relies an the sysfs -> block devices map created by initwrapper/devices.cpp
  */
-static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec> &extsd_recs,
+static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_recs,
                                       const char *mount_point, mode_t perms)
 {
     if (extsd_recs.empty()) {
@@ -484,7 +486,7 @@ static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec> &extsd_
 
         auto devices_map = get_block_dev_mappings();
 
-        for (const util::fstab_rec &rec : extsd_recs) {
+        for (const util::FstabRec &rec : extsd_recs) {
             std::vector<std::string> patterns =
                     split_patterns(rec.blk_device.c_str());
 
@@ -595,7 +597,7 @@ static bool disable_fsck(const char *fsck_binary)
 {
     SigVerifyResult result;
     result = verify_signature(FSCK_WRAPPER, FSCK_WRAPPER_SIG);
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("%s: Invalid signature", FSCK_WRAPPER);
         return false;
     }
@@ -618,7 +620,7 @@ static bool disable_fsck(const char *fsck_binary)
 
     // Copy permissions
     chown(target.c_str(), sb.st_uid, sb.st_gid);
-    chmod(target.c_str(), sb.st_mode);
+    chmod(target.c_str(), static_cast<mode_t>(sb.st_mode));
 
     // Copy SELinux label
     std::string context;
@@ -660,7 +662,7 @@ static bool copy_mount_exfat()
 
     // Copy permissions
     chown(target, sb.st_uid, sb.st_gid);
-    chmod(target, sb.st_mode);
+    chmod(target, static_cast<mode_t>(sb.st_mode));
 
     // Copy SELinux label
     std::string context;
@@ -690,7 +692,7 @@ static bool wrap_extsd_binaries()
         return false;
     }
 
-    bool ret;
+    bool ret = true;
 
     // Online fsck is not possible so we'll have to prevent Vold from trying
     // to run fsck_msdos and failing.
@@ -721,27 +723,28 @@ static bool wrap_extsd_binaries()
 struct FstabRecs
 {
     // Entries to go in newly generated fstab
-    std::vector<util::fstab_rec> gen;
+    std::vector<util::FstabRec> gen;
     // /system entries
-    std::vector<util::fstab_rec> system;
+    std::vector<util::FstabRec> system;
     // /cache entries
-    std::vector<util::fstab_rec> cache;
+    std::vector<util::FstabRec> cache;
     // /data entries
-    std::vector<util::fstab_rec> data;
+    std::vector<util::FstabRec> data;
     // External SD entries
-    std::vector<util::fstab_rec> extsd;
+    std::vector<util::FstabRec> extsd;
 };
 
-bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                   const Device &device, int flags, FstabRecs *recs)
+static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
+                          const Device &device, MountFlags flags,
+                          FstabRecs &recs)
 {
-    std::vector<util::fstab_rec> fstab;
+    std::vector<util::FstabRec> fstab;
 
-    recs->gen.clear();
-    recs->system.clear();
-    recs->cache.clear();
-    recs->data.clear();
-    recs->extsd.clear();
+    recs.gen.clear();
+    recs.system.clear();
+    recs.cache.clear();
+    recs.data.clear();
+    recs.extsd.clear();
 
     // Read original fstab file
     fstab = util::read_fstab(path);
@@ -756,19 +759,19 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         LOGD("fstab: %s", it->orig_line.c_str());
 
         if (util::path_compare(it->mount_point, "/system") == 0
-                && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
+                && (flags & MountFlag::MountSystem)) {
             LOGD("-> /system entry");
-            recs->system.push_back(std::move(*it));
+            recs.system.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/cache") == 0
-                && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
+                && (flags & MountFlag::MountCache)) {
             LOGD("-> /cache entry");
-            recs->cache.push_back(std::move(*it));
+            recs.cache.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/data") == 0
-                && (flags & MOUNT_FLAG_MOUNT_DATA)) {
+                && (flags & MountFlag::MountData)) {
             LOGD("-> /data entry");
-            recs->data.push_back(std::move(*it));
+            recs.data.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (it->vold_args.find("emmc@intsd") == std::string::npos
                 && ((include_sdcard0 && it->vold_args.find("voldmanaged=sdcard0") != std::string::npos)
@@ -777,16 +780,16 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
                 || it->vold_args.find("voldmanaged=extSdCard") != std::string::npos
                 || it->vold_args.find("voldmanaged=external_SD") != std::string::npos
                 || it->vold_args.find("voldmanaged=MicroSD") != std::string::npos)
-                && (flags & MOUNT_FLAG_MOUNT_EXTERNAL_SD)) {
+                && (flags & MountFlag::MountExternalSd)) {
             LOGD("-> External SD entry");
             // Has to be mounted by us
-            recs->extsd.push_back(*it);
+            recs.extsd.push_back(*it);
             // and also has to be processed by vold
-            recs->gen.push_back(std::move(*it));
+            recs.gen.push_back(std::move(*it));
             it = fstab.erase(it);
         } else {
             // Let vold mount this
-            recs->gen.push_back(std::move(*it));
+            recs.gen.push_back(std::move(*it));
             it = fstab.erase(it);
         }
     }
@@ -794,46 +797,46 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     // Some ROMs mount the partitions in one of the init.*.rc files or some
     // shell script. If that's the case, we just have to guess for working
     // fstab entries.
-    if (!(flags & MOUNT_FLAG_NO_GENERIC_ENTRIES)) {
-        if (recs->system.empty() && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
+    if (!(flags & MountFlag::NoGenericEntries)) {
+        if (recs.system.empty() && (flags & MountFlag::MountSystem)) {
             LOGW("No /system fstab entries found. Adding generic entries");
             auto entries = generic_fstab_system_entries(device);
-            for (util::fstab_rec &rec : entries) {
-                recs->system.push_back(std::move(rec));
+            for (util::FstabRec &rec : entries) {
+                recs.system.push_back(std::move(rec));
             }
         }
-        if (recs->cache.empty() && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
+        if (recs.cache.empty() && (flags & MountFlag::MountCache)) {
             LOGW("No /cache fstab entries found. Adding generic entries");
             auto entries = generic_fstab_cache_entries(device);
-            for (util::fstab_rec &rec : entries) {
-                recs->cache.push_back(std::move(rec));
+            for (util::FstabRec &rec : entries) {
+                recs.cache.push_back(std::move(rec));
             }
         }
-        if (recs->data.empty() && (flags & MOUNT_FLAG_MOUNT_DATA)) {
+        if (recs.data.empty() && (flags & MountFlag::MountData)) {
             LOGW("No /data fstab entries found. Adding generic entries");
             auto entries = generic_fstab_data_entries(device);
-            for (util::fstab_rec &rec : entries) {
-                recs->data.push_back(std::move(rec));
+            for (util::FstabRec &rec : entries) {
+                recs.data.push_back(std::move(rec));
             }
         }
     }
 
     // Remove nosuid flag on the partition that the system directory resides on
     if (rom && !rom->system_is_image) {
-        if (rom->system_source == Rom::Source::CACHE) {
-            for (util::fstab_rec &rec : recs->cache) {
-                rec.flags &= ~MS_NOSUID;
+        if (rom->system_source == Rom::Source::Cache) {
+            for (util::FstabRec &rec : recs.cache) {
+                rec.flags &= ~static_cast<unsigned long>(MS_NOSUID);
             }
-        } else if (rom->system_source == Rom::Source::DATA) {
-            for (util::fstab_rec &rec : recs->data) {
-                rec.flags &= ~MS_NOSUID;
+        } else if (rom->system_source == Rom::Source::Data) {
+            for (util::FstabRec &rec : recs.data) {
+                rec.flags &= ~static_cast<unsigned long>(MS_NOSUID);
             }
         }
     }
 
-    if (rom && rom->cache_source == Rom::Source::SYSTEM) {
-        for (util::fstab_rec &rec : recs->system) {
-            rec.flags &= ~MS_RDONLY;
+    if (rom && rom->cache_source == Rom::Source::System) {
+        for (util::FstabRec &rec : recs.system) {
+            rec.flags &= ~static_cast<unsigned long>(MS_RDONLY);
         }
     }
 
@@ -849,12 +852,12 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
  * \return Whether all of the
  */
 bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                 const Device &device, int flags)
+                 const Device &device, MountFlags flags)
 {
     std::vector<std::string> successful;
     FstabRecs recs;
 
-    if (!process_fstab(path, rom, device, flags, &recs)) {
+    if (!process_fstab(path, rom, device, flags, recs)) {
         return false;
     }
 
@@ -899,9 +902,9 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     // Mount external SD only if ROM is installed on the external SD. This is
     // necessary because mount_extsd_fstab_entries() blocks until an SD card is
     // found or a timeout occurs.
-    bool require_extsd = rom->system_source == Rom::Source::EXTERNAL_SD
-            || rom->cache_source == Rom::Source::EXTERNAL_SD
-            || rom->data_source == Rom::Source::EXTERNAL_SD;
+    bool require_extsd = rom->system_source == Rom::Source::ExternalSd
+            || rom->cache_source == Rom::Source::ExternalSd
+            || rom->data_source == Rom::Source::ExternalSd;
     if (!require_extsd) {
         LOGV("Skipping extsd mount because ROM is not an extsd-slot");
     }
@@ -917,21 +920,21 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
 
     if (ret) {
         LOGI("Successfully mounted partitions");
-    } else if (flags & MOUNT_FLAG_UNMOUNT_ON_FAILURE) {
+    } else if (flags & MountFlag::UnmountOnFailure) {
         for (const std::string &mount_point : successful) {
             util::umount(mount_point);
         }
     }
 
     // Rewrite fstab file
-    if (ret && (flags & MOUNT_FLAG_REWRITE_FSTAB)) {
+    if (ret && (flags & MountFlag::RewriteFstab)) {
         int fd = open(path, O_RDWR | O_TRUNC);
         if (fd < 0) {
             LOGE("%s: Failed to open file: %s", path, strerror(errno));
             return false;
         }
 
-        for (const util::fstab_rec &rec : recs.gen) {
+        for (const util::FstabRec &rec : recs.gen) {
             dprintf(fd, "%s\n", rec.orig_line.c_str());
         }
 
@@ -977,9 +980,9 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
 
     mount_all_system_images();
 
-    bool require_extsd = rom->system_source == Rom::Source::EXTERNAL_SD
-            || rom->cache_source == Rom::Source::EXTERNAL_SD
-            || rom->data_source == Rom::Source::EXTERNAL_SD;
+    bool require_extsd = rom->system_source == Rom::Source::ExternalSd
+            || rom->cache_source == Rom::Source::ExternalSd
+            || rom->data_source == Rom::Source::ExternalSd;
     if (require_extsd) {
         wrap_extsd_binaries();
     } else {

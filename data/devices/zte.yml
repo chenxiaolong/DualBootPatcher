@@ -30,6 +30,18 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde14
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    brightness_path: /sys/devices/soc/900000.qcom\x2cmdss_mdp/900000.qcom\x2cmdss_mdp:qcom\x2cmdss_fb_primary/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 153
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
 - name: Z11
   id: NX531J
   codenames:
@@ -54,7 +66,17 @@
     recovery:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p15
-      
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
 - name: ZTE BA510
   id: P635T39
   codenames:
@@ -111,3 +133,42 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p19
+
+- name: ZTE S291
+  id: P897A20
+  codenames:
+    - P897A20
+    - p897a20
+    - S291
+    - s291
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p12
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p14
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi

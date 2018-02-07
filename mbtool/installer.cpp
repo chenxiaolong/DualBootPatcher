@@ -28,6 +28,7 @@
 // Linux/posix
 #include <dirent.h>
 #include <fcntl.h>
+#include <sched.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -113,7 +114,7 @@ const std::string Installer::CANCELLED = "cancelled";
 
 Installer::Installer(std::string zip_file, std::string chroot_dir,
                      std::string temp_dir, int interface, int output_fd,
-                     int flags)
+                     InstallerFlags flags)
     : _zip_file(std::move(zip_file))
     , _chroot(std::move(chroot_dir))
     , _temp(std::move(temp_dir))
@@ -202,7 +203,7 @@ static bool log_delete_recursive(const std::string &path)
 }
 
 static bool log_copy_dir(const std::string &source,
-                         const std::string &target, int flags)
+                         const std::string &target, util::CopyFlags flags)
 {
     bool ret = util::copy_dir(source, target, flags);
     if (!ret) {
@@ -337,9 +338,9 @@ bool Installer::create_chroot()
     // there. Also, for whatever reason, bind mounting /sbin results in EINVAL
     // no matter if it's done from here or from busybox.
     if (!log_copy_dir("/sbin", in_chroot("/sbin"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
 
@@ -376,15 +377,15 @@ bool Installer::create_chroot()
 
     // We need /dev/input/* and /dev/graphics/* for AROMA
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
     if (!log_copy_dir("/dev/graphics", in_chroot("/dev/graphics"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
 
@@ -477,9 +478,9 @@ bool Installer::mount_efs() const
         if (stat("/twres", &sb) == 0 && S_ISDIR(sb.st_mode)) {
             LOGD("Looking for /efs entry in TWRP-format fstab");
 
-            std::vector<util::twrp_fstab_rec> recs =
+            std::vector<util::TwrpFstabRec> recs =
                     util::read_twrp_fstab("/etc/recovery.fstab");
-            for (const util::twrp_fstab_rec &rec : recs) {
+            for (auto const &rec : recs) {
                 if (util::path_compare(rec.mount_point, "/efs") == 0
                         || util::path_compare(rec.mount_point, "/efs1") == 0) {
                     LOGD("Found /efs fstab entry");
@@ -495,9 +496,9 @@ bool Installer::mount_efs() const
         } else {
             LOGE("Looking for /efs entry in non-TWRP-format fstab");
 
-            std::vector<util::fstab_rec> recs =
+            std::vector<util::FstabRec> recs =
                     util::read_fstab("/etc/recovery.fstab");
-            for (const util::fstab_rec &rec : recs) {
+            for (auto const &rec : recs) {
                 if (util::path_compare(rec.mount_point, "/efs") == 0) {
                     LOGD("Found /efs fstab entry");
                     efs_dev = rec.blk_device;
@@ -533,7 +534,7 @@ bool Installer::mount_efs() const
  */
 bool Installer::extract_multiboot_files()
 {
-    std::vector<util::extract_info> files{
+    std::vector<util::ExtractInfo> files{
         {
             "META-INF/com/google/android/update-binary.orig",
             _temp + "/updater"
@@ -599,7 +600,7 @@ bool Installer::extract_multiboot_files()
     for (auto const &item : sigcheck) {
         SigVerifyResult result =
                 verify_signature(item.c_str(), (item + ".sig").c_str());
-        if (result != SigVerifyResult::VALID) {
+        if (result != SigVerifyResult::Valid) {
             LOGE("%s: Signature verification failed", item.c_str());
             return false;
         }
@@ -620,7 +621,8 @@ bool Installer::set_up_busybox_wrapper()
     rename(sbin_busybox.c_str(), in_chroot("/sbin/busybox_orig").c_str());
 
     if (!util::copy_file(temp_busybox, sbin_busybox,
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              temp_busybox.c_str(), sbin_busybox.c_str(), strerror(errno));
         return false;
@@ -648,7 +650,7 @@ bool Installer::create_image(const std::string &path, uint64_t size)
     }
 
     auto result = create_ext4_image(path, size);
-    if (result == CreateImageResult::NOT_ENOUGH_SPACE) {
+    if (result == CreateImageResult::NotEnoughSpace) {
         uint64_t avail;
         if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
             avail = 0;
@@ -659,7 +661,7 @@ bool Installer::create_image(const std::string &path, uint64_t size)
         display_msg("- Available: %" PRIu64 " bytes", avail);
     }
 
-    return result == CreateImageResult::SUCCEEDED;
+    return result == CreateImageResult::Succeeded;
 }
 
 /*!
@@ -740,7 +742,7 @@ bool Installer::mount_dir_or_image(const std::string &source,
     if (is_image) {
         struct stat sb;
         if (stat(source.c_str(), &sb) < 0) {
-            double mib = (double) image_size / 1024 / 1024;
+            double mib = static_cast<double>(image_size) / 1024 / 1024;
 
             display_msg("Creating image (%.1f MiB) at %s",
                         mib, source.c_str());
@@ -944,7 +946,8 @@ bool Installer::run_real_updater()
     std::string chroot_updater = in_chroot("/mb/updater");
 
     if (!util::copy_file(updater, chroot_updater,
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              updater.c_str(), chroot_updater.c_str(), strerror(errno));
         return false;
@@ -952,7 +955,8 @@ bool Installer::run_real_updater()
 
 #if DEBUG_USE_UPDATER_WRAPPER
     if (!util::copy_file(DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper"),
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper").c_str(),
              strerror(errno));
@@ -997,13 +1001,6 @@ bool Installer::run_real_updater()
         }
     }
 
-    char argv1[20];
-    char argv2[20];
-
-    snprintf(argv1, sizeof(argv1), "%d", _interface);
-    snprintf(argv2, sizeof(argv2), "%d",
-             _passthrough ? _output_fd : pipe_fds[1]);
-
     // Run updater in the chroot
     std::vector<std::string> argv{
 #if DEBUG_USE_UPDATER_WRAPPER
@@ -1013,8 +1010,8 @@ bool Installer::run_real_updater()
 #endif
 #endif
         "/mb/updater",
-        argv1,
-        argv2,
+        format("%d", _interface),
+        format("%d", _passthrough ? _output_fd : pipe_fds[1]),
         "/mb/install.zip"
     };
 
@@ -1263,7 +1260,7 @@ Installer::ProceedState Installer::install_stage_initialize()
 
     LOGD("[Installer] Initialization stage");
 
-    std::vector<util::exists_info> info{
+    std::vector<util::ExistsInfo> info{
         { "system.transfer.list", false },
         { "system.new.dat", false },
         { "system.img", false },
@@ -1455,9 +1452,9 @@ Installer::ProceedState Installer::install_stage_check_device()
         }
 
         // Follow symlinks just in case the symlink source isn't in the list
-        if (!util::copy_file(dev, dev_path, util::COPY_ATTRIBUTES
-                                          | util::COPY_XATTRS
-                                          | util::COPY_FOLLOW_SYMLINKS)) {
+        if (!util::copy_file(dev, dev_path, util::CopyFlag::CopyAttributes
+                                          | util::CopyFlag::CopyXattrs
+                                          | util::CopyFlag::FollowSymlinks)) {
             LOGW("Failed to copy %s. Continuing anyway", dev.c_str());
         } else {
             LOGD("Copied %s to the chroot", dev.c_str());
@@ -1541,15 +1538,6 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
 {
     LOGD("[Installer] Chroot set up stage");
 
-    // Calculate SHA512 hash of the boot partition
-    if (!util::sha512_hash(_boot_block_dev, _boot_hash)) {
-        display_msg("Failed to compute sha512sum of boot partition");
-        return ProceedState::Fail;
-    }
-
-    std::string digest = util::hex_string(_boot_hash, SHA512_DIGEST_LENGTH);
-    LOGD("Boot partition SHA512sum: %s", digest.c_str());
-
     // Save a copy of the boot image that we'll restore if the installation fails
     if (!util::copy_contents(_boot_block_dev, _temp + "/boot.orig")) {
         display_msg("Failed to backup boot partition");
@@ -1562,7 +1550,7 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
         // Use an empty base dirs list since we don't want to flash any non-boot
         // partitions
         auto result = switch_rom(_rom->id, _boot_block_dev, {}, true);
-        if (result != SwitchRomResult::SUCCEEDED) {
+        if (result != SwitchRomResult::Succeeded) {
             display_msg("Failed to switch to target ROM. Continuing anyway...");
             LOGW("Failed to switch to target ROM: %d",
                  static_cast<int>(result));
@@ -1573,6 +1561,24 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
         LOGV("Won't switch to non-existent target ROM");
     }
 
+    // Patch current boot image to undo the init symlink patch. This is
+    // necessary to flash something that also tries to touch /init.
+    LOGV("Patching ramdisk to undo init modifications");
+    std::vector<std::function<RamdiskPatcherFn>> rps{rp_restore_init()};
+    if (!InstallerUtil::patch_boot_image(_boot_block_dev, _boot_block_dev,
+                                         rps)) {
+        LOGW("Failed to patch boot image. Continuing anyway...");
+    }
+
+    // Calculate SHA512 hash of the boot partition
+    if (!util::sha512_hash(_boot_block_dev, _boot_hash)) {
+        display_msg("Failed to compute sha512sum of boot partition");
+        return ProceedState::Fail;
+    }
+
+    std::string digest = util::hex_string(_boot_hash.data(), _boot_hash.size());
+    LOGD("Boot partition SHA512sum: %s", digest.c_str());
+
     // Wrap busybox to disable some applets
     if (!set_up_busybox_wrapper()) {
         display_msg("Failed to extract busybox wrapper");
@@ -1581,16 +1587,19 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
 
     // Copy ourself for the real update-binary to use
     util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
     chmod(in_chroot(HELPER_TOOL).c_str(), 0555);
 
     // Copy /default.prop
     util::copy_file("/default.prop", in_chroot("/default.prop"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     // Copy file_contexts
     util::copy_file("/file_contexts", in_chroot("/file_contexts"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     return on_set_up_chroot();
 }
@@ -1599,7 +1608,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 {
     LOGD("[Installer] Filesystem mounting stage");
 
-    if (_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES) {
+    if (_flags & InstallerFlag::SkipMountingVolumes) {
         LOGV("Skipping filesystem mounting stage");
         return ProceedState::Continue;
     }
@@ -1805,7 +1814,7 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
             display_msg("Failed to run e2fsck on image");
         }
     } else {
-        if (!(_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES)
+        if (!(_flags & InstallerFlag::SkipMountingVolumes)
                 && (_has_block_image || _rom->id == "primary")) {
             display_msg("Copying temporary image to system");
 
@@ -1833,18 +1842,18 @@ Installer::ProceedState Installer::install_stage_finish()
     LOGD("[Installer] Finalization stage");
 
     // Calculate SHA512 hash of the boot partition after installation
-    unsigned char new_hash[SHA512_DIGEST_LENGTH];
+    util::Sha512Digest new_hash;
     if (!util::sha512_hash(_boot_block_dev, new_hash)) {
         display_msg("Failed to compute sha512sum of boot partition");
         return ProceedState::Fail;
     }
 
-    std::string old_digest = util::hex_string(_boot_hash, SHA512_DIGEST_LENGTH);
-    std::string new_digest = util::hex_string(new_hash, SHA512_DIGEST_LENGTH);
+    std::string old_digest = util::hex_string(_boot_hash.data(), _boot_hash.size());
+    std::string new_digest = util::hex_string(new_hash.data(), new_hash.size());
     LOGD("Old boot partition SHA512sum: %s", old_digest.c_str());
     LOGD("New boot partition SHA512sum: %s", new_digest.c_str());
 
-    bool changed = memcmp(_boot_hash, new_hash, SHA512_DIGEST_LENGTH) != 0;
+    bool changed = _boot_hash != new_hash;
     bool force_update = _prop["mbtool.installer.always-patch-ramdisk"] == "true";
 
     // Set kernel if it was changed
@@ -1897,14 +1906,14 @@ Installer::ProceedState Installer::install_stage_finish()
         }
 
         // Update checksums
-        unsigned char digest[SHA512_DIGEST_LENGTH];
+        util::Sha512Digest digest;
 
         if (!util::sha512_hash(temp_boot_img, digest)) {
             display_msg("Failed to compute sha512sum of new boot image");
             return ProceedState::Fail;
         }
 
-        std::string hash = util::hex_string(digest, SHA512_DIGEST_LENGTH);
+        std::string hash = util::hex_string(digest.data(), digest.size());
 
         std::unordered_map<std::string, std::string> props;
         checksums_read(&props);

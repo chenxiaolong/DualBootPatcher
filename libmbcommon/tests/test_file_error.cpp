@@ -27,31 +27,27 @@
         ASSERT_EQ((B), (A)); \
     } while (0)
 
+using namespace mb;
+
 TEST(FileErrorTest, CheckErrorCodesComparableToErrorConditions)
 {
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
-                  mb::FileErrorC::InvalidArgument);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::CannotConvertEncoding),
-                  mb::FileErrorC::InvalidArgument);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::InvalidMode),
-                  mb::FileErrorC::InvalidArgument);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::InvalidWhence),
-                  mb::FileErrorC::InvalidArgument);
+    TEST_EQUALITY(make_error_code(FileError::ArgumentOutOfRange),
+                  FileErrorC::InvalidArgument);
+    TEST_EQUALITY(make_error_code(FileError::CannotConvertEncoding),
+                  FileErrorC::InvalidArgument);
 
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::InvalidState),
-                  mb::FileErrorC::InvalidState);
+    TEST_EQUALITY(make_error_code(FileError::InvalidState),
+                  FileErrorC::InvalidState);
 
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedRead),
-                  mb::FileErrorC::Unsupported);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedWrite),
-                  mb::FileErrorC::Unsupported);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedSeek),
-                  mb::FileErrorC::Unsupported);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedTruncate),
-                  mb::FileErrorC::Unsupported);
+    TEST_EQUALITY(make_error_code(FileError::UnsupportedRead),
+                  FileErrorC::Unsupported);
+    TEST_EQUALITY(make_error_code(FileError::UnsupportedWrite),
+                  FileErrorC::Unsupported);
+    TEST_EQUALITY(make_error_code(FileError::UnsupportedSeek),
+                  FileErrorC::Unsupported);
+    TEST_EQUALITY(make_error_code(FileError::UnsupportedTruncate),
+                  FileErrorC::Unsupported);
 
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::IntegerOverflow),
-                  mb::FileErrorC::InternalError);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::BadFileFormat),
-                  mb::FileErrorC::InternalError);
+    TEST_EQUALITY(make_error_code(FileError::IntegerOverflow),
+                  FileErrorC::InternalError);
 }

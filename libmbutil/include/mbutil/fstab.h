@@ -22,9 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 constexpr unsigned long MF_WAIT             = 1 << 0;
@@ -43,8 +41,18 @@ constexpr unsigned long MF_NOTRIM           = 1 << 12;
 constexpr unsigned long MF_FILEENCRYPTION   = 1 << 13;
 constexpr unsigned long MF_FORMATTABLE      = 1 << 14;
 constexpr unsigned long MF_SLOTSELECT       = 1 << 15;
+constexpr unsigned long MF_FORCEFDEORFBE    = 1 << 16;
+constexpr unsigned long MF_LATEMOUNT        = 1 << 17;
+constexpr unsigned long MF_NOFAIL           = 1 << 18;
+constexpr unsigned long MF_VERIFYATBOOT     = 1 << 19;
+constexpr unsigned long MF_MAX_COMP_STREAMS = 1 << 20;
+constexpr unsigned long MF_RESERVEDSIZE     = 1 << 21;
+constexpr unsigned long MF_QUOTA            = 1 << 22;
+constexpr unsigned long MF_ERASEBLKSIZE     = 1 << 23;
+constexpr unsigned long MF_LOGICALBLKSIZE   = 1 << 24;
+constexpr unsigned long MF_AVB              = 1 << 25;
 
-struct fstab_rec
+struct FstabRec
 {
     // Block device to mount
     std::string blk_device;
@@ -66,7 +74,7 @@ struct fstab_rec
     std::string orig_line;
 };
 
-struct twrp_fstab_rec
+struct TwrpFstabRec
 {
     std::vector<std::string> blk_devices;
     std::string mount_point;
@@ -77,8 +85,7 @@ struct twrp_fstab_rec
     std::string orig_line;
 };
 
-std::vector<fstab_rec> read_fstab(const std::string &path);
-std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path);
+std::vector<FstabRec> read_fstab(const std::string &path);
+std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path);
 
-}
 }

@@ -24,6 +24,17 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p18
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Xiaomi Mi3W
   id: cancro
@@ -68,7 +79,6 @@
     default_brightness: 162
     theme: portrait_hdpi
 
-
 - name: Xiaomi Mi4C
   id: libra
   codenames:
@@ -105,7 +115,6 @@
     max_brightness: 255
     default_brightness: 162
     theme: portrait_hdpi
-
 
 - name: Xiaomi Mi4i
   id: ferrari
@@ -144,7 +153,6 @@
     max_brightness: 255
     default_brightness: 162
     theme: portrait_hdpi
-
 
 - name: Xiaomi Mi4S
   id: aqua
@@ -189,7 +197,6 @@
     default_brightness: 162
     theme: portrait_hdpi
 
-
 - name: Xiaomi Mi 5
   id: gemini
   codenames:
@@ -221,6 +228,17 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde37
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 80
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Xiaomi Mi 5s
   id: capricorn
@@ -264,6 +282,17 @@
       - /dev/block/platform/soc/624000.ufshc/sda13
       - /dev/block/platform/soc/624000.ufshc/by-num/p13
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 4095
+    default_brightness: 2047
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Xiaomi Mi 5s Plus
   id: natrium
@@ -296,6 +325,17 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sda13
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 4095
+    default_brightness: 2047
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Xiaomi Mi 6
   id: sagit
@@ -332,6 +372,7 @@
       - /dev/block/sda15
       - /dev/block/platform/soc/1da4000.ufshc/by-num/p15
       - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
+
   boot_ui:
     supported: yes
     graphics_backends:
@@ -343,3 +384,53 @@
     max_brightness: 4095
     brightness_path: /sys/devices/soc/c900000.qcom,mdss_mdp/c900000.qcom,mdss_mdp:qcom,mdss_fb_primary/leds/lcd-backlight/brightness
     theme: portrait_hdpi
+
+- name: Xiaomi Mi 5X
+  id: tiffany
+  codenames:
+    - tiffany
+  architecture: arm64-v8a
+  
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p50
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p21
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p22
+
+- name: Xiaomi Mi Note 3
+  id: jason
+  codenames:
+    - jason
+  architecture: arm64-v8a
+  
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p69
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p67
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p70
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p62
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p63

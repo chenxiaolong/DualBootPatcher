@@ -34,9 +34,7 @@
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/integer.h"
 #include "mbutil/properties.h"
-#include "mbutil/string.h"
 
 #include <android/log.h>
 
@@ -236,7 +234,7 @@ static void wait_forever()
 static void load_other_config()
 {
     // Get Android version (needed for pattern input)
-    tw_android_sdk_version = mb::util::property_file_get_snum<int>(
+    tw_android_sdk_version = mb::util::property_file_get_num<int>(
             "/raw/system/build.prop", "ro.build.version.sdk", 0);
 }
 
@@ -495,7 +493,7 @@ int main(int argc, char *argv[])
     // Exit action
     std::string exit_action;
     DataManager::GetValue(VAR_TW_EXIT_ACTION, exit_action);
-    std::vector<std::string> args = mb::util::split(exit_action, ",");
+    std::vector<std::string> args = mb::split(exit_action, ',');
 
     // Save settings
     DataManager::Flush();

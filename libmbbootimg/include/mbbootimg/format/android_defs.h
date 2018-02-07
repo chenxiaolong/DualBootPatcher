@@ -24,31 +24,27 @@
 
 #include "mbbootimg/header.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
-constexpr char     BOOT_MAGIC[]                 = "ANDROID!";
-constexpr size_t   BOOT_MAGIC_SIZE              = 8;
-constexpr size_t   BOOT_NAME_SIZE               = 16;
-constexpr size_t   BOOT_ARGS_SIZE               = 512;
+constexpr unsigned char BOOT_MAGIC[]                 = "ANDROID!";
+constexpr size_t        BOOT_MAGIC_SIZE              = 8;
+constexpr size_t        BOOT_NAME_SIZE               = 16;
+constexpr size_t        BOOT_ARGS_SIZE               = 512;
 
-constexpr size_t   MAX_HEADER_OFFSET            = 512;
+constexpr size_t        MAX_HEADER_OFFSET            = 512;
 
-constexpr char     SAMSUNG_SEANDROID_MAGIC[]    = "SEANDROIDENFORCE";
-constexpr size_t   SAMSUNG_SEANDROID_MAGIC_SIZE = 16;
+constexpr unsigned char SAMSUNG_SEANDROID_MAGIC[]    = "SEANDROIDENFORCE";
+constexpr size_t        SAMSUNG_SEANDROID_MAGIC_SIZE = 16;
 
-constexpr uint32_t DEFAULT_PAGE_SIZE            = 2048u;
-constexpr uint32_t DEFAULT_OFFSET_BASE          = 0x10000000u;
-constexpr uint32_t DEFAULT_KERNEL_OFFSET        = 0x00008000u;
-constexpr uint32_t DEFAULT_RAMDISK_OFFSET       = 0x01000000u;
-constexpr uint32_t DEFAULT_SECOND_OFFSET        = 0x00f00000u;
-constexpr uint32_t DEFAULT_TAGS_OFFSET          = 0x00000100u;
+constexpr uint32_t      DEFAULT_PAGE_SIZE            = 2048u;
+constexpr uint32_t      DEFAULT_OFFSET_BASE          = 0x10000000u;
+constexpr uint32_t      DEFAULT_KERNEL_OFFSET        = 0x00008000u;
+constexpr uint32_t      DEFAULT_RAMDISK_OFFSET       = 0x01000000u;
+constexpr uint32_t      DEFAULT_SECOND_OFFSET        = 0x00f00000u;
+constexpr uint32_t      DEFAULT_TAGS_OFFSET          = 0x00000100u;
 
-constexpr HeaderFields SUPPORTED_FIELDS         =
+constexpr HeaderFields  SUPPORTED_FIELDS             =
         HeaderField::KernelSize
         | HeaderField::KernelAddress
         | HeaderField::RamdiskSize
@@ -63,6 +59,4 @@ constexpr HeaderFields SUPPORTED_FIELDS         =
         | HeaderField::KernelCmdline
         | HeaderField::Id;
 
-}
-}
 }

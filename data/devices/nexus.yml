@@ -24,6 +24,17 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p7
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Google/LG Nexus 5
   id: hammerhead
@@ -58,6 +69,17 @@
       - /dev/block/platform/msm_sdcc.1/by-name/sdi
       - /dev/block/platform/msm_sdcc.1/by-name/tz
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/mdp.0/qcom\x2cmdss_fb_primary.160/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Google/LG Nexus 5X
   id: bullhead
@@ -90,7 +112,18 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p38
 
-
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_TIMEOUT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 215
+    default_brightness: 100
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Google/Motorola Nexus 6
   id: shamu
@@ -117,6 +150,18 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p35
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_TIMEOUT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 215
+    default_brightness: 80
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
 
 - name: Google/Huawei Nexus 6P
   id: angler
@@ -148,6 +193,15 @@
       - /dev/block/platform/soc.0/f9824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p35
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Google/ASUS Nexus 7 (2012 Wifi)
   id: grouper
@@ -174,6 +228,15 @@
       - /dev/block/platform/sdhci-tegra.3/by-name/SOS
       - /dev/block/mmcblk0p1
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Google/ASUS Nexus 7 (2013 Wifi)
   id: flo
@@ -198,3 +261,15 @@
       - /dev/block/mmcblk0p14
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/msm_fb.591617/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 107
+    theme: portrait_hdpi

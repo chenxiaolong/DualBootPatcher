@@ -19,50 +19,21 @@
 
 #include "mbdevice/device.h"
 
-#include "mbdevice/device_p.h"
 
-
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 Device::Device()
-    : _priv_ptr(new DevicePrivate())
+    : m_base()
+    , m_tw()
 {
-    MB_PRIVATE(Device);
-
-    priv->tw.pixel_format = TwPixelFormat::Default;
-    priv->tw.force_pixel_format = TwForcePixelFormat::None;
-    priv->tw.max_brightness = -1;
-    priv->tw.default_brightness = -1;
+    m_tw.pixel_format = TwPixelFormat::Default;
+    m_tw.force_pixel_format = TwForcePixelFormat::None;
+    m_tw.max_brightness = -1;
+    m_tw.default_brightness = -1;
 }
 
-Device::Device(const Device &device)
-    : _priv_ptr(new DevicePrivate(*device._priv_func()))
-{
-}
-
-Device::Device(Device &&device)
-    : _priv_ptr(std::move(device._priv_ptr))
-{
-    device._priv_ptr.reset(new DevicePrivate());
-}
-
-Device::~Device()
-{
-}
-
-void Device::operator=(const Device &device)
-{
-    MB_PRIVATE(Device);
-    *priv = *device._priv_func();
-}
-
-void Device::operator=(Device &&device)
-{
-    _priv_ptr.swap(device._priv_ptr);
-}
+Device::~Device() = default;
 
 /*!
  * \brief Get the device ID
@@ -71,8 +42,7 @@ void Device::operator=(Device &&device)
  */
 std::string Device::id() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.id;
+    return m_base.id;
 }
 
 /*!
@@ -82,8 +52,7 @@ std::string Device::id() const
  */
 void Device::set_id(std::string id)
 {
-    MB_PRIVATE(Device);
-    priv->base.id = std::move(id);
+    m_base.id = std::move(id);
 }
 
 /*!
@@ -93,8 +62,7 @@ void Device::set_id(std::string id)
  */
 std::vector<std::string> Device::codenames() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.codenames;
+    return m_base.codenames;
 }
 
 /*!
@@ -104,8 +72,7 @@ std::vector<std::string> Device::codenames() const
  */
 void Device::set_codenames(std::vector<std::string> codenames)
 {
-    MB_PRIVATE(Device);
-    priv->base.codenames = std::move(codenames);
+    m_base.codenames = std::move(codenames);
 }
 
 /*!
@@ -115,8 +82,7 @@ void Device::set_codenames(std::vector<std::string> codenames)
  */
 std::string Device::name() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.name;
+    return m_base.name;
 }
 
 /*!
@@ -126,8 +92,7 @@ std::string Device::name() const
  */
 void Device::set_name(std::string name)
 {
-    MB_PRIVATE(Device);
-    priv->base.name = std::move(name);
+    m_base.name = std::move(name);
 }
 
 /*!
@@ -137,8 +102,7 @@ void Device::set_name(std::string name)
  */
 std::string Device::architecture() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.architecture;
+    return m_base.architecture;
 }
 
 /*!
@@ -148,20 +112,17 @@ std::string Device::architecture() const
  */
 void Device::set_architecture(std::string architecture)
 {
-    MB_PRIVATE(Device);
-    priv->base.architecture = std::move(architecture);
+    m_base.architecture = std::move(architecture);
 }
 
 DeviceFlags Device::flags() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.flags;
+    return m_base.flags;
 }
 
 void Device::set_flags(DeviceFlags flags)
 {
-    MB_PRIVATE(Device);
-    priv->base.flags = flags;
+    m_base.flags = flags;
 }
 
 /*!
@@ -171,8 +132,7 @@ void Device::set_flags(DeviceFlags flags)
  */
 std::vector<std::string> Device::block_dev_base_dirs() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.base_dirs;
+    return m_base.base_dirs;
 }
 
 /*!
@@ -182,8 +142,7 @@ std::vector<std::string> Device::block_dev_base_dirs() const
  */
 void Device::set_block_dev_base_dirs(std::vector<std::string> base_dirs)
 {
-    MB_PRIVATE(Device);
-    priv->base.base_dirs = std::move(base_dirs);
+    m_base.base_dirs = std::move(base_dirs);
 }
 
 /*!
@@ -193,8 +152,7 @@ void Device::set_block_dev_base_dirs(std::vector<std::string> base_dirs)
  */
 std::vector<std::string> Device::system_block_devs() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.system_devs;
+    return m_base.system_devs;
 }
 
 /*!
@@ -204,8 +162,7 @@ std::vector<std::string> Device::system_block_devs() const
  */
 void Device::set_system_block_devs(std::vector<std::string> block_devs)
 {
-    MB_PRIVATE(Device);
-    priv->base.system_devs = std::move(block_devs);
+    m_base.system_devs = std::move(block_devs);
 }
 
 /*!
@@ -215,8 +172,7 @@ void Device::set_system_block_devs(std::vector<std::string> block_devs)
  */
 std::vector<std::string> Device::cache_block_devs() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.cache_devs;
+    return m_base.cache_devs;
 }
 
 /*!
@@ -226,8 +182,7 @@ std::vector<std::string> Device::cache_block_devs() const
  */
 void Device::set_cache_block_devs(std::vector<std::string> block_devs)
 {
-    MB_PRIVATE(Device);
-    priv->base.cache_devs = std::move(block_devs);
+    m_base.cache_devs = std::move(block_devs);
 }
 
 /*!
@@ -237,8 +192,7 @@ void Device::set_cache_block_devs(std::vector<std::string> block_devs)
  */
 std::vector<std::string> Device::data_block_devs() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.data_devs;
+    return m_base.data_devs;
 }
 
 /*!
@@ -248,8 +202,7 @@ std::vector<std::string> Device::data_block_devs() const
  */
 void Device::set_data_block_devs(std::vector<std::string> block_devs)
 {
-    MB_PRIVATE(Device);
-    priv->base.data_devs = std::move(block_devs);
+    m_base.data_devs = std::move(block_devs);
 }
 
 /*!
@@ -259,8 +212,7 @@ void Device::set_data_block_devs(std::vector<std::string> block_devs)
  */
 std::vector<std::string> Device::boot_block_devs() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.boot_devs;
+    return m_base.boot_devs;
 }
 
 /*!
@@ -270,8 +222,7 @@ std::vector<std::string> Device::boot_block_devs() const
  */
 void Device::set_boot_block_devs(std::vector<std::string> block_devs)
 {
-    MB_PRIVATE(Device);
-    priv->base.boot_devs = std::move(block_devs);
+    m_base.boot_devs = std::move(block_devs);
 }
 
 /*!
@@ -281,8 +232,7 @@ void Device::set_boot_block_devs(std::vector<std::string> block_devs)
  */
 std::vector<std::string> Device::recovery_block_devs() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.recovery_devs;
+    return m_base.recovery_devs;
 }
 
 /*!
@@ -292,8 +242,7 @@ std::vector<std::string> Device::recovery_block_devs() const
  */
 void Device::set_recovery_block_devs(std::vector<std::string> block_devs)
 {
-    MB_PRIVATE(Device);
-    priv->base.recovery_devs = std::move(block_devs);
+    m_base.recovery_devs = std::move(block_devs);
 }
 
 /*!
@@ -303,8 +252,7 @@ void Device::set_recovery_block_devs(std::vector<std::string> block_devs)
  */
 std::vector<std::string> Device::extra_block_devs() const
 {
-    MB_PRIVATE(const Device);
-    return priv->base.extra_devs;
+    return m_base.extra_devs;
 }
 
 /*!
@@ -314,282 +262,248 @@ std::vector<std::string> Device::extra_block_devs() const
  */
 void Device::set_extra_block_devs(std::vector<std::string> block_devs)
 {
-    MB_PRIVATE(Device);
-    priv->base.extra_devs = std::move(block_devs);
+    m_base.extra_devs = std::move(block_devs);
 }
 
 bool Device::tw_supported() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.supported;
+    return m_tw.supported;
 }
 
 void Device::set_tw_supported(bool supported)
 {
-    MB_PRIVATE(Device);
-    priv->tw.supported = supported;
+    m_tw.supported = supported;
 }
 
 TwFlags Device::tw_flags() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.flags;
+    return m_tw.flags;
 }
 
 void Device::set_tw_flags(TwFlags flags)
 {
-    MB_PRIVATE(Device);
-    priv->tw.flags = flags;
+    m_tw.flags = flags;
 }
 
 TwPixelFormat Device::tw_pixel_format() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.pixel_format;
+    return m_tw.pixel_format;
 }
 
 void Device::set_tw_pixel_format(TwPixelFormat format)
 {
-    MB_PRIVATE(Device);
-    priv->tw.pixel_format = format;
+    m_tw.pixel_format = format;
 }
 
 TwForcePixelFormat Device::tw_force_pixel_format() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.force_pixel_format;
+    return m_tw.force_pixel_format;
 }
 
 void Device::set_tw_force_pixel_format(TwForcePixelFormat format)
 {
-    MB_PRIVATE(Device);
-    priv->tw.force_pixel_format = format;
+    m_tw.force_pixel_format = format;
 }
 
 int Device::tw_overscan_percent() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.overscan_percent;
+    return m_tw.overscan_percent;
 }
 
 void Device::set_tw_overscan_percent(int percent)
 {
-    MB_PRIVATE(Device);
-    priv->tw.overscan_percent = percent;
+    m_tw.overscan_percent = percent;
 }
 
 int Device::tw_default_x_offset() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.default_x_offset;
+    return m_tw.default_x_offset;
 }
 
 void Device::set_tw_default_x_offset(int offset)
 {
-    MB_PRIVATE(Device);
-    priv->tw.default_x_offset = offset;
+    m_tw.default_x_offset = offset;
 }
 
 int Device::tw_default_y_offset() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.default_y_offset;
+    return m_tw.default_y_offset;
 }
 
 void Device::set_tw_default_y_offset(int offset)
 {
-    MB_PRIVATE(Device);
-    priv->tw.default_y_offset = offset;
+    m_tw.default_y_offset = offset;
 }
 
 std::string Device::tw_brightness_path() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.brightness_path;
+    return m_tw.brightness_path;
 }
 
 void Device::set_tw_brightness_path(std::string path)
 {
-    MB_PRIVATE(Device);
-    priv->tw.brightness_path = std::move(path);
+    m_tw.brightness_path = std::move(path);
 }
 
 std::string Device::tw_secondary_brightness_path() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.secondary_brightness_path;
+    return m_tw.secondary_brightness_path;
 }
 
 void Device::set_tw_secondary_brightness_path(std::string path)
 {
-    MB_PRIVATE(Device);
-    priv->tw.secondary_brightness_path = std::move(path);
+    m_tw.secondary_brightness_path = std::move(path);
 }
 
 int Device::tw_max_brightness() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.max_brightness;
+    return m_tw.max_brightness;
 }
 
 void Device::set_tw_max_brightness(int value)
 {
-    MB_PRIVATE(Device);
-    priv->tw.max_brightness = value;
+    m_tw.max_brightness = value;
 }
 
 int Device::tw_default_brightness() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.default_brightness;
+    return m_tw.default_brightness;
 }
 
 void Device::set_tw_default_brightness(int value)
 {
-    MB_PRIVATE(Device);
-    priv->tw.default_brightness = value;
+    m_tw.default_brightness = value;
 }
 
 std::string Device::tw_battery_path() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.battery_path;
+    return m_tw.battery_path;
 }
 
 void Device::set_tw_battery_path(std::string path)
 {
-    MB_PRIVATE(Device);
-    priv->tw.battery_path = std::move(path);
+    m_tw.battery_path = std::move(path);
 }
 
 std::string Device::tw_cpu_temp_path() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.cpu_temp_path;
+    return m_tw.cpu_temp_path;
 }
 
 void Device::set_tw_cpu_temp_path(std::string path)
 {
-    MB_PRIVATE(Device);
-    priv->tw.cpu_temp_path = std::move(path);
+    m_tw.cpu_temp_path = std::move(path);
 }
 
 std::string Device::tw_input_blacklist() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.input_blacklist;
+    return m_tw.input_blacklist;
 }
 
 void Device::set_tw_input_blacklist(std::string blacklist)
 {
-    MB_PRIVATE(Device);
-    priv->tw.input_blacklist = std::move(blacklist);
+    m_tw.input_blacklist = std::move(blacklist);
 }
 
 std::string Device::tw_input_whitelist() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.input_whitelist;
+    return m_tw.input_whitelist;
 }
 
 void Device::set_tw_input_whitelist(std::string whitelist)
 {
-    MB_PRIVATE(Device);
-    priv->tw.input_whitelist = std::move(whitelist);
+    m_tw.input_whitelist = std::move(whitelist);
 }
 
 std::vector<std::string> Device::tw_graphics_backends() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.graphics_backends;
+    return m_tw.graphics_backends;
 }
 
 void Device::set_tw_graphics_backends(std::vector<std::string> backends)
 {
-    MB_PRIVATE(Device);
-    priv->tw.graphics_backends = std::move(backends);
+    m_tw.graphics_backends = std::move(backends);
 }
 
 std::string Device::tw_theme() const
 {
-    MB_PRIVATE(const Device);
-    return priv->tw.theme;
+    return m_tw.theme;
 }
 
 void Device::set_tw_theme(std::string theme)
 {
-    MB_PRIVATE(Device);
-    priv->tw.theme = std::move(theme);
+    m_tw.theme = std::move(theme);
 }
 
 
 ValidateFlags Device::validate() const
 {
-    MB_PRIVATE(const Device);
-
     ValidateFlags flags = 0;
 
-    if (priv->base.id.empty()) {
+    if (m_base.id.empty()) {
         flags |= ValidateFlag::MissingId;
     }
 
-    if (priv->base.codenames.empty()) {
+    if (m_base.codenames.empty()) {
         flags |= ValidateFlag::MissingCodenames;
     }
 
-    if (priv->base.name.empty()) {
+    if (m_base.name.empty()) {
         flags |= ValidateFlag::MissingName;
     }
 
-    if (priv->base.architecture.empty()) {
+    if (m_base.architecture.empty()) {
         flags |= ValidateFlag::MissingArchitecture;
-    } else if (priv->base.architecture != ARCH_ARMEABI_V7A
-            && priv->base.architecture != ARCH_ARM64_V8A
-            && priv->base.architecture != ARCH_X86
-            && priv->base.architecture != ARCH_X86_64) {
+    } else if (m_base.architecture != ARCH_ARMEABI_V7A
+            && m_base.architecture != ARCH_ARM64_V8A
+            && m_base.architecture != ARCH_X86
+            && m_base.architecture != ARCH_X86_64) {
         flags |= ValidateFlag::InvalidArchitecture;
     }
 
-    if ((priv->base.flags & DEVICE_FLAG_MASK) != priv->base.flags) {
+    if ((m_base.flags & DEVICE_FLAG_MASK) != m_base.flags) {
         flags |= ValidateFlag::InvalidFlags;
     }
 
-    if (priv->base.system_devs.empty()) {
+    if (m_base.system_devs.empty()) {
         flags |= ValidateFlag::MissingSystemBlockDevs;
     }
 
-    if (priv->base.cache_devs.empty()) {
+    if (m_base.cache_devs.empty()) {
         flags |= ValidateFlag::MissingCacheBlockDevs;
     }
 
-    if (priv->base.data_devs.empty()) {
+    if (m_base.data_devs.empty()) {
         flags |= ValidateFlag::MissingDataBlockDevs;
     }
 
-    if (priv->base.boot_devs.empty()) {
+    if (m_base.boot_devs.empty()) {
         flags |= ValidateFlag::MissingBootBlockDevs;
     }
 
-    //if (priv->base.recovery_devs.empty()) {
+    //if (m_base.recovery_devs.empty()) {
     //    flags |= ValidateFlag::MissingRecoveryBlockDevs;
     //}
 
-    if (priv->tw.supported) {
-        if ((priv->tw.flags & TW_FLAG_MASK) != priv->tw.flags) {
+    if (m_tw.supported) {
+        if ((m_tw.flags & TW_FLAG_MASK) != m_tw.flags) {
             flags |= ValidateFlag::InvalidBootUiFlags;
         }
 
-        if (priv->tw.theme.empty()) {
+        if (m_tw.theme.empty()) {
             flags |= ValidateFlag::MissingBootUiTheme;
         }
 
-        if (priv->tw.graphics_backends.empty()) {
+        if (m_tw.graphics_backends.empty()) {
             flags |= ValidateFlag::MissingBootUiGraphicsBackends;
         }
     }
 
     return flags;
 }
+
+namespace detail
+{
 
 bool BaseOptions::operator==(const BaseOptions &other) const
 {
@@ -628,13 +542,11 @@ bool TwOptions::operator==(const TwOptions &other) const
             && theme == other.theme;
 }
 
+}
+
 bool Device::operator==(const Device &other) const
 {
-    MB_PRIVATE(const Device);
-
-    return priv->base == other._priv_func()->base
-            && priv->tw == other._priv_func()->tw;
+    return m_base == other.m_base && m_tw == other.m_tw;
 }
 
-}
 }

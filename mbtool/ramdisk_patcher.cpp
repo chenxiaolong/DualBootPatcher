@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/copy.h"
@@ -88,42 +89,58 @@ static bool _rp_patch_default_prop(const std::string &dir,
                                    const std::string &device_id,
                                    bool use_fuse_exfat)
 {
-    std::string tmp_path;
-    int tmp_fd = -1;
-    FILE *fp_in = nullptr;
-    FILE *fp_out = nullptr;
-    char *buf = nullptr;
-    size_t buf_size = 0;
-    ssize_t n;
-    bool ret = false;
-
     std::string path(dir);
     path += "/default.prop";
 
-    tmp_path = format("%s.XXXXXX", path.c_str());
+    std::string tmp_path = format("%s.XXXXXX", path.c_str());
 
-    tmp_fd = mkstemp(&tmp_path[0]);
+    const int tmp_fd = mkstemp(tmp_path.data());
     if (tmp_fd < 0) {
         LOGE("%s: Failed to create temporary file: %s",
              path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
 
-    fp_in = fopen(path.c_str(), "rb");
+    auto unlink_tmp_path = finally([&tmp_path] {
+        unlink(tmp_path.c_str());
+    });
+
+    auto close_tmp_fd = finally([&tmp_fd] {
+        close(tmp_fd);
+    });
+
+    FILE *fp_in = fopen(path.c_str(), "rb");
     if (!fp_in) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
 
-    fp_out = fdopen(tmp_fd, "wb");
+    auto close_fp_in = finally([&fp_in] {
+        fclose(fp_in);
+    });
+
+    FILE *fp_out = fdopen(tmp_fd, "wb");
     if (!fp_out) {
         LOGE("%s: Failed to open for writing: %s",
              tmp_path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
 
-    tmp_fd = -1;
+    // fp_out will automatically close the fd
+    close_tmp_fd.dismiss();
+
+    auto close_fp_out = finally([&fp_out] {
+        fclose(fp_out);
+    });
+
+    char *buf = nullptr;
+    size_t buf_size = 0;
+    ssize_t n;
+
+    auto free_buf = finally([&buf] {
+        free(buf);
+    });
 
     while ((n = getline(&buf, &buf_size, fp_in)) >= 0) {
         // Remove old multiboot properties
@@ -131,10 +148,11 @@ static bool _rp_patch_default_prop(const std::string &dir,
             continue;
         }
 
-        if (fwrite(buf, 1, n, fp_out) != static_cast<size_t>(n)) {
+        if (fwrite(buf, 1, static_cast<size_t>(n), fp_out)
+                != static_cast<size_t>(n)) {
             LOGE("%s: Failed to write file: %s",
                  tmp_path.c_str(), strerror(errno));
-            goto done;
+            return false;
         }
     }
 
@@ -145,39 +163,23 @@ static bool _rp_patch_default_prop(const std::string &dir,
                        use_fuse_exfat ? "true" : "false") < 0) {
         LOGE("%s: Failed to write properties: %s",
              tmp_path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
+
+    // Manually close file to ensure we catch write errors
+    close_fp_out.dismiss();
 
     if (fclose(fp_out) < 0) {
         LOGE("%s: Failed to close file: %s",
              tmp_path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
-
-    fp_out = nullptr;
 
     if (!InstallerUtil::replace_file(path.c_str(), tmp_path)) {
-        goto done;
+        return false;
     }
 
-    ret = true;
-
-done:
-    if (tmp_fd >= 0) {
-        close(tmp_fd);
-    }
-    if (fp_in) {
-        fclose(fp_in);
-    }
-    if (fp_out) {
-        fclose(fp_out);
-    }
-
-    unlink(tmp_path.c_str());
-
-    free(buf);
-
-    return ret;
+    return true;
 }
 
 std::function<RamdiskPatcherFn>
@@ -261,14 +263,32 @@ rp_symlink_fuse_exfat()
     return _rp_symlink_fuse_exfat;
 }
 
-static bool _rp_symlink_init(const std::string &dir)
+static bool _is_linked_to_mbtool(const std::string &path)
+{
+    std::string link_target;
+
+    if (!util::read_link(path, link_target)) {
+        return false;
+    }
+
+    auto pieces = util::path_split(link_target);
+
+    if (std::find(pieces.begin(), pieces.end(), "mbtool") == pieces.end()) {
+        return false;
+    }
+
+    return true;
+}
+
+static std::string _get_init_target(const std::string &dir)
 {
     std::string target{dir};
     target += "/init";
-    std::string real_init{dir};
-    real_init += "/init.orig";
-
-    struct stat sb;
+    std::string sony_init_wrapper(dir);
+    sony_init_wrapper += "/sbin/init_sony";
+    std::string sony_real_init(dir);
+    sony_real_init += "/init.real";
+    std::string sony_symlink_target;
 
     // If this is a Sony device that doesn't use sbin/ramdisk.cpio for the
     // combined ramdisk, we'll have to explicitly allow their init executable to
@@ -278,40 +298,41 @@ static bool _rp_symlink_init(const std::string &dir)
     // See:
     // * https://github.com/chenxiaolong/DualBootPatcher/issues/533
     // * https://github.com/sonyxperiadev/device-sony-common-init
-    {
-        std::string sony_init_wrapper(dir);
-        sony_init_wrapper += "/sbin/init_sony";
-        std::string sony_real_init(dir);
-        sony_real_init += "/init.real";
-        std::string sony_symlink_target;
 
-        // Check that /init is a symlink and that /init.real exists
-        if (lstat(target.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)
-                && util::read_link(target, sony_symlink_target)
-                && lstat(sony_real_init.c_str(), &sb) == 0) {
-            std::vector<std::string> haystack{util::path_split(sony_symlink_target)};
-            std::vector<std::string> needle{util::path_split("sbin/init_sony")};
+    struct stat sb;
 
-            util::normalize_path(haystack);
+    // Check that /init is a symlink and that /init.real exists
+    if (lstat(target.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)
+            && util::read_link(target, sony_symlink_target)
+            && lstat(sony_real_init.c_str(), &sb) == 0) {
+        auto haystack = util::path_split(sony_symlink_target);
+        auto needle = util::path_split("sbin/init_sony");
 
-            // Check that init points to some path with "sbin/init_sony" in it
-            auto const it = std::search(haystack.cbegin(), haystack.cend(),
-                                        needle.cbegin(), needle.cend());
-            if (it != haystack.cend()) {
-                target.swap(sony_real_init);
-            }
+        util::normalize_path(haystack);
+
+        // Check that init points to some path with "sbin/init_sony" in it
+        auto const it = std::search(haystack.cbegin(), haystack.cend(),
+                                    needle.cbegin(), needle.cend());
+        if (it != haystack.cend()) {
+            target.swap(sony_real_init);
         }
     }
 
-    LOGD("[init] Target init path: %s", target.c_str());
-    LOGD("[init] Real init path: %s", real_init.c_str());
+    return target;
+}
 
-    if (lstat(real_init.c_str(), &sb) < 0) {
-        if (errno != ENOENT) {
-            LOGE("%s: Failed to access file: %s",
-                 real_init.c_str(), strerror(errno));
-            return false;
-        }
+static bool _rp_symlink_init(const std::string &dir)
+{
+    std::string real_init{dir};
+    real_init += "/init.orig";
+
+    auto target = _get_init_target(dir);
+    LOGD("[init] Target init path: %s", target.c_str());
+
+    // Move /init to /init.orig if it's not a symlink to mbtool
+
+    if (!_is_linked_to_mbtool(target)) {
+        LOGD("[init] Moving real init and symlinking init to mbtool");
 
         if (rename(target.c_str(), real_init.c_str()) < 0) {
             LOGE("%s: Failed to rename file: %s",
@@ -333,6 +354,35 @@ std::function<RamdiskPatcherFn>
 rp_symlink_init()
 {
     return _rp_symlink_init;
+}
+
+static bool _rp_restore_init(const std::string &dir)
+{
+    std::string real_init{dir};
+    real_init += "/init.orig";
+
+    auto target = _get_init_target(dir);
+    LOGD("[init] Target init path: %s", target.c_str());
+
+    // Move /init.orig to /init if /init is a symlink to mbtool
+
+    if (_is_linked_to_mbtool(target)) {
+        LOGD("[init] Restoring real init to init");
+
+        if (rename(real_init.c_str(), target.c_str()) < 0) {
+            LOGE("%s: Failed to rename file: %s",
+                 real_init.c_str(), strerror(errno));
+            return false;
+        }
+    }
+
+    return true;
+}
+
+std::function<RamdiskPatcherFn>
+rp_restore_init()
+{
+    return _rp_restore_init;
 }
 
 static bool _rp_add_device_json(const std::string &dir,

@@ -17,6 +17,15 @@ find_package_handle_standard_args(
 
 if(LIBSEPOL_FOUND)
     set(LIBSEPOL_LIBRARIES ${LIBSEPOL_LIBRARY})
+
+    add_library(LibSepol::LibSepol UNKNOWN IMPORTED)
+    set_target_properties(
+        LibSepol::LibSepol
+        PROPERTIES
+        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+        IMPORTED_LOCATION "${LIBSEPOL_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${LIBSEPOL_INCLUDE_DIR}"
+    )
 endif()
 
 mark_as_advanced(LIBSEPOL_INCLUDE_DIR LIBSEPOL_LIBRARY)

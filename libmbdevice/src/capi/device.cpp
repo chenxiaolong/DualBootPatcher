@@ -226,7 +226,7 @@ SETTER(uint32_t, tw_flags)
 GETTER(uint16_t, tw_pixel_format)
 {
     CCAST(device);
-    return static_cast<std::underlying_type<TwPixelFormat>::type>(
+    return static_cast<std::underlying_type_t<TwPixelFormat>>(
             d->tw_pixel_format());
 }
 
@@ -239,7 +239,7 @@ SETTER(uint16_t, tw_pixel_format)
 GETTER(uint16_t, tw_force_pixel_format)
 {
     CCAST(device);
-    return static_cast<std::underlying_type<TwForcePixelFormat>::type>(
+    return static_cast<std::underlying_type_t<TwForcePixelFormat>>(
             d->tw_force_pixel_format());
 }
 

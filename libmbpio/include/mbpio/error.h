@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,7 +21,9 @@
 
 #include <string>
 
-namespace io
+#include "mbcommon/common.h"
+
+namespace mb::io
 {
 
 enum class Error
@@ -31,10 +33,10 @@ enum class Error
     PlatformError
 };
 
-Error lastError();
-std::string lastErrorString();
+MB_EXPORT Error last_error();
+MB_EXPORT std::string last_error_string();
 
 // TODO: Put in private header
-void setLastError(Error error, std::string errorString);
+MB_EXPORT void set_last_error(Error error, std::string error_string);
 
 }

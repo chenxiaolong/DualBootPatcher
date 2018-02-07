@@ -1,28 +1,30 @@
 buildscript {
+    ext.kotlin_version = '1.2.20'
+
     repositories {
         jcenter()
+        google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 repositories {
     jcenter()
+    google()
     maven { url "https://jitpack.io" }
 }
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.3"
+    compileSdkVersion 27
+    buildToolsVersion "27.0.3"
 
     packagingOptions {
-        // Both commons-lang3 and common-io want to include these file
-        exclude 'META-INF/LICENSE.txt'
-        exclude 'META-INF/NOTICE.txt'
-
         // CMake will strip the libraries automatically for release builds
         doNotStrip '**.so'
     }
@@ -79,6 +81,8 @@ android {
             shrinkResources true
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
+            matchingFallbacks = ['release']
         }
     }
 
@@ -134,25 +138,31 @@ readSigningConfig('@_DEBUG_SIGN_CONFIG_PATH@', android.signingConfigs.debug)
 readSigningConfig('@_CI_SIGN_CONFIG_PATH@', android.signingConfigs.ci)
 
 dependencies {
-    compile 'com.android.support:support-v4:25.3.1'
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.android.support:cardview-v7:25.3.1'
-    compile 'com.android.support:palette-v7:25.3.1'
-    compile 'com.android.support:design:25.3.1'
-    compile 'com.android.support:recyclerview-v7:25.3.1'
-    compile 'com.android.support:support-v13:25.3.1'
-    compile 'com.google.code.gson:gson:2.7'
-    compile 'com.squareup.picasso:picasso:2.5.2'
-    compile 'com.afollestad.material-dialogs:core:0.8.6.1'
-    compile 'com.afollestad.material-dialogs:commons:0.8.6.1'
-    compile 'com.github.clans:fab:1.6.4'
-    compile 'org.apache.commons:commons-lang3:3.4'
-    compile 'commons-io:commons-io:2.4'
-    compile 'net.java.dev.jna:jna:4.4.0@aar'
-    compile project(":emulatorview")
-    compile project(":rootshell")
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5.1'
-    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.1'
-    ciCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.1'
+    implementation "android.arch.lifecycle:extensions:1.1.0"
+    annotationProcessor "android.arch.lifecycle:compiler:1.1.0"
+
+    implementation 'com.android.support:support-v4:27.0.2'
+    implementation 'com.android.support:appcompat-v7:27.0.2'
+    implementation 'com.android.support:cardview-v7:27.0.2'
+    implementation 'com.android.support:palette-v7:27.0.2'
+    implementation 'com.android.support:preference-v7:27.0.2'
+    implementation 'com.android.support:preference-v14:27.0.2'
+    implementation 'com.android.support:design:27.0.2'
+    implementation 'com.android.support:recyclerview-v7:27.0.2'
+    implementation 'com.android.support:support-v13:27.0.2'
+    implementation 'com.google.code.gson:gson:2.8.0'
+    implementation 'com.squareup.picasso:picasso:2.5.2'
+    implementation 'com.afollestad.material-dialogs:core:0.9.6.0'
+    implementation 'com.afollestad.material-dialogs:commons:0.9.6.0'
+    implementation 'com.github.clans:fab:1.6.4'
+    implementation 'org.apache.commons:commons-text:1.2'
+    implementation 'net.java.dev.jna:jna:4.5.0@aar'
+    implementation project(":emulatorview")
+    implementation project(":rootshell")
+
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.5.4'
+    releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
+    ciImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
 }

@@ -55,7 +55,7 @@ If you don't have docker installed, the following packages are needed:
     If you're making a portable build, use `cpack` to generate an archive.
 
     ```sh
-    cpack -G ZIP # Or TBZ2, TGZ, TXZ, TZ, etc.
+    cpack
     ```
 
     Note that the `.so`/`.dylib` dependencies have to be manually added to the resulting archive in order to be used on other machines.

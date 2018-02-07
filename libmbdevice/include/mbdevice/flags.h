@@ -21,9 +21,7 @@
 
 #include "mbcommon/flags.h"
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 constexpr char ARCH_ARMEABI_V7A[]   = "armeabi-v7a";
@@ -39,7 +37,7 @@ enum class DeviceFlag : uint32_t
 MB_DECLARE_FLAGS(DeviceFlags, DeviceFlag)
 MB_DECLARE_OPERATORS_FOR_FLAGS(DeviceFlags)
 
-constexpr std::underlying_type<DeviceFlag>::type DEVICE_FLAG_MASK = (1 << 2) - 1;
+constexpr std::underlying_type_t<DeviceFlag> DEVICE_FLAG_MASK = (1 << 2) - 1;
 
 enum class TwFlag : uint32_t
 {
@@ -64,7 +62,7 @@ enum class TwFlag : uint32_t
 MB_DECLARE_FLAGS(TwFlags, TwFlag)
 MB_DECLARE_OPERATORS_FOR_FLAGS(TwFlags)
 
-constexpr std::underlying_type<TwFlag>::type TW_FLAG_MASK = (1 << 17) - 1;
+constexpr std::underlying_type_t<TwFlag> TW_FLAG_MASK = (1 << 17) - 1;
 
 enum class TwPixelFormat : uint16_t
 {
@@ -101,5 +99,4 @@ enum class ValidateFlag : uint32_t
 MB_DECLARE_FLAGS(ValidateFlags, ValidateFlag)
 MB_DECLARE_OPERATORS_FOR_FLAGS(ValidateFlags)
 
-}
 }

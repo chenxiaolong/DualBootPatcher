@@ -20,16 +20,16 @@
 #include "mbutil/directory.h"
 
 #include <vector>
+
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+
 #include <sys/stat.h>
 
 #include "mbutil/path.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 bool mkdir_recursive(const std::string &dir, mode_t mode)
@@ -94,5 +94,4 @@ bool mkdir_parent(const std::string &path, mode_t perms)
     return true;
 }
 
-}
 }

@@ -18,6 +18,8 @@
 #include "initwrapper/cutils/uevent.h"
 
 #include <cerrno>
+#include <cstring>
+
 #include <strings.h>
 #include <sys/socket.h>
 #include <unistd.h>

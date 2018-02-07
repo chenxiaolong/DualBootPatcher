@@ -19,17 +19,20 @@
 
 #pragma once
 
-#include "mbcommon/guard_p.h"
+#include <cstdio>
 
-#include "mbcommon/file/posix.h"
-#include "mbcommon/file_p.h"
+#include <sys/stat.h>
 
 /*! \cond INTERNAL */
 namespace mb
 {
+namespace detail
+{
 
 struct PosixFileFuncs
 {
+    virtual ~PosixFileFuncs();
+
     // sys/stat.h
     virtual int fn_fstat(int fildes, struct stat *buf) = 0;
 
@@ -50,42 +53,9 @@ struct PosixFileFuncs
                              FILE *stream) = 0;
 
     // unistd.h
-    virtual int fn_ftruncate64(int fd, off_t length) = 0;
+    virtual int fn_ftruncate64(int fd, off64_t length) = 0;
 };
 
-class PosixFilePrivate : public FilePrivate
-{
-public:
-    PosixFilePrivate();
-    virtual ~PosixFilePrivate();
-
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(PosixFilePrivate)
-
-    void clear();
-
-#ifdef _WIN32
-    static const wchar_t * convert_mode(FileOpenMode mode);
-#else
-    static const char * convert_mode(FileOpenMode mode);
-#endif
-
-    PosixFileFuncs *funcs;
-
-    FILE *fp;
-    bool owned;
-#ifdef _WIN32
-    std::wstring filename;
-    const wchar_t *mode;
-#else
-    std::string filename;
-    const char *mode;
-#endif
-
-    bool can_seek;
-
-protected:
-    PosixFilePrivate(PosixFileFuncs *funcs);
-};
-
+}
 }
 /*! \endcond */

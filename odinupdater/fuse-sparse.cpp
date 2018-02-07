@@ -21,6 +21,7 @@
 
 #include <mutex>
 #include <new>
+#include <optional>
 
 #include <cerrno>
 #include <cinttypes>
@@ -30,6 +31,13 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+
+#ifdef __clang__
+#  pragma GCC diagnostic push
+#  if __has_warning("-Wdocumentation")
+#    pragma GCC diagnostic ignored "-Wdocumentation"
+#  endif
+#endif
 
 // fuse
 // We have to define _FILE_OFFSET_BITS because <fuse/fuse_common.h> requires it.
@@ -42,6 +50,10 @@
 #include <fuse/fuse.h>
 #ifdef __ANDROID__
 #  undef _FILE_OFFSET_BITS
+#endif
+
+#ifdef __clang__
+#  pragma GCC diagnostic pop
 #endif
 
 // libmbcommon
@@ -67,6 +79,16 @@ struct context
     std::mutex mutex;
 };
 
+static std::optional<int> extract_errno(std::error_code ec)
+{
+    if (ec.category() == std::generic_category()
+            || ec.category() == std::system_category()) {
+        return ec.value();
+    }
+
+    return {};
+}
+
 /*!
  * \brief Open callback for fuse
  */
@@ -83,24 +105,21 @@ static int fuse_open(const char *path, fuse_file_info *fi)
         return -ENOMEM;
     }
 
-    if (!ctx->source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)) {
+    auto ret = ctx->source_file.open(source_fd_path,
+                                     mb::FileOpenMode::ReadOnly);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
-                source_fd_path, ctx->source_file.error_string().c_str());
-        auto error = ctx->source_file.error();
+                source_fd_path, ret.error().message().c_str());
         delete ctx;
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+        return -extract_errno(ret.error()).value_or(EIO);
     }
 
-    if (!ctx->sparse_file.open(&ctx->source_file)) {
+    ret = ctx->sparse_file.open(&ctx->source_file);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open sparse file: %s\n",
-                source_fd_path, ctx->sparse_file.error_string().c_str());
-        auto error = ctx->sparse_file.error();
+                source_fd_path, ret.error().message().c_str());
         delete ctx;
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+        return -extract_errno(ret.error()).value_or(EIO);
     }
 
     fi->fh = reinterpret_cast<uint64_t>(ctx);
@@ -115,8 +134,7 @@ static int fuse_release(const char *path, fuse_file_info *fi)
 {
     (void) path;
 
-    context *ctx = reinterpret_cast<context *>(fi->fh);
-    delete ctx;
+    delete reinterpret_cast<context *>(fi->fh);
 
     return 0;
 }
@@ -131,22 +149,17 @@ static int fuse_read_locked(context *ctx, char *buf, size_t size,
                             OFF_T offset)
 {
     // Seek to position
-    if (!ctx->sparse_file.seek(offset, SEEK_SET, nullptr)) {
-        auto error = ctx->sparse_file.error();
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+    auto new_offset = ctx->sparse_file.seek(offset, SEEK_SET);
+    if (!new_offset) {
+        return -extract_errno(new_offset.error()).value_or(EIO);
     }
 
-    size_t n;
-    if (!ctx->sparse_file.read(buf, size, n)) {
-        auto error = ctx->sparse_file.error();
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+    auto n = ctx->sparse_file.read(buf, size);
+    if (!n) {
+        return -extract_errno(n.error()).value_or(EIO);
     }
 
-    return n;
+    return static_cast<int>(n.value());
 }
 
 /*!
@@ -171,7 +184,7 @@ static int fuse_getattr(const char *path, struct stat *stbuf)
     (void) path;
 
     stbuf->st_mode = S_IFREG | 0444;
-    stbuf->st_size = sparse_size;
+    stbuf->st_size = static_cast<OFF_T>(sparse_size);
 
     return 0;
 }
@@ -184,22 +197,18 @@ static int get_sparse_file_size()
     mb::StandardFile source_file;
     mb::sparse::SparseFile sparse_file;
 
-    if (!source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)) {
+    auto ret = source_file.open(source_fd_path, mb::FileOpenMode::ReadOnly);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
-                source_fd_path, source_file.error_string().c_str());
-        auto error = source_file.error();
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+                source_fd_path, ret.error().message().c_str());
+        return -extract_errno(ret.error()).value_or(EIO);
     }
 
-    if (!sparse_file.open(&source_file)) {
+    ret = sparse_file.open(&source_file);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open sparse file: %s\n",
-                source_fd_path, sparse_file.error_string().c_str());
-        auto error = sparse_file.error();
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+                source_fd_path, ret.error().message().c_str());
+        return -extract_errno(ret.error()).value_or(EIO);
     }
 
     sparse_size = sparse_file.size();
@@ -299,8 +308,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    fuse_operations fuse_oper;
-    memset(&fuse_oper, 0, sizeof(fuse_oper));
+    fuse_operations fuse_oper = {};
     fuse_oper.getattr = fuse_getattr;
     fuse_oper.open    = fuse_open;
     fuse_oper.read    = fuse_read;

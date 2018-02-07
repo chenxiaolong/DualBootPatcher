@@ -21,9 +21,7 @@
 
 #include <string>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 bool reboot_via_framework(bool show_confirm_dialog);
@@ -32,5 +30,4 @@ bool reboot_via_syscall(const std::string &reboot_arg);
 bool shutdown_via_init();
 bool shutdown_via_syscall();
 
-}
 }

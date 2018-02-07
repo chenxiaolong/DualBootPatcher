@@ -39,29 +39,29 @@
 namespace mb
 {
 
-class CopySystem : public util::FTSWrapper {
+class CopySystem : public util::FtsWrapper {
 public:
     CopySystem(std::string path, std::string target)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
+        : FtsWrapper(path, util::FtsFlag::GroupSpecialFiles),
         _target(std::move(target))
     {
     }
 
-    virtual int on_changed_path() override
+    Actions on_changed_path() override
     {
         // We'll set attrs and xattrs after visiting children
         if (_curr->fts_level == 0) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
 
         // We only care about the first level
         if (_curr->fts_level != 1) {
-            return Action::FTS_Next;
+            return Action::Next;
         }
 
         // Don't copy multiboot directory
         if (strcmp(_curr->fts_name, "multiboot") == 0) {
-            return Action::FTS_Skip;
+            return Action::Skip;
         }
 
         _curtgtpath.clear();
@@ -69,66 +69,67 @@ public:
         _curtgtpath += "/";
         _curtgtpath += _curr->fts_name;
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
         if (_curr->fts_level == 0) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
 
         // _target is the correct parameter here (or pathbuf and
-        // COPY_EXCLUDE_TOP_LEVEL flag)
+        // CopyFlag::ExcludeTopLevel flag)
         if (!util::copy_dir(_curr->fts_accpath, _target,
-                            util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-            format(_error_msg, "%s: Failed to copy directory: %s",
-                   _curr->fts_path, strerror(errno));
+                            util::CopyFlag::CopyAttributes
+                          | util::CopyFlag::CopyXattrs)) {
+            _error_msg = format("%s: Failed to copy directory: %s",
+                                _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
-            return Action::FTS_Skip | Action::FTS_Fail;
+            return Action::Skip | Action::Fail;
         }
-        return Action::FTS_Skip;
+        return Action::Skip;
     }
 
-    virtual int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
         if (_curr->fts_level == 0) {
             if (!util::copy_stat(_curr->fts_accpath, _target)) {
                 LOGE("%s: Failed to copy attributes: %s",
                      _target.c_str(), strerror(errno));
-                return Action::FTS_Fail;
+                return Action::Fail;
             }
             if (!util::copy_xattrs(_curr->fts_accpath, _target)) {
                 LOGE("%s: Failed to copy xattrs: %s",
                      _target.c_str(), strerror(errno));
-                return Action::FTS_Fail;
+                return Action::Fail;
             }
         }
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
         if (_curr->fts_level == 0) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
-        return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return copy_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         if (_curr->fts_level == 0) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
-        return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return copy_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
         if (_curr->fts_level == 0) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
-        return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return copy_path() ? Action::Ok : Action::Fail;
     }
 
 private:
@@ -138,9 +139,10 @@ private:
     bool copy_path()
     {
         if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
-                             util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-            format(_error_msg, "%s: Failed to copy file: %s",
-                   _curr->fts_path, strerror(errno));
+                             util::CopyFlag::CopyAttributes
+                           | util::CopyFlag::CopyXattrs)) {
+            _error_msg = format("%s: Failed to copy file: %s",
+                                _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -170,17 +172,17 @@ bool copy_system(const std::string &source, const std::string &target)
  *
  * \return True if all operations succeeded. False, if any failed.
  */
-bool fix_multiboot_permissions(void)
+bool fix_multiboot_permissions()
 {
     util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
 
     if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
-                     util::CHOWN_RECURSIVE)) {
+                     util::ChownFlag::Recursive)) {
         LOGE("Failed to chown %s", MULTIBOOT_DIR);
         return false;
     }
 
-    if (!util::chmod(MULTIBOOT_DIR, 0775, util::CHMOD_RECURSIVE)) {
+    if (!util::chmod(MULTIBOOT_DIR, 0775, util::ChmodFlag::Recursive)) {
         LOGE("Failed to chmod %s", MULTIBOOT_DIR);
         return false;
     }
@@ -201,7 +203,7 @@ bool switch_context(const std::string &context)
     std::string current;
 
     if (!util::selinux_get_process_attr(
-            0, util::SELinuxAttr::CURRENT, current)) {
+            0, util::SELinuxAttr::Current, current)) {
         LOGE("Failed to get current process context: %s", strerror(errno));
         // Don't fail if SELinux is not supported
         return errno == ENOENT;
@@ -217,7 +219,7 @@ bool switch_context(const std::string &context)
     LOGV("Setting process context: %s", context.c_str());
 
     if (!util::selinux_set_process_attr(
-            0, util::SELinuxAttr::CURRENT, context)) {
+            0, util::SELinuxAttr::Current, context)) {
         LOGE("Failed to set current process context: %s", strerror(errno));
         return false;
     }
