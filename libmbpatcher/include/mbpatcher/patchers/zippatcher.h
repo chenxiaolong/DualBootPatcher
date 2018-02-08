@@ -57,8 +57,7 @@ public:
 
     void cancel_patching() override;
 
-    static std::string create_info_prop(const std::string &rom_id,
-                                        bool always_patch_ramdisk);
+    static std::string create_info_prop(const std::string &rom_id);
 
 private:
     PatcherConfig &m_pc;
