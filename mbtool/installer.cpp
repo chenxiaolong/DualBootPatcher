@@ -63,6 +63,7 @@
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/fstab.h"
+#include "mbutil/hash.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
@@ -1570,15 +1571,6 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
         LOGW("Failed to patch boot image. Continuing anyway...");
     }
 
-    // Calculate SHA512 hash of the boot partition
-    if (!util::sha512_hash(_boot_block_dev, _boot_hash)) {
-        display_msg("Failed to compute sha512sum of boot partition");
-        return ProceedState::Fail;
-    }
-
-    std::string digest = util::hex_string(_boot_hash.data(), _boot_hash.size());
-    LOGD("Boot partition SHA512sum: %s", digest.c_str());
-
     // Wrap busybox to disable some applets
     if (!set_up_busybox_wrapper()) {
         display_msg("Failed to extract busybox wrapper");
@@ -1841,85 +1833,63 @@ Installer::ProceedState Installer::install_stage_finish()
 {
     LOGD("[Installer] Finalization stage");
 
-    // Calculate SHA512 hash of the boot partition after installation
-    util::Sha512Digest new_hash;
-    if (!util::sha512_hash(_boot_block_dev, new_hash)) {
-        display_msg("Failed to compute sha512sum of boot partition");
+    display_msg("Patching boot image");
+
+    std::string temp_boot_img(_temp);
+    temp_boot_img += "/boot.img";
+
+    std::vector<std::function<RamdiskPatcherFn>> rps{
+        rp_write_rom_id(_rom->id),
+        rp_patch_default_prop(_detected_device, _use_fuse_exfat),
+        rp_add_binaries(_temp + "/binaries"),
+        rp_symlink_fuse_exfat(),
+        rp_symlink_init(),
+        rp_add_device_json(_temp + "/device.json"),
+    };
+
+    if (!InstallerUtil::patch_boot_image(_boot_block_dev, temp_boot_img, rps)) {
+        display_msg("Failed to patch boot image");
         return ProceedState::Fail;
     }
 
-    std::string old_digest = util::hex_string(_boot_hash.data(), _boot_hash.size());
-    std::string new_digest = util::hex_string(new_hash.data(), new_hash.size());
-    LOGD("Old boot partition SHA512sum: %s", old_digest.c_str());
-    LOGD("New boot partition SHA512sum: %s", new_digest.c_str());
+    // Write to multiboot directory and boot partition
 
-    bool changed = _boot_hash != new_hash;
-    bool force_update = _prop["mbtool.installer.always-patch-ramdisk"] == "true";
-
-    // Set kernel if it was changed
-    if (force_update || changed) {
-        display_msg("Patching boot image");
-        LOGV("Ramdisk changed: %d", changed);
-        LOGV("Patching forced: %d", force_update);
-
-        std::string temp_boot_img(_temp);
-        temp_boot_img += "/boot.img";
-
-        std::vector<std::function<RamdiskPatcherFn>> rps;
-        rps.push_back(rp_write_rom_id(_rom->id));
-        rps.push_back(rp_patch_default_prop(_detected_device, _use_fuse_exfat));
-        rps.push_back(rp_add_binaries(_temp + "/binaries"));
-        rps.push_back(rp_symlink_fuse_exfat());
-        rps.push_back(rp_symlink_init());
-        rps.push_back(rp_add_device_json(_temp + "/device.json"));
-
-        if (!InstallerUtil::patch_boot_image(_boot_block_dev, temp_boot_img,
-                                             rps)) {
-            display_msg("Failed to patch boot image");
-            return ProceedState::Fail;
-        }
-
-        // Write to multiboot directory and boot partition
-
-        std::string path(MULTIBOOT_DIR);
-        path += "/";
-        path += _rom->id;
-        path += "/boot.img";
-        if (!util::mkdir_parent(path, 0775)) {
-            display_msg("Failed to create %s", path.c_str());
-            return ProceedState::Fail;
-        }
-
-        if (!util::copy_contents(temp_boot_img, _boot_block_dev)) {
-            LOGE("Failed to copy %s to %s: %s",
-                 temp_boot_img.c_str(), _boot_block_dev.c_str(),
-                 strerror(errno));
-            display_msg("Failed to flash patched boot image");
-            return ProceedState::Fail;
-        }
-        if (!util::copy_contents(temp_boot_img, path)) {
-            LOGE("Failed to copy %s to %s: %s",
-                 temp_boot_img.c_str(), path.c_str(),
-                 strerror(errno));
-            display_msg("Failed to back up boot image");
-            return ProceedState::Fail;
-        }
-
-        // Update checksums
-        util::Sha512Digest digest;
-
-        if (!util::sha512_hash(temp_boot_img, digest)) {
-            display_msg("Failed to compute sha512sum of new boot image");
-            return ProceedState::Fail;
-        }
-
-        std::string hash = util::hex_string(digest.data(), digest.size());
-
-        std::unordered_map<std::string, std::string> props;
-        checksums_read(&props);
-        checksums_update(&props, _rom->id, "boot.img", hash);
-        checksums_write(props);
+    std::string path(MULTIBOOT_DIR);
+    path += "/";
+    path += _rom->id;
+    path += "/boot.img";
+    if (!util::mkdir_parent(path, 0775)) {
+        display_msg("Failed to create %s", path.c_str());
+        return ProceedState::Fail;
     }
+
+    if (!util::copy_contents(temp_boot_img, _boot_block_dev)) {
+        LOGE("Failed to copy %s to %s: %s",
+             temp_boot_img.c_str(), _boot_block_dev.c_str(), strerror(errno));
+        display_msg("Failed to flash patched boot image");
+        return ProceedState::Fail;
+    }
+    if (!util::copy_contents(temp_boot_img, path)) {
+        LOGE("Failed to copy %s to %s: %s",
+             temp_boot_img.c_str(), path.c_str(), strerror(errno));
+        display_msg("Failed to back up boot image");
+        return ProceedState::Fail;
+    }
+
+    // Update checksums
+    util::Sha512Digest digest;
+
+    if (!util::sha512_hash(temp_boot_img, digest)) {
+        display_msg("Failed to compute sha512sum of new boot image");
+        return ProceedState::Fail;
+    }
+
+    std::string hash = util::hex_string(digest.data(), digest.size());
+
+    std::unordered_map<std::string, std::string> props;
+    checksums_read(&props);
+    checksums_update(&props, _rom->id, "boot.img", hash);
+    checksums_write(props);
 
     fix_multiboot_permissions();
 
