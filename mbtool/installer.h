@@ -26,7 +26,6 @@
 #include "mbcommon/common.h"
 #include "mbcommon/flags.h"
 #include "mbdevice/device.h"
-#include "mbutil/hash.h"
 
 #include "roms.h"
 
@@ -92,7 +91,6 @@ protected:
     std::string _boot_block_dev;
     std::string _recovery_block_dev;
     std::string _system_block_dev;
-    util::Sha512Digest _boot_hash;
     std::shared_ptr<Rom> _rom;
     std::string _system_path;
     std::string _cache_path;
