@@ -289,21 +289,21 @@ static std::string _format_iso8601(const std::tm &tm, long nanoseconds,
                       std::abs(gmtoff / 60) % 60);
 }
 
-static std::string _format_prio(LogLevel prio)
+static char _format_prio(LogLevel prio)
 {
     switch (prio) {
     case LogLevel::Error:
-        return "error";
+        return 'E';
     case LogLevel::Warning:
-        return "warning";
+        return 'W';
     case LogLevel::Info:
-        return "info";
+        return 'I';
     case LogLevel::Debug:
-        return "debug";
+        return 'D';
     case LogLevel::Verbose:
-        return "verbose";
+        return 'V';
     default:
-        return {};
+        MB_UNREACHABLE("Invalid log level: %d", static_cast<int>(prio));
     }
 }
 
