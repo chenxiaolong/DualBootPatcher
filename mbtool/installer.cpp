@@ -76,6 +76,7 @@
 #include "installer_util.h"
 #include "multiboot.h"
 #include "signature.h"
+#include "romconfig.h"
 #include "switcher.h"
 #include "wipe.h"
 
@@ -1754,6 +1755,24 @@ Installer::ProceedState Installer::install_stage_installation()
     run_debug_shell();
 #endif
 
+    run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
+
+    // Grab version and display ID so that can be cached in config.json later
+    std::string build_prop(in_chroot("/system/build.prop"));
+    std::unordered_map<std::string, std::string> props;
+    util::property_file_get_all(build_prop, props);
+
+    auto to_cache = {
+        "ro.build.version.release",
+        "ro.build.display.id",
+    };
+
+    for (auto const &prop : to_cache) {
+        if (auto it = props.find(prop); it != props.end()) {
+            _cached_prop[it->first] = it->second;
+        }
+    }
+
     // Determine if fuse-exfat should be used. We can't detect this at boot time
     // since vold is not yet available. We used to detect whether fuse-exfat
     // should be used by checking for the presence of "EXFAT   " or "exfat" in
@@ -1762,8 +1781,6 @@ Installer::ProceedState Installer::install_stage_installation()
     // X Pure, which uses the exfat kernel module in all ROMs. This is a more
     // robust solution since the "/system/bin/mount.exfat" string only exists
     // #ifndef CONFIG_KERNEL_HAVE_EXFAT
-    run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
-
     std::string vold_path(in_chroot("/system/bin/vold"));
     _use_fuse_exfat = util::file_find_one_of(vold_path, {
         "/system/bin/mount.exfat"
@@ -1890,6 +1907,18 @@ Installer::ProceedState Installer::install_stage_finish()
     checksums_read(&props);
     checksums_update(&props, _rom->id, "boot.img", hash);
     checksums_write(props);
+
+    // Write cached properties to config
+    std::string config_path(_rom->config_path());
+    RomConfig config;
+    if (config.load_file(config_path)) {
+        config.cached_props = _cached_prop;
+        if (!config.save_file(config_path)) {
+            LOGW("%s: Failed to save config", config_path.c_str());
+        }
+    } else {
+        LOGW("%s: Failed to load config", config_path.c_str());
+    }
 
     fix_multiboot_permissions();
 
