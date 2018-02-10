@@ -92,6 +92,7 @@
   codenames:
     - m2
     - meilan2
+    - mblu2
     - meizu_m2_mini	
     - M578
     - M578U
@@ -131,29 +132,35 @@
       - /dev/block/mmcblk0p8
     extra:
       - /dev/block/platform/mtk-msdc.0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/metadata
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
       - /dev/block/platform/mtk-msdc.0/by-name/custom
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/custom
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/custom
       - /dev/block/platform/mtk-msdc.0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/nvram
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/nvram
       - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/lk
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/lk
       - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/logo
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/logo
       - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/para
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/para
       - /dev/block/platform/mtk-msdc.0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee1
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee1
       - /dev/block/platform/mtk-msdc.0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee2
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH 
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     max_brightness: 255
-    default_brightness: 168
+    default_brightness: 128
     cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
     graphics_backends:
       - fbdev
