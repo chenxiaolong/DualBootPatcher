@@ -46,6 +46,7 @@
 #include "init.h"
 #include "packages.h"
 #include "reboot.h"
+#include "romconfig.h"
 #include "roms.h"
 #include "signature.h"
 #include "switcher.h"
@@ -1042,16 +1043,19 @@ static bool v3_mb_get_installed_roms(int fd, const v3::Request *msg)
         }
         build_prop += "/build.prop";
 
-        std::unordered_map<std::string, std::string> properties;
-        util::property_file_get_all(build_prop, properties);
+        std::unordered_map<std::string, std::string> props;
 
-        if (properties.find("ro.build.version.release") != properties.end()) {
-            const std::string &version = properties["ro.build.version.release"];
-            fb_version = builder.CreateString(version);
+        RomConfig config;
+        config.load_file(r->config_path());
+        props.swap(config.cached_props);
+
+        util::property_file_get_all(build_prop, props);
+
+        if (auto it = props.find("ro.build.version.release"); it != props.end()) {
+            fb_version = builder.CreateString(it->second);
         }
-        if (properties.find("ro.build.display.id") != properties.end()) {
-            const std::string &build = properties["ro.build.display.id"];
-            fb_build = builder.CreateString(build);
+        if (auto it = props.find("ro.build.display.id"); it != props.end()) {
+            fb_build = builder.CreateString(it->second);
         }
 
         v3::MbRomBuilder mrb(builder);
