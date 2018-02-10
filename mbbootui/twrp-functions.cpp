@@ -63,7 +63,9 @@ std::string TWFunc::get_resource_path(const std::string &res_path)
 
 static std::string current_date_time()
 {
-    return mb::util::format_time("%Y-%m-%d--%H-%M-%S");
+    auto str = mb::util::format_time("%Y-%m-%d--%H-%M-%S",
+                                     std::chrono::system_clock::now());
+    return str ? str.value() : std::string();
 }
 
 static bool convertToUint64(const char *str, uint64_t *out)

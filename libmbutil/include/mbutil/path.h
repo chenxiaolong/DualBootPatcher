@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -37,7 +38,7 @@ void normalize_path(std::vector<std::string> &components);
 bool relative_path(const std::string &path, const std::string &start,
                    std::string &out);
 int path_compare(const std::string &path1, const std::string &path2);
-bool wait_for_path(const std::string &path, unsigned int timeout_ms);
+bool wait_for_path(const std::string &path, std::chrono::milliseconds timeout);
 bool path_exists(const std::string &path, bool follow_symlinks);
 
 }

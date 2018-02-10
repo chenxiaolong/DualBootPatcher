@@ -19,16 +19,18 @@
 
 #include "mbutil/path.h"
 
+#include <chrono>
 #include <vector>
+
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+
 #include <libgen.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include "mblog/logging.h"
-#include "mbutil/time.h"
 
 #define LOG_TAG "mbutil/path"
 
@@ -329,13 +331,15 @@ int path_compare(const std::string &path1, const std::string &path2)
     return path_join(path1_pieces).compare(path_join(path2_pieces));
 }
 
-bool wait_for_path(const std::string &path, unsigned int timeout_ms)
+bool wait_for_path(const std::string &path, std::chrono::milliseconds timeout)
 {
-    uint64_t until = current_time_ms() + timeout_ms;
+    using namespace std::chrono;
+
+    auto until = steady_clock::now() + timeout;
     struct stat sb;
     int ret;
 
-    while ((ret = stat(path.c_str(), &sb)) < 0 && current_time_ms() < until) {
+    while ((ret = stat(path.c_str(), &sb)) < 0 && steady_clock::now() < until) {
         usleep(10000);
     }
 

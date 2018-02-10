@@ -19,9 +19,8 @@
 #ifndef __BLANKTIMER_HEADER_HPP
 #define __BLANKTIMER_HEADER_HPP
 
+#include <chrono>
 #include <string>
-
-#include <sys/time.h>
 
 class blanktimer
 {
@@ -46,7 +45,7 @@ private:
     pthread_mutex_t mutex;
     enum State { kOn = 0, kDim = 1, kOff = 2, kBlanked = 3 };
     State state;
-    timespec btimer;
+    std::chrono::steady_clock::time_point btimer;
     long sleepTimer;
     std::string orig_brightness;
 };

@@ -21,54 +21,47 @@
 
 #include <ctime>
 
+#include "mbcommon/error_code.h"
+
+using namespace std::chrono;
+
 namespace mb::util
 {
-
-uint64_t current_time_ms()
-{
-    struct timespec res;
-    clock_gettime(CLOCK_REALTIME, &res);
-    return 1000ull * static_cast<uint64_t>(res.tv_sec)
-            + static_cast<uint64_t>(res.tv_nsec) / 1000000;
-}
 
 /*!
  * \brief Format date and time
  *
- * \note: Because strftime does not differentiate between a buffer size error
- *        and an empty string result, if \a format results in an empty string,
- *        then this function will return false and \a out will not be modified.
- *
  * \param format Date and time format string
- * \param out Output string
+ * \param tp System clock time point to format
  *
- * \return Whether the date and time was successfully formatted
+ * \return Formatted timestamp or error
  */
-bool format_time(const std::string &format, std::string &out)
+oc::result<std::string> format_time(std::string_view format,
+                                    system_clock::time_point tp)
 {
-    struct timespec res;
     struct tm tm;
-    if (clock_gettime(CLOCK_REALTIME, &res) < 0) {
-        return false;
+
+    auto t = system_clock::to_time_t(tp);
+
+    // Some systems call tzset() in localtime_r() and others don't. We'll
+    // manually call it to ensure the behavior is the same on every platform.
+    tzset();
+
+    if (!localtime_r(&t, &tm)) {
+        return ec_from_errno();
     }
-    if (!localtime_r(&res.tv_sec, &tm)) {
-        return false;
-    }
+
+    // strftime() does not differentiate between errors and empty strings, so
+    // prepend a character to ensure that a valid result is never empty.
+    std::string f("x");
+    f += format;
 
     char buf[100];
-    if (strftime(buf, sizeof(buf), format.c_str(), &tm) == 0) {
-        return false;
+    if (strftime(buf, sizeof(buf), f.c_str(), &tm) == 0) {
+        return std::errc::value_too_large;
     }
 
-    out = buf;
-    return true;
-}
-
-std::string format_time(const std::string &format)
-{
-    std::string result;
-    format_time(format, result);
-    return result;
+    return buf + 1;
 }
 
 }
