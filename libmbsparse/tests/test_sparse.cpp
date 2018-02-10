@@ -87,14 +87,14 @@ struct SparseTest : testing::Test
         ASSERT_TRUE(_source_file.open(&_data, &_size));
     }
 
-    void build_valid_data()
+    void build_valid_data(bool oversized)
     {
         SparseHeader shdr = {};
         shdr.magic = SPARSE_HEADER_MAGIC;
         shdr.major_version = SPARSE_HEADER_MAJOR_VER;
         shdr.minor_version = 0;
-        shdr.file_hdr_sz = sizeof(SparseHeader);
-        shdr.chunk_hdr_sz = sizeof(ChunkHeader);
+        shdr.file_hdr_sz = sizeof(SparseHeader) + (oversized ? 4 : 0);
+        shdr.chunk_hdr_sz = sizeof(ChunkHeader) + (oversized ? 4 : 0);
         shdr.blk_sz = 4;
         shdr.total_blks = 12;
         shdr.total_chunks = 4;
@@ -102,6 +102,9 @@ struct SparseTest : testing::Test
         fix_sparse_header_byte_order(shdr);
 
         ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+        if (oversized) {
+            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd", 4));
+        }
 
         ChunkHeader chdr;
 
@@ -113,6 +116,9 @@ struct SparseTest : testing::Test
         fix_chunk_header_byte_order(chdr);
 
         ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+        if (oversized) {
+            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd", 4));
+        }
         ASSERT_TRUE(_source_file.write("0123456789abcdef", 16));
 
         // [2/4] Add fill chunk header
@@ -123,6 +129,9 @@ struct SparseTest : testing::Test
         fix_chunk_header_byte_order(chdr);
 
         ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+        if (oversized) {
+            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd", 4));
+        }
 
         uint32_t fill_val = mb_htole32(0x12345678);
         ASSERT_TRUE(_source_file.write(&fill_val, sizeof(fill_val)));
@@ -135,6 +144,9 @@ struct SparseTest : testing::Test
         fix_chunk_header_byte_order(chdr);
 
         ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+        if (oversized) {
+            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd", 4));
+        }
 
         // [4/4] Add CRC32 chunk header
         chdr = {};
@@ -144,6 +156,9 @@ struct SparseTest : testing::Test
         fix_chunk_header_byte_order(chdr);
 
         ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+        if (oversized) {
+            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd", 4));
+        }
         ASSERT_TRUE(_source_file.write("\x00\x00\x00\x00", 4));
 
         // Move back to beginning of the file
@@ -609,7 +624,7 @@ TEST_F(SparseTest, CheckReadUndersizedChunkDataFatal)
 TEST_F(SparseTest, ReadValidDataWithSeekableFile)
 {
     char buf[1024];
-    build_valid_data();
+    build_valid_data(true);
 
     // Check that valid sparse header can be opened
     ASSERT_TRUE(_file.open(&_source_file));
@@ -658,7 +673,7 @@ TEST_F(SparseTest, ReadValidDataWithSkippableFile)
     char *ptr = buf;
     size_t remaining = sizeof(buf);
     uint64_t total = 0;
-    build_valid_data();
+    build_valid_data(true);
 
     // Check that valid sparse header can be opened
     _source_file.set_seekability(Seekability::CanSkip);
@@ -697,7 +712,7 @@ TEST_F(SparseTest, ReadValidDataWithUnseekableFile)
     char *ptr = buf;
     size_t remaining = sizeof(buf);
     uint64_t total = 0;
-    build_valid_data();
+    build_valid_data(true);
 
     // Check that valid sparse header can be opened
     _source_file.set_seekability(Seekability::CanRead);

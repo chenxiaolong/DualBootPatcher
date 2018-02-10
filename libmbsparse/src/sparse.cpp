@@ -576,6 +576,8 @@ oc::result<void> SparseFile::skip_bytes(uint64_t bytes)
             set_fatal();
             return FileError::UnexpectedEof;
         }
+
+        m_cur_src_offset += bytes;
         return oc::success();
     }
 
