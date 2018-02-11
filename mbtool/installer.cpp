@@ -399,7 +399,7 @@ bool Installer::create_chroot()
         return false;
     }
 
-    util::create_empty_file(in_chroot("/.chroot"));
+    (void) util::create_empty_file(in_chroot("/.chroot"));
 
     return true;
 }
@@ -1167,7 +1167,7 @@ bool Installer::run_debug_shell()
 
 bool Installer::is_aroma(const std::string &path)
 {
-    return util::file_find_one_of(path, {
+    auto r = util::file_find_one_of(path, {
         "AROMA Installer",
         "support@amarullz.com",
         "(c) 2013 by amarullz xda-developers",
@@ -1177,6 +1177,7 @@ bool Installer::is_aroma(const std::string &path)
         "AROMA_BUILD",
         "AROMA_VERSION"
     });
+    return r && r.value();
 }
 
 
@@ -1349,16 +1350,16 @@ Installer::ProceedState Installer::install_stage_check_device()
 {
     LOGD("[Installer] Device verification stage");
 
-    std::vector<unsigned char> contents;
-    if (!util::file_read_all(_temp + "/device.json", contents)) {
+    auto contents = util::file_read_all_v(_temp + "/device.json");
+    if (!contents) {
         display_msg("Failed to read device.json");
         return ProceedState::Fail;
     }
-    contents.push_back('\0');
+    contents.value().push_back('\0');
 
     JsonError error;
 
-    if (!device_from_json(reinterpret_cast<char *>(contents.data()),
+    if (!device_from_json(reinterpret_cast<char *>(contents.value().data()),
                           _device, error)) {
         display_msg("Error when loading device.json");
         return ProceedState::Fail;
@@ -1374,11 +1375,11 @@ Installer::ProceedState Installer::install_stage_check_device()
     std::string prop_build_product =
             util::property_get_string("ro.build.product", {});
     std::string prop_patcher_device =
-            util::property_get_string("ro.patcher.device", {});
+            util::property_get_string(PROP_DEVICE, {});
 
     LOGD("ro.product.device = %s", prop_product_device.c_str());
     LOGD("ro.build.product = %s", prop_build_product.c_str());
-    LOGD("ro.patcher.device = %s", prop_patcher_device.c_str());
+    LOGD(PROP_DEVICE " = %s", prop_patcher_device.c_str());
     LOGD("Target device = %s", _device.id().c_str());
 
     if (!prop_patcher_device.empty()) {
@@ -1644,8 +1645,8 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     }
 
     // Get desired system image size
-    uint64_t system_size;
-    if (!util::get_blockdev_size(_system_block_dev.c_str(), system_size)) {
+    auto system_size = util::get_blockdev_size(_system_block_dev);
+    if (!system_size) {
         display_msg("Failed to get size of system partition");
         display_msg("Image size will be 4 GiB");
         system_size = DEFAULT_IMAGE_SIZE;
@@ -1663,7 +1664,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
         _temp_image_path += "/.system.img.tmp";
         remove(_temp_image_path.c_str());
 
-        if (!create_image(_temp_image_path, system_size)) {
+        if (!create_image(_temp_image_path, system_size.value())) {
             display_msg("Failed to create temporary image %s",
                         _temp_image_path.c_str());
 
@@ -1677,7 +1678,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
                 _temp_image_path += "/.system.img.tmp";
                 remove(_temp_image_path.c_str());
 
-                if (!create_image(_temp_image_path, system_size)) {
+                if (!create_image(_temp_image_path, system_size.value())) {
                     return ProceedState::Fail;
                 }
             } else {
@@ -1703,12 +1704,12 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     if (!mount_dir_or_image(system_path,
                             in_chroot(CHROOT_SYSTEM_BIND_MOUNT),
                             in_chroot(CHROOT_SYSTEM_LOOP_DEV),
-                            system_is_image, system_size)) {
+                            system_is_image, system_size.value())) {
         return ProceedState::Fail;
     }
 
     // Bind-mount zip file
-    util::create_empty_file(in_chroot("/mb/install.zip"));
+    (void) util::create_empty_file(in_chroot("/mb/install.zip"));
     if (log_mount(_zip_file.c_str(), in_chroot("/mb/install.zip").c_str(),
                   "", MS_BIND, "") < 0) {
         return ProceedState::Fail;
@@ -1800,10 +1801,11 @@ Installer::ProceedState Installer::install_stage_installation()
     // X Pure, which uses the exfat kernel module in all ROMs. This is a more
     // robust solution since the "/system/bin/mount.exfat" string only exists
     // #ifndef CONFIG_KERNEL_HAVE_EXFAT
-    std::string vold_path(in_chroot("/system/bin/vold"));
-    _use_fuse_exfat = util::file_find_one_of(vold_path, {
-        "/system/bin/mount.exfat"
-    });
+    if (auto r = util::file_find_one_of(
+            in_chroot("/system/bin/vold"), {"/system/bin/mount.exfat"});
+            r && r.value()) {
+        _use_fuse_exfat = true;
+    }
 
     hook_ret = on_post_install(updater_ret);
     if (hook_ret != ProceedState::Continue) return hook_ret;

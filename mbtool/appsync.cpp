@@ -755,8 +755,11 @@ static bool proxy_process(int fd, bool can_appsync)
         // NOTE: We'll effectively make the connection sychronous because we
         //       always wait for a reply before receiving the next command.
         // See: https://github.com/CyanogenMod/android_frameworks_native/commit/8124b181d4b5a3a44796fdb0e3ea4e4171f102c7
-        bool is_async = util::file_find_one_of(
-                INSTALLD_PATH, { "failed to read transaction id" });
+        bool is_async = false;
+        if (auto r = util::file_find_one_of(INSTALLD_PATH,
+                { "failed to read transaction id" }); r && r.value()) {
+            is_async = true;
+        }
         LOGD("installd is CyanogenMod async version: %d", is_async);
 
         LOGD("---");

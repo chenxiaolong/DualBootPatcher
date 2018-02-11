@@ -174,7 +174,7 @@ bool copy_system(const std::string &source, const std::string &target)
  */
 bool fix_multiboot_permissions()
 {
-    util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
+    (void) util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
 
     if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
                      util::ChownFlag::Recursive)) {

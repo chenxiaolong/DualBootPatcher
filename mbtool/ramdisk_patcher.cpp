@@ -36,6 +36,7 @@
 #include "mbutil/path.h"
 
 #include "installer_util.h"
+#include "multiboot.h"
 
 #define LOG_TAG "mbtool/ramdisk_patcher"
 
@@ -158,8 +159,8 @@ static bool _rp_patch_default_prop(const std::string &dir,
 
     // Write new properties
     if (fputc('\n', fp_out) == EOF
-            || fprintf(fp_out, "ro.patcher.device=%s\n", device_id.c_str()) < 0
-            || fprintf(fp_out, "ro.patcher.use_fuse_exfat=%s\n",
+            || fprintf(fp_out, PROP_DEVICE "=%s\n", device_id.c_str()) < 0
+            || fprintf(fp_out, PROP_USE_FUSE_EXFAT "=%s\n",
                        use_fuse_exfat ? "true" : "false") < 0) {
         LOGE("%s: Failed to write properties: %s",
              tmp_path.c_str(), strerror(errno));

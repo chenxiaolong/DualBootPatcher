@@ -276,13 +276,12 @@ static bool properties_cleanup()
 
 static std::string get_rom_id()
 {
-    std::string rom_id;
-
-    if (!util::file_first_line("/romid", rom_id)) {
+    auto rom_id = util::file_first_line("/romid");
+    if (!rom_id) {
         return {};
     }
 
-    return rom_id;
+    return std::move(rom_id.value());
 }
 
 // Operating on paths instead of fd's should be safe enough since, at this
@@ -1058,12 +1057,11 @@ static bool launch_boot_menu()
     bool skip = false;
 
     if (stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
-        std::string skip_rom;
-        util::file_first_line(BOOT_UI_SKIP_PATH, skip_rom);
+        auto skip_rom = util::file_first_line(BOOT_UI_SKIP_PATH);
 
         std::string rom_id = get_rom_id();
 
-        if (skip_rom == rom_id) {
+        if (skip_rom && skip_rom.value() == rom_id) {
             LOGV("Performing one-time skipping of Boot UI");
             skip = true;
         } else {
@@ -1230,9 +1228,14 @@ int init_main(int argc, char *argv[])
     LOGV("Booting up with version %s (%s)",
          version(), git_version());
 
-    std::vector<unsigned char> contents;
-    util::file_read_all(DEVICE_JSON_PATH, contents);
-    contents.push_back('\0');
+    auto contents = util::file_read_all_v(DEVICE_JSON_PATH);
+    if (!contents) {
+        LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH,
+             contents.error().message().c_str());
+        critical_failure();
+        return EXIT_FAILURE;
+    }
+    contents.value().push_back('\0');
 
     // Start probing for devices so we have somewhere to write logs for
     // critical_failure()
@@ -1241,8 +1244,8 @@ int init_main(int argc, char *argv[])
     Device device;
     JsonError error;
 
-    if (!device_from_json(
-            reinterpret_cast<char *>(contents.data()), device, error)) {
+    if (!device_from_json(reinterpret_cast<char *>(
+            contents.value().data()), device, error)) {
         LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
         critical_failure();
         return EXIT_FAILURE;
@@ -1268,7 +1271,7 @@ int init_main(int argc, char *argv[])
         LOGW("%s: Failed to access file: %s", fstab.c_str(), strerror(errno));
         LOGW("Continuing anyway...");
         fstab = "/fstab.MBTOOL_DUMMY_DO_NOT_USE";
-        util::create_empty_file(fstab);
+        (void) util::create_empty_file(fstab);
     }
 
     // Get ROM ID from /romid

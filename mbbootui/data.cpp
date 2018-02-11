@@ -536,12 +536,16 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
             auto const &cpu_temp_path = tw_device.tw_cpu_temp_path();
             if (!cpu_temp_path.empty()) {
                 cpu_temp_file = cpu_temp_path;
-                if (!mb::util::file_first_line(cpu_temp_file, results)) {
+                if (auto r = mb::util::file_first_line(cpu_temp_file)) {
+                    results = std::move(r.value());
+                } else {
                     return -1;
                 }
             } else {
                 cpu_temp_file = "/sys/class/thermal/thermal_zone0/temp";
-                if (!mb::util::file_first_line(cpu_temp_file, results)) {
+                if (auto r = mb::util::file_first_line(cpu_temp_file)) {
+                    results = std::move(r.value());
+                } else {
                     return -1;
                 }
             }

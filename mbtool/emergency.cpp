@@ -156,13 +156,16 @@ bool emergency_reboot()
     std::vector<EmergencyMount> ems;
     Device device;
     JsonError error;
+    bool loaded_json = false;
 
-    std::vector<unsigned char> contents;
-    util::file_read_all(DEVICE_JSON_PATH, contents);
-    contents.push_back('\0');
+    auto contents = util::file_read_all_v(DEVICE_JSON_PATH);
+    if (contents) {
+        contents.value().push_back('\0');
 
-    bool loaded_json = device_from_json(
-            reinterpret_cast<char *>(contents.data()), device, error);
+        loaded_json = device_from_json(
+                reinterpret_cast<char *>(contents.value().data()),
+                device, error);
+    }
 
     // /data
     {

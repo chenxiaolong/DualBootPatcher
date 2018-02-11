@@ -375,12 +375,13 @@ static bool mount_ext4(const char *source, const char *target)
 
 static bool try_extsd_mount(const char *block_dev, const char *mount_point)
 {
-    // Vold ignores the fstab fstype field and uses blkid to determine the
-    // filesystem. We don't link in blkid, so we'll use a trial and error
-    // approach.
+    bool use_fuse_exfat = false;
 
-    bool use_fuse_exfat =
-            util::file_find_one_of("/init.orig", { "EXFAT   ", "exfat" });
+    if (auto r = util::file_find_one_of("/init.orig", { "EXFAT   ", "exfat" });
+            r && r.value()) {
+        use_fuse_exfat = true;
+    }
+
     std::string value = util::property_file_get_string(
             DEFAULT_PROP_PATH, PROP_USE_FUSE_EXFAT, "");
     if (!value.empty()) {
@@ -405,18 +406,12 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
         LOGD("Using fuse-exfat: %d", use_fuse_exfat);
 
         auto func = use_fuse_exfat ? &mount_exfat_fuse : &mount_exfat_kernel;
-        if (func(block_dev, mount_point)) {
-            return true;
-        }
+        return func(block_dev, mount_point);
     } else if (fstype.value() == "vfat") {
-        if (mount_vfat(block_dev, mount_point)) {
-            return true;
-        }
+        return mount_vfat(block_dev, mount_point);
     } else if (fstype.value() == "ext") {
         // Assume ext4
-        if (mount_ext4(block_dev, mount_point)) {
-            return true;
-        }
+        return mount_ext4(block_dev, mount_point);
     } else {
         LOGE("%s: Cannot handle filesystem: %s",
              block_dev, fstype.value().c_str());
