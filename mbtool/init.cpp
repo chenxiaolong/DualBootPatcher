@@ -1101,9 +1101,9 @@ static bool launch_boot_menu()
     }
 
     auto clean_up = finally([]{
-        if (!util::delete_recursive(BOOT_UI_PATH)) {
+        if (auto r = util::delete_recursive(BOOT_UI_PATH); !r) {
             LOGW("%s: Failed to recursively delete: %s",
-                 BOOT_UI_PATH, strerror(errno));
+                 BOOT_UI_PATH, r.error().message().c_str());
         }
     });
 

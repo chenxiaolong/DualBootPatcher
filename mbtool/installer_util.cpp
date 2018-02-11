@@ -303,7 +303,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     }
 
     auto delete_temp_dir = finally([&]{
-        util::delete_recursive(tmpdir);
+        (void) util::delete_recursive(tmpdir);
     });
 
     Reader reader;
@@ -484,7 +484,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
     }
 
     auto delete_temp_dir = finally([&]{
-        util::delete_recursive(tmpdir);
+        (void) util::delete_recursive(tmpdir);
     });
 
     int format;

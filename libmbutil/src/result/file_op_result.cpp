@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,17 +17,25 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "mbutil/result/file_op_result.h"
 
 #include <string>
-
-#include "mbcommon/outcome.h"
-
-#include "mbutil/result/file_op_result.h"
 
 namespace mb::util
 {
 
-FileOpResult<void> delete_recursive(const std::string &path);
+std::string FileOpErrorInfo::message() const
+{
+    std::string buf;
+
+    if (!path.empty()) {
+        buf += path;
+        buf += ": ";
+    }
+
+    buf += ec.message();
+
+    return buf;
+}
 
 }

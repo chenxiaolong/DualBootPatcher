@@ -198,9 +198,13 @@ static bool log_wipe_directory(const std::string &mountpoint,
 static bool log_delete_recursive(const std::string &path)
 {
     LOGV("Recursively deleting %s", path.c_str());
-    bool ret = util::delete_recursive(path);
-    LOGV("-> %s", ret ? "Succeeded" : "Failed");
-    return ret;
+    if (auto r = util::delete_recursive(path)) {
+        LOGV("-> Succeeded");
+        return true;
+    } else {
+        LOGV("-> Failed: %s", r.error().message().c_str());
+        return false;
+    }
 }
 
 bool wipe_system(const std::shared_ptr<Rom> &rom)

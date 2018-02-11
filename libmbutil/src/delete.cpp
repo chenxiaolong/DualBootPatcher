@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,21 +21,20 @@
 
 #include <cerrno>
 #include <cstdlib>
-#include <cstring>
 #include <sys/stat.h>
 
-#include "mbcommon/string.h"
-#include "mblog/logging.h"
+#include "mbcommon/error_code.h"
 #include "mbutil/fts.h"
-#include "mbutil/string.h"
 
-#define LOG_TAG "mbutil/delete"
 
 namespace mb::util
 {
 
 class RecursiveDeleter : public FtsWrapper {
 public:
+    std::string error_path;
+    std::error_code error;
+
     RecursiveDeleter(std::string path)
         : FtsWrapper(std::move(path), FtsFlag::GroupSpecialFiles)
     {
@@ -72,25 +71,28 @@ private:
     bool delete_path()
     {
         if (remove(_curr->fts_accpath) < 0) {
-            _error_msg = format("%s: Failed to remove: %s",
-                                _curr->fts_path, strerror(errno));
-            LOGE("%s", _error_msg.c_str());
+            error_path = _curr->fts_path;
+            error = ec_from_errno();
             return false;
         }
         return true;
     }
 };
 
-bool delete_recursive(const std::string &path)
+FileOpResult<void> delete_recursive(const std::string &path)
 {
     struct stat sb;
     if (stat(path.c_str(), &sb) < 0 && errno == ENOENT) {
         // Don't fail if directory does not exist
-        return true;
+        return oc::success();
     }
 
     RecursiveDeleter deleter(path);
-    return deleter.run();
+    if (!deleter.run()) {
+        return FileOpErrorInfo{std::move(deleter.error_path), deleter.error};
+    }
+
+    return oc::success();
 }
 
 }

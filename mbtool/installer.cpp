@@ -200,11 +200,12 @@ static bool log_unmount_all(const std::string &dir)
 
 static bool log_delete_recursive(const std::string &path)
 {
-    bool ret = util::delete_recursive(path);
-    if (!ret) {
-        LOGE("Failed to recursively remove %s", path.c_str());
+    if (auto r = util::delete_recursive(path); !r) {
+        LOGE("Failed to recursively remove %s: %s",
+             path.c_str(), r.error().message().c_str());
+        return false;
     }
-    return ret;
+    return true;
 }
 
 static bool log_copy_dir(const std::string &source,
@@ -444,7 +445,7 @@ bool Installer::destroy_chroot() const
         return false;
     }
 
-    util::delete_recursive(_chroot);
+    (void) util::delete_recursive(_chroot);
 
     if (log_is_mounted("/efs")) {
         log_umount("/efs");

@@ -1287,7 +1287,7 @@ void PageManager::LoadLanguageList(ZipArchive* package)
 {
     Language_List.clear();
     if (mb::util::path_exists(TWFunc::get_resource_path("customlanguages"), false)) {
-        mb::util::delete_recursive(TWFunc::get_resource_path("customlanguages"));
+        (void) mb::util::delete_recursive(TWFunc::get_resource_path("customlanguages"));
     }
     if (package) {
         (void) mb::util::mkdir_recursive(TWFunc::get_resource_path("customlanguages"), 0700);

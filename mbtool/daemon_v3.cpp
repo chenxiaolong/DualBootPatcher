@@ -530,25 +530,30 @@ static bool v3_path_delete(int fd, const v3::Request *msg)
         return v3_send_response_invalid(fd);
     }
 
-    bool ret;
-    int saved_errno;
+    bool ret = true;
+    std::error_code ec;
 
     switch (request->flag()) {
     case v3::PathDeleteFlag_REMOVE:
-        ret = remove(request->path()->c_str()) == 0;
-        saved_errno = errno;
+        if (!(ret = remove(request->path()->c_str()) == 0)) {
+            ec = ec_from_errno();
+        }
         break;
     case v3::PathDeleteFlag_UNLINK:
-        ret = unlink(request->path()->c_str()) == 0;
-        saved_errno = errno;
+        if (!(ret = unlink(request->path()->c_str()) == 0)) {
+            ec = ec_from_errno();
+        }
         break;
     case v3::PathDeleteFlag_RMDIR:
-        ret = rmdir(request->path()->c_str()) == 0;
-        saved_errno = errno;
+        if (!(ret = rmdir(request->path()->c_str()) == 0)) {
+            ec = ec_from_errno();
+        }
         break;
     case v3::PathDeleteFlag_RECURSIVE:
-        ret = util::delete_recursive(request->path()->str());
-        saved_errno = errno;
+        if (auto r = util::delete_recursive(request->path()->str()); !r) {
+            ret = false;
+            ec = r.error().ec;
+        }
         break;
     default:
         return v3_send_response_invalid(fd);
@@ -559,11 +564,11 @@ static bool v3_path_delete(int fd, const v3::Request *msg)
 
     if (!ret) {
         error = v3::CreatePathDeleteErrorDirect(
-                builder, saved_errno, strerror(saved_errno));
+                builder, ec.value(), ec.message().c_str());
     }
 
     auto response = v3::CreatePathDeleteResponseDirect(
-            builder, ret, ret ? nullptr : strerror(saved_errno), error);
+            builder, ret, ret ? nullptr : ec.message().c_str(), error);
 
     // Wrap response
     builder.Finish(v3::CreateResponse(
