@@ -32,8 +32,7 @@ void replace(std::string &source,
 void replace_all(std::string &source,
                  const std::string &from, const std::string &to);
 
-std::vector<std::string> tokenize(const std::string &str,
-                                  const std::string &delims);
+std::vector<std::string> tokenize(std::string str, const std::string &delims);
 
 std::string hex_string(const unsigned char *data, size_t size);
 

@@ -59,17 +59,14 @@ void replace_all(std::string &source,
     replace_internal(source, from, to, false);
 }
 
-std::vector<std::string> tokenize(const std::string &str,
-                                  const std::string &delims)
+std::vector<std::string> tokenize(std::string str, const std::string &delims)
 {
-    std::vector<char> linebuf(str.begin(), str.end());
-    linebuf.resize(linebuf.size() + 1);
     std::vector<std::string> tokens;
 
     char *temp;
     char *token;
 
-    token = strtok_r(linebuf.data(), delims.c_str(), &temp);
+    token = strtok_r(str.data(), delims.c_str(), &temp);
     while (token != nullptr) {
         tokens.emplace_back(token);
 
