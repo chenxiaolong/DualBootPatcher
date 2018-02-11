@@ -119,7 +119,7 @@ static bool create_dir_and_mount(const std::vector<util::FstabRec> &recs,
         if (rec.fs_mgr_flags & util::MF_WAIT) {
             LOGD("%s: Waiting up to 20 seconds for block device",
                  rec.blk_device.c_str());
-            util::wait_for_path(rec.blk_device, 20 * 1000);
+            util::wait_for_path(rec.blk_device, std::chrono::seconds(20));
         }
 
         // Try mounting

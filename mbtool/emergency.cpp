@@ -114,8 +114,10 @@ static bool dump_kernel_log(const char *file)
         return false;
     }
 
-    std::string timestamp = util::format_time("%Y/%m/%d %H:%M:%S %Z\n");
-    if (fwrite(timestamp.data(), timestamp.length(), 1, fp.get()) != 1) {
+    auto timestamp = util::format_time("%Y/%m/%d %H:%M:%S %Z\n",
+                                       std::chrono::system_clock::now());
+    if (timestamp && fwrite(timestamp.value().data(),
+            timestamp.value().length(), 1, fp.get()) != 1) {
         LOGE("%s: Failed to write timestamp: %s", file, strerror(errno));
         return false;
     }

@@ -906,7 +906,10 @@ int backup_main(int argc, char *argv[])
     util::CompressionType compression = util::CompressionType::Lz4;
     bool force = false;
 
-    if (!util::format_time("%Y.%m.%d-%H.%M.%S", name)) {
+    if (auto n = util::format_time("%Y.%m.%d-%H.%M.%S",
+                                   std::chrono::system_clock::now())) {
+        n.value().swap(name);
+    } else {
         fprintf(stderr, "Failed to format current time\n");
         return EXIT_FAILURE;
     }

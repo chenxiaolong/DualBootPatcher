@@ -20,6 +20,7 @@
 #include "appsync.h"
 
 #include <algorithm>
+#include <chrono>
 
 #include <cassert>
 #include <cstdio>
@@ -55,7 +56,6 @@
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
 #include "mbutil/string.h"
-#include "mbutil/time.h"
 
 #include "appsyncmanager.h"
 #include "multiboot.h"
@@ -82,6 +82,8 @@
 #define COMMAND_BUF_SIZE                1024
 
 #define PACKAGES_XML_PATH_FMT           "%s/system/packages.xml"
+
+using namespace std::chrono;
 
 namespace mb
 {
@@ -157,7 +159,7 @@ static bool prepare_appsync()
         return false;
     }
 
-    uint64_t start = util::current_time_ms(), stop;
+    auto start = steady_clock::now();
 
     for (auto it = config.shared_pkgs.begin();
             it != config.shared_pkgs.end();) {
@@ -193,10 +195,12 @@ static bool prepare_appsync()
         disable_data_sharing = true;
     }
 
-    stop = util::current_time_ms();
-    LOGD("Initialization stage 1 took %" PRIu64 "ms", stop - start);
+    auto stop = steady_clock::now();
+    LOGD("Initialization stage 1 took %" PRIu64 "ms",
+         static_cast<uint64_t>(duration_cast<milliseconds>(
+                stop - start).count()));
 
-    start = util::current_time_ms();
+    start = steady_clock::now();
 
     // Actually share the data
     for (SharedPackage &shared_pkg : config.shared_pkgs) {
@@ -213,8 +217,10 @@ static bool prepare_appsync()
         }
     }
 
-    stop = util::current_time_ms();
-    LOGD("Initialization stage 2 took %" PRIu64 "ms", stop - start);
+    stop = steady_clock::now();
+    LOGD("Initialization stage 2 took %" PRIu64 "ms",
+         static_cast<uint64_t>(duration_cast<milliseconds>(
+                stop - start).count()));
 
     return true;
 }
@@ -531,41 +537,40 @@ static bool handle_installd_event(int client_fd, int installd_fd,
     // Use the same buffer size as installd
     char buf[COMMAND_BUF_SIZE];
 
-    uint64_t time_start, time_stop;
-    uint64_t time_start_installd, time_stop_installd;
-    uint64_t time_start_send, time_stop_send;
-
     int async_id;
 
-    time_start = util::current_time_ms();
+    auto start = steady_clock::now();
 
-    time_start_installd = util::current_time_ms();
+    auto start_installd = steady_clock::now();
     if (!receive_message(
             installd_fd, buf, sizeof(buf), is_async, async_id)) {
         LOGE("Failed to receive reply from installd");
         return false;
     }
-    time_stop_installd = util::current_time_ms();
+    auto stop_installd = steady_clock::now();
 
     std::vector<std::string> args = parse_args(buf);
     LOGD("Received async (probably) reply: %s", args_to_string(args).c_str());
 
-    time_start_send = util::current_time_ms();
+    auto start_send = steady_clock::now();
     if (!send_message(client_fd, buf, is_async, async_id)) {
         LOGE("Failed to send reply to client");
         return false;
     }
-    time_stop_send = util::current_time_ms();
+    auto stop_send = steady_clock::now();
 
-    time_stop = util::current_time_ms();
+    auto stop = steady_clock::now();
 
     LOGD("Command stats:");
     LOGD("- Time to send result back to client:  %" PRIu64 "ms",
-         time_stop_send - time_start_send);
+         static_cast<uint64_t>(duration_cast<milliseconds>(
+                stop_send - start_send).count()));
     LOGD("- Time to receive reply from installd: %" PRIu64 "ms",
-         time_stop_installd - time_start_installd);
+         static_cast<uint64_t>(duration_cast<milliseconds>(
+                stop_installd - start_installd).count()));
     LOGD("- Time to complete entire proxy logic: %" PRIu64 "ms",
-         time_stop - time_start);
+         static_cast<uint64_t>(duration_cast<milliseconds>(
+                stop - start).count()));
     LOGD("---");
 
     return true;
@@ -577,10 +582,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
     // Use the same buffer size as installd
     char buf[COMMAND_BUF_SIZE];
 
-    uint64_t time_start, time_stop;
-    uint64_t time_start_installd, time_stop_installd;
-    uint64_t time_start_hook = 0, time_stop_hook = 0;
-    uint64_t time_start_send, time_stop_send;
+    steady_clock::time_point start_hook, stop_hook;
 
     int async_id;
 
@@ -589,7 +591,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
         return false;
     }
 
-    time_start = util::current_time_ms();
+    auto start = steady_clock::now();
 
     std::vector<std::string> args = parse_args(buf);
 
@@ -640,16 +642,16 @@ static bool handle_android_event(int client_fd, int installd_fd,
             LOGD("Received command: %s", args_to_string(args).c_str());
 
             if (can_appsync) {
-                time_start_hook = util::current_time_ms();
+                start_hook = steady_clock::now();
                 handle_command(args);
-                time_stop_hook = util::current_time_ms();
+                stop_hook = steady_clock::now();
             }
         } else {
             LOGW("Unrecognized command: %s", args_to_string(args).c_str());
         }
     }
 
-    time_start_installd = util::current_time_ms();
+    auto start_installd = steady_clock::now();
     if (!send_message(installd_fd, buf, is_async, async_id)) {
         LOGE("Failed to send request to installd");
         return false;
@@ -659,7 +661,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
         LOGE("Failed to receive reply from installd");
         return false;
     }
-    time_stop_installd = util::current_time_ms();
+    auto stop_installd = steady_clock::now();
 
     args = parse_args(buf);
 
@@ -667,27 +669,31 @@ static bool handle_android_event(int client_fd, int installd_fd,
         LOGD("Sending reply: %s", args_to_string(args).c_str());
     }
 
-    time_start_send = util::current_time_ms();
+    auto start_send = steady_clock::now();
     if (!send_message(client_fd, buf, is_async, async_id)) {
         LOGE("Failed to send reply to client");
         return false;
     }
-    time_stop_send = util::current_time_ms();
+    auto stop_send = steady_clock::now();
 
-    time_stop = util::current_time_ms();
+    auto stop = steady_clock::now();
 
     if (log_result) {
         LOGD("Command stats:");
         LOGD("- Time to send result back to client:  %" PRIu64 "ms",
-             time_stop_send - time_start_send);
+             static_cast<uint64_t>(duration_cast<milliseconds>(
+                    stop_send - start_send).count()));
         LOGD("- Time to complete installd command:   %" PRIu64 "ms",
-             time_stop_installd - time_start_installd);
+             static_cast<uint64_t>(duration_cast<milliseconds>(
+                    stop_installd - start_installd).count()));
         if (can_appsync) {
             LOGD("- Time to hook installd command:       %" PRIu64 "ms",
-                 time_stop_hook - time_start_hook);
+                 static_cast<uint64_t>(duration_cast<milliseconds>(
+                        stop_hook - start_hook).count()));
         }
         LOGD("- Time to complete entire proxy logic: %" PRIu64 "ms",
-             time_stop - time_start);
+             static_cast<uint64_t>(duration_cast<milliseconds>(
+                    stop - start).count()));
         LOGD("---");
     }
 
@@ -941,14 +947,16 @@ int appsync_main(int argc, char *argv[])
         LOGW("Continuing to proxy installd anyway...");
     } else {
         if (config.indiv_app_sharing) {
-            uint64_t start = util::current_time_ms();
+            auto start = steady_clock::now();
             can_appsync = prepare_appsync();
-            uint64_t stop = util::current_time_ms();
+            auto stop = steady_clock::now();
             if (!can_appsync) {
                 LOGW("appsync preparation failed. "
                      "App sharing is completely disabled");
             }
-            LOGD("Entire appsync preparation took %" PRIu64 "ms", stop - start);
+            LOGD("Entire appsync preparation took %" PRIu64 "ms",
+                 static_cast<uint64_t>(duration_cast<milliseconds>(
+                        stop - start).count()));
         }
     }
 

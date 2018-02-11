@@ -21,6 +21,7 @@
 
 // C++
 #include <algorithm>
+#include <chrono>
 
 // C
 #include <cstring>
@@ -69,7 +70,6 @@
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
-#include "mbutil/time.h"
 
 // Local
 #include "image.h"
@@ -1705,6 +1705,8 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 
 Installer::ProceedState Installer::install_stage_installation()
 {
+    using namespace std::chrono;
+
     LOGD("[Installer] Installation stage");
 
     ProceedState hook_ret = on_pre_install();
@@ -1728,20 +1730,23 @@ Installer::ProceedState Installer::install_stage_installation()
     struct stat sb;
     if (lstat(in_chroot("/.skip-install").c_str(), &sb) < 0
             && errno == ENOENT) {
-        uint64_t start = util::current_time_ms();
+        auto start = steady_clock::now();
         updater_ret = run_real_updater();
-        uint64_t stop = util::current_time_ms();
-        uint64_t remainder = stop - start;
+        auto stop = steady_clock::now();
+        auto ms = duration_cast<milliseconds>(stop - start);
 
-        uint64_t hours = remainder / (3600 * 1000);
-        remainder %= (3600 * 1000);
-        uint64_t minutes = remainder / (60 * 1000);
-        remainder %= (60 * 1000);
-        uint64_t seconds = remainder / 1000;
-        remainder %= 1000;
+        auto h = duration_cast<hours>(ms);
+        ms -= h;
+        auto m = duration_cast<minutes>(ms);
+        ms -= m;
+        auto s = duration_cast<seconds>(ms);
+        ms -= s;
 
         display_msg("Elapsed time: %02" PRIu64 ":%02" PRIu64 ":%02" PRIu64
-                    ".%03" PRIu64, hours, minutes, seconds, remainder);
+                    ".%03" PRIu64, static_cast<uint64_t>(h.count()),
+                    static_cast<uint64_t>(m.count()),
+                    static_cast<uint64_t>(s.count()),
+                    static_cast<uint64_t>(ms.count()));
 
         if (!updater_ret) {
             display_msg("Failed to run real update-binary");
