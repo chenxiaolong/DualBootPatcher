@@ -883,10 +883,10 @@ static bool create_layout_version()
         return false;
     }
 
-    if (!util::selinux_set_context(
-            "/data/.layout_version", "u:object_r:install_data_file:s0")) {
+    if (auto ret = util::selinux_set_context("/data/.layout_version",
+            "u:object_r:install_data_file:s0"); !ret) {
         LOGE("%s: Failed to set SELinux context: %s",
-             "/data/.layout_version", strerror(errno));
+             "/data/.layout_version", ret.error().message().c_str());
         return false;
     }
 

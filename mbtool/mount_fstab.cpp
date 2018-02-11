@@ -623,16 +623,15 @@ static bool disable_fsck(const char *fsck_binary)
     chmod(target.c_str(), static_cast<mode_t>(sb.st_mode));
 
     // Copy SELinux label
-    std::string context;
-    if (util::selinux_get_context(fsck_binary, context)) {
-        LOGD("%s: SELinux label is: %s", fsck_binary, context.c_str());
-        if (!util::selinux_set_context(target.c_str(), context)) {
+    if (auto context = util::selinux_get_context(fsck_binary)) {
+        LOGD("%s: SELinux label is: %s", fsck_binary, context.value().c_str());
+        if (auto ret = util::selinux_set_context(target, context.value()); !ret) {
             LOGW("%s: Failed to set SELinux label: %s",
-                 target.c_str(), strerror(errno));
+                 target.c_str(), ret.error().message().c_str());
         }
     } else {
         LOGW("%s: Failed to get SELinux label: %s",
-             fsck_binary, strerror(errno));
+             fsck_binary, context.error().message().c_str());
     }
 
     if (mount(target.c_str(), fsck_binary, "", MS_BIND | MS_RDONLY, "") < 0) {
@@ -665,16 +664,16 @@ static bool copy_mount_exfat()
     chmod(target, static_cast<mode_t>(sb.st_mode));
 
     // Copy SELinux label
-    std::string context;
-    if (util::selinux_get_context(system_mount_exfat, context)) {
-        LOGD("%s: SELinux label is: %s", system_mount_exfat, context.c_str());
-        if (!util::selinux_set_context(target, context)) {
+    if (auto context = util::selinux_get_context(system_mount_exfat)) {
+        LOGD("%s: SELinux label is: %s", system_mount_exfat,
+             context.value().c_str());
+        if (auto ret = util::selinux_set_context(target, context.value()); !ret) {
             LOGW("%s: Failed to set SELinux label: %s",
-                 target, strerror(errno));
+                 target, ret.error().message().c_str());
         }
     } else {
         LOGW("%s: Failed to get SELinux label: %s",
-             system_mount_exfat, strerror(errno));
+             system_mount_exfat, context.error().message().c_str());
     }
 
     if (mount(target, system_mount_exfat, "", MS_BIND | MS_RDONLY, "") < 0) {

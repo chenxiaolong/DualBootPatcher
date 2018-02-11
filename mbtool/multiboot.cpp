@@ -187,12 +187,14 @@ bool fix_multiboot_permissions()
         return false;
     }
 
-    std::string context;
-    if (util::selinux_lget_context(INTERNAL_STORAGE, context)
-            && !util::selinux_lset_context_recursive(MULTIBOOT_DIR, context)) {
-        LOGE("%s: Failed to set context to %s: %s",
-             MULTIBOOT_DIR, context.c_str(), strerror(errno));
-        return false;
+    if (auto context = util::selinux_lget_context(INTERNAL_STORAGE)) {
+        if (auto ret = util::selinux_lset_context_recursive(
+                MULTIBOOT_DIR, context.value()); !ret) {
+            LOGE("%s: Failed to set context to %s: %s",
+                 MULTIBOOT_DIR, context.value().c_str(),
+                 ret.error().message().c_str());
+            return false;
+        }
     }
 
     return true;
@@ -200,27 +202,28 @@ bool fix_multiboot_permissions()
 
 bool switch_context(const std::string &context)
 {
-    std::string current;
-
-    if (!util::selinux_get_process_attr(
-            0, util::SELinuxAttr::Current, current)) {
-        LOGE("Failed to get current process context: %s", strerror(errno));
+    auto current = util::selinux_get_process_attr(
+            0, util::SELinuxAttr::Current);
+    if (!current) {
+        LOGE("Failed to get current process context: %s",
+             current.error().message().c_str());
         // Don't fail if SELinux is not supported
         return errno == ENOENT;
     }
 
-    LOGI("Current process context: %s", current.c_str());
+    LOGI("Current process context: %s", current.value().c_str());
 
-    if (current == context) {
+    if (current.value() == context) {
         LOGV("Not switching process context");
         return true;
     }
 
     LOGV("Setting process context: %s", context.c_str());
 
-    if (!util::selinux_set_process_attr(
-            0, util::SELinuxAttr::Current, context)) {
-        LOGE("Failed to set current process context: %s", strerror(errno));
+    if (auto ret = util::selinux_set_process_attr(
+            0, util::SELinuxAttr::Current, context); !ret) {
+        LOGE("Failed to set current process context: %s",
+             ret.error().message().c_str());
         return false;
     }
 

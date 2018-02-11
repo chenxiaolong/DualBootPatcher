@@ -819,10 +819,9 @@ static void warn_selinux_context()
     // the daemon will guarantee that we run in that context. We'll just warn if
     // this happens to not be the case (eg. debugging via command line).
 
-    std::string context;
-    if (util::selinux_get_process_attr(
-            0, util::SELinuxAttr::Current, context)
-            && context != MB_EXEC_CONTEXT) {
+    auto context = util::selinux_get_process_attr(
+            0, util::SELinuxAttr::Current);
+    if (context && context.value() != MB_EXEC_CONTEXT) {
         fprintf(stderr, "WARNING: Not running under %s context\n",
                 MB_EXEC_CONTEXT);
     }

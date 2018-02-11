@@ -289,7 +289,7 @@ static int create_new_socket()
 
     chown(addr.sun_path, INSTALLD_SOCKET_UID, INSTALLD_SOCKET_GID);
     chmod(addr.sun_path, INSTALLD_SOCKET_PERMS);
-    util::selinux_set_context(addr.sun_path, INSTALLD_SOCKET_CONTEXT);
+    (void) util::selinux_set_context(addr.sun_path, INSTALLD_SOCKET_CONTEXT);
 
     // Make sure close-on-exec is cleared to the fd remains open across execve()
     fcntl(fd, F_SETFD, 0);
