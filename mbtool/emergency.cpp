@@ -28,7 +28,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/outcome.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
@@ -92,50 +94,44 @@ private:
     std::vector<std::string> _results;
 };
 
-static bool dump_kernel_log(const char *file)
+static oc::result<void> dump_kernel_log(const char *file)
 {
     int len = klogctl(KLOG_SIZE_BUFFER, nullptr, 0);
     if (len < 0) {
-        LOGE("Failed to get kernel log buffer size: %s", strerror(errno));
-        return false;
+        return ec_from_errno();
     }
 
     std::vector<char> buf(static_cast<size_t>(len));
 
     len = klogctl(KLOG_READ_ALL, buf.data(), static_cast<int>(buf.size()));
     if (len < 0) {
-        LOGE("Failed to read kernel log buffer: %s", strerror(errno));
-        return false;
+        return ec_from_errno();
     }
 
     ScopedFILE fp(fopen(file, "wb"), fclose);
     if (!fp) {
-        LOGE("%s: Failed to open for writing: %s", file, strerror(errno));
-        return false;
+        return ec_from_errno();
     }
 
     auto timestamp = util::format_time("%Y/%m/%d %H:%M:%S %Z\n",
                                        std::chrono::system_clock::now());
     if (timestamp && fwrite(timestamp.value().data(),
             timestamp.value().length(), 1, fp.get()) != 1) {
-        LOGE("%s: Failed to write timestamp: %s", file, strerror(errno));
-        return false;
+        return ec_from_errno();
     }
 
     if (len > 0) {
         if (fwrite(buf.data(), static_cast<size_t>(len), 1, fp.get()) != 1) {
-            LOGE("%s: Failed to write data: %s", file, strerror(errno));
-            return false;
+            return ec_from_errno();
         }
         if (buf[static_cast<size_t>(len - 1)] != '\n') {
             if (fputc('\n', fp.get()) == EOF) {
-                LOGE("%s: Failed to write data: %s", file, strerror(errno));
-                return false;
+                return ec_from_errno();
             }
         }
     }
 
-    return true;
+    return oc::success();
 }
 
 struct EmergencyMount
@@ -255,7 +251,10 @@ bool emergency_reboot()
         LOGI("Dumping kernel log to %s", log_path.c_str());
 
         rename(log_path.c_str(), log_path_old.c_str());
-        dump_kernel_log(log_path.c_str());
+        if (auto ret = dump_kernel_log(log_path.c_str()); !ret) {
+            LOGW("Failed to dump kernel log: %s",
+                 ret.error().message().c_str());
+        }
         sync();
 
         util::umount(em.mount_point);
