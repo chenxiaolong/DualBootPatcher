@@ -893,6 +893,30 @@ static bool create_layout_version()
     return true;
 }
 
+static bool disable_installd()
+{
+    static constexpr char installd_init[] = "/system/etc/init/installd.rc";
+
+    if (access(installd_init, R_OK) < 0) {
+        if (errno == ENOENT) {
+            LOGV("%s: installd init file not found", installd_init);
+            return true;
+        } else {
+            LOGE("%s: Failed to access file: %s",
+                 installd_init, strerror(errno));
+            return false;
+        }
+    }
+
+    if (!util::mount("/dev/null", installd_init, "", MS_BIND | MS_RDONLY, "")) {
+        LOGE("%s: Failed to bind mount /dev/null: %s",
+             installd_init, strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
 static bool disable_spota()
 {
     static const char *spota_dir = "/data/security/spota";
@@ -1307,6 +1331,9 @@ int init_main(int argc, char *argv[])
     write_fstab_hack(fstab.c_str());
     add_mbtool_services(config.indiv_app_sharing);
     strip_manual_mounts();
+
+    // Disable installd on Android 7.0+
+    disable_installd();
 
     // Data modifications
     create_layout_version();
