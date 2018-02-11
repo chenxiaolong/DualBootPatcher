@@ -1215,8 +1215,8 @@ int init_main(int argc, char *argv[])
     mkdir("/system", 0755);
     mkdir("/cache", 0770);
     mkdir("/data", 0771);
-    util::chown("/cache", "system", "cache", 0);
-    util::chown("/data", "system", "system", 0);
+    (void) util::chown("/cache", "system", "cache", 0);
+    (void) util::chown("/data", "system", "system", 0);
 
     // Redirect std{in,out,err} to /dev/null
     open_devnull_stdio();

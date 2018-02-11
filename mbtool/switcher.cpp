@@ -159,9 +159,9 @@ bool checksums_write(const std::unordered_map<std::string, std::string> &props)
     (void) util::mkdir_parent(checksums_path, 0755);
     (void) util::create_empty_file(checksums_path);
 
-    if (!util::chown(checksums_path, 0, 0, 0)) {
+    if (auto r = util::chown(checksums_path, 0, 0, 0); !r) {
         LOGW("%s: Failed to chown file: %s",
-             checksums_path.c_str(), strerror(errno));
+             checksums_path.c_str(), r.error().message().c_str());
     }
     if (chmod(checksums_path.c_str(), 0700) < 0) {
         LOGW("%s: Failed to chmod file: %s",

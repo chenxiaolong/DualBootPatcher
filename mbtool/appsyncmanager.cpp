@@ -58,7 +58,7 @@ public:
 
     Actions on_changed_path() override
     {
-        util::chown(_curr->fts_accpath, "system", "system", 0);
+        (void) util::chown(_curr->fts_accpath, "system", "system", 0);
         return Action::Ok;
     }
 
@@ -124,9 +124,10 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
         return false;
     }
 
-    if (!util::chown(data_path, uid, uid, util::ChownFlag::Recursive)) {
+    if (auto r = util::chown(
+            data_path, uid, uid, util::ChownFlag::Recursive); !r) {
         LOGW("[%s] %s: Failed to chown: %s",
-             pkg.c_str(), data_path.c_str(), strerror(errno));
+             pkg.c_str(), data_path.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -164,9 +165,9 @@ bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
              pkg.c_str(), target.c_str(), r.error().message().c_str());
         return false;
     }
-    if (!util::chown(target, uid, uid, util::ChownFlag::Recursive)) {
+    if (auto r = util::chown(target, uid, uid, util::ChownFlag::Recursive); !r) {
         LOGW("[%s] %s: Failed to chown: %s",
-             pkg.c_str(), target.c_str(), strerror(errno));
+             pkg.c_str(), target.c_str(), r.error().message().c_str());
         return false;
     }
 

@@ -176,14 +176,17 @@ bool fix_multiboot_permissions()
 {
     (void) util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
 
-    if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
-                     util::ChownFlag::Recursive)) {
-        LOGE("Failed to chown %s", MULTIBOOT_DIR);
+    if (auto r = util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
+                             util::ChownFlag::Recursive); !r) {
+        LOGE("Failed to chown %s: %s", MULTIBOOT_DIR,
+             r.error().message().c_str());
         return false;
     }
 
-    if (!util::chmod(MULTIBOOT_DIR, 0775, util::ChmodFlag::Recursive)) {
-        LOGE("Failed to chmod %s", MULTIBOOT_DIR);
+    if (auto r = util::chmod(MULTIBOOT_DIR, 0775,
+                             util::ChmodFlag::Recursive); !r) {
+        LOGE("Failed to chmod %s: %s", MULTIBOOT_DIR,
+             r.error().message().c_str());
         return false;
     }
 

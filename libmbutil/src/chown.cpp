@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,37 +21,43 @@
 
 #include <cerrno>
 #include <cstdlib>
-#include <cstring>
 
 #include <grp.h>
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "mbcommon/string.h"
-#include "mblog/logging.h"
+#include "mbcommon/error_code.h"
 #include "mbutil/fts.h"
-#include "mbutil/string.h"
 
-#define LOG_TAG "mbutil/chown"
 
 namespace mb::util
 {
 
-static bool chown_internal(const std::string &path,
-                           uid_t uid,
-                           gid_t gid,
-                           bool follow_symlinks)
+static oc::result<void> chown_internal(const std::string &path,
+                                       uid_t uid,
+                                       gid_t gid,
+                                       bool follow_symlinks)
 {
+    int ret;
+
     if (follow_symlinks) {
-        return ::chown(path.c_str(), uid, gid) == 0;
+        ret = ::chown(path.c_str(), uid, gid);
     } else {
-        return ::lchown(path.c_str(), uid, gid) == 0;
+        ret = ::lchown(path.c_str(), uid, gid);
     }
+
+    if (ret < 0) {
+        ec_from_errno();
+    }
+
+    return oc::success();
 }
 
 class RecursiveChown : public FtsWrapper {
 public:
+    std::error_code ec;
+
     RecursiveChown(std::string path, uid_t uid, gid_t gid,
                    bool follow_symlinks)
         : FtsWrapper(std::move(path), FtsFlag::GroupSpecialFiles)
@@ -88,10 +94,9 @@ private:
 
     bool chown_path()
     {
-        if (!chown_internal(_curr->fts_accpath, _uid, _gid, _follow_symlinks)) {
-            _error_msg = format("%s: Failed to chown: %s",
-                                _curr->fts_path, strerror(errno));
-            LOGW("%s", _error_msg.c_str());
+        if (auto r = chown_internal(
+                _curr->fts_accpath, _uid, _gid, _follow_symlinks); !r) {
+            ec = r.error();
             return false;
         }
         return true;
@@ -99,10 +104,10 @@ private:
 };
 
 // WARNING: Not thread safe! Android doesn't have getpwnam_r() or getgrnam_r()
-bool chown(const std::string &path,
-           const std::string &user,
-           const std::string &group,
-           ChownFlags flags)
+oc::result<void> chown(const std::string &path,
+                       const std::string &user,
+                       const std::string &group,
+                       ChownFlags flags)
 {
     uid_t uid;
     gid_t gid;
@@ -113,7 +118,7 @@ bool chown(const std::string &path,
         if (!errno) {
             errno = EINVAL; // User does not exist
         }
-        return false;
+        return ec_from_errno();
     } else {
         uid = pw->pw_uid;
     }
@@ -124,7 +129,7 @@ bool chown(const std::string &path,
         if (!errno) {
             errno = EINVAL; // Group does not exist
         }
-        return false;
+        return ec_from_errno();
     } else {
         gid = gr->gr_gid;
     }
@@ -132,14 +137,18 @@ bool chown(const std::string &path,
     return chown(path, uid, gid, flags);
 }
 
-bool chown(const std::string &path,
-           uid_t uid,
-           gid_t gid,
-           ChownFlags flags)
+oc::result<void> chown(const std::string &path,
+                       uid_t uid,
+                       gid_t gid,
+                       ChownFlags flags)
 {
     if (flags & ChownFlag::Recursive) {
         RecursiveChown fts(path, uid, gid, flags & ChownFlag::FollowSymlinks);
-        return fts.run();
+        if (!fts.run()) {
+            return fts.ec;
+        } else {
+            return oc::success();
+        }
     } else {
         return chown_internal(path, uid, gid, flags & ChownFlag::FollowSymlinks);
     }
