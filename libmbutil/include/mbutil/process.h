@@ -24,11 +24,12 @@
 #include <sys/types.h>
 
 #include "mbcommon/common.h"
+#include "mbcommon/outcome.h"
 
 namespace mb::util
 {
 
-bool set_process_title_init(int argc, char *argv[]);
-bool set_process_title(const std::string &title, size_t *size_out);
+oc::result<void> set_process_title_init(int argc, char *argv[]);
+oc::result<size_t> set_process_title(std::string_view title);
 
 }

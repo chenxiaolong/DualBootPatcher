@@ -134,8 +134,8 @@ static bool client_connection(int fd)
         return false;
     }
 
-    util::set_process_title(format("mbtool connection from pid: %u", cred.pid),
-                            nullptr);
+    (void) util::set_process_title(format(
+            "mbtool connection from pid: %u", cred.pid));
 
     LOGD("Client PID: %u", cred.pid);
     LOGD("Client UID: %u", cred.uid);
@@ -277,9 +277,10 @@ static bool run_daemon()
 
             // Change the process name so --replace doesn't kill existing
             // connections
-            if (!util::set_process_title(
-                    "mbtool connection initializing", nullptr)) {
-                LOGE("Failed to set process title: %s", strerror(errno));
+            if (auto ret = util::set_process_title(
+                    "mbtool connection initializing"); !ret) {
+                LOGE("Failed to set process title: %s",
+                     ret.error().message().c_str());
                 _exit(127);
             }
 
