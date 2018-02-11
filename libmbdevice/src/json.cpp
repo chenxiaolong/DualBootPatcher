@@ -420,7 +420,7 @@ bool device_to_json(const Device &device, std::string &json)
     if (!base_dirs.empty()) {
         Value array(kArrayType);
         for (auto const &p : base_dirs) {
-            array.PushBack(StringRef(p), d.GetAllocator());
+            array.PushBack(StringRef(p), alloc);
         }
         block_devs.AddMember("base_dirs", array, alloc);
     }
@@ -429,7 +429,7 @@ bool device_to_json(const Device &device, std::string &json)
     if (!system_devs.empty()) {
         Value array(kArrayType);
         for (auto const &p : system_devs) {
-            array.PushBack(StringRef(p), d.GetAllocator());
+            array.PushBack(StringRef(p), alloc);
         }
         block_devs.AddMember("system", array, alloc);
     }
@@ -438,7 +438,7 @@ bool device_to_json(const Device &device, std::string &json)
     if (!cache_devs.empty()) {
         Value array(kArrayType);
         for (auto const &p : cache_devs) {
-            array.PushBack(StringRef(p), d.GetAllocator());
+            array.PushBack(StringRef(p), alloc);
         }
         block_devs.AddMember("cache", array, alloc);
     }
@@ -447,7 +447,7 @@ bool device_to_json(const Device &device, std::string &json)
     if (!data_devs.empty()) {
         Value array(kArrayType);
         for (auto const &p : data_devs) {
-            array.PushBack(StringRef(p), d.GetAllocator());
+            array.PushBack(StringRef(p), alloc);
         }
         block_devs.AddMember("data", array, alloc);
     }
@@ -456,7 +456,7 @@ bool device_to_json(const Device &device, std::string &json)
     if (!boot_devs.empty()) {
         Value array(kArrayType);
         for (auto const &p : boot_devs) {
-            array.PushBack(StringRef(p), d.GetAllocator());
+            array.PushBack(StringRef(p), alloc);
         }
         block_devs.AddMember("boot", array, alloc);
     }
@@ -465,7 +465,7 @@ bool device_to_json(const Device &device, std::string &json)
     if (!recovery_devs.empty()) {
         Value array(kArrayType);
         for (auto const &p : recovery_devs) {
-            array.PushBack(StringRef(p), d.GetAllocator());
+            array.PushBack(StringRef(p), alloc);
         }
         block_devs.AddMember("recovery", array, alloc);
     }
@@ -474,7 +474,7 @@ bool device_to_json(const Device &device, std::string &json)
     if (!extra_devs.empty()) {
         Value array(kArrayType);
         for (auto const &p : extra_devs) {
-            array.PushBack(StringRef(p), d.GetAllocator());
+            array.PushBack(StringRef(p), alloc);
         }
         block_devs.AddMember("extra", array, alloc);
     }
@@ -495,7 +495,7 @@ bool device_to_json(const Device &device, std::string &json)
         Value array(kArrayType);
         for (auto const &item : g_tw_flag_mappings) {
             if (tw_flags & item.second) {
-                array.PushBack(StringRef(item.first), d.GetAllocator());
+                array.PushBack(StringRef(item.first), alloc);
             }
         }
         boot_ui.AddMember("flags", array, alloc);
@@ -583,7 +583,7 @@ bool device_to_json(const Device &device, std::string &json)
     if (!graphics_backends.empty()) {
         Value array(kArrayType);
         for (auto const &b : graphics_backends) {
-            array.PushBack(StringRef(b), d.GetAllocator());
+            array.PushBack(StringRef(b), alloc);
         }
         boot_ui.AddMember("graphics_backends", array, alloc);
     }
