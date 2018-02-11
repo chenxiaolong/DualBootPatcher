@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,13 +21,10 @@
 
 #include <memory>
 
-#include <cerrno>
 #include <cstdio>
-#include <cstring>
 
-#include "mblog/logging.h"
+#include "mbcommon/error_code.h"
 
-#define LOG_TAG "mbutil/hash"
 
 namespace mb::util
 {
@@ -38,16 +35,14 @@ using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
  * \brief Compute SHA512 hash of a file
  *
  * \param path Path to file
- * \param digest Byte array to store computed hash value
  *
- * \return true on success, false on failure and errno set appropriately
+ * \return The digest on success or the error code on failure
  */
-bool sha512_hash(const std::string &path, Sha512Digest &digest)
+oc::result<Sha512Digest> sha512_hash(const std::string &path)
 {
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
-        LOGE("%s: Failed to open: %s", path.c_str(), strerror(errno));
-        return false;
+        return ec_from_errno();
     }
 
     std::array<unsigned char, 10240> buf;
@@ -55,14 +50,12 @@ bool sha512_hash(const std::string &path, Sha512Digest &digest)
 
     SHA512_CTX ctx;
     if (!SHA512_Init(&ctx)) {
-        LOGE("openssl: SHA512_Init() failed");
-        return false;
+        return std::errc::io_error;
     }
 
     while ((n = fread(buf.data(), 1, buf.size(), fp.get())) > 0) {
         if (!SHA512_Update(&ctx, buf.data(), n)) {
-            LOGE("openssl: SHA512_Update() failed");
-            return false;
+            return std::errc::io_error;
         }
         if (n < buf.size()) {
             break;
@@ -70,17 +63,16 @@ bool sha512_hash(const std::string &path, Sha512Digest &digest)
     }
 
     if (ferror(fp.get())) {
-        LOGE("%s: Failed to read file", path.c_str());
-        errno = EIO;
-        return false;
+        return ec_from_errno();
     }
+
+    Sha512Digest digest;
 
     if (!SHA512_Final(digest.data(), &ctx)) {
-        LOGE("openssl: SHA512_Final() failed");
-        return false;
+        return std::errc::io_error;
     }
 
-    return true;
+    return std::move(digest);
 }
 
 }

@@ -1907,14 +1907,16 @@ Installer::ProceedState Installer::install_stage_finish()
     }
 
     // Update checksums
-    util::Sha512Digest digest;
-
-    if (!util::sha512_hash(temp_boot_img, digest)) {
+    auto digest = util::sha512_hash(temp_boot_img);
+    if (!digest) {
+        LOGE("%s: Failed to compute sha512sum: %s",
+             temp_boot_img.c_str(), digest.error().message().c_str());
         display_msg("Failed to compute sha512sum of new boot image");
         return ProceedState::Fail;
     }
 
-    std::string hash = util::hex_string(digest.data(), digest.size());
+    std::string hash = util::hex_string(digest.value().data(),
+                                        digest.value().size());
 
     std::unordered_map<std::string, std::string> props;
     checksums_read(&props);
