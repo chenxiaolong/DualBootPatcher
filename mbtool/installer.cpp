@@ -211,12 +211,12 @@ static bool log_delete_recursive(const std::string &path)
 static bool log_copy_dir(const std::string &source,
                          const std::string &target, util::CopyFlags flags)
 {
-    bool ret = util::copy_dir(source, target, flags);
-    if (!ret) {
-        LOGE("Failed to copy contents of %s/ to %s/",
-             source.c_str(), target.c_str());
+    if (auto r = util::copy_dir(source, target, flags); !r) {
+        LOGE("Failed to copy contents of %s/ to %s/: %s",
+             source.c_str(), target.c_str(), r.error().message().c_str());
+        return false;
     }
-    return ret;
+    return true;
 }
 
 
@@ -633,16 +633,15 @@ bool Installer::set_up_busybox_wrapper()
 
     rename(sbin_busybox.c_str(), in_chroot("/sbin/busybox_orig").c_str());
 
-    if (!util::copy_file(temp_busybox, sbin_busybox,
-                         util::CopyFlag::CopyAttributes
-                       | util::CopyFlag::CopyXattrs)) {
-        LOGE("Failed to copy %s to %s: %s",
-             temp_busybox.c_str(), sbin_busybox.c_str(), strerror(errno));
+    if (auto r = util::copy_file(temp_busybox, sbin_busybox,
+                                 util::CopyFlag::CopyAttributes
+                               | util::CopyFlag::CopyXattrs); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 
     if (chmod(sbin_busybox.c_str(), 0555) < 0) {
-        LOGE("Failed to chmod %s: %s", sbin_busybox.c_str(), strerror(errno));
+        LOGE("%s: Failed to chmod: %s", sbin_busybox.c_str(), strerror(errno));
         return false;
     }
 
@@ -778,9 +777,8 @@ bool Installer::mount_dir_or_image(const std::string &source,
                  ret.error().message().c_str());
             return false;
         }
-        if (!util::copy_file(loopdev.value(), loop_target, 0)) {
-            LOGE("Failed to copy %s to %s: %s",
-                 loopdev.value().c_str(), loop_target.c_str(), strerror(errno));
+        if (auto r = util::copy_file(loopdev.value(), loop_target, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return false;
         }
 
@@ -960,21 +958,19 @@ bool Installer::run_real_updater()
 
     std::string chroot_updater = in_chroot("/mb/updater");
 
-    if (!util::copy_file(updater, chroot_updater,
-                         util::CopyFlag::CopyAttributes
-                       | util::CopyFlag::CopyXattrs)) {
-        LOGE("Failed to copy %s to %s: %s",
-             updater.c_str(), chroot_updater.c_str(), strerror(errno));
+    if (auto r = util::copy_file(updater, chroot_updater,
+                                 util::CopyFlag::CopyAttributes
+                               | util::CopyFlag::CopyXattrs); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 
 #if DEBUG_USE_UPDATER_WRAPPER
-    if (!util::copy_file(DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper"),
-                         util::CopyFlag::CopyAttributes
-                       | util::CopyFlag::CopyXattrs)) {
-        LOGE("Failed to copy %s to %s: %s",
-             DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper").c_str(),
-             strerror(errno));
+    if (auto r = util::copy_file(DEBUG_UPDATER_WRAPPER_PATH,
+                                 in_chroot("/mb/wrapper"),
+                                 util::CopyFlag::CopyAttributes
+                               | util::CopyFlag::CopyXattrs); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 #endif
@@ -1468,9 +1464,10 @@ Installer::ProceedState Installer::install_stage_check_device()
         }
 
         // Follow symlinks just in case the symlink source isn't in the list
-        if (!util::copy_file(dev, dev_path, util::CopyFlag::CopyAttributes
-                                          | util::CopyFlag::CopyXattrs
-                                          | util::CopyFlag::FollowSymlinks)) {
+        if (auto r = util::copy_file(dev, dev_path,
+                                     util::CopyFlag::CopyAttributes
+                                   | util::CopyFlag::CopyXattrs
+                                   | util::CopyFlag::FollowSymlinks); !r) {
             LOGW("Failed to copy %s. Continuing anyway", dev.c_str());
         } else {
             LOGD("Copied %s to the chroot", dev.c_str());
@@ -1593,20 +1590,20 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     }
 
     // Copy ourself for the real update-binary to use
-    util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
-                    util::CopyFlag::CopyAttributes
-                  | util::CopyFlag::CopyXattrs);
+    (void) util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
+                           util::CopyFlag::CopyAttributes
+                         | util::CopyFlag::CopyXattrs);
     chmod(in_chroot(HELPER_TOOL).c_str(), 0555);
 
     // Copy /default.prop
-    util::copy_file("/default.prop", in_chroot("/default.prop"),
-                    util::CopyFlag::CopyAttributes
-                  | util::CopyFlag::CopyXattrs);
+    (void) util::copy_file("/default.prop", in_chroot("/default.prop"),
+                           util::CopyFlag::CopyAttributes
+                         | util::CopyFlag::CopyXattrs);
 
     // Copy file_contexts
-    util::copy_file("/file_contexts", in_chroot("/file_contexts"),
-                    util::CopyFlag::CopyAttributes
-                  | util::CopyFlag::CopyXattrs);
+    (void) util::copy_file("/file_contexts", in_chroot("/file_contexts"),
+                           util::CopyFlag::CopyAttributes
+                         | util::CopyFlag::CopyXattrs);
 
     return on_set_up_chroot();
 }
@@ -1900,15 +1897,15 @@ Installer::ProceedState Installer::install_stage_finish()
         return ProceedState::Fail;
     }
 
-    if (!util::copy_contents(temp_boot_img, _boot_block_dev)) {
-        LOGE("Failed to copy %s to %s: %s",
-             temp_boot_img.c_str(), _boot_block_dev.c_str(), strerror(errno));
+    if (auto r = util::copy_contents(temp_boot_img, _boot_block_dev); !r) {
+        LOGE("Failed to copy %s to %s: %s", temp_boot_img.c_str(),
+             _boot_block_dev.c_str(), r.error().message().c_str());
         display_msg("Failed to flash patched boot image");
         return ProceedState::Fail;
     }
-    if (!util::copy_contents(temp_boot_img, path)) {
-        LOGE("Failed to copy %s to %s: %s",
-             temp_boot_img.c_str(), path.c_str(), strerror(errno));
+    if (auto r = util::copy_contents(temp_boot_img, path); !r) {
+        LOGE("Failed to copy %s to %s: %s", temp_boot_img.c_str(), path.c_str(),
+             r.error().message().c_str());
         display_msg("Failed to back up boot image");
         return ProceedState::Fail;
     }
@@ -1959,10 +1956,13 @@ void Installer::install_stage_cleanup(Installer::ProceedState ret)
 
     remove(_temp_image_path.c_str());
 
-    if (ret == ProceedState::Fail && !_boot_block_dev.empty()
-            && !util::copy_contents(_temp + "/boot.orig", _boot_block_dev)) {
-        LOGE("Failed to restore boot partition: %s", strerror(errno));
-        display_msg("Failed to restore boot partition");
+    if (ret == ProceedState::Fail && !_boot_block_dev.empty()) {
+        if (auto r = util::copy_contents(
+                _temp + "/boot.orig", _boot_block_dev); !r) {
+            LOGE("Failed to restore boot partition: %s",
+                 r.error().message().c_str());
+            display_msg("Failed to restore boot partition");
+        }
     }
 
     if (!destroy_chroot()) {

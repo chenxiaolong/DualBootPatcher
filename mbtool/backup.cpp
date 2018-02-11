@@ -328,7 +328,9 @@ static Result backup_boot_image(const std::shared_ptr<Rom> &rom,
     struct stat sb;
     if (stat(boot_image_path.c_str(), &sb) == 0) {
         LOGI("=== Backing up %s ===", boot_image_path.c_str());
-        if (!util::copy_file(boot_image_path, boot_image_backup, 0)) {
+        if (auto r = util::copy_file(
+                boot_image_path, boot_image_backup, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return Result::Failed;
         }
     } else {
@@ -408,7 +410,8 @@ static Result backup_configs(const std::shared_ptr<Rom> &rom,
     struct stat sb;
     if (stat(config_path.c_str(), &sb) == 0) {
         LOGI("=== Backing up %s ===", config_path.c_str());
-        if (!util::copy_file(config_path, config_backup, 0)) {
+        if (auto r = util::copy_file(config_path, config_backup, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return Result::Failed;
         }
     } else {
@@ -417,7 +420,8 @@ static Result backup_configs(const std::shared_ptr<Rom> &rom,
     }
     if (stat(thumbnail_path.c_str(), &sb) == 0) {
         LOGI("=== Backing up %s ===", thumbnail_path.c_str());
-        if (!util::copy_file(thumbnail_path, thumbnail_backup, 0)) {
+        if (auto r = util::copy_file(thumbnail_path, thumbnail_backup, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return Result::Failed;
         }
     } else {
@@ -456,7 +460,8 @@ static Result restore_configs(const std::shared_ptr<Rom> &rom,
     struct stat sb;
     if (stat(config_backup.c_str(), &sb) == 0) {
         LOGI("=== Restoring to %s ===", config_path.c_str());
-        if (!util::copy_file(config_backup, config_path, 0)) {
+        if (auto r = util::copy_file(config_backup, config_path, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return Result::Failed;
         }
     } else {
@@ -465,7 +470,8 @@ static Result restore_configs(const std::shared_ptr<Rom> &rom,
     }
     if (stat(thumbnail_backup.c_str(), &sb) == 0) {
         LOGI("=== Restoring to %s ===", thumbnail_path.c_str());
-        if (!util::copy_file(thumbnail_backup, thumbnail_path, 0)) {
+        if (auto r = util::copy_file(thumbnail_backup, thumbnail_path, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return Result::Failed;
         }
     } else {

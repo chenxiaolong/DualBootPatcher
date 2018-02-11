@@ -609,9 +609,8 @@ static bool disable_fsck(const char *fsck_binary)
     target += "/";
     target += util::base_name(fsck_binary);
 
-    if (!util::copy_file(FSCK_WRAPPER, target, 0)) {
-        LOGE("Failed to copy %s to %s: %s",
-             FSCK_WRAPPER, target.c_str(), strerror(errno));
+    if (auto r = util::copy_file(FSCK_WRAPPER, target, 0); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 
@@ -652,7 +651,8 @@ static bool copy_mount_exfat()
         return errno == ENOENT;
     }
 
-    if (!util::copy_file(our_mount_exfat, target, 0)) {
+    if (auto r = util::copy_file(our_mount_exfat, target, 0); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 

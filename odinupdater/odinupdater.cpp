@@ -562,16 +562,15 @@ static bool copy_dir_if_exists(const char *source_dir,
         return false;
     }
 
-    bool ret = mb::util::copy_dir(source_dir, target_dir,
+    auto ret = mb::util::copy_dir(source_dir, target_dir,
                                   mb::util::CopyFlag::CopyAttributes
                                 | mb::util::CopyFlag::CopyXattrs
                                 | mb::util::CopyFlag::ExcludeTopLevel);
     if (!ret) {
-        error("Failed to copy %s to %s: %s",
-              source_dir, target_dir, strerror(errno));
+        error("%s", ret.error().message().c_str());
     }
 
-    return ret;
+    return !!ret;
 }
 
 // Looping is necessary in Touchwiz, which sometimes fails to unmount the

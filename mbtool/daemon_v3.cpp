@@ -504,17 +504,16 @@ static bool v3_path_copy(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
     fb::Offset<v3::PathCopyError> error;
 
-    bool ret = util::copy_contents(
-            request->source()->str(), request->target()->str());
-    int saved_errno = errno;
-
+    auto ret = util::copy_contents(request->source()->str(),
+                                   request->target()->str());
     if (!ret) {
         error = v3::CreatePathCopyErrorDirect(
-                builder, saved_errno, strerror(saved_errno));
+                builder, ret.error().ec.value(), ret.error().message().c_str());
     }
 
     auto response = v3::CreatePathCopyResponseDirect(
-            builder, ret, ret ? nullptr : strerror(saved_errno), error);
+            builder, !!ret, ret ? nullptr : ret.error().message().c_str(),
+            error);
 
     // Wrap response
     builder.Finish(v3::CreateResponse(
@@ -895,19 +894,21 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     mounted_tmpfs = true;
 
     // Copy binary to tmpfs
-    if (!util::copy_file(request->binary_path()->str(), target_binary, 0)) {
+    if (auto r = util::copy_file(
+            request->binary_path()->str(), target_binary, 0); !r) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        error_msg = format("%s: Failed to copy binary to tmpfs: %s",
-                           request->binary_path()->c_str(), strerror(errno));
+        error_msg = format("Failed to copy binary to tmpfs: %s",
+                           r.error().message().c_str());
         LOGE("%s", error_msg.c_str());
         goto done;
     }
 
     // Copy signature to tmpfs
-    if (!util::copy_file(request->signature_path()->str(), target_sig, 0)) {
+    if (auto r = util::copy_file(
+            request->signature_path()->str(), target_sig, 0); !r) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        error_msg = format("%s: Failed to copy signature to tmpfs: %s",
-                           request->signature_path()->c_str(), strerror(errno));
+        error_msg = format("Failed to copy signature to tmpfs: %s",
+                           r.error().message().c_str());
         LOGE("%s", error_msg.c_str());
         goto done;
     }

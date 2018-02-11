@@ -220,7 +220,8 @@ static bool _rp_add_binaries(const std::string &dir,
         target += "/";
         target += item.to;
 
-        if (!util::copy_file(source, target, 0)) {
+        if (auto r = util::copy_file(source, target, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return false;
         }
         if (chmod(target.c_str(), item.perm) < 0) {
@@ -391,7 +392,8 @@ static bool _rp_add_device_json(const std::string &dir,
     std::string device_json(dir);
     device_json += "/device.json";
 
-    if (!util::copy_file(device_json_file, device_json, 0)) {
+    if (auto r = util::copy_file(device_json_file, device_json, 0); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 

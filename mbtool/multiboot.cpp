@@ -80,11 +80,11 @@ public:
 
         // _target is the correct parameter here (or pathbuf and
         // CopyFlag::ExcludeTopLevel flag)
-        if (!util::copy_dir(_curr->fts_accpath, _target,
-                            util::CopyFlag::CopyAttributes
-                          | util::CopyFlag::CopyXattrs)) {
-            _error_msg = format("%s: Failed to copy directory: %s",
-                                _curr->fts_path, strerror(errno));
+        if (auto r = util::copy_dir(_curr->fts_accpath, _target,
+                                    util::CopyFlag::CopyAttributes
+                                  | util::CopyFlag::CopyXattrs); !r) {
+            _error_msg = format("Failed to copy directory: %s",
+                                r.error().message().c_str());
             LOGW("%s", _error_msg.c_str());
             return Action::Skip | Action::Fail;
         }
@@ -94,14 +94,14 @@ public:
     Actions on_reached_directory_post() override
     {
         if (_curr->fts_level == 0) {
-            if (!util::copy_stat(_curr->fts_accpath, _target)) {
+            if (auto r = util::copy_stat(_curr->fts_accpath, _target); !r) {
                 LOGE("%s: Failed to copy attributes: %s",
-                     _target.c_str(), strerror(errno));
+                     _target.c_str(), r.error().message().c_str());
                 return Action::Fail;
             }
-            if (!util::copy_xattrs(_curr->fts_accpath, _target)) {
+            if (auto r = util::copy_xattrs(_curr->fts_accpath, _target); !r) {
                 LOGE("%s: Failed to copy xattrs: %s",
-                     _target.c_str(), strerror(errno));
+                     _target.c_str(), r.error().message().c_str());
                 return Action::Fail;
             }
         }
@@ -138,11 +138,11 @@ private:
 
     bool copy_path()
     {
-        if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
-                             util::CopyFlag::CopyAttributes
-                           | util::CopyFlag::CopyXattrs)) {
-            _error_msg = format("%s: Failed to copy file: %s",
-                                _curr->fts_path, strerror(errno));
+        if (auto r = util::copy_file(_curr->fts_accpath, _curtgtpath,
+                                     util::CopyFlag::CopyAttributes
+                                   | util::CopyFlag::CopyXattrs); !r) {
+            _error_msg = format("Failed to copy file: %s",
+                                r.error().message().c_str());
             LOGW("%s", _error_msg.c_str());
             return false;
         }
