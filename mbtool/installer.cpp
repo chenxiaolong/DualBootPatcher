@@ -484,32 +484,38 @@ bool Installer::mount_efs() const
         if (stat("/twres", &sb) == 0 && S_ISDIR(sb.st_mode)) {
             LOGD("Looking for /efs entry in TWRP-format fstab");
 
-            std::vector<util::TwrpFstabRec> recs =
-                    util::read_twrp_fstab("/etc/recovery.fstab");
-            for (auto const &rec : recs) {
-                if (util::path_compare(rec.mount_point, "/efs") == 0
-                        || util::path_compare(rec.mount_point, "/efs1") == 0) {
-                    LOGD("Found /efs fstab entry");
-                    for (const std::string &dev : rec.blk_devices) {
-                        if (stat(dev.c_str(), &sb) == 0) {
-                            efs_dev = dev.c_str();
-                            break;
+            if (auto recs = util::read_twrp_fstab("/etc/recovery.fstab")) {
+                for (auto const &rec : recs.value()) {
+                    if (util::path_compare(rec.mount_point, "/efs") == 0
+                            || util::path_compare(rec.mount_point, "/efs1") == 0) {
+                        LOGD("Found /efs fstab entry");
+                        for (const std::string &dev : rec.blk_devices) {
+                            if (stat(dev.c_str(), &sb) == 0) {
+                                efs_dev = dev.c_str();
+                                break;
+                            }
                         }
+                        break;
                     }
-                    break;
                 }
+            } else {
+                LOGW("/etc/recovery.fstab: Failed to read fstab: %s",
+                     recs.error().message().c_str());
             }
         } else {
             LOGE("Looking for /efs entry in non-TWRP-format fstab");
 
-            std::vector<util::FstabRec> recs =
-                    util::read_fstab("/etc/recovery.fstab");
-            for (auto const &rec : recs) {
-                if (util::path_compare(rec.mount_point, "/efs") == 0) {
-                    LOGD("Found /efs fstab entry");
-                    efs_dev = rec.blk_device;
-                    break;
+            if (auto recs = util::read_fstab("/etc/recovery.fstab")) {
+                for (auto const &rec : recs.value()) {
+                    if (util::path_compare(rec.mount_point, "/efs") == 0) {
+                        LOGD("Found /efs fstab entry");
+                        efs_dev = rec.blk_device;
+                        break;
+                    }
                 }
+            } else {
+                LOGW("/etc/recovery.fstab: Failed to read fstab: %s",
+                     recs.error().message().c_str());
             }
         }
 

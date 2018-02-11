@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,8 +22,47 @@
 #include <string>
 #include <vector>
 
+#include "mbcommon/outcome.h"
+
 namespace mb::util
 {
+
+enum class FstabError
+{
+    MissingSourcePath = 1,
+    MissingTargetPath,
+    MissingFilesystemType,
+    MissingMountOptions,
+    MissingVoldOptions,
+    InvalidLength,
+};
+
+std::error_code make_error_code(FstabError e);
+
+const std::error_category & fstab_error_category();
+
+struct FstabErrorInfo
+{
+    std::string line;
+    std::error_code ec;
+
+    std::string message() const;
+};
+
+inline const std::error_code & make_error_code(const FstabErrorInfo &ei)
+{
+    return ei.ec;
+}
+
+[[noreturn]]
+inline void throw_as_system_error_with_payload(const FstabErrorInfo &ei)
+{
+    (void) ei;
+    OUTCOME_THROW_EXCEPTION(std::system_error(make_error_code(ei)));
+}
+
+template <typename T>
+using FstabResult = oc::result<T, FstabErrorInfo>;
 
 constexpr unsigned long MF_WAIT             = 1 << 0;
 constexpr unsigned long MF_CHECK            = 1 << 1;
@@ -74,6 +113,8 @@ struct FstabRec
     std::string orig_line;
 };
 
+using FstabRecs = std::vector<FstabRec>;
+
 struct TwrpFstabRec
 {
     std::vector<std::string> blk_devices;
@@ -85,7 +126,17 @@ struct TwrpFstabRec
     std::string orig_line;
 };
 
-std::vector<FstabRec> read_fstab(const std::string &path);
-std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path);
+using TwrpFstabRecs = std::vector<TwrpFstabRec>;
 
+FstabResult<FstabRecs> read_fstab(const std::string &path);
+FstabResult<TwrpFstabRecs> read_twrp_fstab(const std::string &path);
+
+}
+
+namespace std
+{
+    template<>
+    struct is_error_code_enum<mb::util::FstabError> : true_type
+    {
+    };
 }

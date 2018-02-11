@@ -733,8 +733,6 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
                           const Device &device, MountFlags flags,
                           FstabRecs &recs)
 {
-    std::vector<util::FstabRec> fstab;
-
     recs.gen.clear();
     recs.system.clear();
     recs.cache.clear();
@@ -742,11 +740,13 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     recs.extsd.clear();
 
     // Read original fstab file
-    fstab = util::read_fstab(path);
-    if (fstab.empty()) {
-        LOGE("%s: Failed to read fstab", path);
+    auto fstab_ret = util::read_fstab(path);
+    if (!fstab_ret) {
+        LOGE("%s: Failed to read fstab: %s",
+             path, fstab_ret.error().message().c_str());
         return false;
     }
+    auto &&fstab = fstab_ret.value();
 
     bool include_sdcard0 = !(device.flags() & DeviceFlag::FstabSkipSdcard0);
 
