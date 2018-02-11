@@ -123,9 +123,11 @@ oc::result<MountEntry> get_mount_entry(std::FILE *fp)
 
     ssize_t n = getline(&line, &size, fp);
     if (n < 0) {
-        return ec_from_errno();
-    } else if (n == 0) {
-        return MountError::EndOfFile;
+        if (ferror(fp)) {
+            return ec_from_errno();
+        } else {
+            return MountError::EndOfFile;
+        }
     }
 
     int pos[8];
