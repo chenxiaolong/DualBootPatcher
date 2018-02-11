@@ -178,7 +178,7 @@ oc::result<bool> file_find_one_of(const std::string &path,
     return false;
 }
 
-oc::result<std::vector<unsigned char>> file_read_all_v(const std::string &path)
+oc::result<std::vector<unsigned char>> file_read_all(const std::string &path)
 {
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
@@ -209,47 +209,6 @@ oc::result<std::vector<unsigned char>> file_read_all_v(const std::string &path)
     }
 
     return std::move(data);
-}
-
-oc::result<std::pair<void *, std::size_t>>
-file_read_all(const std::string &path)
-{
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
-    if (!fp) {
-        return ec_from_errno();
-    }
-
-    if (fseeko(fp.get(), 0, SEEK_END) < 0) {
-        return ec_from_errno();
-    }
-    auto size = ftello(fp.get());
-    if (size < 0) {
-        return ec_from_errno();
-    } else if (std::make_unsigned_t<decltype(size)>(size) > SIZE_MAX) {
-        return std::errc::result_out_of_range;
-    }
-    if (fseeko(fp.get(), 0, SEEK_SET) < 0) {
-        return ec_from_errno();
-    }
-
-    auto data_size = static_cast<size_t>(size);
-
-    auto data = std::malloc(data_size);
-    if (!data) {
-        return ec_from_errno();
-    }
-
-    if (fread(data, data_size, 1, fp.get()) != 1) {
-        free(data);
-
-        if (ferror(fp.get())) {
-            return ec_from_errno();
-        } else {
-            return FileError::UnexpectedEof;
-        }
-    }
-
-    return {data, data_size};
 }
 
 oc::result<uint64_t> get_blockdev_size(const std::string &path)

@@ -33,9 +33,7 @@ oc::result<void> file_write_data(const std::string &path,
                                  const void *data, size_t size);
 oc::result<bool> file_find_one_of(const std::string &path,
                                   const std::vector<std::string> &items);
-oc::result<std::vector<unsigned char>> file_read_all_v(const std::string &path);
-oc::result<std::pair<void *, std::size_t>>
-file_read_all(const std::string &path);
+oc::result<std::vector<unsigned char>> file_read_all(const std::string &path);
 
 oc::result<uint64_t> get_blockdev_size(const std::string &path);
 

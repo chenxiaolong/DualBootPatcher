@@ -416,7 +416,7 @@ static void load_properties(char *data, const char *filter)
 static void load_properties_from_file(const char* filename, const char* filter) {
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 
-    auto data = mb::util::file_read_all_v(filename);
+    auto data = mb::util::file_read_all(filename);
     if (!data) {
         LOGW("Couldn't load properties from %s: %s",
              filename, data.error().message().c_str());

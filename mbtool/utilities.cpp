@@ -72,7 +72,7 @@ static bool get_device(const char *path, Device &device)
     LOGD("ro.product.device = %s", prop_product_device.c_str());
     LOGD("ro.build.product = %s", prop_build_product.c_str());
 
-    auto contents = util::file_read_all_v(path);
+    auto contents = util::file_read_all(path);
     if (!contents) {
         LOGE("%s: Failed to read file: %s", path,
              contents.error().message().c_str());
@@ -334,7 +334,7 @@ public:
         LOGD("%s -> %s", _curr->fts_path, name.c_str());
 
         if (name == "META-INF/com/google/android/aroma-config.in") {
-            auto data = util::file_read_all_v(_curr->fts_accpath);
+            auto data = util::file_read_all(_curr->fts_accpath);
             if (!data) {
                 LOGE("Failed to read: %s: %s", _curr->fts_path,
                      data.error().message().c_str());

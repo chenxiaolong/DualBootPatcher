@@ -1228,7 +1228,7 @@ int init_main(int argc, char *argv[])
     LOGV("Booting up with version %s (%s)",
          version(), git_version());
 
-    auto contents = util::file_read_all_v(DEVICE_JSON_PATH);
+    auto contents = util::file_read_all(DEVICE_JSON_PATH);
     if (!contents) {
         LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH,
              contents.error().message().c_str());

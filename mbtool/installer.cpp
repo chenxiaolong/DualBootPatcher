@@ -1350,7 +1350,7 @@ Installer::ProceedState Installer::install_stage_check_device()
 {
     LOGD("[Installer] Device verification stage");
 
-    auto contents = util::file_read_all_v(_temp + "/device.json");
+    auto contents = util::file_read_all(_temp + "/device.json");
     if (!contents) {
         display_msg("Failed to read device.json");
         return ProceedState::Fail;

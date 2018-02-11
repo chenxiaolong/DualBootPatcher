@@ -103,7 +103,7 @@ static bool redirect_output_to_file(const char *path, mode_t mode)
 
 static bool detect_device()
 {
-    auto contents = mb::util::file_read_all_v(DEVICE_JSON_PATH);
+    auto contents = mb::util::file_read_all(DEVICE_JSON_PATH);
     if (!contents) {
         LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH,
              contents.error().message().c_str());

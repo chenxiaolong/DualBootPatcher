@@ -355,7 +355,7 @@ SwitchRomResult switch_rom(const std::string &id,
         // If memory becomes an issue, an alternative method is to create a
         // temporary directory in /data/multiboot/ that's only writable by root
         // and copy the images there.
-        if (auto r = util::file_read_all_v(f.image)) {
+        if (auto r = util::file_read_all(f.image)) {
             f.data = std::move(r.value());
         } else {
             LOGE("%s: Failed to read image: %s",
@@ -457,7 +457,7 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
         return false;
     }
 
-    auto data = util::file_read_all_v(boot_blockdev);
+    auto data = util::file_read_all(boot_blockdev);
     if (!data) {
         LOGE("%s: Failed to read block device: %s",
              boot_blockdev.c_str(), data.error().message().c_str());

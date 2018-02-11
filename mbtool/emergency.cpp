@@ -158,7 +158,7 @@ bool emergency_reboot()
     JsonError error;
     bool loaded_json = false;
 
-    auto contents = util::file_read_all_v(DEVICE_JSON_PATH);
+    auto contents = util::file_read_all(DEVICE_JSON_PATH);
     if (contents) {
         contents.value().push_back('\0');
 
