@@ -143,11 +143,13 @@ struct EmergencyMount
 
 bool emergency_reboot()
 {
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
+    using namespace std::chrono_literals;
+
+    (void) util::vibrate(100ms, 250ms);
+    (void) util::vibrate(100ms, 250ms);
+    (void) util::vibrate(100ms, 250ms);
+    (void) util::vibrate(100ms, 250ms);
+    (void) util::vibrate(100ms, 250ms);
 
     LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
 

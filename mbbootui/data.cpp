@@ -29,6 +29,7 @@
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/path.h"
+#include "mbutil/vibrate.h"
 
 #include "config/config.hpp"
 #include "gui/blanktimer.hpp"
@@ -627,9 +628,11 @@ void DataManager::ReadSettingsFile()
 
 void DataManager::Vibrate(const std::string& varName)
 {
+    using namespace std::chrono_literals;
+
     int vib_value = 0;
     GetValue(varName, vib_value);
     if (vib_value) {
-        vibrate(vib_value);
+        (void) mb::util::vibrate(std::chrono::milliseconds(vib_value), 0ms);
     }
 }

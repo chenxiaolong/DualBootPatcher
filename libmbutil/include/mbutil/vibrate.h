@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,9 +19,14 @@
 
 #pragma once
 
+#include <chrono>
+
+#include "mbcommon/outcome.h"
+
 namespace mb::util
 {
 
-bool vibrate(unsigned int timeout_ms, unsigned int additional_wait_ms);
+oc::result<void> vibrate(std::chrono::milliseconds timeout,
+                         std::chrono::milliseconds wait);
 
 }
