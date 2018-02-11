@@ -69,11 +69,11 @@ void make_link_init(const char *oldpath, const char *newpath)
 
 void remove_link(const char *oldpath, const char *newpath)
 {
-    std::string path;
-    if (!mb::util::read_link(newpath, path)) {
+    auto path = mb::util::read_link(newpath);
+    if (!path) {
         return;
     }
-    if (path == oldpath) {
+    if (path.value() == oldpath) {
         unlink(newpath);
     }
 }

@@ -265,13 +265,12 @@ rp_symlink_fuse_exfat()
 
 static bool _is_linked_to_mbtool(const std::string &path)
 {
-    std::string link_target;
-
-    if (!util::read_link(path, link_target)) {
+    auto link_target = util::read_link(path);
+    if (!link_target) {
         return false;
     }
 
-    auto pieces = util::path_split(link_target);
+    auto pieces = util::path_split(link_target.value());
 
     if (std::find(pieces.begin(), pieces.end(), "mbtool") == pieces.end()) {
         return false;
@@ -288,7 +287,6 @@ static std::string _get_init_target(const std::string &dir)
     sony_init_wrapper += "/sbin/init_sony";
     std::string sony_real_init(dir);
     sony_real_init += "/init.real";
-    std::string sony_symlink_target;
 
     // If this is a Sony device that doesn't use sbin/ramdisk.cpio for the
     // combined ramdisk, we'll have to explicitly allow their init executable to
@@ -302,19 +300,20 @@ static std::string _get_init_target(const std::string &dir)
     struct stat sb;
 
     // Check that /init is a symlink and that /init.real exists
-    if (lstat(target.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)
-            && util::read_link(target, sony_symlink_target)
-            && lstat(sony_real_init.c_str(), &sb) == 0) {
-        auto haystack = util::path_split(sony_symlink_target);
-        auto needle = util::path_split("sbin/init_sony");
+    if (lstat(target.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)) {
+        auto sony_symlink_target = util::read_link(target);
+        if (sony_symlink_target && lstat(sony_real_init.c_str(), &sb) == 0) {
+            auto haystack = util::path_split(sony_symlink_target.value());
+            auto needle = util::path_split("sbin/init_sony");
 
-        util::normalize_path(haystack);
+            util::normalize_path(haystack);
 
-        // Check that init points to some path with "sbin/init_sony" in it
-        auto const it = std::search(haystack.cbegin(), haystack.cend(),
-                                    needle.cbegin(), needle.cend());
-        if (it != haystack.cend()) {
-            target.swap(sony_real_init);
+            // Check that init points to some path with "sbin/init_sony" in it
+            auto const it = std::search(haystack.cbegin(), haystack.cend(),
+                                        needle.cbegin(), needle.cend());
+            if (it != haystack.cend()) {
+                target.swap(sony_real_init);
+            }
         }
     }
 

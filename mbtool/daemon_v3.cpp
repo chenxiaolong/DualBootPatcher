@@ -621,20 +621,19 @@ static bool v3_path_readlink(int fd, const v3::Request *msg)
         return v3_send_response_invalid(fd);
     }
 
-    std::string target;
-    bool ret = util::read_link(request->path()->c_str(), target);
-    int saved_errno = errno;
+    auto target = util::read_link(request->path()->str());
 
     fb::FlatBufferBuilder builder;
     fb::Offset<v3::PathReadlinkError> error;
 
-    if (!ret) {
+    if (!target) {
         error = v3::CreatePathReadlinkErrorDirect(
-                builder, saved_errno, strerror(saved_errno));
+                builder, target.error().value(),
+                target.error().message().c_str());
     }
 
     auto response = v3::CreatePathReadlinkResponseDirect(
-            builder, ret ? target.c_str() : nullptr, error);
+            builder, target ? target.value().c_str() : nullptr, error);
 
     // Wrap response
     builder.Finish(v3::CreateResponse(

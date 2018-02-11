@@ -266,14 +266,14 @@ bool copy_file(const std::string &source, const std::string &target,
 
     case S_IFLNK:
         if (!(flags & CopyFlag::FollowSymlinks)) {
-            std::string symlink_path;
-            if (!read_link(source, symlink_path)) {
+            auto symlink_path = read_link(source);
+            if (!symlink_path) {
                 LOGW("%s: Failed to read symlink path: %s",
-                     source.c_str(), strerror(errno));
+                     source.c_str(), symlink_path.error().message().c_str());
                 return false;
             }
 
-            if (symlink(symlink_path.c_str(), target.c_str()) < 0) {
+            if (symlink(symlink_path.value().c_str(), target.c_str()) < 0) {
                 LOGW("%s: Failed to create symlink: %s",
                      target.c_str(), strerror(errno));
                 return false;
@@ -491,16 +491,17 @@ public:
         }
 
         // Find current symlink target
-        std::string symlink_path;
-        if (!read_link(_curr->fts_accpath, symlink_path)) {
+        auto symlink_path = read_link(_curr->fts_accpath);
+        if (!symlink_path) {
             _error_msg = format("%s: Failed to read symlink path: %s",
-                                _curr->fts_accpath, strerror(errno));
+                                _curr->fts_accpath,
+                                symlink_path.error().message().c_str());
             LOGW("%s", _error_msg.c_str());
             return Action::Fail;
         }
 
         // Create new symlink
-        if (symlink(symlink_path.c_str(), _curtgtpath.c_str()) < 0) {
+        if (symlink(symlink_path.value().c_str(), _curtgtpath.c_str()) < 0) {
             _error_msg = format("%s: Failed to create symlink: %s",
                                 _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
