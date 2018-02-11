@@ -228,13 +228,14 @@ bool emergency_reboot()
 
         if (!util::is_mounted(em.mount_point)) {
             for (const std::string &path : em.paths) {
-                if (util::mount(path, em.mount_point, "auto", 0, "")) {
+                if (auto ret = util::mount(path, em.mount_point, "auto", 0, "")) {
                     LOGV("%s: Mounted %s",
                          em.mount_point.c_str(), path.c_str());
                     break;
                 } else {
                     LOGW("%s: Failed to mount %s: %s",
-                         em.mount_point.c_str(), path.c_str(), strerror(errno));
+                         em.mount_point.c_str(), path.c_str(),
+                         ret.error().message().c_str());
                 }
             }
         }
@@ -259,7 +260,7 @@ bool emergency_reboot()
         }
         sync();
 
-        util::umount(em.mount_point);
+        (void) util::umount(em.mount_point);
     }
 
     fix_multiboot_permissions();

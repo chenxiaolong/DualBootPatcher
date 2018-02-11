@@ -908,9 +908,10 @@ static bool disable_installd()
         }
     }
 
-    if (!util::mount("/dev/null", installd_init, "", MS_BIND | MS_RDONLY, "")) {
+    if (auto ret = util::mount(
+            "/dev/null", installd_init, "", MS_BIND | MS_RDONLY, ""); !ret) {
         LOGE("%s: Failed to bind mount /dev/null: %s",
-             installd_init, strerror(errno));
+             installd_init, ret.error().message().c_str());
         return false;
     }
 
@@ -936,8 +937,10 @@ static bool disable_spota()
         return false;
     }
 
-    if (!util::mount("tmpfs", spota_dir, "tmpfs", MS_RDONLY, "mode=0000")) {
-        LOGE("%s: Failed to mount tmpfs: %s", spota_dir, strerror(errno));
+    if (auto ret = util::mount(
+            "tmpfs", spota_dir, "tmpfs", MS_RDONLY, "mode=0000"); !ret) {
+        LOGE("%s: Failed to mount tmpfs: %s",
+             spota_dir, ret.error().message().c_str());
         return false;
     }
 

@@ -231,17 +231,19 @@ static bool backup_image(const std::string &output_file,
 
     fsck_ext4_image(image);
 
-    if (!util::mount(image, BACKUP_MNT_DIR, "ext4", MS_RDONLY, "")) {
+    if (auto ret = util::mount(
+            image, BACKUP_MNT_DIR, "ext4", MS_RDONLY, ""); !ret) {
         LOGE("Failed to mount %s at %s: %s", image.c_str(), BACKUP_MNT_DIR,
-             strerror(errno));
+             ret.error().message().c_str());
         return false;
     }
 
     bool ret = backup_directory(output_file, BACKUP_MNT_DIR, exclusions,
                                 compression);
 
-    if (!util::umount(BACKUP_MNT_DIR)) {
-        LOGE("Failed to unmount %s: %s", BACKUP_MNT_DIR, strerror(errno));
+    if (auto umount_ret = util::umount(BACKUP_MNT_DIR); !umount_ret) {
+        LOGE("Failed to unmount %s: %s", BACKUP_MNT_DIR,
+             umount_ret.error().message().c_str());
         return false;
     }
 
@@ -283,17 +285,18 @@ static bool restore_image(const std::string &input_file,
 
     fsck_ext4_image(image);
 
-    if (!util::mount(image, BACKUP_MNT_DIR, "ext4", 0, "")) {
+    if (auto ret = util::mount(image, BACKUP_MNT_DIR, "ext4", 0, ""); !ret) {
         LOGE("Failed to mount %s at %s: %s", image.c_str(), BACKUP_MNT_DIR,
-             strerror(errno));
+             ret.error().message().c_str());
         return false;
     }
 
     bool ret = restore_directory(input_file, BACKUP_MNT_DIR, exclusions,
                                  compression);
 
-    if (!util::umount(BACKUP_MNT_DIR)) {
-        LOGE("Failed to unmount %s: %s", BACKUP_MNT_DIR, strerror(errno));
+    if (auto umount_ret = util::umount(BACKUP_MNT_DIR); !umount_ret) {
+        LOGE("Failed to unmount %s: %s", BACKUP_MNT_DIR,
+             umount_ret.error().message().c_str());
         return false;
     }
 
@@ -709,9 +712,9 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
 
     // Restore system
     if (targets & BackupTarget::System) {
-        uint64_t image_size;
-        if (!util::mount_get_total_size(
-                Roms::get_system_partition(), image_size)) {
+        auto image_size = util::mount_get_total_size(
+                Roms::get_system_partition());
+        if (!image_size) {
             LOGE("Failed to get the size of the system partition");
             return false;
         }
@@ -726,7 +729,7 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
 
         Result ret = restore_partition(
                 system_path, input_dir, path,
-                rom->system_is_image, image_size, {}, compression);
+                rom->system_is_image, image_size.value(), {}, compression);
         if (ret == Result::Failed) {
             return false;
         }

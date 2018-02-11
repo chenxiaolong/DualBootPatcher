@@ -89,9 +89,9 @@ static bool initialize_adb()
              USB_FFS_ADB_PATH, strerror(errno));
         ret = false;
     }
-    if (!util::mount("adb", USB_FFS_ADB_PATH, "functionfs", 0, "")) {
+    if (auto r = util::mount("adb", USB_FFS_ADB_PATH, "functionfs", 0, ""); !r) {
         LOGW("%s: Failed to mount functionfs: %s",
-             USB_FFS_ADB_PATH, strerror(errno));
+             USB_FFS_ADB_PATH, r.error().message().c_str());
         ret = false;
     }
 

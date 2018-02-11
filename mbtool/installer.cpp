@@ -179,20 +179,23 @@ static int log_mknod(const char *pathname, mode_t mode, dev_t dev)
 
 static bool log_is_mounted(const std::string &mountpoint)
 {
-    bool ret = util::is_mounted(mountpoint);
+    auto ret = util::is_mounted(mountpoint);
     if (!ret) {
-        LOGE("%s is not mounted", mountpoint.c_str());
+        LOGE("%s: %s", mountpoint.c_str(), ret.error().message().c_str());
+        return false;
     }
-    return ret;
+    return true;
 }
 
 static bool log_unmount_all(const std::string &dir)
 {
-    bool ret = util::unmount_all(dir);
+    auto ret = util::unmount_all(dir);
     if (!ret) {
-        LOGE("Failed to unmount all mountpoints within %s", dir.c_str());
+        LOGE("Failed to unmount all mountpoints within %s: %s",
+             dir.c_str(), ret.error().message().c_str());
+        return false;
     }
-    return ret;
+    return true;
 }
 
 static bool log_delete_recursive(const std::string &path)
@@ -414,7 +417,7 @@ bool Installer::destroy_chroot() const
             path = dev_block_path;
             path += '/';
             path += ent->d_name;
-            util::loopdev_remove_device(path.c_str());
+            (void) util::loopdev_remove_device(path.c_str());
         }
         dp.reset();
     }
@@ -435,8 +438,9 @@ bool Installer::destroy_chroot() const
     log_umount(_chroot.c_str());
 
     // Unmount everything previously mounted in the chroot
-    if (!util::unmount_all(_chroot)) {
-        LOGE("Failed to unmount previous mount points in %s", _chroot.c_str());
+    if (auto ret = util::unmount_all(_chroot); !ret) {
+        LOGE("Failed to unmount previous mount points in %s: %s",
+             _chroot.c_str(), ret.error().message().c_str());
         return false;
     }
 
@@ -653,14 +657,12 @@ bool Installer::create_image(const std::string &path, uint64_t size)
 
     auto result = create_ext4_image(path, size);
     if (result == CreateImageResult::NotEnoughSpace) {
-        uint64_t avail;
-        if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
-            avail = 0;
-        }
+        auto avail = util::mount_get_avail_size(util::dir_name(path));
+
         display_msg(std::string{});
         display_msg("There is not enough space to create %s", path.c_str());
         display_msg("- Needed:    %" PRIu64 " bytes", size);
-        display_msg("- Available: %" PRIu64 " bytes", avail);
+        display_msg("- Available: %" PRIu64 " bytes", avail ? avail.value() : 0);
     }
 
     return result == CreateImageResult::Succeeded;
@@ -694,13 +696,14 @@ bool Installer::system_image_copy(const std::string &source,
         return false;
     }
 
-    if (!util::mount(image, temp_mnt, "auto", 0, "")) {
-        LOGE("Failed to mount %s: %s", source.c_str(), strerror(errno));
+    if (auto ret = util::mount(image, temp_mnt, "auto", 0, ""); !ret) {
+        LOGE("Failed to mount %s: %s", source.c_str(),
+             ret.error().message().c_str());
         return false;
     }
 
     auto unmount_tmp_dir = finally([&] {
-        util::umount(temp_mnt);
+        (void) util::umount(temp_mnt);
     });
 
     if (reverse) {
@@ -717,8 +720,9 @@ bool Installer::system_image_copy(const std::string &source,
         }
     }
 
-    if (!util::umount(temp_mnt)) {
-        LOGE("Failed to unmount %s: %s", temp_mnt.c_str(), strerror(errno));
+    if (auto ret = util::umount(temp_mnt); !ret) {
+        LOGE("Failed to unmount %s: %s", temp_mnt.c_str(),
+             ret.error().message().c_str());
         return false;
     }
 
@@ -756,23 +760,26 @@ bool Installer::mount_dir_or_image(const std::string &source,
             }
         }
 
-        std::string loopdev = util::loopdev_find_unused();
-        if (loopdev.empty()) {
-            LOGE("Failed to find unused loop device: %s", strerror(errno));
+        auto loopdev = util::loopdev_find_unused();
+        if (!loopdev) {
+            LOGE("Failed to find unused loop device: %s",
+                 loopdev.error().message().c_str());
             return false;
         }
-        if (!util::loopdev_set_up_device(loopdev, source, 0, false)) {
+        if (auto ret = util::loopdev_set_up_device(
+                loopdev.value(), source, 0, false); !ret) {
             LOGE("Failed to attach %s to %s: %s",
-                 loopdev.c_str(), source.c_str(), strerror(errno));
+                 loopdev.value().c_str(), source.c_str(),
+                 ret.error().message().c_str());
             return false;
         }
-        if (!util::copy_file(loopdev, loop_target, 0)) {
+        if (!util::copy_file(loopdev.value(), loop_target, 0)) {
             LOGE("Failed to copy %s to %s: %s",
-                 loopdev.c_str(), loop_target.c_str(), strerror(errno));
+                 loopdev.value().c_str(), loop_target.c_str(), strerror(errno));
             return false;
         }
 
-        _associated_loop_devs.push_back(loopdev);
+        _associated_loop_devs.push_back(std::move(loopdev.value()));
     } else {
         if (!util::mkdir_recursive(source, 0771)
                 || !util::mkdir_recursive(bind_target, 0771)
@@ -808,11 +815,12 @@ bool Installer::change_root(const std::string &path)
             return false;
         }
 
-        for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
+        while (auto entry = util::get_mount_entry(fp.get())) {
             // TODO: Use util::path_compare() instead of dumb string prefix
             //       matching
-            if (entry.dir != "/" && !starts_with(entry.dir, path)) {
-                to_unmount.push_back(std::move(entry.dir));
+            if (entry.value().dir != "/"
+                    && !starts_with(entry.value().dir, path)) {
+                to_unmount.push_back(std::move(entry.value().dir));
             }
         }
 
@@ -1808,9 +1816,9 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
 
     // Disassociate loop devices
     for (const std::string &loop_dev : _associated_loop_devs) {
-        if (!util::loopdev_remove_device(loop_dev)) {
+        if (auto ret = util::loopdev_remove_device(loop_dev); !ret) {
             LOGE("%s: Failed to disassociate loop device: %s",
-                 loop_dev.c_str(), strerror(errno));
+                 loop_dev.c_str(), ret.error().message().c_str());
         }
     }
 

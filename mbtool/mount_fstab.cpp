@@ -123,18 +123,17 @@ static bool create_dir_and_mount(const std::vector<util::FstabRec> &recs,
         }
 
         // Try mounting
-        bool ret = util::mount(rec.blk_device, mount_point, rec.fs_type,
-                               rec.flags, rec.fs_options);
-        if (!ret) {
-            LOGE("Failed to mount %s (%s) at %s: %s",
-                 rec.blk_device.c_str(), rec.fs_type.c_str(),
-                 mount_point, strerror(errno));
-            continue;
-        } else {
+        if (auto ret = util::mount(rec.blk_device, mount_point, rec.fs_type,
+                                   rec.flags, rec.fs_options)) {
             LOGE("Successfully mounted %s (%s) at %s",
                  rec.blk_device.c_str(), rec.fs_type.c_str(),
                  mount_point);
             return true;
+        } else {
+            LOGE("Failed to mount %s (%s) at %s: %s",
+                 rec.blk_device.c_str(), rec.fs_type.c_str(),
+                 mount_point, ret.error().message().c_str());
+            continue;
         }
     }
 
@@ -396,30 +395,31 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
         }
     }
 
-    std::optional<std::string> fstype;
-    if (!util::blkid_get_fs_type(block_dev, fstype)) {
+    auto fstype = util::blkid_get_fs_type(block_dev);
+    if (!fstype) {
         LOGE("%s: Failed to detect filesystem type: %s",
-             block_dev, strerror(errno));
-    } else if (!fstype) {
+             block_dev, fstype.error().message().c_str());
+    } else if (fstype.value().empty()) {
         LOGE("%s: Unknown filesystem", block_dev);
-    } else if (*fstype == "exfat") {
+    } else if (fstype.value() == "exfat") {
         LOGD("Using fuse-exfat: %d", use_fuse_exfat);
 
         auto func = use_fuse_exfat ? &mount_exfat_fuse : &mount_exfat_kernel;
         if (func(block_dev, mount_point)) {
             return true;
         }
-    } else if (*fstype == "vfat") {
+    } else if (fstype.value() == "vfat") {
         if (mount_vfat(block_dev, mount_point)) {
             return true;
         }
-    } else if (*fstype == "ext") {
+    } else if (fstype.value() == "ext") {
         // Assume ext4
         if (mount_ext4(block_dev, mount_point)) {
             return true;
         }
     } else {
-        LOGE("%s: Cannot handle filesystem: %s", block_dev, fstype->c_str());
+        LOGE("%s: Cannot handle filesystem: %s",
+             block_dev, fstype.value().c_str());
     }
 
     return false;
@@ -550,14 +550,10 @@ static bool mount_target(const char *source, const char *target, bool bind)
         return false;
     }
 
-    bool ret;
-
-    if (bind) {
-        ret = util::mount(source, target, "", MS_BIND, "");
-    } else {
-        ret = util::mount(source, target, "auto", 0, "");
-    }
-
+    auto ret = util::mount(source, target,
+                           bind ? "" : "auto",
+                           bind ? MS_BIND : 0,
+                           "");
     if (!ret) {
         LOGE("%s: Failed to mount: %s: %s", target, source, strerror(errno));
         return false;
@@ -921,7 +917,7 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         LOGI("Successfully mounted partitions");
     } else if (flags & MountFlag::UnmountOnFailure) {
         for (const std::string &mount_point : successful) {
-            util::umount(mount_point);
+            (void) util::umount(mount_point);
         }
     }
 
@@ -973,7 +969,9 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
     util::mkdir_recursive("/raw/data/media", 0771);
     util::mkdir_recursive("/data/media", 0771);
 
-    if (!util::mount("/raw/data/media", "/data/media", "", MS_BIND, "")) {
+    if (auto ret = util::mount(
+            "/raw/data/media", "/data/media", "", MS_BIND, ""); !ret) {
+        LOGE("Failed to mount /data/media: %s", ret.error().message().c_str());
         return false;
     }
 
