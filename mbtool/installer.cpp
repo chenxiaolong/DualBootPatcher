@@ -655,9 +655,9 @@ bool Installer::set_up_busybox_wrapper()
  */
 bool Installer::create_image(const std::string &path, uint64_t size)
 {
-    if (!util::mkdir_parent(path, S_IRWXU)) {
+    if (auto r = util::mkdir_parent(path, S_IRWXU); !r) {
         LOGE("%s: Failed to create parent directory: %s",
-             path.c_str(), strerror(errno));
+             path.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -688,16 +688,14 @@ bool Installer::system_image_copy(const std::string &source,
     std::string temp_mnt(_temp);
     temp_mnt += "/.system.tmp";
 
-    struct stat sb;
-
-    if (stat(source.c_str(), &sb) < 0
-            && !util::mkdir_recursive(source, 0755)) {
-        LOGE("Failed to create %s: %s", source.c_str(), strerror(errno));
+    if (auto r = util::mkdir_recursive(source, 0755);
+            !r && r.error() != std::errc::file_exists) {
+        LOGE("Failed to create %s: %s", source.c_str(),
+             r.error().message().c_str());
         return false;
     }
 
-    if (stat(temp_mnt.c_str(), &sb) < 0
-            && mkdir(temp_mnt.c_str(), 0755) < 0) {
+    if (mkdir(temp_mnt.c_str(), 0755) < 0 && errno != EEXIST) {
         LOGE("Failed to create %s: %s", temp_mnt.c_str(), strerror(errno));
         return false;
     }
@@ -1463,9 +1461,9 @@ Installer::ProceedState Installer::install_stage_check_device()
     for (auto const &dev : devs) {
         std::string dev_path(in_chroot(dev));
 
-        if (!util::mkdir_parent(dev_path, 0755)) {
-            LOGW("Failed to create parent directory of %s",
-                 dev_path.c_str());
+        if (auto r = util::mkdir_parent(dev_path, 0755); !r) {
+            LOGW("Failed to create parent directory of %s: %s",
+                 dev_path.c_str(), r.error().message().c_str());
         }
 
         // Follow symlinks just in case the symlink source isn't in the list
@@ -1482,9 +1480,9 @@ Installer::ProceedState Installer::install_stage_check_device()
     for (auto const &dev : system_devs) {
         std::string dev_path(in_chroot(dev));
 
-        if (!util::mkdir_parent(dev_path, 0755)) {
-            LOGW("Failed to create parent directory of %s",
-                 dev_path.c_str());
+        if (auto r = util::mkdir_parent(dev_path, 0755); !r) {
+            LOGW("Failed to create parent directory of %s: %s",
+                 dev_path.c_str(), r.error().message().c_str());
         }
 
         if (symlink(CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str()) < 0) {

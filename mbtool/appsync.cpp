@@ -922,7 +922,8 @@ int appsync_main(int argc, char *argv[])
     }
 
 
-    if (!util::mkdir_parent(MULTIBOOT_LOG_APPSYNC, 0775) && errno != EEXIST) {
+    if (auto r = util::mkdir_parent(MULTIBOOT_LOG_APPSYNC, 0775);
+            !r && r.error() != std::errc::file_exists) {
         fprintf(stderr, "Failed to create parent directory of %s: %s\n",
                 MULTIBOOT_LOG_APPSYNC, strerror(errno));
         return EXIT_FAILURE;

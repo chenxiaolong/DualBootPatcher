@@ -156,7 +156,7 @@ bool checksums_write(const std::unordered_map<std::string, std::string> &props)
              checksums_path.c_str(), strerror(errno));
     }
 
-    util::mkdir_parent(checksums_path, 0755);
+    (void) util::mkdir_parent(checksums_path, 0755);
     (void) util::create_empty_file(checksums_path);
 
     if (!util::chown(checksums_path, 0, 0, 0)) {
@@ -328,9 +328,9 @@ SwitchRomResult switch_rom(const std::string &id,
         return SwitchRomResult::Failed;
     }
 
-    if (!util::mkdir_recursive(multiboot_path, 0775)) {
+    if (auto r = util::mkdir_recursive(multiboot_path, 0775); !r) {
         LOGE("%s: Failed to create directory: %s",
-             multiboot_path.c_str(), strerror(errno));
+             multiboot_path.c_str(), r.error().message().c_str());
         return SwitchRomResult::Failed;
     }
 
@@ -451,9 +451,9 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
         return false;
     }
 
-    if (!util::mkdir_recursive(multiboot_path, 0775)) {
+    if (auto r = util::mkdir_recursive(multiboot_path, 0775); !r) {
         LOGE("%s: Failed to create directory: %s",
-             multiboot_path.c_str(), strerror(errno));
+             multiboot_path.c_str(), r.error().message().c_str());
         return false;
     }
 

@@ -97,9 +97,10 @@ std::string AppSyncManager::get_shared_data_path(const std::string &pkg)
 
 bool AppSyncManager::initialize_directories()
 {
-    if (!util::mkdir_recursive(_as_data_dir, 0751) && errno != EEXIST) {
+    if (auto r = util::mkdir_recursive(_as_data_dir, 0751);
+            !r && r.error() != std::errc::file_exists) {
         LOGW("%s: Failed to create directory: %s", _as_data_dir.c_str(),
-             strerror(errno));
+             r.error().message().c_str());
         return false;
     }
 
@@ -110,9 +111,9 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
 {
     std::string data_path = get_shared_data_path(pkg);
 
-    if (!util::mkdir_recursive(data_path, 0751)) {
+    if (auto r = util::mkdir_recursive(data_path, 0751); !r) {
         LOGW("[%s] %s: Failed to create directory: %s",
-             pkg.c_str(), data_path.c_str(), strerror(errno));
+             pkg.c_str(), data_path.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -158,9 +159,9 @@ bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
     target += "/";
     target += pkg;
 
-    if (!util::mkdir_recursive(target, 0755)) {
+    if (auto r = util::mkdir_recursive(target, 0755); !r) {
         LOGW("[%s] %s: Failed to create directory: %s",
-             pkg.c_str(), target.c_str(), strerror(errno));
+             pkg.c_str(), target.c_str(), r.error().message().c_str());
         return false;
     }
     if (!util::chown(target, uid, uid, util::ChownFlag::Recursive)) {

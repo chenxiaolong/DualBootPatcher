@@ -641,7 +641,7 @@ static void handle_generic_device_event(struct uevent *uevent)
                     return;
                 }
                 if (!dry_run) {
-                    mb::util::mkdir_parent(devpath, 0755);
+                    (void) mb::util::mkdir_parent(devpath, 0755);
                 }
             } else {
                 // This imitates the file system that would be created

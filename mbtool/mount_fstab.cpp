@@ -464,9 +464,9 @@ static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_r
 
     LOGD("%zu fstab entries for the external SD", extsd_recs.size());
 
-    if (!util::mkdir_recursive(mount_point, perms)) {
+    if (auto r = util::mkdir_recursive(mount_point, perms); !r) {
         LOGE("%s: Failed to create directory: %s",
-             mount_point, strerror(errno));
+             mount_point, r.error().message().c_str());
         return false;
     }
 
@@ -533,16 +533,22 @@ static bool mount_target(const char *source, const char *target, bool bind)
         unlink(target);
     }
 
-    if (!util::mkdir_recursive(target, 0755) && errno != EEXIST) {
-        LOGE("%s: Failed to create directory: %s", target, strerror(errno));
+    if (auto r = util::mkdir_recursive(target, 0755);
+            !r && r.error() != std::errc::file_exists) {
+        LOGE("%s: Failed to create directory: %s",
+             target, r.error().message().c_str());
         return false;
     }
 
     // Create source directory for bind mount if it doesn't already exist.
     // This can happen if the user accidentally wipes /cache, for example.
-    if (bind && !util::mkdir_recursive(source, 0755) && errno != EEXIST) {
-        LOGE("%s: Failed to create directory: %s", source, strerror(errno));
-        return false;
+    if (bind) {
+        if (auto r = util::mkdir_recursive(source, 0755);
+                !r && r.error() != std::errc::file_exists) {
+            LOGE("%s: Failed to create directory: %s",
+                 source, r.error().message().c_str());
+            return false;
+        }
     }
 
     auto ret = util::mount(source, target,
@@ -961,8 +967,8 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
     }
 
     // Bind mount internal SD directory
-    util::mkdir_recursive("/raw/data/media", 0771);
-    util::mkdir_recursive("/data/media", 0771);
+    (void) util::mkdir_recursive("/raw/data/media", 0771);
+    (void) util::mkdir_recursive("/data/media", 0771);
 
     if (auto ret = util::mount(
             "/raw/data/media", "/data/media", "", MS_BIND, ""); !ret) {

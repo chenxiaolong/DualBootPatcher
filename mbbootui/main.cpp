@@ -396,9 +396,9 @@ int main(int argc, char *argv[])
 
     umask(0);
 
-    if (!mb::util::mkdir_recursive(MBBOOTUI_BASE_PATH, 0755)) {
+    if (auto r = mb::util::mkdir_recursive(MBBOOTUI_BASE_PATH, 0755); !r) {
         LOGE("%s: Failed to create directory: %s",
-             MBBOOTUI_BASE_PATH, strerror(errno));
+             MBBOOTUI_BASE_PATH, r.error().message().c_str());
         return EXIT_FAILURE;
     }
 

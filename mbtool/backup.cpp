@@ -223,7 +223,8 @@ static bool backup_image(const std::string &output_file,
                          const std::vector<std::string> &exclusions,
                          util::CompressionType compression)
 {
-    if (!util::mkdir_recursive(BACKUP_MNT_DIR, 0755) && errno != EEXIST) {
+    if (auto r = util::mkdir_recursive(BACKUP_MNT_DIR, 0755);
+            !r && r.error() != std::errc::file_exists) {
         LOGE("%s: Failed to create directory: %s",
              BACKUP_MNT_DIR, strerror(errno));
         return false;
@@ -258,9 +259,9 @@ static bool restore_image(const std::string &input_file,
                           const std::vector<std::string> &exclusions,
                           util::CompressionType compression)
 {
-    if (!util::mkdir_parent(image, S_IRWXU)) {
+    if (auto r = util::mkdir_parent(image, S_IRWXU); !r) {
         LOGE("%s: Failed to create parent directory: %s",
-             image.c_str(), strerror(errno));
+             image.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -277,7 +278,8 @@ static bool restore_image(const std::string &input_file,
         }
     }
 
-    if (!util::mkdir_recursive(BACKUP_MNT_DIR, 0755) && errno != EEXIST) {
+    if (auto r = util::mkdir_recursive(BACKUP_MNT_DIR, 0755);
+            !r && r.error() != std::errc::file_exists) {
         LOGE("%s: Failed to create directory: %s",
              BACKUP_MNT_DIR, strerror(errno));
         return false;
@@ -690,9 +692,9 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
     std::string multiboot_dir(MULTIBOOT_DIR);
     multiboot_dir += '/';
     multiboot_dir += rom->id;
-    if (!util::mkdir_recursive(multiboot_dir, 0775)) {
+    if (auto r = util::mkdir_recursive(multiboot_dir, 0775); !r) {
         LOGE("%s: Failed to create directory: %s",
-             multiboot_dir.c_str(), strerror(errno));
+             multiboot_dir.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -997,9 +999,9 @@ int backup_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!util::mkdir_recursive(output_dir, 0755)) {
+    if (auto r = util::mkdir_recursive(output_dir, 0755); !r) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
-                output_dir.c_str(), strerror(errno));
+                output_dir.c_str(), r.error().message().c_str());
         return EXIT_FAILURE;
     }
 

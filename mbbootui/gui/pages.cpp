@@ -1290,7 +1290,7 @@ void PageManager::LoadLanguageList(ZipArchive* package)
         mb::util::delete_recursive(TWFunc::get_resource_path("customlanguages"));
     }
     if (package) {
-        mb::util::mkdir_recursive(TWFunc::get_resource_path("customlanguages"), 0700);
+        (void) mb::util::mkdir_recursive(TWFunc::get_resource_path("customlanguages"), 0700);
         struct utimbuf timestamp = { 1217592000, 1217592000 };  // 8/1/2008 default
 #ifdef HAVE_SELINUX
         mzExtractRecursive(package, "languages", TWFunc::get_resource_path("customlanguages/").c_str(), &timestamp, nullptr, nullptr, nullptr);

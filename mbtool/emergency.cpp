@@ -224,9 +224,10 @@ bool emergency_reboot()
     }
 
     for (auto const &em : ems) {
-        if (!util::mkdir_recursive(em.mount_point, 0755) && errno != EEXIST) {
+        if (auto r = util::mkdir_recursive(em.mount_point, 0755);
+                !r && r.error() != std::errc::file_exists) {
             LOGW("%s: Failed to create directory: %s",
-                 em.mount_point.c_str(), strerror(errno));
+                 em.mount_point.c_str(), r.error().message().c_str());
         }
 
         if (!util::is_mounted(em.mount_point)) {
@@ -249,7 +250,8 @@ bool emergency_reboot()
         std::string log_path_old(log_path);
         log_path_old += ".old";
 
-        if (!util::mkdir_parent(log_path, 0755) && errno != EEXIST) {
+        if (auto r = util::mkdir_parent(log_path, 0755);
+                !r && r.error() != std::errc::file_exists) {
             LOGW("%s: Failed to create parent directory: %s",
                  log_path.c_str(), strerror(errno));
         }

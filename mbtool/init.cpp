@@ -931,8 +931,10 @@ static bool disable_spota()
         return true;
     }
 
-    if (!util::mkdir_recursive(spota_dir, 0) && errno != EEXIST) {
-        LOGE("%s: Failed to create directory: %s", spota_dir, strerror(errno));
+    if (auto r = util::mkdir_recursive(spota_dir, 0);
+            !r && r.error() != std::errc::file_exists) {
+        LOGE("%s: Failed to create directory: %s", spota_dir,
+             r.error().message().c_str());
         return false;
     }
 
@@ -1011,7 +1013,7 @@ static bool extract_zip(const char *source, const char *target)
     std::string target_file(target);
     target_file += "/exec";
 
-    util::mkdir_recursive(target, 0755);
+    (void) util::mkdir_recursive(target, 0755);
 
     FILE *fp = fopen(target_file.c_str(), "wb");
     if (!fp) {

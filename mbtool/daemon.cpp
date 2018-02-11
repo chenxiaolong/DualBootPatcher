@@ -360,8 +360,8 @@ static bool daemon_init()
     } else if (log_to_kmsg) {
         log::set_logger(std::make_shared<log::KmsgLogger>(false));
     } else {
-        if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775)
-                && errno != EEXIST) {
+        if (auto r = util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775);
+                !r && r.error() != std::errc::file_exists) {
             LOGE("Failed to create parent directory of %s: %s",
                  MULTIBOOT_LOG_DAEMON, strerror(errno));
             return false;

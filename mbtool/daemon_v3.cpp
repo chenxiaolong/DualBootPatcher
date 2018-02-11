@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
@@ -588,21 +589,23 @@ static bool v3_path_mkdir(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
     fb::Offset<v3::PathMkdirError> error;
 
-    bool ret;
+    oc::result<void> ret = oc::success();
     if (request->recursive()) {
         ret = util::mkdir_recursive(request->path()->str(), mode);
     } else {
-        ret = mkdir(request->path()->c_str(), mode) == 0;
+        if (mkdir(request->path()->c_str(), mode) < 0) {
+            ret = ec_from_errno();
+        }
     }
-    int saved_errno = errno;
 
     if (!ret) {
         error = v3::CreatePathMkdirErrorDirect(
-                builder, saved_errno, strerror(saved_errno));
+                builder, ret.error().value(), ret.error().message().c_str());
     }
 
     auto response = v3::CreatePathMkdirResponseDirect(
-            builder, ret, ret ? nullptr : strerror(saved_errno), error);
+            builder, !!ret, ret ? nullptr : ret.error().message().c_str(),
+            error);
 
     // Wrap response
     builder.Finish(v3::CreateResponse(

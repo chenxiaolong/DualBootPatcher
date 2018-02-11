@@ -625,9 +625,9 @@ bool extract_archive(const std::string &filename, const std::string &target)
 
     set_up_output(out.get());
 
-    if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
+    if (auto r = mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO); !r) {
         LOGE("%s: Failed to create directory: %s",
-             target.c_str(), strerror(errno));
+             target.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -688,9 +688,9 @@ bool extract_files(const std::string &filename, const std::string &target,
 
     set_up_output(out.get());
 
-    if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
+    if (auto r = mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO); !r) {
         LOGE("%s: Failed to create directory: %s",
-             target.c_str(), strerror(errno));
+             target.c_str(), r.error().message().c_str());
         return false;
     }
 

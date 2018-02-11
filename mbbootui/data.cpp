@@ -621,7 +621,7 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
 void DataManager::ReadSettingsFile()
 {
 #ifndef TW_OEM_BUILD
-    mb::util::mkdir_parent(tw_settings_path, 0700);
+    (void) mb::util::mkdir_parent(tw_settings_path, 0700);
 
     LOGI("Attempt to load settings from settings file...");
     LoadValues(tw_settings_path);
