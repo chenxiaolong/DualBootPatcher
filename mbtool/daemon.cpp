@@ -148,42 +148,48 @@ static bool client_connection(int fd)
     if (allow_root_client && cred.uid == 0 && cred.gid == 0) {
         LOGV("Received connection from client with root UID and GID");
         LOGW("WARNING: Cannot verify signature of root client process");
-        if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
-            LOGE("Failed to send credentials allowed message");
+        if (auto ret = util::socket_write_string(fd, RESPONSE_ALLOW); !ret) {
+            LOGE("Failed to send credentials allowed message: %s",
+                 ret.error().message().c_str());
             return false;
         }
     } else if (verify_credentials(cred.uid)) {
-        if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
-            LOGE("Failed to send credentials allowed message");
+        if (auto ret = util::socket_write_string(fd, RESPONSE_ALLOW); !ret) {
+            LOGE("Failed to send credentials allowed message: %s",
+                 ret.error().message().c_str());
             return false;
         }
     } else {
-        if (!util::socket_write_string(fd, RESPONSE_DENY)) {
-            LOGE("Failed to send credentials denied message");
+        if (auto ret = util::socket_write_string(fd, RESPONSE_DENY); !ret) {
+            LOGE("Failed to send credentials denied message: %s",
+                 ret.error().message().c_str());
         }
         return false;
     }
 
-    int32_t version;
-    if (!util::socket_read_int32(fd, version)) {
-        LOGE("Failed to get interface version");
+    auto version = util::socket_read_int32(fd);
+    if (!version) {
+        LOGE("Failed to get interface version: %s",
+             version.error().message().c_str());
         return false;
     }
 
-    if (version == 2) {
+    if (version.value() == 2) {
         LOGE("Protocol version 2 is no longer supported");
-        util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
+        (void) util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         return false;
-    } else if (version == 3) {
-        if (!util::socket_write_string(fd, RESPONSE_OK)) {
+    } else if (version.value() == 3) {
+        if (auto ret = util::socket_write_string(fd, RESPONSE_OK); !ret) {
+            LOGE("Failed to send OK message: %s",
+                 ret.error().message().c_str());
             return false;
         }
 
         connection_version_3(fd);
         return true;
     } else {
-        LOGE("Unsupported interface version: %d", version);
-        util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
+        LOGE("Unsupported interface version: %d", version.value());
+        (void) util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         return false;
     }
 }

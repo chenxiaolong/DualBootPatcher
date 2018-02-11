@@ -79,7 +79,7 @@ static int fd_count = 0;
 static bool v3_send_response(int fd, const fb::FlatBufferBuilder &builder)
 {
     return util::socket_write_bytes(
-            fd, builder.GetBufferPointer(), builder.GetSize());
+            fd, builder.GetBufferPointer(), builder.GetSize()).has_value();
 }
 
 static bool v3_send_response_invalid(int fd)
@@ -1446,18 +1446,19 @@ bool connection_version_3(int fd)
     });
 
     while (1) {
-        std::vector<uint8_t> data;
-        if (!util::socket_read_bytes(fd, data)) {
+        auto data = util::socket_read_bytes(fd);
+        if (!data) {
+            LOGE("Failed to read request: %s",  data.error().message().c_str());
             return false;
         }
 
-        auto verifier = fb::Verifier(data.data(), data.size());
+        auto verifier = fb::Verifier(data.value().data(), data.value().size());
         if (!v3::VerifyRequestBuffer(verifier)) {
             LOGE("Received invalid buffer");
             return false;
         }
 
-        const v3::Request *request = v3::GetRequest(data.data());
+        const v3::Request *request = v3::GetRequest(data.value().data());
         v3::RequestType type = request->request_type();
         request_handler_fn fn = nullptr;
 

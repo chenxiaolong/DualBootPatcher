@@ -309,31 +309,35 @@ static int create_new_socket()
 static bool receive_message(int fd, char *buf, std::size_t size,
                             bool is_async, int &async_id)
 {
-    unsigned short count;
-
     if (is_async) {
-        if (!util::socket_read_int32(fd, async_id)) {
-            LOGE("Failed to receive async command ID: %s", strerror(errno));
+        auto ret = util::socket_read_int32(fd);
+        if (!ret) {
+            LOGE("Failed to receive async command ID: %s",
+                 ret.error().message().c_str());
             return false;
         }
+        async_id = ret.value();
     }
 
-    if (!util::socket_read_uint16(fd, count)) {
-        LOGE("Failed to read command size: %s", strerror(errno));
+    auto count = util::socket_read_uint16(fd);
+    if (!count) {
+        LOGE("Failed to read command size: %s",
+             count.error().message().c_str());
         return false;
     }
 
-    if (count < 1 || count >= size) {
-        LOGE("Invalid size %u", count);
+    if (count.value() < 1 || count.value() >= size) {
+        LOGE("Invalid size %u", count.value());
         return false;
     }
 
-    if (util::socket_read(fd, buf, count) != count) {
-        LOGE("Failed to read command: %s", strerror(errno));
+    if (auto ret = util::socket_read(fd, buf, count.value());
+            !ret || ret.value() != count.value()) {
+        LOGE("Failed to read command: %s", ret.error().message().c_str());
         return false;
     }
 
-    buf[count] = 0;
+    buf[count.value()] = 0;
 
     return true;
 }
@@ -347,19 +351,21 @@ static bool send_message(int fd, const char *command,
     auto count = static_cast<uint16_t>(strlen(command));
 
     if (is_async) {
-        if (!util::socket_write_int32(fd, async_id)) {
-            LOGE("Failed to write async command ID: %s", strerror(errno));
+        if (auto ret = util::socket_write_int32(fd, async_id); !ret) {
+            LOGE("Failed to write async command ID: %s",
+                 ret.error().message().c_str());
             return false;
         }
     }
 
-    if (!util::socket_write_uint16(fd, count)) {
-        LOGE("Failed to write command size: %s", strerror(errno));
+    if (auto ret = util::socket_write_uint16(fd, count); !ret) {
+        LOGE("Failed to write command size: %s", ret.error().message().c_str());
         return false;
     }
 
-    if (util::socket_write(fd, command, count) != count) {
-        LOGE("Failed to write command: %s", strerror(errno));
+    if (auto ret = util::socket_write(fd, command, count);
+            !ret || ret.value() != count) {
+        LOGE("Failed to write command: %s", ret.error().message().c_str());
         return false;
     }
 
