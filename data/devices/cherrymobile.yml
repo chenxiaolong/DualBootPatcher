@@ -109,6 +109,8 @@
   id: Touch_XL_2
   codenames:
     - TOUCH_XL_2
+    - TouchXL2_V2
+    - Touch_XL2_V2
     - Touch_XL_2
     - touch_xl_2
     - Cherry_Mobile
@@ -179,3 +181,4 @@
     max_brightness: 255
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
+
