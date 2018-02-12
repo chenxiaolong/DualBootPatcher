@@ -200,26 +200,17 @@ static bool stop_daemon()
     return wait_for_pid("daemon", daemon_pid) != -1;
 }
 
-static util::CmdlineIterAction set_kernel_properties_cb(const std::string &name,
-                                                        const std::optional<std::string> &value,
-                                                        void *userdata)
-{
-    (void) userdata;
-
-    if (starts_with(name, "androidboot.") && name.size() > 12 && value) {
-        char buf[PROP_NAME_MAX];
-        int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name.c_str() + 12);
-        if (n >= 0 && n < static_cast<int>(sizeof(buf))) {
-            property_set(buf, *value);
-        }
-    }
-
-    return util::CmdlineIterAction::Continue;
-}
-
 static bool set_kernel_properties()
 {
-    util::kernel_cmdline_iter(&set_kernel_properties_cb, nullptr);
+    if (auto cmdline = util::kernel_cmdline()) {
+        for (auto const &[k, v] : cmdline.value()) {
+            if (starts_with(k, "androidboot.") && k.size() > 12 && v) {
+                std::string key("ro.boot.");
+                key += std::string_view(k).substr(12);
+                property_set(key, *v);
+            }
+        }
+    }
 
     struct {
         const char *src_prop;
