@@ -202,7 +202,7 @@ FileOpResult<void> copy_contents(const std::string &source,
         close(fd_target);
     });
 
-    if (auto r = copy_data_fd(fd_source, fd_target)) {
+    if (auto r = copy_data_fd(fd_source, fd_target); !r) {
         // TODO: OR SOURCE?
         return FileOpErrorInfo{target, ec_from_errno()};
     }

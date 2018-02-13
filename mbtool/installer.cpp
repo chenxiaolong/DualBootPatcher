@@ -1552,8 +1552,10 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     LOGD("[Installer] Chroot set up stage");
 
     // Save a copy of the boot image that we'll restore if the installation fails
-    if (!util::copy_contents(_boot_block_dev, _temp + "/boot.orig")) {
-        display_msg("Failed to backup boot partition");
+    if (auto r = util::copy_contents(
+            _boot_block_dev, _temp + "/boot.orig"); !r) {
+        LOGE("%s", r.error().message().c_str());
+        display_msg("Failed to back up boot partition");
         return ProceedState::Fail;
     }
 
