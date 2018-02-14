@@ -31,12 +31,13 @@
 #include "config/config.hpp"
 #include "minui.h"
 
+#include "mbutil/vibrate.h"
+
 //#define _EVENT_LOGGING
 
 #define MAX_DEVICES         32
 
-#define VIBRATOR_TIMEOUT_FILE "/sys/class/timed_output/vibrator/enable"
-#define VIBRATOR_TIME_MS    50
+#define VIBRATOR_TIME       50ms
 
 #ifndef SYN_REPORT
 #define SYN_REPORT          0x00
@@ -63,6 +64,8 @@
 #define ABS_MT_TRACKING_ID  0x39
 #define ABS_MT_PRESSURE     0x3a
 #define ABS_MT_DISTANCE     0x3b
+
+using namespace std::chrono_literals;
 
 enum
 {
@@ -110,32 +113,6 @@ static int has_mouse = 0;
 static inline int ABS(int x)
 {
     return x < 0 ? -x : x;
-}
-
-int vibrate(int timeout_ms)
-{
-    char str[20];
-    int fd;
-    int ret;
-
-    if (timeout_ms > 10000) {
-        timeout_ms = 1000;
-    }
-
-    fd = open(VIBRATOR_TIMEOUT_FILE, O_WRONLY);
-    if (fd < 0) {
-        return -1;
-    }
-
-    ret = snprintf(str, sizeof(str), "%d", timeout_ms);
-    ret = write(fd, str, ret);
-    close(fd);
-
-    if (ret < 0) {
-       return -1;
-    }
-
-    return 0;
 }
 
 /* Returns empty tokens */
@@ -735,7 +712,7 @@ static int vk_modify(struct ev *e, struct input_event *ev)
 
                 last_virt_key = e->vks[i].scancode;
 
-                vibrate(VIBRATOR_TIME_MS);
+                (void) mb::util::vibrate(VIBRATOR_TIME, 0ms);
 
                 // Mark that all further movement until lift is discard,
                 // and make sure we don't come back into this area

@@ -76,7 +76,7 @@ public:
         auto request = v3::CreateMbGetInstalledRomsRequest(builder);
 
         // Send request
-        std::vector<uint8_t> buf;
+        std::vector<unsigned char> buf;
         const v3::MbGetInstalledRomsResponse *response;
         if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_MbGetInstalledRomsRequest,
@@ -123,7 +123,7 @@ public:
         auto request = v3::CreateMbGetBootedRomIdRequest(builder);
 
         // Send request
-        std::vector<uint8_t> buf;
+        std::vector<unsigned char> buf;
         const v3::MbGetBootedRomIdResponse *response;
         if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_MbGetBootedRomIdRequest,
@@ -164,7 +164,7 @@ public:
                                                     force_checksums_update);
 
         // Send request
-        std::vector<uint8_t> buf;
+        std::vector<unsigned char> buf;
         const v3::MbSwitchRomResponse *response;
         if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_MbSwitchRomRequest,
@@ -205,7 +205,7 @@ public:
                                                v3::RebootType_DIRECT, false);
 
         // Send request
-        std::vector<uint8_t> buf;
+        std::vector<unsigned char> buf;
         const v3::RebootResponse *response;
         if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_RebootRequest,
@@ -227,7 +227,7 @@ public:
                                                  v3::ShutdownType_DIRECT);
 
         // Send request
-        std::vector<uint8_t> buf;
+        std::vector<unsigned char> buf;
         const v3::ShutdownResponse *response;
         if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_ShutdownRequest,
@@ -248,7 +248,7 @@ public:
         auto request = v3::CreateMbGetVersionRequest(builder);
 
         // Send request
-        std::vector<uint8_t> buf;
+        std::vector<unsigned char> buf;
         const v3::MbGetVersionResponse *response;
         if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_MbGetVersionRequest,
@@ -268,7 +268,7 @@ public:
 
 private:
     template<typename Result>
-    bool send_request(std::vector<uint8_t> &buf,
+    bool send_request(std::vector<unsigned char> &buf,
                       fb::FlatBufferBuilder &builder,
                       const fb::Offset<void> &fb_request,
                       v3::RequestType request_type,
@@ -282,15 +282,20 @@ private:
         builder.Finish(rb.Finish());
 
         // Send request
-        if (!mb::util::socket_write_bytes(
-                _fd, builder.GetBufferPointer(), builder.GetSize())) {
+        if (auto ret = mb::util::socket_write_bytes(
+                _fd, builder.GetBufferPointer(), builder.GetSize()); !ret) {
+            LOGE("Failed to send request: %s", ret.error().message().c_str());
             return false;
         }
 
         // Read response
-        if (!mb::util::socket_read_bytes(_fd, buf)) {
+        auto response_buf = mb::util::socket_read_bytes(_fd);
+        if (!response_buf) {
+            LOGE("Failed to receive response: %s",
+                 response_buf.error().message().c_str());
             return false;
         }
+        response_buf.value().swap(buf);
 
         // Verify response
         auto verifier = fb::Verifier(buf.data(), buf.size());
@@ -371,35 +376,39 @@ bool MbtoolConnection::connect()
     LOGD("Connected to daemon. Negotiating authorization...");
 
     // Check authorization result
-    std::string result;
-    if (!mb::util::socket_read_string(fd, result)) {
-        LOGE("Failed to receive authorization result: %s", strerror(errno));
+    auto result = mb::util::socket_read_string(fd);
+    if (!result) {
+        LOGE("Failed to receive authorization result: %s",
+             result.error().message().c_str());
         return false;
-    } else if (result == HANDSHAKE_RESPONSE_DENY) {
+    } else if (result.value() == HANDSHAKE_RESPONSE_DENY) {
         LOGE("Daemon denied authorization");
         return false;
-    } else if (result != HANDSHAKE_RESPONSE_ALLOW) {
+    } else if (result.value() != HANDSHAKE_RESPONSE_ALLOW) {
         LOGE("Invalid authorization result from daemon: %s",
-             result.c_str());
+             result.value().c_str());
         return false;
     }
 
     // Send requested interface version
-    if (!mb::util::socket_write_int32(fd, PROTOCOL_VERSION)) {
-        LOGE("Failed to send interface version: %s", strerror(errno));
+    if (auto ret = mb::util::socket_write_int32(fd, PROTOCOL_VERSION); !ret) {
+        LOGE("Failed to send interface version: %s",
+             ret.error().message().c_str());
         return false;
     }
 
     // Check interface request's response
-    if (!mb::util::socket_read_string(fd, result)) {
-        LOGE("Failed to receive interface request result: %s", strerror(errno));
+    result = mb::util::socket_read_string(fd);
+    if (!result) {
+        LOGE("Failed to receive interface request result: %s",
+             result.error().message().c_str());
         return false;
-    } else if (result == HANDSHAKE_RESPONSE_UNSUPPORTED) {
+    } else if (result.value() == HANDSHAKE_RESPONSE_UNSUPPORTED) {
         LOGE("Daemon does not support interface version %d", PROTOCOL_VERSION);
         return false;
-    } else if (result != HANDSHAKE_RESPONSE_OK) {
+    } else if (result.value() != HANDSHAKE_RESPONSE_OK) {
         LOGE("Invalid interface request result from daemon: %s",
-             result.c_str());
+             result.value().c_str());
         return false;
     }
 

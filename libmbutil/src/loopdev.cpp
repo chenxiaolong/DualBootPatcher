@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -31,6 +31,7 @@
 
 #include <linux/loop.h>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbutil/string.h"
@@ -51,15 +52,15 @@ namespace mb::util
 /*!
  * \brief Find empty loopdev by using the new ioctl for /dev/block/loop-control
  *
- * \return Loopdev number or -1 if loop-control does not exist or the ioctl
- *         failed
+ * \return Loopdev number or the error code if loop-control does not exist or
+ *         the ioctl failed
  */
-static int find_loopdev_by_loop_control()
+static oc::result<int> find_loopdev_by_loop_control()
 {
     int fd = -1;
 
     if ((fd = open(LOOP_CONTROL, O_RDWR)) < 0) {
-        return -1;
+        return ec_from_errno();
     }
 
     auto close_fd = finally([&] {
@@ -68,7 +69,7 @@ static int find_loopdev_by_loop_control()
 
     int n = ioctl(fd, LOOP_CTL_GET_FREE);
     if (n < 0) {
-        return -1;
+        return ec_from_errno();
     }
 
     char loopdev[64];
@@ -76,7 +77,7 @@ static int find_loopdev_by_loop_control()
 
     if (mknod(loopdev, S_IFBLK | 0644, static_cast<dev_t>(makedev(7, n))) < 0
             && errno != EEXIST) {
-        return -1;
+        ec_from_errno();
     }
 
     return n;
@@ -85,13 +86,13 @@ static int find_loopdev_by_loop_control()
 /*!
  * \brief Find empty loopdev by dumb scan through /dev/block/loop*
  *
- * \return Loopdev number or -1 if:
+ * \return Loopdev number or the error code if:
  *         - /dev/block/loop# failed to stat where errno != ENOENT
  *         - /dev/block/loop# is not a loop device
  *         - /dev/block/loop# could not be opened
  *         - LOOP_GET_STATUS64 ioctl failed where errno != ENXIO
  */
-static int find_loopdev_by_scanning(void)
+static oc::result<int> find_loopdev_by_scanning()
 {
     int fd;
     char loopdev[64];
@@ -144,73 +145,82 @@ static int find_loopdev_by_scanning(void)
         }
     }
 
-    return -1;
+    return std::errc::no_such_file_or_directory;
 }
 
-std::string loopdev_find_unused(void)
+oc::result<std::string> loopdev_find_unused()
 {
-    int n = find_loopdev_by_loop_control();
+    auto n = find_loopdev_by_loop_control();
+
     // Also search by scanning if n == 0, since some installers hardcode
     // /dev/block/loop0
-    if (n <= 0) {
+    if (!n || n.value() == 0) {
         n = find_loopdev_by_scanning();
     }
-    if (n < 0) {
-        return {};
+    if (!n) {
+        return n.as_failure();
     }
 
-    return format(LOOP_FMT, n);
+    return format(LOOP_FMT, n.value());
 }
 
-bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
-                           uint64_t offset, bool ro)
+oc::result<void> loopdev_set_up_device(const std::string &loopdev,
+                                       const std::string &file,
+                                       uint64_t offset, bool ro)
 {
-    int ffd = -1;
-    int lfd = -1;
-
-    loop_info64 loopinfo = {};
-
-    if ((ffd = open(file.c_str(), ro ? O_RDONLY : O_RDWR)) < 0) {
-        return false;
+    int ffd = open(file.c_str(), ro ? O_RDONLY : O_RDWR);
+    if (ffd < 0) {
+        return ec_from_errno();
     }
 
     auto close_ffd = finally([&] {
         close(ffd);
     });
 
-    if ((lfd = open(loopdev.c_str(), ro ? O_RDONLY : O_RDWR)) < 0) {
-        return false;
+    int lfd = open(loopdev.c_str(), ro ? O_RDONLY : O_RDWR);
+    if (lfd < 0) {
+        return ec_from_errno();
     }
 
     auto close_lfd = finally([&] {
         close(lfd);
     });
 
+    loop_info64 loopinfo = {};
+
     strlcpy(reinterpret_cast<char *>(loopinfo.lo_file_name), file.c_str(),
             LO_NAME_SIZE);
     loopinfo.lo_offset = offset;
 
     if (ioctl(lfd, LOOP_SET_FD, ffd) < 0) {
-        return false;
+        return ec_from_errno();
     }
 
     if (ioctl(lfd, LOOP_SET_STATUS64, &loopinfo) < 0) {
+        int saved_errno = errno;
         ioctl(lfd, LOOP_CLR_FD, 0);
-        return false;
+        return ec_from_errno(saved_errno);
     }
 
-    return true;
+    return oc::success();
 }
 
-bool loopdev_remove_device(const std::string &loopdev)
+oc::result<void> loopdev_remove_device(const std::string &loopdev)
 {
-    int lfd;
-    if ((lfd = open(loopdev.c_str(), O_RDONLY)) < 0) {
-        return false;
+    int lfd = open(loopdev.c_str(), O_RDONLY);
+    if (lfd < 0) {
+        return ec_from_errno();
     }
-    int ret = ioctl(lfd, LOOP_CLR_FD, 0);
-    close(lfd);
-    return ret == 0;
+
+    auto close_fd = finally([&] {
+        close(lfd);
+    });
+
+    if (ioctl(lfd, LOOP_CLR_FD, 0) < 0) {
+        return ec_from_errno();
+    }
+
+    return oc::success();
 }
 
 }

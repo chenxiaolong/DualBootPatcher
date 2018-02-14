@@ -765,8 +765,8 @@ int GUIAction::switch_rom(const std::string& arg)
         if (ret == 0) {
             // Skip boot menu for next boot
             static const char *skip_path = "/raw/cache/multiboot/bootui/skip";
-            mb::util::mkdir_parent(skip_path, 0755);
-            mb::util::file_write_data(skip_path, arg.data(), arg.size());
+            (void) mb::util::mkdir_parent(skip_path, 0755);
+            (void) mb::util::file_write_data(skip_path, arg.data(), arg.size());
         }
 
         // Reboot when exiting

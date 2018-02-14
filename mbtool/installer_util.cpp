@@ -236,19 +236,20 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
 
         const char *curpath = archive_entry_pathname(entry.get());
         if (curpath && !input_dir.empty()) {
-            std::string relpath;
-            if (!util::relative_path(curpath, input_dir, relpath)) {
+            auto relpath = util::relative_path(curpath, input_dir);
+            if (!relpath) {
                 LOGE("Failed to compute relative path of %s starting at %s: %s",
-                     curpath, input_dir.c_str(), strerror(errno));
+                     curpath, input_dir.c_str(),
+                     relpath.error().message().c_str());
                 return false;
             }
-            if (relpath.empty()) {
+            if (relpath.value().empty()) {
                 // If the relative path is empty, then the current path is
                 // the root of the directory tree. We don't need that, so
                 // skip it.
                 continue;
             }
-            archive_entry_set_pathname(entry.get(), relpath.c_str());
+            archive_entry_set_pathname(entry.get(), relpath.value().c_str());
         }
 
         ret = archive_write_header(aout.get(), entry.get());
@@ -302,7 +303,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     }
 
     auto delete_temp_dir = finally([&]{
-        util::delete_recursive(tmpdir);
+        (void) util::delete_recursive(tmpdir);
     });
 
     Reader reader;
@@ -483,7 +484,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
     }
 
     auto delete_temp_dir = finally([&]{
-        util::delete_recursive(tmpdir);
+        (void) util::delete_recursive(tmpdir);
     });
 
     int format;

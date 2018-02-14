@@ -487,22 +487,24 @@ std::string Roms::get_extsd_partition()
     // Look for mounted MMC partitions
     ScopedFILE fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
     if (fp) {
-        for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
+        while (auto entry = util::get_mount_entry(fp.get())) {
             // Skip useless mounts
-            if (!starts_with(entry.dir.c_str(), prefix_mnt)) {
+            if (!starts_with(entry.value().dir.c_str(), prefix_mnt)) {
                 continue;
             }
 
-            if (stat(entry.fsname.c_str(), &sb) < 0) {
+            if (stat(entry.value().fsname.c_str(), &sb) < 0) {
                 LOGW("%s: Failed to stat: %s",
-                     entry.fsname.c_str(), strerror(errno));
+                     entry.value().fsname.c_str(), strerror(errno));
                 continue;
             }
 
             if (major(sb.st_rdev) == 179) {
+                std::string_view suffix(entry.value().dir);
+                suffix.remove_prefix(strlen(prefix_mnt));
+
                 std::string path(prefix_storage);
-                path.append(entry.dir.begin() + strlen(prefix_mnt),
-                            entry.dir.end());
+                path += suffix;
 
                 if (util::is_mounted(path)) {
                     return path;

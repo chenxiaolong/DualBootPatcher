@@ -56,9 +56,9 @@ void sanitize(char *s)
 
 void make_link_init(const char *oldpath, const char *newpath)
 {
-    if (!mb::util::mkdir_parent(newpath, 0755)) {
+    if (auto r = mb::util::mkdir_parent(newpath, 0755); !r) {
         LOGE("Failed to create parent directory of %s: %s",
-             newpath, strerror(errno));
+             newpath, r.error().message().c_str());
     }
 
     if (symlink(oldpath, newpath) < 0) {
@@ -69,11 +69,11 @@ void make_link_init(const char *oldpath, const char *newpath)
 
 void remove_link(const char *oldpath, const char *newpath)
 {
-    std::string path;
-    if (!mb::util::read_link(newpath, path)) {
+    auto path = mb::util::read_link(newpath);
+    if (!path) {
         return;
     }
-    if (path == oldpath) {
+    if (path.value() == oldpath) {
         unlink(newpath);
     }
 }

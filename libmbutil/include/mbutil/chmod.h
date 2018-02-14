@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,9 +20,11 @@
 #pragma once
 
 #include <string>
+
 #include <sys/types.h>
 
 #include "mbcommon/flags.h"
+#include "mbcommon/outcome.h"
 
 namespace mb::util
 {
@@ -34,6 +36,6 @@ enum class ChmodFlag : uint8_t
 MB_DECLARE_FLAGS(ChmodFlags, ChmodFlag)
 MB_DECLARE_OPERATORS_FOR_FLAGS(ChmodFlags)
 
-bool chmod(const std::string &path, mode_t perms, ChmodFlags flags);
+oc::result<void> chmod(const std::string &path, mode_t perms, ChmodFlags flags);
 
 }

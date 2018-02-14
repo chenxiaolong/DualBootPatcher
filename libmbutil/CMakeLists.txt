@@ -54,6 +54,7 @@ foreach(variant ${variants})
         src/vibrate.cpp
         src/external/system_properties.cpp
         src/external/system_properties_compat.c
+        src/result/file_op_result.cpp
         external/android_reboot.c
     )
 

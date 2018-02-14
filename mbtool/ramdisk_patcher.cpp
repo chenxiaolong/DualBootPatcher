@@ -36,6 +36,7 @@
 #include "mbutil/path.h"
 
 #include "installer_util.h"
+#include "multiboot.h"
 
 #define LOG_TAG "mbtool/ramdisk_patcher"
 
@@ -158,8 +159,8 @@ static bool _rp_patch_default_prop(const std::string &dir,
 
     // Write new properties
     if (fputc('\n', fp_out) == EOF
-            || fprintf(fp_out, "ro.patcher.device=%s\n", device_id.c_str()) < 0
-            || fprintf(fp_out, "ro.patcher.use_fuse_exfat=%s\n",
+            || fprintf(fp_out, PROP_DEVICE "=%s\n", device_id.c_str()) < 0
+            || fprintf(fp_out, PROP_USE_FUSE_EXFAT "=%s\n",
                        use_fuse_exfat ? "true" : "false") < 0) {
         LOGE("%s: Failed to write properties: %s",
              tmp_path.c_str(), strerror(errno));
@@ -219,7 +220,8 @@ static bool _rp_add_binaries(const std::string &dir,
         target += "/";
         target += item.to;
 
-        if (!util::copy_file(source, target, 0)) {
+        if (auto r = util::copy_file(source, target, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return false;
         }
         if (chmod(target.c_str(), item.perm) < 0) {
@@ -265,13 +267,12 @@ rp_symlink_fuse_exfat()
 
 static bool _is_linked_to_mbtool(const std::string &path)
 {
-    std::string link_target;
-
-    if (!util::read_link(path, link_target)) {
+    auto link_target = util::read_link(path);
+    if (!link_target) {
         return false;
     }
 
-    auto pieces = util::path_split(link_target);
+    auto pieces = util::path_split(link_target.value());
 
     if (std::find(pieces.begin(), pieces.end(), "mbtool") == pieces.end()) {
         return false;
@@ -288,7 +289,6 @@ static std::string _get_init_target(const std::string &dir)
     sony_init_wrapper += "/sbin/init_sony";
     std::string sony_real_init(dir);
     sony_real_init += "/init.real";
-    std::string sony_symlink_target;
 
     // If this is a Sony device that doesn't use sbin/ramdisk.cpio for the
     // combined ramdisk, we'll have to explicitly allow their init executable to
@@ -302,19 +302,20 @@ static std::string _get_init_target(const std::string &dir)
     struct stat sb;
 
     // Check that /init is a symlink and that /init.real exists
-    if (lstat(target.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)
-            && util::read_link(target, sony_symlink_target)
-            && lstat(sony_real_init.c_str(), &sb) == 0) {
-        auto haystack = util::path_split(sony_symlink_target);
-        auto needle = util::path_split("sbin/init_sony");
+    if (lstat(target.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)) {
+        auto sony_symlink_target = util::read_link(target);
+        if (sony_symlink_target && lstat(sony_real_init.c_str(), &sb) == 0) {
+            auto haystack = util::path_split(sony_symlink_target.value());
+            auto needle = util::path_split("sbin/init_sony");
 
-        util::normalize_path(haystack);
+            util::normalize_path(haystack);
 
-        // Check that init points to some path with "sbin/init_sony" in it
-        auto const it = std::search(haystack.cbegin(), haystack.cend(),
-                                    needle.cbegin(), needle.cend());
-        if (it != haystack.cend()) {
-            target.swap(sony_real_init);
+            // Check that init points to some path with "sbin/init_sony" in it
+            auto const it = std::search(haystack.cbegin(), haystack.cend(),
+                                        needle.cbegin(), needle.cend());
+            if (it != haystack.cend()) {
+                target.swap(sony_real_init);
+            }
         }
     }
 
@@ -391,7 +392,8 @@ static bool _rp_add_device_json(const std::string &dir,
     std::string device_json(dir);
     device_json += "/device.json";
 
-    if (!util::copy_file(device_json_file, device_json, 0)) {
+    if (auto r = util::copy_file(device_json_file, device_json, 0); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 

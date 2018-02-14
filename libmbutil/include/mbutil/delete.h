@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,9 +21,13 @@
 
 #include <string>
 
+#include "mbcommon/outcome.h"
+
+#include "mbutil/result/file_op_result.h"
+
 namespace mb::util
 {
 
-bool delete_recursive(const std::string &path);
+FileOpResult<void> delete_recursive(const std::string &path);
 
 }

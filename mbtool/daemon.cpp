@@ -134,8 +134,8 @@ static bool client_connection(int fd)
         return false;
     }
 
-    util::set_process_title(format("mbtool connection from pid: %u", cred.pid),
-                            nullptr);
+    (void) util::set_process_title(format(
+            "mbtool connection from pid: %u", cred.pid));
 
     LOGD("Client PID: %u", cred.pid);
     LOGD("Client UID: %u", cred.uid);
@@ -148,42 +148,48 @@ static bool client_connection(int fd)
     if (allow_root_client && cred.uid == 0 && cred.gid == 0) {
         LOGV("Received connection from client with root UID and GID");
         LOGW("WARNING: Cannot verify signature of root client process");
-        if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
-            LOGE("Failed to send credentials allowed message");
+        if (auto ret = util::socket_write_string(fd, RESPONSE_ALLOW); !ret) {
+            LOGE("Failed to send credentials allowed message: %s",
+                 ret.error().message().c_str());
             return false;
         }
     } else if (verify_credentials(cred.uid)) {
-        if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
-            LOGE("Failed to send credentials allowed message");
+        if (auto ret = util::socket_write_string(fd, RESPONSE_ALLOW); !ret) {
+            LOGE("Failed to send credentials allowed message: %s",
+                 ret.error().message().c_str());
             return false;
         }
     } else {
-        if (!util::socket_write_string(fd, RESPONSE_DENY)) {
-            LOGE("Failed to send credentials denied message");
+        if (auto ret = util::socket_write_string(fd, RESPONSE_DENY); !ret) {
+            LOGE("Failed to send credentials denied message: %s",
+                 ret.error().message().c_str());
         }
         return false;
     }
 
-    int32_t version;
-    if (!util::socket_read_int32(fd, version)) {
-        LOGE("Failed to get interface version");
+    auto version = util::socket_read_int32(fd);
+    if (!version) {
+        LOGE("Failed to get interface version: %s",
+             version.error().message().c_str());
         return false;
     }
 
-    if (version == 2) {
+    if (version.value() == 2) {
         LOGE("Protocol version 2 is no longer supported");
-        util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
+        (void) util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         return false;
-    } else if (version == 3) {
-        if (!util::socket_write_string(fd, RESPONSE_OK)) {
+    } else if (version.value() == 3) {
+        if (auto ret = util::socket_write_string(fd, RESPONSE_OK); !ret) {
+            LOGE("Failed to send OK message: %s",
+                 ret.error().message().c_str());
             return false;
         }
 
         connection_version_3(fd);
         return true;
     } else {
-        LOGE("Unsupported interface version: %d", version);
-        util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
+        LOGE("Unsupported interface version: %d", version.value());
+        (void) util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         return false;
     }
 }
@@ -271,9 +277,10 @@ static bool run_daemon()
 
             // Change the process name so --replace doesn't kill existing
             // connections
-            if (!util::set_process_title(
-                    "mbtool connection initializing", nullptr)) {
-                LOGE("Failed to set process title: %s", strerror(errno));
+            if (auto ret = util::set_process_title(
+                    "mbtool connection initializing"); !ret) {
+                LOGE("Failed to set process title: %s",
+                     ret.error().message().c_str());
                 _exit(127);
             }
 
@@ -353,8 +360,8 @@ static bool daemon_init()
     } else if (log_to_kmsg) {
         log::set_logger(std::make_shared<log::KmsgLogger>(false));
     } else {
-        if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775)
-                && errno != EEXIST) {
+        if (auto r = util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775);
+                !r && r.error() != std::errc::file_exists) {
             LOGE("Failed to create parent directory of %s: %s",
                  MULTIBOOT_LOG_DAEMON, strerror(errno));
             return false;

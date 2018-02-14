@@ -58,7 +58,7 @@ public:
 
     Actions on_changed_path() override
     {
-        util::chown(_curr->fts_accpath, "system", "system", 0);
+        (void) util::chown(_curr->fts_accpath, "system", "system", 0);
         return Action::Ok;
     }
 
@@ -97,9 +97,10 @@ std::string AppSyncManager::get_shared_data_path(const std::string &pkg)
 
 bool AppSyncManager::initialize_directories()
 {
-    if (!util::mkdir_recursive(_as_data_dir, 0751) && errno != EEXIST) {
+    if (auto r = util::mkdir_recursive(_as_data_dir, 0751);
+            !r && r.error() != std::errc::file_exists) {
         LOGW("%s: Failed to create directory: %s", _as_data_dir.c_str(),
-             strerror(errno));
+             r.error().message().c_str());
         return false;
     }
 
@@ -110,9 +111,9 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
 {
     std::string data_path = get_shared_data_path(pkg);
 
-    if (!util::mkdir_recursive(data_path, 0751)) {
+    if (auto r = util::mkdir_recursive(data_path, 0751); !r) {
         LOGW("[%s] %s: Failed to create directory: %s",
-             pkg.c_str(), data_path.c_str(), strerror(errno));
+             pkg.c_str(), data_path.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -123,9 +124,10 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
         return false;
     }
 
-    if (!util::chown(data_path, uid, uid, util::ChownFlag::Recursive)) {
+    if (auto r = util::chown(
+            data_path, uid, uid, util::ChownFlag::Recursive); !r) {
         LOGW("[%s] %s: Failed to chown: %s",
-             pkg.c_str(), data_path.c_str(), strerror(errno));
+             pkg.c_str(), data_path.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -135,11 +137,16 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
 bool AppSyncManager::fix_shared_data_permissions()
 {
     std::string context("u:object_r:app_data_file:s0");
-    util::selinux_lget_context("/data/data/com.android.systemui", context);
+    if (auto ret = util::selinux_lget_context(
+            "/data/data/com.android.systemui")) {
+        context.swap(ret.value());
+    }
 
-    if (!util::selinux_lset_context_recursive(_as_data_dir, context)) {
+    if (auto ret = util::selinux_lset_context_recursive(
+            _as_data_dir, context); !ret) {
         LOGW("%s: Failed to set context recursively to %s: %s",
-             _as_data_dir.c_str(), context.c_str(), strerror(errno));
+             _as_data_dir.c_str(), context.c_str(),
+             ret.error().message().c_str());
         return false;
     }
 
@@ -153,14 +160,14 @@ bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
     target += "/";
     target += pkg;
 
-    if (!util::mkdir_recursive(target, 0755)) {
+    if (auto r = util::mkdir_recursive(target, 0755); !r) {
         LOGW("[%s] %s: Failed to create directory: %s",
-             pkg.c_str(), target.c_str(), strerror(errno));
+             pkg.c_str(), target.c_str(), r.error().message().c_str());
         return false;
     }
-    if (!util::chown(target, uid, uid, util::ChownFlag::Recursive)) {
+    if (auto r = util::chown(target, uid, uid, util::ChownFlag::Recursive); !r) {
         LOGW("[%s] %s: Failed to chown: %s",
-             pkg.c_str(), target.c_str(), strerror(errno));
+             pkg.c_str(), target.c_str(), r.error().message().c_str());
         return false;
     }
 

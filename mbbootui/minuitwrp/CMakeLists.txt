@@ -49,6 +49,7 @@ target_link_libraries(
     PRIVATE
     interface.global.CXXVersion
     mbbootui-config
+    mbutil-static
     AndroidSystemCore::Cutils
     Freetype::Freetype
     PNG::PNG

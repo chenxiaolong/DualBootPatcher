@@ -80,11 +80,11 @@ public:
 
         // _target is the correct parameter here (or pathbuf and
         // CopyFlag::ExcludeTopLevel flag)
-        if (!util::copy_dir(_curr->fts_accpath, _target,
-                            util::CopyFlag::CopyAttributes
-                          | util::CopyFlag::CopyXattrs)) {
-            _error_msg = format("%s: Failed to copy directory: %s",
-                                _curr->fts_path, strerror(errno));
+        if (auto r = util::copy_dir(_curr->fts_accpath, _target,
+                                    util::CopyFlag::CopyAttributes
+                                  | util::CopyFlag::CopyXattrs); !r) {
+            _error_msg = format("Failed to copy directory: %s",
+                                r.error().message().c_str());
             LOGW("%s", _error_msg.c_str());
             return Action::Skip | Action::Fail;
         }
@@ -94,14 +94,14 @@ public:
     Actions on_reached_directory_post() override
     {
         if (_curr->fts_level == 0) {
-            if (!util::copy_stat(_curr->fts_accpath, _target)) {
+            if (auto r = util::copy_stat(_curr->fts_accpath, _target); !r) {
                 LOGE("%s: Failed to copy attributes: %s",
-                     _target.c_str(), strerror(errno));
+                     _target.c_str(), r.error().message().c_str());
                 return Action::Fail;
             }
-            if (!util::copy_xattrs(_curr->fts_accpath, _target)) {
+            if (auto r = util::copy_xattrs(_curr->fts_accpath, _target); !r) {
                 LOGE("%s: Failed to copy xattrs: %s",
-                     _target.c_str(), strerror(errno));
+                     _target.c_str(), r.error().message().c_str());
                 return Action::Fail;
             }
         }
@@ -138,11 +138,11 @@ private:
 
     bool copy_path()
     {
-        if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
-                             util::CopyFlag::CopyAttributes
-                           | util::CopyFlag::CopyXattrs)) {
-            _error_msg = format("%s: Failed to copy file: %s",
-                                _curr->fts_path, strerror(errno));
+        if (auto r = util::copy_file(_curr->fts_accpath, _curtgtpath,
+                                     util::CopyFlag::CopyAttributes
+                                   | util::CopyFlag::CopyXattrs); !r) {
+            _error_msg = format("Failed to copy file: %s",
+                                r.error().message().c_str());
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -174,25 +174,30 @@ bool copy_system(const std::string &source, const std::string &target)
  */
 bool fix_multiboot_permissions()
 {
-    util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
+    (void) util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
 
-    if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
-                     util::ChownFlag::Recursive)) {
-        LOGE("Failed to chown %s", MULTIBOOT_DIR);
+    if (auto r = util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
+                             util::ChownFlag::Recursive); !r) {
+        LOGE("Failed to chown %s: %s", MULTIBOOT_DIR,
+             r.error().message().c_str());
         return false;
     }
 
-    if (!util::chmod(MULTIBOOT_DIR, 0775, util::ChmodFlag::Recursive)) {
-        LOGE("Failed to chmod %s", MULTIBOOT_DIR);
+    if (auto r = util::chmod(MULTIBOOT_DIR, 0775,
+                             util::ChmodFlag::Recursive); !r) {
+        LOGE("Failed to chmod %s: %s", MULTIBOOT_DIR,
+             r.error().message().c_str());
         return false;
     }
 
-    std::string context;
-    if (util::selinux_lget_context(INTERNAL_STORAGE, context)
-            && !util::selinux_lset_context_recursive(MULTIBOOT_DIR, context)) {
-        LOGE("%s: Failed to set context to %s: %s",
-             MULTIBOOT_DIR, context.c_str(), strerror(errno));
-        return false;
+    if (auto context = util::selinux_lget_context(INTERNAL_STORAGE)) {
+        if (auto ret = util::selinux_lset_context_recursive(
+                MULTIBOOT_DIR, context.value()); !ret) {
+            LOGE("%s: Failed to set context to %s: %s",
+                 MULTIBOOT_DIR, context.value().c_str(),
+                 ret.error().message().c_str());
+            return false;
+        }
     }
 
     return true;
@@ -200,27 +205,28 @@ bool fix_multiboot_permissions()
 
 bool switch_context(const std::string &context)
 {
-    std::string current;
-
-    if (!util::selinux_get_process_attr(
-            0, util::SELinuxAttr::Current, current)) {
-        LOGE("Failed to get current process context: %s", strerror(errno));
+    auto current = util::selinux_get_process_attr(
+            0, util::SELinuxAttr::Current);
+    if (!current) {
+        LOGE("Failed to get current process context: %s",
+             current.error().message().c_str());
         // Don't fail if SELinux is not supported
         return errno == ENOENT;
     }
 
-    LOGI("Current process context: %s", current.c_str());
+    LOGI("Current process context: %s", current.value().c_str());
 
-    if (current == context) {
+    if (current.value() == context) {
         LOGV("Not switching process context");
         return true;
     }
 
     LOGV("Setting process context: %s", context.c_str());
 
-    if (!util::selinux_set_process_attr(
-            0, util::SELinuxAttr::Current, context)) {
-        LOGE("Failed to set current process context: %s", strerror(errno));
+    if (auto ret = util::selinux_set_process_attr(
+            0, util::SELinuxAttr::Current, context); !ret) {
+        LOGE("Failed to set current process context: %s",
+             ret.error().message().c_str());
         return false;
     }
 

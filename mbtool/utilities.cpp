@@ -72,18 +72,19 @@ static bool get_device(const char *path, Device &device)
     LOGD("ro.product.device = %s", prop_product_device.c_str());
     LOGD("ro.build.product = %s", prop_build_product.c_str());
 
-    std::vector<unsigned char> contents;
-    if (!util::file_read_all(path, contents)) {
-        LOGE("%s: Failed to read file: %s", path, strerror(errno));
+    auto contents = util::file_read_all(path);
+    if (!contents) {
+        LOGE("%s: Failed to read file: %s", path,
+             contents.error().message().c_str());
         return false;
     }
-    contents.push_back('\0');
+    contents.value().push_back('\0');
 
     std::vector<Device> devices;
     JsonError error;
 
-    if (!device_list_from_json(reinterpret_cast<const char *>(contents.data()),
-                               devices, error)) {
+    if (!device_list_from_json(reinterpret_cast<const char *>(
+            contents.value().data()), devices, error)) {
         LOGE("%s: Failed to load devices", path);
         return false;
     }
@@ -206,9 +207,9 @@ static bool utilities_wipe_multiboot(const char *rom_id)
     return wipe_multiboot(rom);
 }
 
-static void generate_aroma_config(std::vector<unsigned char> *data)
+static void generate_aroma_config(std::vector<unsigned char> &data)
 {
-    std::string str_data(data->begin(), data->end());
+    std::string str_data(data.begin(), data.end());
 
     std::string rom_menu_items;
     std::string rom_selection_items;
@@ -252,7 +253,7 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
     util::replace_all(str_data, "@DATA_MOUNT_POINT@", Roms::get_data_partition());
     util::replace_all(str_data, "@EXTSD_MOUNT_POINT@", Roms::get_extsd_partition());
 
-    data->assign(str_data.begin(), str_data.end());
+    data.assign(str_data.begin(), str_data.end());
 }
 
 class AromaGenerator : public util::FtsWrapper
@@ -333,16 +334,17 @@ public:
         LOGD("%s -> %s", _curr->fts_path, name.c_str());
 
         if (name == "META-INF/com/google/android/aroma-config.in") {
-            std::vector<unsigned char> data;
-            if (!util::file_read_all(_curr->fts_accpath, data)) {
-                LOGE("Failed to read: %s", _curr->fts_path);
+            auto data = util::file_read_all(_curr->fts_accpath);
+            if (!data) {
+                LOGE("Failed to read: %s: %s", _curr->fts_path,
+                     data.error().message().c_str());
                 return Action::Fail;
             }
 
-            generate_aroma_config(&data);
+            generate_aroma_config(data.value());
 
             name = "META-INF/com/google/android/aroma-config";
-            bool ret = add_file(name, data);
+            bool ret = add_file(name, data.value());
             return ret ? Action::Ok : Action::Fail;
         } else {
             bool ret = add_file(name, _curr->fts_accpath);

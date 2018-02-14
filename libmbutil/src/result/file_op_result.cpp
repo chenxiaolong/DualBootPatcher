@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,26 +17,25 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "mbutil/result/file_op_result.h"
 
 #include <string>
-#include <vector>
-
-#include "mbcommon/common.h"
 
 namespace mb::util
 {
 
-void replace(std::string &source,
-             const std::string &from, const std::string &to);
-void replace_all(std::string &source,
-                 const std::string &from, const std::string &to);
+std::string FileOpErrorInfo::message() const
+{
+    std::string buf;
 
-std::vector<std::string> tokenize(std::string str, const std::string &delims);
+    if (!path.empty()) {
+        buf += path;
+        buf += ": ";
+    }
 
-std::string hex_string(const unsigned char *data, size_t size);
+    buf += ec.message();
 
-char ** dup_cstring_list(const char * const *list);
-void free_cstring_list(char **list);
+    return buf;
+}
 
 }

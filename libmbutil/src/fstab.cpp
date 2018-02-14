@@ -30,8 +30,10 @@
 
 #include <sys/mount.h>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/integer.h"
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/string.h"
 
@@ -42,6 +44,64 @@ namespace mb::util
 {
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+
+struct FstabErrorCategory : std::error_category
+{
+    const char * name() const noexcept override;
+
+    std::string message(int ev) const override;
+};
+
+const std::error_category & fstab_error_category()
+{
+    static FstabErrorCategory c;
+    return c;
+}
+
+std::error_code make_error_code(FstabError e)
+{
+    return {static_cast<int>(e), fstab_error_category()};
+}
+
+const char * FstabErrorCategory::name() const noexcept
+{
+    return "fstab";
+}
+
+std::string FstabErrorCategory::message(int ev) const
+{
+    switch (static_cast<FstabError>(ev)) {
+    case FstabError::MissingSourcePath:
+        return "missing source path";
+    case FstabError::MissingTargetPath:
+        return "missing target path";
+    case FstabError::MissingFilesystemType:
+        return "missing filesystem type";
+    case FstabError::MissingMountOptions:
+        return "missing mount options";
+    case FstabError::MissingVoldOptions:
+        return "missing vold options";
+    case FstabError::InvalidLength:
+        return "invalid length";
+    default:
+        return "(unknown fstab error)";
+    }
+}
+
+std::string FstabErrorInfo::message() const
+{
+    std::string buf;
+
+    if (!line.empty()) {
+        buf += "invalid line: '";
+        buf += line;
+        buf += "': ";
+    }
+
+    buf += ec.message();
+
+    return buf;
+}
 
 struct MountFlag
 {
@@ -112,54 +172,45 @@ static struct MountFlag g_fs_mgr_flags[] =
     { nullptr,              0 },
 };
 
-static unsigned long options_to_flags(const MountFlag *flags_map,
-                                      std::string args,
-                                      std::string *new_args_out)
+static std::pair<unsigned long, std::string>
+options_to_flags(const MountFlag *flags_map, std::string options)
 {
     unsigned long flags = 0;
+    std::string new_options;
     char *save_ptr;
 
-    if (new_args_out) {
-        new_args_out->clear();
-    }
-
-    char *temp = strtok_r(args.data(), ",", &save_ptr);
+    char *temp = strtok_r(options.data(), ",", &save_ptr);
     while (temp) {
         const MountFlag *it;
 
         for (it = flags_map; it->name; ++it) {
-            if (strncmp(temp, it->name, strlen(it->name)) == 0) {
+            if (starts_with(temp, it->name)) {
                 flags |= it->flag;
                 break;
             }
         }
 
         if (!it->name) {
-            if (new_args_out) {
-                *new_args_out += temp;
-                *new_args_out += ',';
-            } else {
-                LOGW("Only universal mount options expected, but found %s", temp);
-            }
+            new_options += temp;
+            new_options += ',';
         }
 
         temp = strtok_r(nullptr, ",", &save_ptr);
     }
 
-    if (new_args_out && !new_args_out->empty()) {
-        new_args_out->pop_back();
+    if (!new_options.empty()) {
+        new_options.pop_back();
     }
 
-    return flags;
+    return {flags, std::move(new_options)};
 }
 
 // Much simplified version of fs_mgr's fstab parsing code
-std::vector<FstabRec> read_fstab(const std::string &path)
+FstabResult<FstabRecs> read_fstab(const std::string &path)
 {
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
-        LOGE("Failed to open file %s: %s", path.c_str(), strerror(errno));
-        return {};
+        return FstabErrorInfo{{}, ec_from_errno()};
     }
 
     char *line = nullptr;
@@ -178,7 +229,7 @@ std::vector<FstabRec> read_fstab(const std::string &path)
             line[bytes_read - 1] = '\0';
         }
 
-        // Strip leading
+        // Strip leading whitespace
         char *temp = line;
         while (isspace(*temp)) {
             ++temp;
@@ -194,50 +245,50 @@ std::vector<FstabRec> read_fstab(const std::string &path)
 
         rec.orig_line = line;
 
-        if ((temp = strtok_r(line, delim, &save_ptr)) == nullptr) {
-            LOGE("No source path/device found in entry: %s", line);
-            return {};
+        if (!(temp = strtok_r(line, delim, &save_ptr))) {
+            return FstabErrorInfo{line, FstabError::MissingSourcePath};
         }
         rec.blk_device = temp;
 
-        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No mount point found in entry: %s", line);
-            return {};
+        if (!(temp = strtok_r(nullptr, delim, &save_ptr))) {
+            return FstabErrorInfo{line, FstabError::MissingTargetPath};
         }
         rec.mount_point = temp;
 
-        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No filesystem type found in entry: %s", line);
-            return {};
+        if (!(temp = strtok_r(nullptr, delim, &save_ptr))) {
+            return FstabErrorInfo{line, FstabError::MissingFilesystemType};
         }
         rec.fs_type = temp;
 
-        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No mount options found in entry: %s", line);
-            return {};
+        if (!(temp = strtok_r(nullptr, delim, &save_ptr))) {
+            return FstabErrorInfo{line, FstabError::MissingMountOptions};
         }
         rec.mount_args = temp;
-        rec.flags = options_to_flags(g_mount_flags, temp, &rec.fs_options);
+        std::tie(rec.flags, rec.fs_options) =
+                options_to_flags(g_mount_flags, temp);
 
-        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No fs_mgr/vold options found in entry: %s", line);
-            return {};
+        if (!(temp = strtok_r(nullptr, delim, &save_ptr))) {
+            return FstabErrorInfo{line, FstabError::MissingVoldOptions};
         }
         rec.vold_args = temp;
-        rec.fs_mgr_flags = options_to_flags(g_fs_mgr_flags, temp, nullptr);
+        std::tie(rec.fs_mgr_flags, std::ignore) =
+                options_to_flags(g_fs_mgr_flags, temp);
 
         fstab.push_back(std::move(rec));
     }
 
-    return fstab;
+    if (ferror(fp.get())) {
+        return FstabErrorInfo{{}, ec_from_errno()};
+    }
+
+    return std::move(fstab);
 }
 
-std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path)
+FstabResult<TwrpFstabRecs> read_twrp_fstab(const std::string &path)
 {
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
-        LOGE("Failed to open file %s: %s", path.c_str(), strerror(errno));
-        return {};
+        return FstabErrorInfo{{}, ec_from_errno()};
     }
 
     char *line = nullptr;
@@ -272,21 +323,18 @@ std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path)
 
         rec.orig_line = line;
 
-        if ((temp = strtok_r(line, delim, &save_ptr)) == nullptr) {
-            LOGE("No mount point found in entry: %s", line);
-            return {};
+        if (!(temp = strtok_r(line, delim, &save_ptr))) {
+            return FstabErrorInfo{line, FstabError::MissingTargetPath};
         }
         rec.mount_point = temp;
 
-        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No filesystem type found in entry: %s", line);
-            return {};
+        if (!(temp = strtok_r(nullptr, delim, &save_ptr))) {
+            return FstabErrorInfo{line, FstabError::MissingFilesystemType};
         }
         rec.fs_type = temp;
 
-        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No block device found in entry: %s", line);
-            return {};
+        if (!(temp = strtok_r(nullptr, delim, &save_ptr))) {
+            return FstabErrorInfo{line, FstabError::MissingSourcePath};
         }
         rec.blk_devices.push_back(temp);
 
@@ -298,8 +346,7 @@ std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path)
                 // Length of partition
                 temp += 7;
                 if (!str_to_num(temp, 10, rec.length)) {
-                    LOGE("Invalid length: %s", temp);
-                    return {};
+                    return FstabErrorInfo{line, FstabError::InvalidLength};
                 }
             } else if (strncmp(temp, "flags=", 6) == 0) {
                 // TWRP flags
@@ -318,7 +365,11 @@ std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path)
         fstab.push_back(std::move(rec));
     }
 
-    return fstab;
+    if (ferror(fp.get())) {
+        return FstabErrorInfo{{}, ec_from_errno()};
+    }
+
+    return std::move(fstab);
 }
 
 }

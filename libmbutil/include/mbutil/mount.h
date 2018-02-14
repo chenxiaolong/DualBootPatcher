@@ -23,8 +23,20 @@
 
 #include <cstdio>
 
+#include "mbcommon/outcome.h"
+
 namespace mb::util
 {
+
+enum class MountError
+{
+    EndOfFile = 1,
+    PathNotMounted,
+};
+
+std::error_code make_error_code(MountError e);
+
+const std::error_category & mount_error_category();
 
 constexpr char PROC_MOUNTS[] = "/proc/mounts";
 
@@ -38,16 +50,24 @@ struct MountEntry
     int passno;
 };
 
-bool get_mount_entry(std::FILE *fp, MountEntry &entry_out);
+oc::result<MountEntry> get_mount_entry(std::FILE *fp);
 
-bool is_mounted(const std::string &mountpoint);
-bool unmount_all(const std::string &dir);
-bool mount(const std::string &source, const std::string &target,
-           const std::string &fstype, unsigned long mount_flags,
-           const std::string &data);
-bool umount(const std::string &target);
+oc::result<void> is_mounted(const std::string &mountpoint);
+oc::result<void> unmount_all(const std::string &dir);
+oc::result<void> mount(const std::string &source, const std::string &target,
+                       const std::string &fstype, unsigned long mount_flags,
+                       const std::string &data);
+oc::result<void> umount(const std::string &target);
 
-bool mount_get_total_size(const std::string &path, uint64_t &size);
-bool mount_get_avail_size(const std::string &path, uint64_t &size);
+oc::result<uint64_t> mount_get_total_size(const std::string &path);
+oc::result<uint64_t> mount_get_avail_size(const std::string &path);
 
+}
+
+namespace std
+{
+    template<>
+    struct is_error_code_enum<mb::util::MountError> : true_type
+    {
+    };
 }

@@ -179,40 +179,44 @@ static int log_mknod(const char *pathname, mode_t mode, dev_t dev)
 
 static bool log_is_mounted(const std::string &mountpoint)
 {
-    bool ret = util::is_mounted(mountpoint);
+    auto ret = util::is_mounted(mountpoint);
     if (!ret) {
-        LOGE("%s is not mounted", mountpoint.c_str());
+        LOGE("%s: %s", mountpoint.c_str(), ret.error().message().c_str());
+        return false;
     }
-    return ret;
+    return true;
 }
 
 static bool log_unmount_all(const std::string &dir)
 {
-    bool ret = util::unmount_all(dir);
+    auto ret = util::unmount_all(dir);
     if (!ret) {
-        LOGE("Failed to unmount all mountpoints within %s", dir.c_str());
+        LOGE("Failed to unmount all mountpoints within %s: %s",
+             dir.c_str(), ret.error().message().c_str());
+        return false;
     }
-    return ret;
+    return true;
 }
 
 static bool log_delete_recursive(const std::string &path)
 {
-    bool ret = util::delete_recursive(path);
-    if (!ret) {
-        LOGE("Failed to recursively remove %s", path.c_str());
+    if (auto r = util::delete_recursive(path); !r) {
+        LOGE("Failed to recursively remove %s: %s",
+             path.c_str(), r.error().message().c_str());
+        return false;
     }
-    return ret;
+    return true;
 }
 
 static bool log_copy_dir(const std::string &source,
                          const std::string &target, util::CopyFlags flags)
 {
-    bool ret = util::copy_dir(source, target, flags);
-    if (!ret) {
-        LOGE("Failed to copy contents of %s/ to %s/",
-             source.c_str(), target.c_str());
+    if (auto r = util::copy_dir(source, target, flags); !r) {
+        LOGE("Failed to copy contents of %s/ to %s/: %s",
+             source.c_str(), target.c_str(), r.error().message().c_str());
+        return false;
     }
-    return ret;
+    return true;
 }
 
 
@@ -396,7 +400,7 @@ bool Installer::create_chroot()
         return false;
     }
 
-    util::create_empty_file(in_chroot("/.chroot"));
+    (void) util::create_empty_file(in_chroot("/.chroot"));
 
     return true;
 }
@@ -414,7 +418,7 @@ bool Installer::destroy_chroot() const
             path = dev_block_path;
             path += '/';
             path += ent->d_name;
-            util::loopdev_remove_device(path.c_str());
+            (void) util::loopdev_remove_device(path.c_str());
         }
         dp.reset();
     }
@@ -435,12 +439,13 @@ bool Installer::destroy_chroot() const
     log_umount(_chroot.c_str());
 
     // Unmount everything previously mounted in the chroot
-    if (!util::unmount_all(_chroot)) {
-        LOGE("Failed to unmount previous mount points in %s", _chroot.c_str());
+    if (auto ret = util::unmount_all(_chroot); !ret) {
+        LOGE("Failed to unmount previous mount points in %s: %s",
+             _chroot.c_str(), ret.error().message().c_str());
         return false;
     }
 
-    util::delete_recursive(_chroot);
+    (void) util::delete_recursive(_chroot);
 
     if (log_is_mounted("/efs")) {
         log_umount("/efs");
@@ -480,32 +485,38 @@ bool Installer::mount_efs() const
         if (stat("/twres", &sb) == 0 && S_ISDIR(sb.st_mode)) {
             LOGD("Looking for /efs entry in TWRP-format fstab");
 
-            std::vector<util::TwrpFstabRec> recs =
-                    util::read_twrp_fstab("/etc/recovery.fstab");
-            for (auto const &rec : recs) {
-                if (util::path_compare(rec.mount_point, "/efs") == 0
-                        || util::path_compare(rec.mount_point, "/efs1") == 0) {
-                    LOGD("Found /efs fstab entry");
-                    for (const std::string &dev : rec.blk_devices) {
-                        if (stat(dev.c_str(), &sb) == 0) {
-                            efs_dev = dev.c_str();
-                            break;
+            if (auto recs = util::read_twrp_fstab("/etc/recovery.fstab")) {
+                for (auto const &rec : recs.value()) {
+                    if (util::path_compare(rec.mount_point, "/efs") == 0
+                            || util::path_compare(rec.mount_point, "/efs1") == 0) {
+                        LOGD("Found /efs fstab entry");
+                        for (const std::string &dev : rec.blk_devices) {
+                            if (stat(dev.c_str(), &sb) == 0) {
+                                efs_dev = dev.c_str();
+                                break;
+                            }
                         }
+                        break;
                     }
-                    break;
                 }
+            } else {
+                LOGW("/etc/recovery.fstab: Failed to read fstab: %s",
+                     recs.error().message().c_str());
             }
         } else {
             LOGE("Looking for /efs entry in non-TWRP-format fstab");
 
-            std::vector<util::FstabRec> recs =
-                    util::read_fstab("/etc/recovery.fstab");
-            for (auto const &rec : recs) {
-                if (util::path_compare(rec.mount_point, "/efs") == 0) {
-                    LOGD("Found /efs fstab entry");
-                    efs_dev = rec.blk_device;
-                    break;
+            if (auto recs = util::read_fstab("/etc/recovery.fstab")) {
+                for (auto const &rec : recs.value()) {
+                    if (util::path_compare(rec.mount_point, "/efs") == 0) {
+                        LOGD("Found /efs fstab entry");
+                        efs_dev = rec.blk_device;
+                        break;
+                    }
                 }
+            } else {
+                LOGW("/etc/recovery.fstab: Failed to read fstab: %s",
+                     recs.error().message().c_str());
             }
         }
 
@@ -622,16 +633,15 @@ bool Installer::set_up_busybox_wrapper()
 
     rename(sbin_busybox.c_str(), in_chroot("/sbin/busybox_orig").c_str());
 
-    if (!util::copy_file(temp_busybox, sbin_busybox,
-                         util::CopyFlag::CopyAttributes
-                       | util::CopyFlag::CopyXattrs)) {
-        LOGE("Failed to copy %s to %s: %s",
-             temp_busybox.c_str(), sbin_busybox.c_str(), strerror(errno));
+    if (auto r = util::copy_file(temp_busybox, sbin_busybox,
+                                 util::CopyFlag::CopyAttributes
+                               | util::CopyFlag::CopyXattrs); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 
     if (chmod(sbin_busybox.c_str(), 0555) < 0) {
-        LOGE("Failed to chmod %s: %s", sbin_busybox.c_str(), strerror(errno));
+        LOGE("%s: Failed to chmod: %s", sbin_busybox.c_str(), strerror(errno));
         return false;
     }
 
@@ -645,22 +655,20 @@ bool Installer::set_up_busybox_wrapper()
  */
 bool Installer::create_image(const std::string &path, uint64_t size)
 {
-    if (!util::mkdir_parent(path, S_IRWXU)) {
+    if (auto r = util::mkdir_parent(path, S_IRWXU); !r) {
         LOGE("%s: Failed to create parent directory: %s",
-             path.c_str(), strerror(errno));
+             path.c_str(), r.error().message().c_str());
         return false;
     }
 
     auto result = create_ext4_image(path, size);
     if (result == CreateImageResult::NotEnoughSpace) {
-        uint64_t avail;
-        if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
-            avail = 0;
-        }
+        auto avail = util::mount_get_avail_size(util::dir_name(path));
+
         display_msg(std::string{});
         display_msg("There is not enough space to create %s", path.c_str());
         display_msg("- Needed:    %" PRIu64 " bytes", size);
-        display_msg("- Available: %" PRIu64 " bytes", avail);
+        display_msg("- Available: %" PRIu64 " bytes", avail ? avail.value() : 0);
     }
 
     return result == CreateImageResult::Succeeded;
@@ -680,27 +688,26 @@ bool Installer::system_image_copy(const std::string &source,
     std::string temp_mnt(_temp);
     temp_mnt += "/.system.tmp";
 
-    struct stat sb;
-
-    if (stat(source.c_str(), &sb) < 0
-            && !util::mkdir_recursive(source, 0755)) {
-        LOGE("Failed to create %s: %s", source.c_str(), strerror(errno));
+    if (auto r = util::mkdir_recursive(source, 0755);
+            !r && r.error() != std::errc::file_exists) {
+        LOGE("Failed to create %s: %s", source.c_str(),
+             r.error().message().c_str());
         return false;
     }
 
-    if (stat(temp_mnt.c_str(), &sb) < 0
-            && mkdir(temp_mnt.c_str(), 0755) < 0) {
+    if (mkdir(temp_mnt.c_str(), 0755) < 0 && errno != EEXIST) {
         LOGE("Failed to create %s: %s", temp_mnt.c_str(), strerror(errno));
         return false;
     }
 
-    if (!util::mount(image, temp_mnt, "auto", 0, "")) {
-        LOGE("Failed to mount %s: %s", source.c_str(), strerror(errno));
+    if (auto ret = util::mount(image, temp_mnt, "auto", 0, ""); !ret) {
+        LOGE("Failed to mount %s: %s", source.c_str(),
+             ret.error().message().c_str());
         return false;
     }
 
     auto unmount_tmp_dir = finally([&] {
-        util::umount(temp_mnt);
+        (void) util::umount(temp_mnt);
     });
 
     if (reverse) {
@@ -717,8 +724,9 @@ bool Installer::system_image_copy(const std::string &source,
         }
     }
 
-    if (!util::umount(temp_mnt)) {
-        LOGE("Failed to unmount %s: %s", temp_mnt.c_str(), strerror(errno));
+    if (auto ret = util::umount(temp_mnt); !ret) {
+        LOGE("Failed to unmount %s: %s", temp_mnt.c_str(),
+             ret.error().message().c_str());
         return false;
     }
 
@@ -756,23 +764,25 @@ bool Installer::mount_dir_or_image(const std::string &source,
             }
         }
 
-        std::string loopdev = util::loopdev_find_unused();
-        if (loopdev.empty()) {
-            LOGE("Failed to find unused loop device: %s", strerror(errno));
+        auto loopdev = util::loopdev_find_unused();
+        if (!loopdev) {
+            LOGE("Failed to find unused loop device: %s",
+                 loopdev.error().message().c_str());
             return false;
         }
-        if (!util::loopdev_set_up_device(loopdev, source, 0, false)) {
+        if (auto ret = util::loopdev_set_up_device(
+                loopdev.value(), source, 0, false); !ret) {
             LOGE("Failed to attach %s to %s: %s",
-                 loopdev.c_str(), source.c_str(), strerror(errno));
+                 loopdev.value().c_str(), source.c_str(),
+                 ret.error().message().c_str());
             return false;
         }
-        if (!util::copy_file(loopdev, loop_target, 0)) {
-            LOGE("Failed to copy %s to %s: %s",
-                 loopdev.c_str(), loop_target.c_str(), strerror(errno));
+        if (auto r = util::copy_file(loopdev.value(), loop_target, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return false;
         }
 
-        _associated_loop_devs.push_back(loopdev);
+        _associated_loop_devs.push_back(std::move(loopdev.value()));
     } else {
         if (!util::mkdir_recursive(source, 0771)
                 || !util::mkdir_recursive(bind_target, 0771)
@@ -808,11 +818,12 @@ bool Installer::change_root(const std::string &path)
             return false;
         }
 
-        for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
+        while (auto entry = util::get_mount_entry(fp.get())) {
             // TODO: Use util::path_compare() instead of dumb string prefix
             //       matching
-            if (entry.dir != "/" && !starts_with(entry.dir, path)) {
-                to_unmount.push_back(std::move(entry.dir));
+            if (entry.value().dir != "/"
+                    && !starts_with(entry.value().dir, path)) {
+                to_unmount.push_back(std::move(entry.value().dir));
             }
         }
 
@@ -947,21 +958,19 @@ bool Installer::run_real_updater()
 
     std::string chroot_updater = in_chroot("/mb/updater");
 
-    if (!util::copy_file(updater, chroot_updater,
-                         util::CopyFlag::CopyAttributes
-                       | util::CopyFlag::CopyXattrs)) {
-        LOGE("Failed to copy %s to %s: %s",
-             updater.c_str(), chroot_updater.c_str(), strerror(errno));
+    if (auto r = util::copy_file(updater, chroot_updater,
+                                 util::CopyFlag::CopyAttributes
+                               | util::CopyFlag::CopyXattrs); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 
 #if DEBUG_USE_UPDATER_WRAPPER
-    if (!util::copy_file(DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper"),
-                         util::CopyFlag::CopyAttributes
-                       | util::CopyFlag::CopyXattrs)) {
-        LOGE("Failed to copy %s to %s: %s",
-             DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper").c_str(),
-             strerror(errno));
+    if (auto r = util::copy_file(DEBUG_UPDATER_WRAPPER_PATH,
+                                 in_chroot("/mb/wrapper"),
+                                 util::CopyFlag::CopyAttributes
+                               | util::CopyFlag::CopyXattrs); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 #endif
@@ -1153,7 +1162,7 @@ bool Installer::run_debug_shell()
 
 bool Installer::is_aroma(const std::string &path)
 {
-    return util::file_find_one_of(path, {
+    auto r = util::file_find_one_of(path, {
         "AROMA Installer",
         "support@amarullz.com",
         "(c) 2013 by amarullz xda-developers",
@@ -1163,6 +1172,7 @@ bool Installer::is_aroma(const std::string &path)
         "AROMA_BUILD",
         "AROMA_VERSION"
     });
+    return r && r.value();
 }
 
 
@@ -1335,16 +1345,16 @@ Installer::ProceedState Installer::install_stage_check_device()
 {
     LOGD("[Installer] Device verification stage");
 
-    std::vector<unsigned char> contents;
-    if (!util::file_read_all(_temp + "/device.json", contents)) {
+    auto contents = util::file_read_all(_temp + "/device.json");
+    if (!contents) {
         display_msg("Failed to read device.json");
         return ProceedState::Fail;
     }
-    contents.push_back('\0');
+    contents.value().push_back('\0');
 
     JsonError error;
 
-    if (!device_from_json(reinterpret_cast<char *>(contents.data()),
+    if (!device_from_json(reinterpret_cast<char *>(contents.value().data()),
                           _device, error)) {
         display_msg("Error when loading device.json");
         return ProceedState::Fail;
@@ -1360,11 +1370,11 @@ Installer::ProceedState Installer::install_stage_check_device()
     std::string prop_build_product =
             util::property_get_string("ro.build.product", {});
     std::string prop_patcher_device =
-            util::property_get_string("ro.patcher.device", {});
+            util::property_get_string(PROP_DEVICE, {});
 
     LOGD("ro.product.device = %s", prop_product_device.c_str());
     LOGD("ro.build.product = %s", prop_build_product.c_str());
-    LOGD("ro.patcher.device = %s", prop_patcher_device.c_str());
+    LOGD(PROP_DEVICE " = %s", prop_patcher_device.c_str());
     LOGD("Target device = %s", _device.id().c_str());
 
     if (!prop_patcher_device.empty()) {
@@ -1448,15 +1458,16 @@ Installer::ProceedState Installer::install_stage_check_device()
     for (auto const &dev : devs) {
         std::string dev_path(in_chroot(dev));
 
-        if (!util::mkdir_parent(dev_path, 0755)) {
-            LOGW("Failed to create parent directory of %s",
-                 dev_path.c_str());
+        if (auto r = util::mkdir_parent(dev_path, 0755); !r) {
+            LOGW("Failed to create parent directory of %s: %s",
+                 dev_path.c_str(), r.error().message().c_str());
         }
 
         // Follow symlinks just in case the symlink source isn't in the list
-        if (!util::copy_file(dev, dev_path, util::CopyFlag::CopyAttributes
-                                          | util::CopyFlag::CopyXattrs
-                                          | util::CopyFlag::FollowSymlinks)) {
+        if (auto r = util::copy_file(dev, dev_path,
+                                     util::CopyFlag::CopyAttributes
+                                   | util::CopyFlag::CopyXattrs
+                                   | util::CopyFlag::FollowSymlinks); !r) {
             LOGW("Failed to copy %s. Continuing anyway", dev.c_str());
         } else {
             LOGD("Copied %s to the chroot", dev.c_str());
@@ -1467,9 +1478,9 @@ Installer::ProceedState Installer::install_stage_check_device()
     for (auto const &dev : system_devs) {
         std::string dev_path(in_chroot(dev));
 
-        if (!util::mkdir_parent(dev_path, 0755)) {
-            LOGW("Failed to create parent directory of %s",
-                 dev_path.c_str());
+        if (auto r = util::mkdir_parent(dev_path, 0755); !r) {
+            LOGW("Failed to create parent directory of %s: %s",
+                 dev_path.c_str(), r.error().message().c_str());
         }
 
         if (symlink(CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str()) < 0) {
@@ -1541,8 +1552,10 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     LOGD("[Installer] Chroot set up stage");
 
     // Save a copy of the boot image that we'll restore if the installation fails
-    if (!util::copy_contents(_boot_block_dev, _temp + "/boot.orig")) {
-        display_msg("Failed to backup boot partition");
+    if (auto r = util::copy_contents(
+            _boot_block_dev, _temp + "/boot.orig"); !r) {
+        LOGE("%s", r.error().message().c_str());
+        display_msg("Failed to back up boot partition");
         return ProceedState::Fail;
     }
 
@@ -1579,20 +1592,20 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     }
 
     // Copy ourself for the real update-binary to use
-    util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
-                    util::CopyFlag::CopyAttributes
-                  | util::CopyFlag::CopyXattrs);
+    (void) util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
+                           util::CopyFlag::CopyAttributes
+                         | util::CopyFlag::CopyXattrs);
     chmod(in_chroot(HELPER_TOOL).c_str(), 0555);
 
     // Copy /default.prop
-    util::copy_file("/default.prop", in_chroot("/default.prop"),
-                    util::CopyFlag::CopyAttributes
-                  | util::CopyFlag::CopyXattrs);
+    (void) util::copy_file("/default.prop", in_chroot("/default.prop"),
+                           util::CopyFlag::CopyAttributes
+                         | util::CopyFlag::CopyXattrs);
 
     // Copy file_contexts
-    util::copy_file("/file_contexts", in_chroot("/file_contexts"),
-                    util::CopyFlag::CopyAttributes
-                  | util::CopyFlag::CopyXattrs);
+    (void) util::copy_file("/file_contexts", in_chroot("/file_contexts"),
+                           util::CopyFlag::CopyAttributes
+                         | util::CopyFlag::CopyXattrs);
 
     return on_set_up_chroot();
 }
@@ -1630,8 +1643,8 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     }
 
     // Get desired system image size
-    uint64_t system_size;
-    if (!util::get_blockdev_size(_system_block_dev.c_str(), system_size)) {
+    auto system_size = util::get_blockdev_size(_system_block_dev);
+    if (!system_size) {
         display_msg("Failed to get size of system partition");
         display_msg("Image size will be 4 GiB");
         system_size = DEFAULT_IMAGE_SIZE;
@@ -1649,7 +1662,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
         _temp_image_path += "/.system.img.tmp";
         remove(_temp_image_path.c_str());
 
-        if (!create_image(_temp_image_path, system_size)) {
+        if (!create_image(_temp_image_path, system_size.value())) {
             display_msg("Failed to create temporary image %s",
                         _temp_image_path.c_str());
 
@@ -1663,7 +1676,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
                 _temp_image_path += "/.system.img.tmp";
                 remove(_temp_image_path.c_str());
 
-                if (!create_image(_temp_image_path, system_size)) {
+                if (!create_image(_temp_image_path, system_size.value())) {
                     return ProceedState::Fail;
                 }
             } else {
@@ -1689,12 +1702,12 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     if (!mount_dir_or_image(system_path,
                             in_chroot(CHROOT_SYSTEM_BIND_MOUNT),
                             in_chroot(CHROOT_SYSTEM_LOOP_DEV),
-                            system_is_image, system_size)) {
+                            system_is_image, system_size.value())) {
         return ProceedState::Fail;
     }
 
     // Bind-mount zip file
-    util::create_empty_file(in_chroot("/mb/install.zip"));
+    (void) util::create_empty_file(in_chroot("/mb/install.zip"));
     if (log_mount(_zip_file.c_str(), in_chroot("/mb/install.zip").c_str(),
                   "", MS_BIND, "") < 0) {
         return ProceedState::Fail;
@@ -1786,10 +1799,11 @@ Installer::ProceedState Installer::install_stage_installation()
     // X Pure, which uses the exfat kernel module in all ROMs. This is a more
     // robust solution since the "/system/bin/mount.exfat" string only exists
     // #ifndef CONFIG_KERNEL_HAVE_EXFAT
-    std::string vold_path(in_chroot("/system/bin/vold"));
-    _use_fuse_exfat = util::file_find_one_of(vold_path, {
-        "/system/bin/mount.exfat"
-    });
+    if (auto r = util::file_find_one_of(
+            in_chroot("/system/bin/vold"), {"/system/bin/mount.exfat"});
+            r && r.value()) {
+        _use_fuse_exfat = true;
+    }
 
     hook_ret = on_post_install(updater_ret);
     if (hook_ret != ProceedState::Continue) return hook_ret;
@@ -1808,9 +1822,9 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
 
     // Disassociate loop devices
     for (const std::string &loop_dev : _associated_loop_devs) {
-        if (!util::loopdev_remove_device(loop_dev)) {
+        if (auto ret = util::loopdev_remove_device(loop_dev); !ret) {
             LOGE("%s: Failed to disassociate loop device: %s",
-                 loop_dev.c_str(), strerror(errno));
+                 loop_dev.c_str(), ret.error().message().c_str());
         }
     }
 
@@ -1885,28 +1899,30 @@ Installer::ProceedState Installer::install_stage_finish()
         return ProceedState::Fail;
     }
 
-    if (!util::copy_contents(temp_boot_img, _boot_block_dev)) {
-        LOGE("Failed to copy %s to %s: %s",
-             temp_boot_img.c_str(), _boot_block_dev.c_str(), strerror(errno));
+    if (auto r = util::copy_contents(temp_boot_img, _boot_block_dev); !r) {
+        LOGE("Failed to copy %s to %s: %s", temp_boot_img.c_str(),
+             _boot_block_dev.c_str(), r.error().message().c_str());
         display_msg("Failed to flash patched boot image");
         return ProceedState::Fail;
     }
-    if (!util::copy_contents(temp_boot_img, path)) {
-        LOGE("Failed to copy %s to %s: %s",
-             temp_boot_img.c_str(), path.c_str(), strerror(errno));
+    if (auto r = util::copy_contents(temp_boot_img, path); !r) {
+        LOGE("Failed to copy %s to %s: %s", temp_boot_img.c_str(), path.c_str(),
+             r.error().message().c_str());
         display_msg("Failed to back up boot image");
         return ProceedState::Fail;
     }
 
     // Update checksums
-    util::Sha512Digest digest;
-
-    if (!util::sha512_hash(temp_boot_img, digest)) {
+    auto digest = util::sha512_hash(temp_boot_img);
+    if (!digest) {
+        LOGE("%s: Failed to compute sha512sum: %s",
+             temp_boot_img.c_str(), digest.error().message().c_str());
         display_msg("Failed to compute sha512sum of new boot image");
         return ProceedState::Fail;
     }
 
-    std::string hash = util::hex_string(digest.data(), digest.size());
+    std::string hash = util::hex_string(digest.value().data(),
+                                        digest.value().size());
 
     std::unordered_map<std::string, std::string> props;
     checksums_read(&props);
@@ -1942,10 +1958,13 @@ void Installer::install_stage_cleanup(Installer::ProceedState ret)
 
     remove(_temp_image_path.c_str());
 
-    if (ret == ProceedState::Fail && !_boot_block_dev.empty()
-            && !util::copy_contents(_temp + "/boot.orig", _boot_block_dev)) {
-        LOGE("Failed to restore boot partition: %s", strerror(errno));
-        display_msg("Failed to restore boot partition");
+    if (ret == ProceedState::Fail && !_boot_block_dev.empty()) {
+        if (auto r = util::copy_contents(
+                _temp + "/boot.orig", _boot_block_dev); !r) {
+            LOGE("Failed to restore boot partition: %s",
+                 r.error().message().c_str());
+            display_msg("Failed to restore boot partition");
+        }
     }
 
     if (!destroy_chroot()) {

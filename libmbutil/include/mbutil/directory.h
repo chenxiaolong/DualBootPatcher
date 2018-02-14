@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,10 +21,12 @@
 
 #include <string>
 
+#include "mbcommon/outcome.h"
+
 namespace mb::util
 {
 
-bool mkdir_recursive(const std::string &dir, mode_t mode);
-bool mkdir_parent(const std::string &path, mode_t perms);
+oc::result<void> mkdir_recursive(std::string dir, mode_t perms);
+oc::result<void> mkdir_parent(const std::string &path, mode_t perms);
 
 }

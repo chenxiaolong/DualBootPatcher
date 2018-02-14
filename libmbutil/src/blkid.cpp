@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "mbcommon/error.h"
+#include "mbcommon/error_code.h"
 #include "mbcommon/finally.h"
 
 // NOTE: We don't use libblkid from util-linux because we don't need most of its
@@ -93,13 +93,13 @@ static inline bool is_vfat(const void *data, size_t size)
             || check_magic(data, size, "\125\252", 2, 0x1fe);
 }
 
-struct probe_func
+struct ProbeFunc
 {
     const char *name;
     bool (*func)(const void *, size_t);
 };
 
-static probe_func probe_funcs[] = {
+static ProbeFunc g_probe_funcs[] = {
     { "btrfs",    &is_btrfs },
     { "exfat",    &is_exfat },
     { "ext",      &is_ext },
@@ -107,10 +107,9 @@ static probe_func probe_funcs[] = {
     { "ntfs",     &is_ntfs },
     { "squashfs", &is_squashfs },
     { "vfat",     &is_vfat },
-    { nullptr,    nullptr },
 };
 
-static ssize_t read_all(int fd, void *buf, size_t size)
+static oc::result<size_t> read_all(int fd, void *buf, size_t size)
 {
     size_t total = 0;
 
@@ -122,45 +121,38 @@ static ssize_t read_all(int fd, void *buf, size_t size)
             if (errno == EINTR) {
                 continue;
             } else {
-                return n;
+                return ec_from_errno();
             }
         } else {
-            total = static_cast<size_t>(static_cast<ssize_t>(total) + n);
+            total += static_cast<size_t>(n);
         }
     }
 
-    return static_cast<ssize_t>(total);
+    return total;
 }
 
-bool blkid_get_fs_type(const std::string &path,
-                       std::optional<std::string> &type)
+oc::result<std::string> blkid_get_fs_type(const std::string &path)
 {
     std::vector<unsigned char> buf(1024 * 1024);
 
     int fd = open(path.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
-        return false;
+        return ec_from_errno();
     }
 
     auto close_fd = finally([&]{
-        ErrorRestorer restorer;
         close(fd);
     });
 
-    ssize_t n = read_all(fd, buf.data(), buf.size());
-    if (n < 0) {
-        return false;
-    }
+    OUTCOME_TRY(n, read_all(fd, buf.data(), buf.size()));
 
-    for (auto it = probe_funcs; it->name; ++it) {
-        if (it->func(buf.data(), static_cast<size_t>(n))) {
-            type = {it->name};
-            return true;
+    for (auto const &pf : g_probe_funcs) {
+        if (pf.func(buf.data(), n)) {
+            return pf.name;
         }
     }
 
-    type = {};
-    return true;
+    return "";
 }
 
 }

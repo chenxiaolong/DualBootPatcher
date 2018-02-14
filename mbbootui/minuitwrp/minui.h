@@ -96,8 +96,6 @@ int res_create_surface(const char* name, gr_surface* pSurface);
 void res_free_surface(gr_surface surface);
 int res_scale_surface(gr_surface source, gr_surface* destination, float scale_w, float scale_h);
 
-int vibrate(int timeout_ms);
-
 #ifdef __cplusplus
 }
 #endif
