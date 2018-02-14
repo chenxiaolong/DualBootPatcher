@@ -32,6 +32,7 @@ namespace mb::patcher
 
 const std::string MagiskPatcher::Id = "MagiskPatcher";
 
+static const std::string AddonDScript = "addon.d/99-magisk.sh";
 static const std::string UtilFunctions = "common/util_functions.sh";
 
 
@@ -60,7 +61,7 @@ std::vector<std::string> MagiskPatcher::new_files() const
 
 std::vector<std::string> MagiskPatcher::existing_files() const
 {
-    return { StandardPatcher::UpdaterScript, UtilFunctions };
+    return { StandardPatcher::UpdaterScript, AddonDScript, UtilFunctions };
 }
 
 static void replace_all(std::string &source, std::string_view from,
@@ -95,11 +96,18 @@ static bool patch_file(const std::string &path, bool is_updater)
     replace_all(contents, "mount -o ro /system", "/update-binary-tool mount /system");
 
     // Not a dual boot bug, but the installer uses a Java program to determine
-    // if a boot image is signed and that program fails to run in certain
-    // environments, such as TWRP 3.1.1 w/LineageOS 14.1 on jfltexx.
-    //
-    // CANNOT LINK EXECUTABLE: could not load library "libc.so" needed by "getprop"; caused by cannot locate symbol "android_get_application_target_sdk_version" referenced by "libc.so"...
+    // if a boot image is signed and that program fails to run properly on
+    // certain devices. /system/bin/dalvikvm would always exit with status 0,
+    // but nothing would be executed.
     replace_all(contents, "BOOTSIGNED=true", "BOOTSIGNED=false");
+
+    // Also not a dual boot bug, but on AOSP-style custom ROMs, Magisk installs
+    // an addon.d script to repatch the boot image during the installation.
+    // However, because the post-install hook executes before the boot image is
+    // flashed, the script forks a background process and waits 5 seconds before
+    // continuing. This race condition leads to a corrupted boot image on
+    // devices with slow internal storage like the Galaxy S4.
+    replace_all(contents, "sleep 5", "sleep 10");
 
     FileUtils::write_from_string(path, contents);
 
@@ -109,6 +117,7 @@ static bool patch_file(const std::string &path, bool is_updater)
 bool MagiskPatcher::patch_files(const std::string &directory)
 {
     patch_file(directory + "/" + StandardPatcher::UpdaterScript, true);
+    patch_file(directory + "/" + AddonDScript, false);
     patch_file(directory + "/" + UtilFunctions, false);
 
     // Don't fail if an error occurs
