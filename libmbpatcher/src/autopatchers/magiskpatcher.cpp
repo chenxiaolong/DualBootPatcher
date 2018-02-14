@@ -96,10 +96,9 @@ static bool patch_file(const std::string &path, bool is_updater)
     replace_all(contents, "mount -o ro /system", "/update-binary-tool mount /system");
 
     // Not a dual boot bug, but the installer uses a Java program to determine
-    // if a boot image is signed and that program fails to run in certain
-    // environments, such as TWRP 3.1.1 w/LineageOS 14.1 on jfltexx.
-    //
-    // CANNOT LINK EXECUTABLE: could not load library "libc.so" needed by "getprop"; caused by cannot locate symbol "android_get_application_target_sdk_version" referenced by "libc.so"...
+    // if a boot image is signed and that program fails to run properly on
+    // certain devices. /system/bin/dalvikvm would always exit with status 0,
+    // but nothing would be executed.
     replace_all(contents, "BOOTSIGNED=true", "BOOTSIGNED=false");
 
     // Also not a dual boot bug, but on AOSP-style custom ROMs, Magisk installs
