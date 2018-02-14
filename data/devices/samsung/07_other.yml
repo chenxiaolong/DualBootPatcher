@@ -25,15 +25,84 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
-  boot_ui:
-    supported: true
+   boot_ui:
+   supported: true
     flags:
       - TW_HAS_DOWNLOAD_MODE
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
-
-- name: Samsung Galaxy Star
+    
+    - name: Samsung Exynos 7580
+  id : exynos7580
+  codenames : 
+   - a3xeltexx
+   - a5xeltexx
+   - a7xeltexx
+   - gvwifi
+   - gvlte
+   - j7eltexx
+   - s5neoltexx
+ architecture: armeabi-v7a
+ block_devs:
+   base_dirs:
+     - /dev/block/platform/13540000.dwmmc0/by-name
+   system: 
+     - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+     - /dev/block/mmcblk0p20
+   cache: 
+     - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+     - /dev/block/mmcblk0p21
+   data: 
+     - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+     - /dev/block/mmcblk0p23
+   boot:
+     - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+     - /dev/block/mmcblk0p10
+   recovery:
+     - /dev/block/platform/13540000.dwmmc/by-name/RECOVERY
+     - /dev/block/mmcblk0p11
+   boot_ui:
+   supported: true
+   flags: 
+	- TW_HAS_DOWNLOAD_MODE
+ 	   
+     - name: Samsung Exynos7870/80
+  id: exynos7870
+  codenames:
+    - a3y17lte
+    - j7velte
+    - on7xelte
+    - j7xelte
+    - j7y17lte
+    - gtaxllte
+    - a7y17lte
+    - a5y17lte
+  architecture: armeabi-v7a
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/13540000.dwmmc0/by-name
+      - /dev/block/mmcblk0p10
+    system:
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p20
+    data:
+     - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+     - /dev/block/mmcblk0p24
+    boot:
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p10
+    recovery:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p11
+   boot_ui:
+   supported: true
+   flags: 
+	- TW_HAS_DOWNLOAD_MODE
+  
   id: mint
   codenames:
     - mint
