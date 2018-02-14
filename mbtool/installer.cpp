@@ -857,8 +857,6 @@ bool Installer::set_up_legacy_properties()
     int propfd, propsz;
     legacy_properties_init();
     for (auto const &pair : _chroot_prop) {
-        LOGD("Setting legacy property: '%s' = '%s'",
-             pair.first.c_str(), pair.second.c_str());
         legacy_property_set(pair.first.c_str(), pair.second.c_str());
     }
     legacy_get_property_workspace(&propfd, &propsz);
