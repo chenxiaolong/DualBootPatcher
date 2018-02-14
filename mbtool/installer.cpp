@@ -324,7 +324,6 @@ bool Installer::create_chroot()
             || log_mkdir(in_chroot("/dev/pts").c_str(), 0755) < 0
             || log_mount("none", in_chroot("/dev/pts").c_str(), "devpts", 0, "") < 0
             || log_mount("none", in_chroot("/proc").c_str(), "proc", 0, "") < 0
-            || log_mount("none", in_chroot("/sbin").c_str(), "tmpfs", 0, "") < 0
             || log_mount("none", in_chroot("/sys").c_str(), "sysfs", 0, "") < 0
             || log_mount("none", in_chroot("/tmp").c_str(), "tmpfs", 0, "") < 0) {
         return false;
