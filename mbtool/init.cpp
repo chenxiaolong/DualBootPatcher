@@ -1332,7 +1332,9 @@ int init_main(int argc, char *argv[])
     strip_manual_mounts();
 
     // Disable installd on Android 7.0+
-    disable_installd();
+    if (config.indiv_app_sharing) {
+        disable_installd();
+    }
 
     // Data modifications
     create_layout_version();
