@@ -1026,9 +1026,13 @@ static bool create_mbtool_types(policydb_t *pdb)
     }
 
     // Allow apps to connect to the daemon
-    ff(add_rules(pdb, "untrusted_app", "mb_exec", "unix_stream_socket", {
-        "connectto",
-    }));
+    for (auto const &type : { "untrusted_app", "untrusted_app_25" }) {
+        if (find_type(pdb, type)) {
+            ff(add_rules(pdb, type, "mb_exec", "unix_stream_socket", {
+                "connectto",
+            }));
+        }
+    }
 
     // Allow zygote to write to our stdout pipe when rebooting
     ff(add_rules(pdb, "zygote", "init", "fifo_file", { "write" }));
