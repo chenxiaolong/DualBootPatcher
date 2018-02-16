@@ -275,32 +275,26 @@
   architecture: armeabi-v7a
 
   block_devs:
-
     system:
       - /dev/block/mmcblk0p21
       - /dev/block/platform/msm_sdcc.3/by-num/p21
       - /dev/block/bootdevice/by-num/p21
-
     cache:
       - /dev/block/mmcblk0p22
       - /dev/block/platform/msm_sdcc.3/by-num/p22
       - /dev/block/bootdevice/by-num/p22
-
     data:
       - /dev/block/mmcblk0p24
       - /dev/block/platform/msm_sdcc.3/by-num/p24
       - /dev/block/bootdevice/by-num/p24
-
     boot:
       - /dev/block/mmcblk0p8
       - /dev/block/platform/msm_sdcc.3/by-num/p8
       - /dev/block/bootdevice/by-num/p8
-
     recovery:
       - /dev/block/mmcblk0p13
       - /dev/block/platform/msm_sdcc.3/by-num/p13
       - /dev/block/bootdevice/by-num/p13
-
   boot_ui:
     supported: true
     flags:
@@ -325,27 +319,22 @@
   architecture: armeabi-v7a
 
   block_devs:
-
     system:
       - /dev/block/mmcblk0p21
       - /dev/block/platform/msm_sdcc.3/by-num/p21
       - /dev/block/bootdevice/by-num/p21
-
     cache:
       - /dev/block/mmcblk0p22
       - /dev/block/platform/msm_sdcc.3/by-num/p22
       - /dev/block/bootdevice/by-num/p22
-
     data:
       - /dev/block/mmcblk0p24
       - /dev/block/platform/msm_sdcc.3/by-num/p24
       - /dev/block/bootdevice/by-num/p24
-
     boot:
       - /dev/block/mmcblk0p8
       - /dev/block/platform/msm_sdcc.3/by-num/p8
       - /dev/block/bootdevice/by-num/p8
-
     recovery:
       - /dev/block/mmcblk0p13
       - /dev/block/platform/msm_sdcc.3/by-num/p13
@@ -385,3 +374,40 @@
       - /dev/block/platform/sdio_emmc/by-name/KERNEL
     recovery:
       - /dev/block/platform/sdio_emmc/by-name/RECOVERY
+
+- name: Samsung Galaxy Core Prime
+  id: core33g
+  codenames:
+    - core33g
+    - SM-G360H
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sprd-sdhci.3/by-name
+    system:
+      - /dev/block/platform/sprd-sdhci.3/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/sprd-sdhci.3/by-name/cache
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/sprd-sdhci.3/by-name/data
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/sprd-sdhci.3/by-name/boot
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/platform/sprd-sdhci.3/by-name/recovery
+      - /dev/block/mmcblk0p21
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/backlight/panel/brightness
+    default_brightness: 255
+    theme: portrait_hdpi

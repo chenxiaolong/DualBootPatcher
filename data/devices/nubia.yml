@@ -317,3 +317,46 @@
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 240
+
+- name: Nubia NX595J
+  id: NX595J
+  codenames:
+    - NX595J
+    - nx595j
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/1da4000.ufshc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/system
+      - /dev/block/sda9
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cache
+      - /dev/block/sda3
+    data:
+      - /dev/block/bootdevice/by-name/data
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/data
+      - /dev/block/sda10
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/boot
+      - /dev/block/sde18
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
+      - /dev/block/sde19
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBA_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    default_brightness: 2047
+    theme: portrait_hdpi
