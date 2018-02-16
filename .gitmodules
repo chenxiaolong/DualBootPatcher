@@ -22,3 +22,6 @@
 [submodule "external/outcome"]
 	path = external/outcome
 	url = https://github.com/chenxiaolong/outcome.git
+[submodule "external/fmt"]
+	path = external/fmt
+	url = https://github.com/chenxiaolong/fmt.git
