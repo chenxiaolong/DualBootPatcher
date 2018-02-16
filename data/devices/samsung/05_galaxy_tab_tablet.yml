@@ -1,5 +1,5 @@
 ---
-- name: Tab A t580
+- name: Galaxy Tab A6 T580 10.1 Wifi
   id: gtaxlwifi
   codenames:
     - gtaxlwifi
@@ -41,7 +41,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Tab A t585
+- name: Galaxy Tab A6 T585 10.1 LTE
   id: gtaxllte
   codenames:
     - gtaxllte
