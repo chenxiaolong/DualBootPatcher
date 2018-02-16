@@ -1,0 +1,49 @@
+- name: Tab A t585
+  id: gtaxlltexx
+  codenames:
+    - gtaxllte
+    - gtaxlltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/13540000.dwmmc0/by-name/
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/bootdevice/recovery
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/bootdevice/modem
+      - /dev/block/platform/13540000.dwmmc0/by-name/RADIO
+      - /dev/block/mmcblk0p13
+      - /dev/block/bootdevice/modem-cdma
+      - /dev/block/platform/13540000.dwmmc0/by-name/CDMA-RADIO
+      - /dev/block/mmcblk0p12
+  boot_ui:
+    supported: true
+    flags:
+      - (TW_HAS_DOWNLOAD_MODE)
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
+    max_brightness: (255)
+    default_brightness: (162)
+    pixel_format: (RGBX_8888)
+    theme: portrait_hdpi
