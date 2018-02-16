@@ -21,45 +21,33 @@
 
 #include <memory>
 
-#include <cstdarg>
-
 #include "mbcommon/common.h"
+#include "mbcommon/fmt.h"
 
 #include "mblog/log_level.h"
 
-#define TLOGE(TAG, ...) \
-    mb::log::log(mb::log::LogLevel::Error, (TAG), __VA_ARGS__)
-#define TLOGW(TAG, ...) \
-    mb::log::log(mb::log::LogLevel::Warning, (TAG), __VA_ARGS__)
-#define TLOGI(TAG, ...) \
-    mb::log::log(mb::log::LogLevel::Info, (TAG), __VA_ARGS__)
-#define TLOGD(TAG, ...) \
-    mb::log::log(mb::log::LogLevel::Debug, (TAG), __VA_ARGS__)
-#define TLOGV(TAG, ...) \
-    mb::log::log(mb::log::LogLevel::Verbose, (TAG), __VA_ARGS__)
+#define FMT_LOG(EXPR) \
+    do { \
+        using namespace fmt::literals; \
+        EXPR; \
+    } while (0)
+
+#define TLOGE(TAG, FMT, ...) \
+    FMT_LOG(mb::log::log(mb::log::LogLevel::Error, (TAG), FMT ## _format(__VA_ARGS__)))
+#define TLOGW(TAG, FMT, ...) \
+    FMT_LOG(mb::log::log(mb::log::LogLevel::Warning, (TAG), FMT ## _format(__VA_ARGS__)))
+#define TLOGI(TAG, FMT, ...) \
+    FMT_LOG(mb::log::log(mb::log::LogLevel::Info, (TAG), FMT ## _format(__VA_ARGS__)))
+#define TLOGD(TAG, FMT, ...) \
+    FMT_LOG(mb::log::log(mb::log::LogLevel::Debug, (TAG), FMT ## _format(__VA_ARGS__)))
+#define TLOGV(TAG, FMT, ...) \
+    FMT_LOG(mb::log::log(mb::log::LogLevel::Verbose, (TAG), FMT ## _format(__VA_ARGS__)))
 
 #define LOGE(...) TLOGE(LOG_TAG, __VA_ARGS__)
 #define LOGW(...) TLOGW(LOG_TAG, __VA_ARGS__)
 #define LOGI(...) TLOGI(LOG_TAG, __VA_ARGS__)
 #define LOGD(...) TLOGD(LOG_TAG, __VA_ARGS__)
 #define LOGV(...) TLOGV(LOG_TAG, __VA_ARGS__)
-
-#define TVLOGE(TAG, ...) \
-    mb::log::log_v(mb::log::LogLevel::Error, (TAG), __VA_ARGS__)
-#define TVLOGW(TAG, ...) \
-    mb::log::log_v(mb::log::LogLevel::Warning, (TAG), __VA_ARGS__)
-#define TVLOGI(TAG, ...) \
-    mb::log::log_v(mb::log::LogLevel::Info, (TAG), __VA_ARGS__)
-#define TVLOGD(TAG, ...) \
-    mb::log::log_v(mb::log::LogLevel::Debug, (TAG), __VA_ARGS__)
-#define TVLOGV(TAG, ...) \
-    mb::log::log_v(mb::log::LogLevel::Verbose, (TAG), __VA_ARGS__)
-
-#define VLOGE(...) TVLOGE(LOG_TAG, __VA_ARGS__)
-#define VLOGW(...) TVLOGW(LOG_TAG, __VA_ARGS__)
-#define VLOGI(...) TVLOGI(LOG_TAG, __VA_ARGS__)
-#define VLOGD(...) TVLOGD(LOG_TAG, __VA_ARGS__)
-#define VLOGV(...) TVLOGV(LOG_TAG, __VA_ARGS__)
 
 namespace mb::log
 {
@@ -69,9 +57,7 @@ class BaseLogger;
 MB_EXPORT std::shared_ptr<BaseLogger> logger();
 MB_EXPORT void set_logger(std::shared_ptr<BaseLogger> logger);
 
-MB_PRINTF(3, 4)
-MB_EXPORT void log(LogLevel prio, const char *tag, const char *fmt, ...);
-MB_EXPORT void log_v(LogLevel prio, const char *tag, const char *fmt, va_list ap);
+MB_EXPORT void log(LogLevel prio, std::string tag, std::string msg);
 
 MB_EXPORT std::string format();
 MB_EXPORT void set_format(std::string fmt);

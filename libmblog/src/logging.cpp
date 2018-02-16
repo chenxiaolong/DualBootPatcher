@@ -381,17 +381,7 @@ void set_logger(std::shared_ptr<BaseLogger> logger)
     g_logger = std::move(logger);
 }
 
-void log(LogLevel prio, const char *tag, const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-
-    log_v(prio, tag, fmt, ap);
-
-    va_end(ap);
-}
-
-void log_v(LogLevel prio, const char *tag, const char *fmt, va_list ap)
+void log(LogLevel prio, std::string tag, std::string msg)
 {
     ErrorRestorer restorer;
     LogRecord rec;
@@ -401,8 +391,8 @@ void log_v(LogLevel prio, const char *tag, const char *fmt, va_list ap)
     rec.pid = static_cast<uint64_t>(_get_pid());
     rec.tid = static_cast<uint64_t>(_get_tid());
     rec.prio = prio;
-    rec.tag = tag;
-    rec.msg = format_v(fmt, ap);
+    rec.tag = std::move(tag);
+    rec.msg = std::move(msg);
 
     if (!g_logger) {
         g_logger = std::make_shared<StdioLogger>(stdout);

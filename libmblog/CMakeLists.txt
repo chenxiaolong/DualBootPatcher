@@ -56,6 +56,7 @@ foreach(variant ${variants})
         ${lib_target}
         PUBLIC
         mbcommon-${variant}
+        fmt
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library
