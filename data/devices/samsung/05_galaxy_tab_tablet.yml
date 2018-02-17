@@ -612,3 +612,67 @@
     default_brightness: 180
     theme: portrait_hdpi
     
+- name: Samsung Galaxy Tab 3 V (Wifi/3G)
+  id: goyavewifixx
+  codenames:
+    # Wifi variant
+    - goyavewifi
+    # 3G variant
+    - goyave3g
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sprd-sdhci.3/by-name
+    system:
+      - /dev/block/platform/sprd-sdhci.3/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/sprd-sdhci.3/by-name/CSC 
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/sprd-sdhci.3/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/sprd-sdhci.3/by-name/KERNEL
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
+      - /dev/block/mmcblk0p21
+    extra:
+      # modem
+      - /dev/block/platform/sprd-sdhci.3/by-name/MODEM
+      - /dev/block/mmcblk0p8
+      # Other
+      - /dev/block/platform/sprd-sdhci.3/by-name/FOTA_SIG
+      - /dev/block/platform/sprd-sdhci.3/by-name/HIDDEN
+      - /dev/block/platform/sprd-sdhci.3/by-name/MODEM2
+      - /dev/block/platform/sprd-sdhci.3/by-name/PARAM
+      - /dev/block/platform/sprd-sdhci.3/by-name/RESERVED2
+      - /dev/block/platform/sprd-sdhci.3/by-name/SBOOT
+      - /dev/block/platform/sprd-sdhci.3/by-name/SBOOT2
+      - /dev/block/platform/sprd-sdhci.3/by-name/TDDSP
+      - /dev/block/platform/sprd-sdhci.3/by-name/WDSP
+      - /dev/block/platform/sprd-sdhci.3/by-name/efs
+      - /dev/block/platform/sprd-sdhci.3/by-name/prodnv
+      - /dev/block/platform/sprd-sdhci.3/by-name/tdfixnv1
+      - /dev/block/platform/sprd-sdhci.3/by-name/tdfixnv2 
+      - /dev/block/platform/sprd-sdhci.3/by-name/tdruntimenv1
+      - /dev/block/platform/sprd-sdhci.3/by-name/tdruntimenv2
+      - /dev/block/platform/sprd-sdhci.3/by-name/wfixnv1
+      - /dev/block/platform/sprd-sdhci.3/by-name/wfixnv2
+      - /dev/block/platform/sprd-sdhci.3/by-name/wruntimenv1
+      - /dev/block/platform/sprd-sdhci.3/by-name/wruntimenv2
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/gen-panel-backlight.33/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+theme: portrait_hdpi    
+    
