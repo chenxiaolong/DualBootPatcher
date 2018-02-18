@@ -31,7 +31,7 @@
       - /dev/block/mmcblk0p12
       - /dev/block/platform/13540000.dwmmc0/by-name/EFS
       - /dev/block/mmcblk0p3
-      - /dev/block/platform/13540000.dwmmc0/by-name/CEFS
+      - /dev/block/platform/13540000.dwmmc0/by-name/CPEFS
       - /dev/block/mmcblk0p4
       - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs1
       - /dev/block/mmcblk0p5
@@ -81,6 +81,16 @@
       - /dev/block/mmcblk0p13
       - /dev/block/platform/13540000.dwmmc0/by-name/CDMA-RADIO
       - /dev/block/mmcblk0p12
+      - /dev/block/platform/13540000.dwmmc0/by-name/EFS
+      - /dev/block/mmcblk0p3
+      - /dev/block/platform/13540000.dwmmc0/by-name/CPEFS
+      - /dev/block/mmcblk0p4
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs1
+      - /dev/block/mmcblk0p5
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs2
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs3
+      - /dev/block/mmcblk0p7
   boot_ui:
     supported: true
     flags:
