@@ -640,29 +640,8 @@
       - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
       - /dev/block/mmcblk0p21
     extra:
-      # modem
       - /dev/block/platform/sprd-sdhci.3/by-name/MODEM
-      - /dev/block/mmcblk0p8
-      # Other
-      - /dev/block/platform/sprd-sdhci.3/by-name/FOTA_SIG
-      - /dev/block/platform/sprd-sdhci.3/by-name/HIDDEN
       - /dev/block/platform/sprd-sdhci.3/by-name/MODEM2
-      - /dev/block/platform/sprd-sdhci.3/by-name/PARAM
-      - /dev/block/platform/sprd-sdhci.3/by-name/RESERVED2
-      - /dev/block/platform/sprd-sdhci.3/by-name/SBOOT
-      - /dev/block/platform/sprd-sdhci.3/by-name/SBOOT2
-      - /dev/block/platform/sprd-sdhci.3/by-name/TDDSP
-      - /dev/block/platform/sprd-sdhci.3/by-name/WDSP
-      - /dev/block/platform/sprd-sdhci.3/by-name/efs
-      - /dev/block/platform/sprd-sdhci.3/by-name/prodnv
-      - /dev/block/platform/sprd-sdhci.3/by-name/tdfixnv1
-      - /dev/block/platform/sprd-sdhci.3/by-name/tdfixnv2 
-      - /dev/block/platform/sprd-sdhci.3/by-name/tdruntimenv1
-      - /dev/block/platform/sprd-sdhci.3/by-name/tdruntimenv2
-      - /dev/block/platform/sprd-sdhci.3/by-name/wfixnv1
-      - /dev/block/platform/sprd-sdhci.3/by-name/wfixnv2
-      - /dev/block/platform/sprd-sdhci.3/by-name/wruntimenv1
-      - /dev/block/platform/sprd-sdhci.3/by-name/wruntimenv2
 
   boot_ui:
     supported: true
