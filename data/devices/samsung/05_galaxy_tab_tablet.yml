@@ -1,5 +1,5 @@
 ---
-- name: Galaxy Tab A6 T580 10.1 Wifi
+- name: Samsung Galaxy Tab A6 10.1 Wifi
   id: gtaxlwifi
   codenames:
     - gtaxlwifi
@@ -29,19 +29,29 @@
       - /dev/block/mmcblk0p13
       - /dev/block/platform/13540000.dwmmc0/by-name/CDMA-RADIO
       - /dev/block/mmcblk0p12
+      - /dev/block/platform/13540000.dwmmc0/by-name/EFS
+      - /dev/block/mmcblk0p3
+      - /dev/block/platform/13540000.dwmmc0/by-name/CEFS
+      - /dev/block/mmcblk0p4
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs1
+      - /dev/block/mmcblk0p5
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs2
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs3
+      - /dev/block/mmcblk0p7
   boot_ui:
     supported: true
     flags:
       - TW_HAS_DOWNLOAD_MODE
     graphics_backends:
       - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
+    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
     max_brightness: 255
     default_brightness: 162
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Galaxy Tab A6 T585 10.1 LTE
+- name: Samsung Galaxy Tab A6 10.1 LTE
   id: gtaxllte
   codenames:
     - gtaxllte
