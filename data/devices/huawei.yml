@@ -246,6 +246,44 @@
     default_brightness: 162
     battery_path: /sys/devices/battery.5/power_supply/Battery
     theme: portrait_hdpi
+    
+- name: Huawei Honor 5X
+  id: kiwi
+  codenames:
+    - kiwi
+    - KIW
+    - KIW-AL10
+    - KIW-L24
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+    system:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p19
+    recovery:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p20
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 28
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi 
 
 - name: Huawei Honor 6X
   id: BLN
