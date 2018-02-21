@@ -1,0 +1,65 @@
+---
+- name: LYF LYF_LS-4006
+  id: LS-4006
+  codenames:
+      - LS-4006
+      - LYF_ld0130
+  architecture: 
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdio_emmc/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p17
+      - /dev/block/platform/sdio_emmc/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p19
+      - /dev/block/platform/sdio_emmc/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p22
+      - /dev/block/platform/sdio_emmc/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p16
+      - /dev/block/platform/sdio_emmc/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p20
+      - /dev/block/platform/sdio_emmc/by-name/recovery
+    extra:
+      - /dev/block/mmcblk1p1
+      - /dev/block/platform/sdio_emmc/by-name/fbootlogo
+      - /dev/block/platform/sdio_emmc/by-name/l_fixnv1
+      - /dev/block/platform/sdio_emmc/by-name/l_fixnv2
+      - /dev/block/platform/sdio_emmc/by-name/l_gdsp
+      - /dev/block/platform/sdio_emmc/by-name/l_ldsp
+      - /dev/block/platform/sdio_emmc/by-name/l_modem
+      - /dev/block/platform/sdio_emmc/by-name/l_runtimenv1
+      - /dev/block/platform/sdio_emmc/by-name/l_runtimenv2
+      - /dev/block/platform/sdio_emmc/by-name/l_warm
+      - /dev/block/platform/sdio_emmc/by-name/logo
+      - /dev/block/platform/sdio_emmc/by-name/misc
+      - /dev/block/platform/sdio_emmc/by-name/miscdata
+      - /dev/block/platform/sdio_emmc/by-name/persist
+      - /dev/block/platform/sdio_emmc/by-name/pm_sys
+      - /dev/block/platform/sdio_emmc/by-name/prodnv
+      - /dev/block/platform/sdio_emmc/by-name/wcnfdl
+      - /dev/block/platform/sdio_emmc/by-name/wcnmodem
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: 
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
