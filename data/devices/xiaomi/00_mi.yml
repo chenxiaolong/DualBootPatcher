@@ -467,6 +467,9 @@
       - /dev/block/mmcblk0p1
       - /dev/block/platform/soc/7824900.sdhci/by-name/modem_b
       - /dev/block/mmcblk0p2
+      - /dev/block/bootdevice/misc
+      - dev/block/platform/soc/7824900.sdhci/by-name/misc
+      - dev/block/mmcblk0p28
 
   boot_ui:
     supported: true
