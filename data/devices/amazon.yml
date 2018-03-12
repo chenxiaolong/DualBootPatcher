@@ -3,7 +3,6 @@
   id: thor
   codenames:
     - thor
-    - thor
   architecture: armeabi-v7a
 
   block_devs:
