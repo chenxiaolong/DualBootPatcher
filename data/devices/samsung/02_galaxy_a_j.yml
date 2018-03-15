@@ -348,3 +348,49 @@
       - fbdev
     pixel_format: BGRA_8888
     theme: portrait_hdpi
+
+- name: Samsung Galaxy A3 (2017) (Exynos)
+  id: a3y17lte
+  codenames:
+    - a3y17lte
+    - a3y17ltexx
+    - a3y17ltelk
+    - a3y17ltexc
+    - SM-A320FL
+    - SM-A320Y
+    - SM-A320F
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/13540000.dwmmc0/by-name
+    system:
+      - /dev/block/bootdevice/by-name/SYSTEM
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/bootdevice/by-name/CACHE
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/bootdevice/by-name/USERDATA
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p24
+    boot:
+      - /dev/block/bootdevice/by-name/BOOT
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p10
+    recovery:
+      - /dev/block/bootdevice/by-name/RECOVERY
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p11
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
