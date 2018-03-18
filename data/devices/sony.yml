@@ -307,6 +307,8 @@
     - tulip_ds
     - for
     - E2333
+    - e23xx
+    - tulip
   architecture: arm64-v8a
   flags:
     - HAS_COMBINED_BOOT_AND_RECOVERY
