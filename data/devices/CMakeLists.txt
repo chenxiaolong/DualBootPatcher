@@ -6,6 +6,7 @@ set(files
     360.yml
     acer.yml
     alcatel.yml
+    amazon.yml
     archos.yml
     ark.yml
     asus.yml
