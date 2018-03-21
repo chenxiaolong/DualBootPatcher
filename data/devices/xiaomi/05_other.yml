@@ -107,3 +107,45 @@
     max_brightness: 255
     pixel_format: RGBA_8888
     theme: portrait_hdpi
+
+- name: Xiaomi Redmi Y1 (Redmi Note 5A)
+  id: ugglite
+  codenames:
+    - ugglite
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/bootdevice/by-name/data
+      - /dev/block/platform/soc/7824900.sdhci/by-name/data
+      - /dev/block/mmcblk0p48
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p21
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p22
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBA_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    default_brightness: 255
+    theme: portrait_hdpi
