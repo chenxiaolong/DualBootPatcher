@@ -469,20 +469,21 @@ bool libarchive_tar_create(const std::string &filename,
             // the archive path to the relative path starting at base_dir
             const char *curpath = archive_entry_pathname(entry);
             if (curpath && path[0] != '/' && !base_dir.empty()) {
-                std::string relpath;
-                if (!relative_path(curpath, base_dir, relpath)) {
+                auto relpath = relative_path(curpath, base_dir);
+                if (!relpath) {
                     LOGE("Failed to compute relative path of %s starting at %s: %s",
-                         curpath, base_dir.c_str(), strerror(errno));
+                         curpath, base_dir.c_str(),
+                         relpath.error().message().c_str());
                     archive_entry_free(entry);
                     return false;
                 }
-                if (relpath.empty()) {
+                if (relpath.value().empty()) {
                     // If the relative path is empty, then the current path is
                     // the root of the directory tree. We don't need that, so
                     // skip it.
                     continue;
                 }
-                archive_entry_set_pathname(entry, relpath.c_str());
+                archive_entry_set_pathname(entry, relpath.value().c_str());
             }
 
             switch (archive_entry_filetype(entry)) {
@@ -610,9 +611,11 @@ bool extract_archive(const std::string &filename, const std::string &target)
 
     archive_entry *entry;
     int ret;
-    std::string cwd = get_cwd();
 
-    if (cwd.empty()) {
+    auto cwd = get_cwd();
+    if (!cwd) {
+        LOGE("Failed to get working directory: %s",
+             cwd.error().message().c_str());
         return false;
     }
 
@@ -622,9 +625,9 @@ bool extract_archive(const std::string &filename, const std::string &target)
 
     set_up_output(out.get());
 
-    if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
+    if (auto r = mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO); !r) {
         LOGE("%s: Failed to create directory: %s",
-             target.c_str(), strerror(errno));
+             target.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -635,7 +638,7 @@ bool extract_archive(const std::string &filename, const std::string &target)
     }
 
     auto chdir_back = finally([&] {
-        chdir(cwd.c_str());
+        chdir(cwd.value().c_str());
     });
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
@@ -670,10 +673,12 @@ bool extract_files(const std::string &filename, const std::string &target,
 
     archive_entry *entry;
     int ret;
-    std::string cwd = get_cwd();
     unsigned int count = 0;
 
-    if (cwd.empty()) {
+    auto cwd = get_cwd();
+    if (!cwd) {
+        LOGE("Failed to get working directory: %s",
+             cwd.error().message().c_str());
         return false;
     }
 
@@ -683,9 +688,9 @@ bool extract_files(const std::string &filename, const std::string &target,
 
     set_up_output(out.get());
 
-    if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
+    if (auto r = mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO); !r) {
         LOGE("%s: Failed to create directory: %s",
-             target.c_str(), strerror(errno));
+             target.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -696,7 +701,7 @@ bool extract_files(const std::string &filename, const std::string &target,
     }
 
     auto chdir_back = finally([&] {
-        chdir(cwd.c_str());
+        chdir(cwd.value().c_str());
     });
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {

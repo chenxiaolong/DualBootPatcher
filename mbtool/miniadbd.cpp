@@ -84,14 +84,14 @@ static bool initialize_adb()
     ret = write_file("/sys/class/android_usb/android0/enable", "1", 1) && ret;
 
     // Create functionfs paths
-    if (!util::mkdir_recursive(USB_FFS_ADB_PATH, 0770)) {
+    if (auto r = util::mkdir_recursive(USB_FFS_ADB_PATH, 0770); !r) {
         LOGW("%s: Failed to create directory: %s",
-             USB_FFS_ADB_PATH, strerror(errno));
+             USB_FFS_ADB_PATH, r.error().message().c_str());
         ret = false;
     }
-    if (!util::mount("adb", USB_FFS_ADB_PATH, "functionfs", 0, "")) {
+    if (auto r = util::mount("adb", USB_FFS_ADB_PATH, "functionfs", 0, ""); !r) {
         LOGW("%s: Failed to mount functionfs: %s",
-             USB_FFS_ADB_PATH, strerror(errno));
+             USB_FFS_ADB_PATH, r.error().message().c_str());
         ret = false;
     }
 

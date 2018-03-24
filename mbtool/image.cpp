@@ -51,15 +51,14 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
 {
     // Ensure we have enough space since we're creating a sparse file that may
     // get bigger
-    uint64_t avail;
-    if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
+    if (auto avail = util::mount_get_avail_size(util::dir_name(path)); !avail) {
         LOGE("%s: Failed to get available space: %s", path.c_str(),
-             strerror(errno));
+             avail.error().message().c_str());
         return CreateImageResult::Failed;
-    } else if (avail < size) {
+    } else if (avail.value() < size) {
         LOGE("There is not enough space to create %s", path.c_str());
         LOGE("- Needed:    %" PRIu64 " bytes", size);
-        LOGE("- Available: %" PRIu64 " bytes", avail);
+        LOGE("- Available: %" PRIu64 " bytes", avail.value());
         return CreateImageResult::NotEnoughSpace;
     }
 

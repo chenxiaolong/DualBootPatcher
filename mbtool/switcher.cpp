@@ -156,12 +156,12 @@ bool checksums_write(const std::unordered_map<std::string, std::string> &props)
              checksums_path.c_str(), strerror(errno));
     }
 
-    util::mkdir_parent(checksums_path, 0755);
-    util::create_empty_file(checksums_path);
+    (void) util::mkdir_parent(checksums_path, 0755);
+    (void) util::create_empty_file(checksums_path);
 
-    if (!util::chown(checksums_path, 0, 0, 0)) {
+    if (auto r = util::chown(checksums_path, 0, 0, 0); !r) {
         LOGW("%s: Failed to chown file: %s",
-             checksums_path.c_str(), strerror(errno));
+             checksums_path.c_str(), r.error().message().c_str());
     }
     if (chmod(checksums_path.c_str(), 0700) < 0) {
         LOGW("%s: Failed to chmod file: %s",
@@ -323,15 +323,14 @@ SwitchRomResult switch_rom(const std::string &id,
     Roms roms;
     roms.add_installed();
 
-    auto r = roms.find_by_id(id);
-    if (!r) {
+    if (!roms.find_by_id(id)) {
         LOGE("Invalid ROM ID: %s", id.c_str());
         return SwitchRomResult::Failed;
     }
 
-    if (!util::mkdir_recursive(multiboot_path, 0775)) {
+    if (auto r = util::mkdir_recursive(multiboot_path, 0775); !r) {
         LOGE("%s: Failed to create directory: %s",
-             multiboot_path.c_str(), strerror(errno));
+             multiboot_path.c_str(), r.error().message().c_str());
         return SwitchRomResult::Failed;
     }
 
@@ -356,9 +355,11 @@ SwitchRomResult switch_rom(const std::string &id,
         // If memory becomes an issue, an alternative method is to create a
         // temporary directory in /data/multiboot/ that's only writable by root
         // and copy the images there.
-        if (!util::file_read_all(f.image, f.data)) {
+        if (auto r = util::file_read_all(f.image)) {
+            f.data = std::move(r.value());
+        } else {
             LOGE("%s: Failed to read image: %s",
-                 f.image.c_str(), strerror(errno));
+                 f.image.c_str(), r.error().message().c_str());
             return SwitchRomResult::Failed;
         }
 
@@ -398,11 +399,10 @@ SwitchRomResult switch_rom(const std::string &id,
 
     // Now we can flash the images
     for (Flashable &f : flashables) {
-        // Cast is okay. The data is just passed to fwrite (ie. no signed
-        // extension issues)
-        if (!util::file_write_data(f.block_dev, f.data.data(), f.data.size())) {
+        if (auto r = util::file_write_data(
+                f.block_dev, f.data.data(), f.data.size()); !r) {
             LOGE("%s: Failed to write image: %s",
-                 f.block_dev.c_str(), strerror(errno));
+                 f.block_dev.c_str(), r.error().message().c_str());
             return SwitchRomResult::Failed;
         }
     }
@@ -446,29 +446,27 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
     Roms roms;
     roms.add_installed();
 
-    auto r = roms.find_by_id(id);
-    if (!r) {
+    if (!roms.find_by_id(id)) {
         LOGE("Invalid ROM ID: %s", id.c_str());
         return false;
     }
 
-    if (!util::mkdir_recursive(multiboot_path, 0775)) {
+    if (auto r = util::mkdir_recursive(multiboot_path, 0775); !r) {
         LOGE("%s: Failed to create directory: %s",
-             multiboot_path.c_str(), strerror(errno));
+             multiboot_path.c_str(), r.error().message().c_str());
         return false;
     }
 
-    std::vector<unsigned char> data;
-
-    if (!util::file_read_all(boot_blockdev, data)) {
+    auto data = util::file_read_all(boot_blockdev);
+    if (!data) {
         LOGE("%s: Failed to read block device: %s",
-             boot_blockdev.c_str(), strerror(errno));
+             boot_blockdev.c_str(), data.error().message().c_str());
         return false;
     }
 
     // Get actual sha512sum
     std::array<unsigned char, SHA512_DIGEST_LENGTH> digest;
-    SHA512(data.data(), data.size(), digest.data());
+    SHA512(data.value().data(), data.value().size(), digest.data());
     std::string hash = util::hex_string(digest.data(), digest.size());
 
     // Add to checksums.prop
@@ -481,9 +479,10 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
 
     // Cast is okay. The data is just passed to fwrite (ie. no signed
     // extension issues)
-    if (!util::file_write_data(bootimg_path, data.data(), data.size())) {
+    if (auto r = util::file_write_data(
+            bootimg_path, data.value().data(), data.value().size()); !r) {
         LOGE("%s: Failed to write image: %s",
-             bootimg_path.c_str(), strerror(errno));
+             bootimg_path.c_str(), r.error().message().c_str());
         return false;
     }
 

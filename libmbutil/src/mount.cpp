@@ -33,7 +33,7 @@
 #include <sys/vfs.h>
 #include <unistd.h>
 
-#include "mbcommon/error.h"
+#include "mbcommon/error_code.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
@@ -53,7 +53,42 @@ namespace mb::util
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
-static std::string unescape_octals(const std::string &in)
+struct MountErrorCategory : std::error_category
+{
+    const char * name() const noexcept override;
+
+    std::string message(int ev) const override;
+};
+
+const std::error_category & mount_error_category()
+{
+    static MountErrorCategory c;
+    return c;
+}
+
+std::error_code make_error_code(MountError e)
+{
+    return {static_cast<int>(e), mount_error_category()};
+}
+
+const char * MountErrorCategory::name() const noexcept
+{
+    return "mount";
+}
+
+std::string MountErrorCategory::message(int ev) const
+{
+    switch (static_cast<MountError>(ev)) {
+    case MountError::EndOfFile:
+        return "end of file";
+    case MountError::PathNotMounted:
+        return "path not mounted";
+    default:
+        return "(unknown mount error)";
+    }
+}
+
+static std::string unescape_octals(std::string_view in)
 {
     std::string result;
 
@@ -76,8 +111,9 @@ static std::string unescape_octals(const std::string &in)
     return result;
 }
 
-bool get_mount_entry(std::FILE *fp, MountEntry &entry_out)
+oc::result<MountEntry> get_mount_entry(std::FILE *fp)
 {
+    MountEntry entry;
     char *line = nullptr;
     size_t size = 0;
 
@@ -85,8 +121,13 @@ bool get_mount_entry(std::FILE *fp, MountEntry &entry_out)
         free(line);
     });
 
-    if (getline(&line, &size, fp) < 0) {
-        return false;
+    ssize_t n = getline(&line, &size, fp);
+    if (n < 0) {
+        if (ferror(fp)) {
+            return ec_from_errno();
+        } else {
+            return MountError::EndOfFile;
+        }
     }
 
     int pos[8];
@@ -95,11 +136,11 @@ bool get_mount_entry(std::FILE *fp, MountEntry &entry_out)
             pos + 2, pos + 3,   // dir
             pos + 4, pos + 5,   // type
             pos + 6, pos + 7,   // opts
-            &entry_out.freq,    // freq
-            &entry_out.passno); // passno
+            &entry.freq,        // freq
+            &entry.passno);     // passno
 
     if (count != 2) {
-        return false;
+        return std::errc::invalid_argument;
     }
 
     // NULL terminate entries
@@ -108,56 +149,63 @@ bool get_mount_entry(std::FILE *fp, MountEntry &entry_out)
     line[pos[5]] = '\0';
     line[pos[7]] = '\0';
 
-    entry_out.fsname = unescape_octals(line + pos[0]);
-    entry_out.dir = unescape_octals(line + pos[2]);
-    entry_out.type = unescape_octals(line + pos[4]);
-    entry_out.opts = unescape_octals(line + pos[6]);
+    entry.fsname = unescape_octals(line + pos[0]);
+    entry.dir = unescape_octals(line + pos[2]);
+    entry.type = unescape_octals(line + pos[4]);
+    entry.opts = unescape_octals(line + pos[6]);
 
     struct stat sb;
-    if (lstat(entry_out.dir.c_str(), &sb) < 0 && errno == ENOENT
-            && ends_with(entry_out.dir, DELETED_SUFFIX)) {
-        entry_out.dir.erase(entry_out.dir.size() - strlen(DELETED_SUFFIX));
+    if (lstat(entry.dir.c_str(), &sb) < 0 && errno == ENOENT
+            && ends_with(entry.dir, DELETED_SUFFIX)) {
+        entry.dir.erase(entry.dir.size() - strlen(DELETED_SUFFIX));
     }
 
-    return true;
+    return std::move(entry);
 }
 
-bool is_mounted(const std::string &mountpoint)
+oc::result<void> is_mounted(const std::string &mountpoint)
 {
     ScopedFILE fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
     if (!fp) {
-        LOGE("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
-        return false;
+        return ec_from_errno();
     }
 
-    for (MountEntry entry; get_mount_entry(fp.get(), entry);) {
-        if (mountpoint == entry.dir) {
-            return true;
+    while (true) {
+        auto entry = get_mount_entry(fp.get());
+        if (!entry) {
+            if (entry.error() == MountError::EndOfFile) {
+                break;
+            } else {
+                return entry.as_failure();
+            }
+        } else if (entry.value().dir == mountpoint) {
+            return oc::success();
         }
     }
 
-    return false;
+    return MountError::PathNotMounted;
 }
 
-bool unmount_all(const std::string &dir)
+oc::result<void> unmount_all(const std::string &dir)
 {
     std::vector<std::string> to_unmount;
     int failed = 0;
+    std::error_code ec;
 
     for (int tries = 0; tries < MAX_UNMOUNT_TRIES; ++tries) {
         failed = 0;
         to_unmount.clear();
+        ec.clear();
 
         ScopedFILE fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
         if (!fp) {
-            LOGE("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
-            return false;
+            return ec_from_errno();
         }
 
-        for (MountEntry entry; get_mount_entry(fp.get(), entry);) {
+        while (auto entry = get_mount_entry(fp.get())) {
             // TODO: Use path_compare() instead of dumb string prefix matching
-            if (starts_with(entry.dir, dir)) {
-                to_unmount.push_back(std::move(entry.dir));
+            if (starts_with(entry.value().dir, dir)) {
+                to_unmount.push_back(std::move(entry.value().dir));
             }
         }
 
@@ -165,30 +213,31 @@ bool unmount_all(const std::string &dir)
         for (auto it = to_unmount.rbegin(); it != to_unmount.rend(); ++it) {
             LOGD("Attempting to unmount %s", it->c_str());
 
-            if (!umount(*it)) {
-                LOGE("%s: Failed to unmount: %s",
-                     it->c_str(), strerror(errno));
+            if (auto ret = umount(*it); !ret) {
+                LOGW("%s: Failed to unmount: %s",
+                     it->c_str(), ret.error().message().c_str());
                 ++failed;
+                ec = ret.error();
             }
         }
 
         // No more matching mount points
         if (failed == 0) {
-            return true;
+            return oc::success();
         }
 
         // Retry
     }
 
-    LOGE("Failed to unmount %d mount points", failed);
-    return false;
+    LOGW("Failed to unmount %d mount points", failed);
+    return ec;
 }
 
 /*!
  * \brief Mount filesystem
  *
- * This function takes the same arguments as mount(2), but returns true on
- * success and false on failure.
+ * This function takes the same arguments as mount(2), but returns nothing on
+ * success and the error on failure.
  *
  * If MS_BIND is not specified in \a mount_flags and \a source is not a block
  * device, then the file will be attached to a loop device and the the loop
@@ -200,12 +249,13 @@ bool unmount_all(const std::string &dir)
  * \param mount_flags See man mount(2)
  * \param data See man mount(2)
  *
- * \return True if mount(2) is successful. False if mount(2) is unsuccessful
- *         or loopdev could not be created or associated with the source path.
+ * \return Nothing if mount(2) is successful. The error code if mount(2) is
+ *         unsuccessful or the loopdev could not be created or be associated
+ *         with the source path.
  */
-bool mount(const std::string &source, const std::string &target,
-           const std::string &fstype, unsigned long mount_flags,
-           const std::string &data)
+oc::result<void> mount(const std::string &source, const std::string &target,
+                       const std::string &fstype, unsigned long mount_flags,
+                       const std::string &data)
 {
     bool need_loopdev = false;
     struct stat sb;
@@ -218,84 +268,77 @@ bool mount(const std::string &source, const std::string &target,
             }
             if (fstype == "auto"
                     && (S_ISREG(sb.st_mode) || S_ISBLK(sb.st_mode))) {
-                std::optional<std::string> detected;
-                if (!blkid_get_fs_type(source, detected) || !detected) {
-                    return false;
-                } else if (*detected == "ext") {
+                OUTCOME_TRY(detected, blkid_get_fs_type(source));
+                if (detected.empty()) {
+                    return std::errc::invalid_argument;
+                } else if (detected == "ext") {
                     // Always assume ext4 instead of ext2, ext3, ext4dev, or jbd
                     fstype_real = "ext4";
                 } else {
-                    fstype_real.swap(*detected);
+                    fstype_real.swap(detected);
                 }
             }
         }
     }
 
     if (need_loopdev) {
-        std::string loopdev = loopdev_find_unused();
-        if (loopdev.empty()) {
-            LOGE("Failed to find unused loop device: %s", strerror(errno));
-            return false;
-        }
-
-        LOGD("Assigning %s to loop device %s", source.c_str(), loopdev.c_str());
-
-        if (!loopdev_set_up_device(
-                loopdev, source, 0, mount_flags & MS_RDONLY)) {
-            LOGE("Failed to set up loop device %s: %s",
-                 loopdev.c_str(), strerror(errno));
-            return false;
-        }
+        OUTCOME_TRY(loopdev, loopdev_find_unused());
+        OUTCOME_TRYV(loopdev_set_up_device(loopdev, source, 0,
+                                           mount_flags & MS_RDONLY));
 
         if (::mount(loopdev.c_str(), target.c_str(), fstype_real.c_str(),
                     mount_flags, data.c_str()) < 0) {
-            loopdev_remove_device(loopdev);
-            return false;
+            int saved_errno = errno;
+            (void) loopdev_remove_device(loopdev);
+            return ec_from_errno(saved_errno);
         }
-
-        return true;
     } else {
-        return ::mount(source.c_str(), target.c_str(), fstype_real.c_str(),
-                       mount_flags, data.c_str()) == 0;
+        if (::mount(source.c_str(), target.c_str(), fstype_real.c_str(),
+                    mount_flags, data.c_str()) < 0) {
+            return ec_from_errno();
+        }
     }
+
+    return oc::success();
 }
 
 /*!
  * \brief Unmount filesystem
  *
- * This function takes the same arguments as umount(2), but returns true on
- * success and false on failure.
+ * This function takes the same arguments as umount(2), but returns nothing on
+ * success and the error on failure.
  *
- * This function will /proc/mounts for the mountpoint (using an exact string
- * compare). If the source path of the mountpoint is a block device and the
- * block device is a loop device, then it will be disassociated from the
+ * This function will search /proc/mounts for the mountpoint (using an exact
+ * string compare). If the source path of the mountpoint is a block device and
+ * the block device is a loop device, then it will be disassociated from the
  * previously attached file. Note that the return value of
- * loopdev_remove_device() is ignored and this function will always return true
- * if umount(2) is successful.
+ * loopdev_remove_device() is ignored and this function will always return a
+ * success result if umount(2) is successful.
  *
- * \param target See man umount(2)
+ * \param target See `man umount(2)`
  *
- * \return True if umount(2) is successful. False if umount(2) is unsuccessful.
+ * \return Nothing if umount(2) is successful. Otherwise, the error code.
  */
-bool umount(const std::string &target)
+oc::result<void> umount(const std::string &target)
 {
     std::string source;
     std::string mnt_dir;
 
     ScopedFILE fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
     if (fp) {
-        for (MountEntry entry; get_mount_entry(fp.get(), entry);) {
-            if (entry.dir == target) {
-                source = entry.fsname;
+        while (auto entry = get_mount_entry(fp.get())) {
+            if (entry.value().dir == target) {
+                source = entry.value().fsname;
             }
         }
     } else {
         LOGW("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
     }
 
-    int ret = ::umount(target.c_str());
-
-    ErrorRestorer restorer;
+    oc::result<void> ret = oc::success();
+    if (::umount(target.c_str()) < 0) {
+        ret = ec_from_errno();
+    }
 
     if (!source.empty()) {
         struct stat sb;
@@ -305,37 +348,36 @@ bool umount(const std::string &target)
             // If the source path is a loop block device, then disassociate it
             // from the image
             LOGD("Clearing loop device %s", source.c_str());
-            if (!loopdev_remove_device(source)) {
-                LOGW("Failed to clear loop device: %s", strerror(errno));
+            if (auto r = loopdev_remove_device(source); !r) {
+                LOGW("Failed to clear loop device: %s",
+                     ret.error().message().c_str());
             }
         }
     }
 
-    return ret == 0;
+    return ret;
 }
 
-bool mount_get_total_size(const std::string &path, uint64_t &size)
+oc::result<uint64_t> mount_get_total_size(const std::string &path)
 {
     struct statfs sfs;
 
     if (statfs(path.c_str(), &sfs) < 0) {
-        return false;
+        return ec_from_errno();
     }
 
-    size = sfs.f_bsize * sfs.f_blocks;
-    return true;
+    return sfs.f_bsize * sfs.f_blocks;
 }
 
-bool mount_get_avail_size(const std::string &path, uint64_t &size)
+oc::result<uint64_t> mount_get_avail_size(const std::string &path)
 {
     struct statfs sfs;
 
     if (statfs(path.c_str(), &sfs) < 0) {
-        return false;
+        return ec_from_errno();
     }
 
-    size = sfs.f_bsize * sfs.f_bavail;
-    return true;
+    return sfs.f_bsize * sfs.f_bavail;
 }
 
 }

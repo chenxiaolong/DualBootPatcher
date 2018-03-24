@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,25 +19,26 @@
 
 #pragma once
 
+#include <chrono>
 #include <string>
 #include <vector>
+
+#include "mbcommon/outcome.h"
 
 namespace mb::util
 {
 
-std::string get_cwd();
-std::string dir_name(const std::string &path);
-std::string base_name(const std::string &path);
-std::string real_path(const std::string &path);
-bool read_link(const std::string &path, std::string &out);
-bool inodes_equal(const std::string &path1, const std::string &path2);
-std::vector<std::string> path_split(const std::string &path);
+oc::result<std::string> get_cwd();
+std::string dir_name(std::string path);
+std::string base_name(std::string path);
+oc::result<std::string> read_link(const std::string &path);
+std::vector<std::string> path_split(std::string path);
 std::string path_join(const std::vector<std::string> &components);
 void normalize_path(std::vector<std::string> &components);
-bool relative_path(const std::string &path, const std::string &start,
-                   std::string &out);
+oc::result<std::string> relative_path(const std::string &path,
+                                      const std::string &start);
 int path_compare(const std::string &path1, const std::string &path2);
-bool wait_for_path(const std::string &path, unsigned int timeout_ms);
+bool wait_for_path(const std::string &path, std::chrono::milliseconds timeout);
 bool path_exists(const std::string &path, bool follow_symlinks);
 
 }

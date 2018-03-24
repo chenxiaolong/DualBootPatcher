@@ -119,22 +119,21 @@ static bool create_dir_and_mount(const std::vector<util::FstabRec> &recs,
         if (rec.fs_mgr_flags & util::MF_WAIT) {
             LOGD("%s: Waiting up to 20 seconds for block device",
                  rec.blk_device.c_str());
-            util::wait_for_path(rec.blk_device, 20 * 1000);
+            util::wait_for_path(rec.blk_device, std::chrono::seconds(20));
         }
 
         // Try mounting
-        bool ret = util::mount(rec.blk_device, mount_point, rec.fs_type,
-                               rec.flags, rec.fs_options);
-        if (!ret) {
-            LOGE("Failed to mount %s (%s) at %s: %s",
-                 rec.blk_device.c_str(), rec.fs_type.c_str(),
-                 mount_point, strerror(errno));
-            continue;
-        } else {
+        if (auto ret = util::mount(rec.blk_device, mount_point, rec.fs_type,
+                                   rec.flags, rec.fs_options)) {
             LOGE("Successfully mounted %s (%s) at %s",
                  rec.blk_device.c_str(), rec.fs_type.c_str(),
                  mount_point);
             return true;
+        } else {
+            LOGE("Failed to mount %s (%s) at %s: %s",
+                 rec.blk_device.c_str(), rec.fs_type.c_str(),
+                 mount_point, ret.error().message().c_str());
+            continue;
         }
     }
 
@@ -376,12 +375,13 @@ static bool mount_ext4(const char *source, const char *target)
 
 static bool try_extsd_mount(const char *block_dev, const char *mount_point)
 {
-    // Vold ignores the fstab fstype field and uses blkid to determine the
-    // filesystem. We don't link in blkid, so we'll use a trial and error
-    // approach.
+    bool use_fuse_exfat = false;
 
-    bool use_fuse_exfat =
-            util::file_find_one_of("/init.orig", { "EXFAT   ", "exfat" });
+    if (auto r = util::file_find_one_of("/init.orig", { "EXFAT   ", "exfat" });
+            r && r.value()) {
+        use_fuse_exfat = true;
+    }
+
     std::string value = util::property_file_get_string(
             DEFAULT_PROP_PATH, PROP_USE_FUSE_EXFAT, "");
     if (!value.empty()) {
@@ -396,30 +396,25 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
         }
     }
 
-    std::optional<std::string> fstype;
-    if (!util::blkid_get_fs_type(block_dev, fstype)) {
+    auto fstype = util::blkid_get_fs_type(block_dev);
+    if (!fstype) {
         LOGE("%s: Failed to detect filesystem type: %s",
-             block_dev, strerror(errno));
-    } else if (!fstype) {
+             block_dev, fstype.error().message().c_str());
+    } else if (fstype.value().empty()) {
         LOGE("%s: Unknown filesystem", block_dev);
-    } else if (*fstype == "exfat") {
+    } else if (fstype.value() == "exfat") {
         LOGD("Using fuse-exfat: %d", use_fuse_exfat);
 
         auto func = use_fuse_exfat ? &mount_exfat_fuse : &mount_exfat_kernel;
-        if (func(block_dev, mount_point)) {
-            return true;
-        }
-    } else if (*fstype == "vfat") {
-        if (mount_vfat(block_dev, mount_point)) {
-            return true;
-        }
-    } else if (*fstype == "ext") {
+        return func(block_dev, mount_point);
+    } else if (fstype.value() == "vfat") {
+        return mount_vfat(block_dev, mount_point);
+    } else if (fstype.value() == "ext") {
         // Assume ext4
-        if (mount_ext4(block_dev, mount_point)) {
-            return true;
-        }
+        return mount_ext4(block_dev, mount_point);
     } else {
-        LOGE("%s: Cannot handle filesystem: %s", block_dev, fstype->c_str());
+        LOGE("%s: Cannot handle filesystem: %s",
+             block_dev, fstype.value().c_str());
     }
 
     return false;
@@ -469,9 +464,9 @@ static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_r
 
     LOGD("%zu fstab entries for the external SD", extsd_recs.size());
 
-    if (!util::mkdir_recursive(mount_point, perms)) {
+    if (auto r = util::mkdir_recursive(mount_point, perms); !r) {
         LOGE("%s: Failed to create directory: %s",
-             mount_point, strerror(errno));
+             mount_point, r.error().message().c_str());
         return false;
     }
 
@@ -538,26 +533,28 @@ static bool mount_target(const char *source, const char *target, bool bind)
         unlink(target);
     }
 
-    if (!util::mkdir_recursive(target, 0755) && errno != EEXIST) {
-        LOGE("%s: Failed to create directory: %s", target, strerror(errno));
+    if (auto r = util::mkdir_recursive(target, 0755);
+            !r && r.error() != std::errc::file_exists) {
+        LOGE("%s: Failed to create directory: %s",
+             target, r.error().message().c_str());
         return false;
     }
 
     // Create source directory for bind mount if it doesn't already exist.
     // This can happen if the user accidentally wipes /cache, for example.
-    if (bind && !util::mkdir_recursive(source, 0755) && errno != EEXIST) {
-        LOGE("%s: Failed to create directory: %s", source, strerror(errno));
-        return false;
-    }
-
-    bool ret;
-
     if (bind) {
-        ret = util::mount(source, target, "", MS_BIND, "");
-    } else {
-        ret = util::mount(source, target, "auto", 0, "");
+        if (auto r = util::mkdir_recursive(source, 0755);
+                !r && r.error() != std::errc::file_exists) {
+            LOGE("%s: Failed to create directory: %s",
+                 source, r.error().message().c_str());
+            return false;
+        }
     }
 
+    auto ret = util::mount(source, target,
+                           bind ? "" : "auto",
+                           bind ? MS_BIND : 0,
+                           "");
     if (!ret) {
         LOGE("%s: Failed to mount: %s: %s", target, source, strerror(errno));
         return false;
@@ -612,9 +609,8 @@ static bool disable_fsck(const char *fsck_binary)
     target += "/";
     target += util::base_name(fsck_binary);
 
-    if (!util::copy_file(FSCK_WRAPPER, target, 0)) {
-        LOGE("Failed to copy %s to %s: %s",
-             FSCK_WRAPPER, target.c_str(), strerror(errno));
+    if (auto r = util::copy_file(FSCK_WRAPPER, target, 0); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 
@@ -623,16 +619,15 @@ static bool disable_fsck(const char *fsck_binary)
     chmod(target.c_str(), static_cast<mode_t>(sb.st_mode));
 
     // Copy SELinux label
-    std::string context;
-    if (util::selinux_get_context(fsck_binary, context)) {
-        LOGD("%s: SELinux label is: %s", fsck_binary, context.c_str());
-        if (!util::selinux_set_context(target.c_str(), context)) {
+    if (auto context = util::selinux_get_context(fsck_binary)) {
+        LOGD("%s: SELinux label is: %s", fsck_binary, context.value().c_str());
+        if (auto ret = util::selinux_set_context(target, context.value()); !ret) {
             LOGW("%s: Failed to set SELinux label: %s",
-                 target.c_str(), strerror(errno));
+                 target.c_str(), ret.error().message().c_str());
         }
     } else {
         LOGW("%s: Failed to get SELinux label: %s",
-             fsck_binary, strerror(errno));
+             fsck_binary, context.error().message().c_str());
     }
 
     if (mount(target.c_str(), fsck_binary, "", MS_BIND | MS_RDONLY, "") < 0) {
@@ -656,7 +651,8 @@ static bool copy_mount_exfat()
         return errno == ENOENT;
     }
 
-    if (!util::copy_file(our_mount_exfat, target, 0)) {
+    if (auto r = util::copy_file(our_mount_exfat, target, 0); !r) {
+        LOGE("%s", r.error().message().c_str());
         return false;
     }
 
@@ -665,16 +661,16 @@ static bool copy_mount_exfat()
     chmod(target, static_cast<mode_t>(sb.st_mode));
 
     // Copy SELinux label
-    std::string context;
-    if (util::selinux_get_context(system_mount_exfat, context)) {
-        LOGD("%s: SELinux label is: %s", system_mount_exfat, context.c_str());
-        if (!util::selinux_set_context(target, context)) {
+    if (auto context = util::selinux_get_context(system_mount_exfat)) {
+        LOGD("%s: SELinux label is: %s", system_mount_exfat,
+             context.value().c_str());
+        if (auto ret = util::selinux_set_context(target, context.value()); !ret) {
             LOGW("%s: Failed to set SELinux label: %s",
-                 target, strerror(errno));
+                 target, ret.error().message().c_str());
         }
     } else {
         LOGW("%s: Failed to get SELinux label: %s",
-             system_mount_exfat, strerror(errno));
+             system_mount_exfat, context.error().message().c_str());
     }
 
     if (mount(target, system_mount_exfat, "", MS_BIND | MS_RDONLY, "") < 0) {
@@ -738,8 +734,6 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
                           const Device &device, MountFlags flags,
                           FstabRecs &recs)
 {
-    std::vector<util::FstabRec> fstab;
-
     recs.gen.clear();
     recs.system.clear();
     recs.cache.clear();
@@ -747,11 +741,13 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     recs.extsd.clear();
 
     // Read original fstab file
-    fstab = util::read_fstab(path);
-    if (fstab.empty()) {
-        LOGE("%s: Failed to read fstab", path);
+    auto fstab_ret = util::read_fstab(path);
+    if (!fstab_ret) {
+        LOGE("%s: Failed to read fstab: %s",
+             path, fstab_ret.error().message().c_str());
         return false;
     }
+    auto &&fstab = fstab_ret.value();
 
     bool include_sdcard0 = !(device.flags() & DeviceFlag::FstabSkipSdcard0);
 
@@ -922,7 +918,7 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         LOGI("Successfully mounted partitions");
     } else if (flags & MountFlag::UnmountOnFailure) {
         for (const std::string &mount_point : successful) {
-            util::umount(mount_point);
+            (void) util::umount(mount_point);
         }
     }
 
@@ -971,10 +967,12 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
     }
 
     // Bind mount internal SD directory
-    util::mkdir_recursive("/raw/data/media", 0771);
-    util::mkdir_recursive("/data/media", 0771);
+    (void) util::mkdir_recursive("/raw/data/media", 0771);
+    (void) util::mkdir_recursive("/data/media", 0771);
 
-    if (!util::mount("/raw/data/media", "/data/media", "", MS_BIND, "")) {
+    if (auto ret = util::mount(
+            "/raw/data/media", "/data/media", "", MS_BIND, ""); !ret) {
+        LOGE("Failed to mount /data/media: %s", ret.error().message().c_str());
         return false;
     }
 

@@ -63,7 +63,9 @@ std::string TWFunc::get_resource_path(const std::string &res_path)
 
 static std::string current_date_time()
 {
-    return mb::util::format_time("%Y-%m-%d--%H-%M-%S");
+    auto str = mb::util::format_time("%Y-%m-%d--%H-%M-%S",
+                                     std::chrono::system_clock::now());
+    return str ? str.value() : std::string();
 }
 
 static bool convertToUint64(const char *str, uint64_t *out)
@@ -87,11 +89,10 @@ void TWFunc::Fixup_Time_On_Boot()
 
         struct timespec ts;
         uint64_t offset = 0;
-        std::string offset_str;
         std::string sepoch = "/sys/class/rtc/rtc0/since_epoch";
 
-        if (mb::util::file_first_line(sepoch, offset_str)
-                && convertToUint64(offset_str.c_str(), &offset)) {
+        if (auto r = mb::util::file_first_line(sepoch);
+                r && convertToUint64(r.value().c_str(), &offset)) {
             LOGI("TWFunc::Fixup_Time: Setting time offset from file %s", sepoch.c_str());
 
             ts.tv_sec = offset;
@@ -106,7 +107,8 @@ void TWFunc::Fixup_Time_On_Boot()
                 return;
             }
         } else {
-            LOGI("TWFunc::Fixup_Time: opening %s failed", sepoch.c_str());
+            LOGI("TWFunc::Fixup_Time: opening %s failed: %s",
+                 sepoch.c_str(), r.error().message().c_str());
         }
 
         LOGI("TWFunc::Fixup_Time: will attempt to use the ats files now.");
@@ -206,7 +208,7 @@ int TWFunc::Set_Brightness(std::string brightness_value)
         if (!secondary_brightness_file.empty()) {
             LOGI("Setting secondary brightness control to %s",
                  brightness_value.c_str());
-            mb::util::file_write_data(
+            (void) mb::util::file_write_data(
                     secondary_brightness_file,
                     brightness_value.data(), brightness_value.size());
         }

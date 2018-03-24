@@ -28,7 +28,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/outcome.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
@@ -92,48 +94,44 @@ private:
     std::vector<std::string> _results;
 };
 
-static bool dump_kernel_log(const char *file)
+static oc::result<void> dump_kernel_log(const char *file)
 {
     int len = klogctl(KLOG_SIZE_BUFFER, nullptr, 0);
     if (len < 0) {
-        LOGE("Failed to get kernel log buffer size: %s", strerror(errno));
-        return false;
+        return ec_from_errno();
     }
 
     std::vector<char> buf(static_cast<size_t>(len));
 
     len = klogctl(KLOG_READ_ALL, buf.data(), static_cast<int>(buf.size()));
     if (len < 0) {
-        LOGE("Failed to read kernel log buffer: %s", strerror(errno));
-        return false;
+        return ec_from_errno();
     }
 
     ScopedFILE fp(fopen(file, "wb"), fclose);
     if (!fp) {
-        LOGE("%s: Failed to open for writing: %s", file, strerror(errno));
-        return false;
+        return ec_from_errno();
     }
 
-    std::string timestamp = util::format_time("%Y/%m/%d %H:%M:%S %Z\n");
-    if (fwrite(timestamp.data(), timestamp.length(), 1, fp.get()) != 1) {
-        LOGE("%s: Failed to write timestamp: %s", file, strerror(errno));
-        return false;
+    auto timestamp = util::format_time("%Y/%m/%d %H:%M:%S %Z\n",
+                                       std::chrono::system_clock::now());
+    if (timestamp && fwrite(timestamp.value().data(),
+            timestamp.value().length(), 1, fp.get()) != 1) {
+        return ec_from_errno();
     }
 
     if (len > 0) {
         if (fwrite(buf.data(), static_cast<size_t>(len), 1, fp.get()) != 1) {
-            LOGE("%s: Failed to write data: %s", file, strerror(errno));
-            return false;
+            return ec_from_errno();
         }
         if (buf[static_cast<size_t>(len - 1)] != '\n') {
             if (fputc('\n', fp.get()) == EOF) {
-                LOGE("%s: Failed to write data: %s", file, strerror(errno));
-                return false;
+                return ec_from_errno();
             }
         }
     }
 
-    return true;
+    return oc::success();
 }
 
 struct EmergencyMount
@@ -145,24 +143,29 @@ struct EmergencyMount
 
 bool emergency_reboot()
 {
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
+    using namespace std::chrono_literals;
+
+    (void) util::vibrate(100ms, 250ms);
+    (void) util::vibrate(100ms, 250ms);
+    (void) util::vibrate(100ms, 250ms);
+    (void) util::vibrate(100ms, 250ms);
+    (void) util::vibrate(100ms, 250ms);
 
     LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
 
     std::vector<EmergencyMount> ems;
     Device device;
     JsonError error;
+    bool loaded_json = false;
 
-    std::vector<unsigned char> contents;
-    util::file_read_all(DEVICE_JSON_PATH, contents);
-    contents.push_back('\0');
+    auto contents = util::file_read_all(DEVICE_JSON_PATH);
+    if (contents) {
+        contents.value().push_back('\0');
 
-    bool loaded_json = device_from_json(
-            reinterpret_cast<char *>(contents.data()), device, error);
+        loaded_json = device_from_json(
+                reinterpret_cast<char *>(contents.value().data()),
+                device, error);
+    }
 
     // /data
     {
@@ -221,20 +224,22 @@ bool emergency_reboot()
     }
 
     for (auto const &em : ems) {
-        if (!util::mkdir_recursive(em.mount_point, 0755) && errno != EEXIST) {
+        if (auto r = util::mkdir_recursive(em.mount_point, 0755);
+                !r && r.error() != std::errc::file_exists) {
             LOGW("%s: Failed to create directory: %s",
-                 em.mount_point.c_str(), strerror(errno));
+                 em.mount_point.c_str(), r.error().message().c_str());
         }
 
         if (!util::is_mounted(em.mount_point)) {
             for (const std::string &path : em.paths) {
-                if (util::mount(path, em.mount_point, "auto", 0, "")) {
+                if (auto ret = util::mount(path, em.mount_point, "auto", 0, "")) {
                     LOGV("%s: Mounted %s",
                          em.mount_point.c_str(), path.c_str());
                     break;
                 } else {
                     LOGW("%s: Failed to mount %s: %s",
-                         em.mount_point.c_str(), path.c_str(), strerror(errno));
+                         em.mount_point.c_str(), path.c_str(),
+                         ret.error().message().c_str());
                 }
             }
         }
@@ -245,7 +250,8 @@ bool emergency_reboot()
         std::string log_path_old(log_path);
         log_path_old += ".old";
 
-        if (!util::mkdir_parent(log_path, 0755) && errno != EEXIST) {
+        if (auto r = util::mkdir_parent(log_path, 0755);
+                !r && r.error() != std::errc::file_exists) {
             LOGW("%s: Failed to create parent directory: %s",
                  log_path.c_str(), strerror(errno));
         }
@@ -253,10 +259,13 @@ bool emergency_reboot()
         LOGI("Dumping kernel log to %s", log_path.c_str());
 
         rename(log_path.c_str(), log_path_old.c_str());
-        dump_kernel_log(log_path.c_str());
+        if (auto ret = dump_kernel_log(log_path.c_str()); !ret) {
+            LOGW("Failed to dump kernel log: %s",
+                 ret.error().message().c_str());
+        }
         sync();
 
-        util::umount(em.mount_point);
+        (void) util::umount(em.mount_point);
     }
 
     fix_multiboot_permissions();

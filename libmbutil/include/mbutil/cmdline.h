@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,24 +21,17 @@
 
 #include <optional>
 #include <string>
+#include <unordered_map>
+
+#include "mbcommon/outcome.h"
+
 
 namespace mb::util
 {
 
-enum class CmdlineIterAction
-{
-    Continue,
-    Stop,
-    Error
-};
+using KernelCmdlineArgs =
+    std::unordered_map<std::string, std::optional<std::string>>;
 
-typedef CmdlineIterAction (*CmdlineIterFn)(const std::string &name,
-                                           const std::optional<std::string> &value,
-                                           void *userdata);
-
-bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata);
-
-bool kernel_cmdline_get_option(const std::string &option,
-                               std::optional<std::string> &value);
+oc::result<KernelCmdlineArgs> kernel_cmdline();
 
 }

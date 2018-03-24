@@ -223,7 +223,8 @@ static bool backup_image(const std::string &output_file,
                          const std::vector<std::string> &exclusions,
                          util::CompressionType compression)
 {
-    if (!util::mkdir_recursive(BACKUP_MNT_DIR, 0755) && errno != EEXIST) {
+    if (auto r = util::mkdir_recursive(BACKUP_MNT_DIR, 0755);
+            !r && r.error() != std::errc::file_exists) {
         LOGE("%s: Failed to create directory: %s",
              BACKUP_MNT_DIR, strerror(errno));
         return false;
@@ -231,17 +232,19 @@ static bool backup_image(const std::string &output_file,
 
     fsck_ext4_image(image);
 
-    if (!util::mount(image, BACKUP_MNT_DIR, "ext4", MS_RDONLY, "")) {
+    if (auto ret = util::mount(
+            image, BACKUP_MNT_DIR, "ext4", MS_RDONLY, ""); !ret) {
         LOGE("Failed to mount %s at %s: %s", image.c_str(), BACKUP_MNT_DIR,
-             strerror(errno));
+             ret.error().message().c_str());
         return false;
     }
 
     bool ret = backup_directory(output_file, BACKUP_MNT_DIR, exclusions,
                                 compression);
 
-    if (!util::umount(BACKUP_MNT_DIR)) {
-        LOGE("Failed to unmount %s: %s", BACKUP_MNT_DIR, strerror(errno));
+    if (auto umount_ret = util::umount(BACKUP_MNT_DIR); !umount_ret) {
+        LOGE("Failed to unmount %s: %s", BACKUP_MNT_DIR,
+             umount_ret.error().message().c_str());
         return false;
     }
 
@@ -256,9 +259,9 @@ static bool restore_image(const std::string &input_file,
                           const std::vector<std::string> &exclusions,
                           util::CompressionType compression)
 {
-    if (!util::mkdir_parent(image, S_IRWXU)) {
+    if (auto r = util::mkdir_parent(image, S_IRWXU); !r) {
         LOGE("%s: Failed to create parent directory: %s",
-             image.c_str(), strerror(errno));
+             image.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -275,7 +278,8 @@ static bool restore_image(const std::string &input_file,
         }
     }
 
-    if (!util::mkdir_recursive(BACKUP_MNT_DIR, 0755) && errno != EEXIST) {
+    if (auto r = util::mkdir_recursive(BACKUP_MNT_DIR, 0755);
+            !r && r.error() != std::errc::file_exists) {
         LOGE("%s: Failed to create directory: %s",
              BACKUP_MNT_DIR, strerror(errno));
         return false;
@@ -283,17 +287,18 @@ static bool restore_image(const std::string &input_file,
 
     fsck_ext4_image(image);
 
-    if (!util::mount(image, BACKUP_MNT_DIR, "ext4", 0, "")) {
+    if (auto ret = util::mount(image, BACKUP_MNT_DIR, "ext4", 0, ""); !ret) {
         LOGE("Failed to mount %s at %s: %s", image.c_str(), BACKUP_MNT_DIR,
-             strerror(errno));
+             ret.error().message().c_str());
         return false;
     }
 
     bool ret = restore_directory(input_file, BACKUP_MNT_DIR, exclusions,
                                  compression);
 
-    if (!util::umount(BACKUP_MNT_DIR)) {
-        LOGE("Failed to unmount %s: %s", BACKUP_MNT_DIR, strerror(errno));
+    if (auto umount_ret = util::umount(BACKUP_MNT_DIR); !umount_ret) {
+        LOGE("Failed to unmount %s: %s", BACKUP_MNT_DIR,
+             umount_ret.error().message().c_str());
         return false;
     }
 
@@ -323,7 +328,9 @@ static Result backup_boot_image(const std::shared_ptr<Rom> &rom,
     struct stat sb;
     if (stat(boot_image_path.c_str(), &sb) == 0) {
         LOGI("=== Backing up %s ===", boot_image_path.c_str());
-        if (!util::copy_file(boot_image_path, boot_image_backup, 0)) {
+        if (auto r = util::copy_file(
+                boot_image_path, boot_image_backup, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return Result::Failed;
         }
     } else {
@@ -403,7 +410,8 @@ static Result backup_configs(const std::shared_ptr<Rom> &rom,
     struct stat sb;
     if (stat(config_path.c_str(), &sb) == 0) {
         LOGI("=== Backing up %s ===", config_path.c_str());
-        if (!util::copy_file(config_path, config_backup, 0)) {
+        if (auto r = util::copy_file(config_path, config_backup, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return Result::Failed;
         }
     } else {
@@ -412,7 +420,8 @@ static Result backup_configs(const std::shared_ptr<Rom> &rom,
     }
     if (stat(thumbnail_path.c_str(), &sb) == 0) {
         LOGI("=== Backing up %s ===", thumbnail_path.c_str());
-        if (!util::copy_file(thumbnail_path, thumbnail_backup, 0)) {
+        if (auto r = util::copy_file(thumbnail_path, thumbnail_backup, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return Result::Failed;
         }
     } else {
@@ -451,7 +460,8 @@ static Result restore_configs(const std::shared_ptr<Rom> &rom,
     struct stat sb;
     if (stat(config_backup.c_str(), &sb) == 0) {
         LOGI("=== Restoring to %s ===", config_path.c_str());
-        if (!util::copy_file(config_backup, config_path, 0)) {
+        if (auto r = util::copy_file(config_backup, config_path, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return Result::Failed;
         }
     } else {
@@ -460,7 +470,8 @@ static Result restore_configs(const std::shared_ptr<Rom> &rom,
     }
     if (stat(thumbnail_backup.c_str(), &sb) == 0) {
         LOGI("=== Restoring to %s ===", thumbnail_path.c_str());
-        if (!util::copy_file(thumbnail_backup, thumbnail_path, 0)) {
+        if (auto r = util::copy_file(thumbnail_backup, thumbnail_path, 0); !r) {
+            LOGE("%s", r.error().message().c_str());
             return Result::Failed;
         }
     } else {
@@ -687,9 +698,9 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
     std::string multiboot_dir(MULTIBOOT_DIR);
     multiboot_dir += '/';
     multiboot_dir += rom->id;
-    if (!util::mkdir_recursive(multiboot_dir, 0775)) {
+    if (auto r = util::mkdir_recursive(multiboot_dir, 0775); !r) {
         LOGE("%s: Failed to create directory: %s",
-             multiboot_dir.c_str(), strerror(errno));
+             multiboot_dir.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -709,9 +720,9 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
 
     // Restore system
     if (targets & BackupTarget::System) {
-        uint64_t image_size;
-        if (!util::mount_get_total_size(
-                Roms::get_system_partition(), image_size)) {
+        auto image_size = util::mount_get_total_size(
+                Roms::get_system_partition());
+        if (!image_size) {
             LOGE("Failed to get the size of the system partition");
             return false;
         }
@@ -726,7 +737,7 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
 
         Result ret = restore_partition(
                 system_path, input_dir, path,
-                rom->system_is_image, image_size, {}, compression);
+                rom->system_is_image, image_size.value(), {}, compression);
         if (ret == Result::Failed) {
             return false;
         }
@@ -819,10 +830,9 @@ static void warn_selinux_context()
     // the daemon will guarantee that we run in that context. We'll just warn if
     // this happens to not be the case (eg. debugging via command line).
 
-    std::string context;
-    if (util::selinux_get_process_attr(
-            0, util::SELinuxAttr::Current, context)
-            && context != MB_EXEC_CONTEXT) {
+    auto context = util::selinux_get_process_attr(
+            0, util::SELinuxAttr::Current);
+    if (context && context.value() != MB_EXEC_CONTEXT) {
         fprintf(stderr, "WARNING: Not running under %s context\n",
                 MB_EXEC_CONTEXT);
     }
@@ -906,7 +916,10 @@ int backup_main(int argc, char *argv[])
     util::CompressionType compression = util::CompressionType::Lz4;
     bool force = false;
 
-    if (!util::format_time("%Y.%m.%d-%H.%M.%S", name)) {
+    if (auto n = util::format_time("%Y.%m.%d-%H.%M.%S",
+                                   std::chrono::system_clock::now())) {
+        n.value().swap(name);
+    } else {
         fprintf(stderr, "Failed to format current time\n");
         return EXIT_FAILURE;
     }
@@ -992,9 +1005,9 @@ int backup_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!util::mkdir_recursive(output_dir, 0755)) {
+    if (auto r = util::mkdir_recursive(output_dir, 0755); !r) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
-                output_dir.c_str(), strerror(errno));
+                output_dir.c_str(), r.error().message().c_str());
         return EXIT_FAILURE;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,6 +22,9 @@
 #include <string>
 
 #include "mbcommon/flags.h"
+#include "mbcommon/outcome.h"
+
+#include "mbutil/result/file_op_result.h"
 
 namespace mb::util
 {
@@ -36,11 +39,16 @@ enum class CopyFlag : uint8_t
 MB_DECLARE_FLAGS(CopyFlags, CopyFlag)
 MB_DECLARE_OPERATORS_FOR_FLAGS(CopyFlags)
 
-bool copy_data_fd(int fd_source, int fd_target);
-bool copy_xattrs(const std::string &source, const std::string &target);
-bool copy_stat(const std::string &source, const std::string &target);
-bool copy_contents(const std::string &source, const std::string &target);
-bool copy_file(const std::string &source, const std::string &target, CopyFlags flags);
-bool copy_dir(const std::string &source, const std::string &target, CopyFlags flags);
+oc::result<void> copy_data_fd(int fd_source, int fd_target);
+FileOpResult<void> copy_xattrs(const std::string &source,
+                               const std::string &target);
+FileOpResult<void> copy_stat(const std::string &source,
+                             const std::string &target);
+FileOpResult<void> copy_contents(const std::string &source,
+                                 const std::string &target);
+FileOpResult<void> copy_file(const std::string &source,
+                             const std::string &target, CopyFlags flags);
+FileOpResult<void> copy_dir(const std::string &source,
+                            const std::string &target, CopyFlags flags);
 
 }

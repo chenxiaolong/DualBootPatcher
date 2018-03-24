@@ -118,14 +118,15 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
 RecoveryInstaller::ProceedState RecoveryInstaller::on_set_up_chroot()
 {
     // Copy /etc/fstab
-    util::copy_file("/etc/fstab", in_chroot("/etc/fstab"),
-                    util::CopyFlag::CopyAttributes
-                  | util::CopyFlag::CopyXattrs);
+    (void) util::copy_file("/etc/fstab", in_chroot("/etc/fstab"),
+                           util::CopyFlag::CopyAttributes
+                         | util::CopyFlag::CopyXattrs);
 
     // Copy /etc/recovery.fstab
-    util::copy_file("/etc/recovery.fstab", in_chroot("/etc/recovery.fstab"),
-                    util::CopyFlag::CopyAttributes
-                  | util::CopyFlag::CopyXattrs);
+    (void) util::copy_file("/etc/recovery.fstab",
+                           in_chroot("/etc/recovery.fstab"),
+                           util::CopyFlag::CopyAttributes
+                         | util::CopyFlag::CopyXattrs);
 
     return ProceedState::Continue;
 }
@@ -134,8 +135,9 @@ void RecoveryInstaller::on_cleanup(Installer::ProceedState ret)
 {
     (void) ret;
 
-    if (!util::copy_file("/tmp/recovery.log", MULTIBOOT_LOG_INSTALLER, 0)) {
-        LOGE("Failed to copy log file: %s", strerror(errno));
+    if (auto r = util::copy_file(
+            "/tmp/recovery.log", MULTIBOOT_LOG_INSTALLER, 0); !r) {
+        LOGE("Failed to copy log file: %s", r.error().message().c_str());
     }
 
     fix_multiboot_permissions();

@@ -269,7 +269,7 @@ bool ZipPatcher::patch_zip()
     update_details("multiboot/info.prop");
 
     const std::string info_prop =
-            ZipPatcher::create_info_prop(m_info->rom_id(), false);
+            ZipPatcher::create_info_prop(m_info->rom_id());
     result = MinizipUtils::add_file(
             handle, "multiboot/info.prop",
             std::vector<unsigned char>(info_prop.begin(), info_prop.end()));
@@ -512,8 +512,7 @@ void ZipPatcher::la_progress_cb(uint64_t bytes, void *userdata)
     p->update_progress(p->m_bytes + bytes, p->m_max_bytes);
 }
 
-std::string ZipPatcher::create_info_prop(const std::string &rom_id,
-                                         bool always_patch_ramdisk)
+std::string ZipPatcher::create_info_prop(const std::string &rom_id)
 {
     std::string out;
 
@@ -548,20 +547,6 @@ std::string ZipPatcher::create_info_prop(const std::string &rom_id,
 
     out += "mbtool.installer.install-location=";
     out += rom_id;
-    out += "\n";
-
-    out +=
-"\n"
-"\n"
-"# mbtool.installer.always-patch-ramdisk\n"
-"# -------------------------------------\n"
-"# By default, the ramdisk is only patched if the boot partition is modified\n"
-"# during the installation process. If this property is enabled, it will always\n"
-"# be patched, regardless if the boot partition is modified.\n"
-"#\n";
-
-    out += "mbtool.installer.always-patch-ramdisk=";
-    out += always_patch_ramdisk ? "true" : "false";
     out += "\n";
 
     return out;

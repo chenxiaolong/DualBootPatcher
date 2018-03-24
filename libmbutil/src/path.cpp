@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,64 +19,44 @@
 
 #include "mbutil/path.h"
 
+#include <chrono>
 #include <vector>
+
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+
 #include <libgen.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "mblog/logging.h"
-#include "mbutil/time.h"
+#include "mbcommon/error_code.h"
 
-#define LOG_TAG "mbutil/path"
 
 namespace mb::util
 {
 
-std::string get_cwd()
+oc::result<std::string> get_cwd()
 {
-    char *cwd = nullptr;
-
-    if (!(cwd = getcwd(nullptr, 0))) {
-        LOGE("Failed to get cwd: %s", strerror(errno));
-        return std::string();
+    std::unique_ptr<char, decltype(free) *> cwd(getcwd(nullptr, 0), &free);
+    if (!cwd) {
+        return ec_from_errno();
     }
 
-    std::string ret(cwd);
-    free(cwd);
-    return ret;
+    return cwd.get();
 }
 
-std::string dir_name(const std::string &path)
+std::string dir_name(std::string path)
 {
-    std::vector<char> buf(path.begin(), path.end());
-    buf.push_back('\0');
-
-    char *ptr = dirname(buf.data());
-    return std::string(ptr);
+    return dirname(path.data());
 }
 
-std::string base_name(const std::string &path)
+std::string base_name(std::string path)
 {
-    std::vector<char> buf(path.begin(), path.end());
-    buf.push_back('\0');
-
-    char *ptr = basename(buf.data());
-    return std::string(ptr);
+    return basename(path.data());
 }
 
-std::string real_path(const std::string &path)
-{
-    char actual_path[PATH_MAX + 1];
-    if (!realpath(path.c_str(), actual_path)) {
-        return std::string();
-    }
-    return std::string(actual_path);
-}
-
-bool read_link(const std::string &path, std::string &out)
+oc::result<std::string> read_link(const std::string &path)
 {
     std::vector<char> buf;
     ssize_t len;
@@ -86,7 +66,7 @@ bool read_link(const std::string &path, std::string &out)
     for (;;) {
         len = readlink(path.c_str(), buf.data(), buf.size() - 1);
         if (len < 0) {
-            return false;
+            return ec_from_errno();
         } else if (static_cast<size_t>(len) == buf.size() - 1) {
             buf.resize(buf.size() << 1);
         } else {
@@ -95,26 +75,7 @@ bool read_link(const std::string &path, std::string &out)
     }
 
     buf[static_cast<size_t>(len)] = '\0';
-    out.assign(buf.data());
-    return true;
-}
-
-bool inodes_equal(const std::string &path1, const std::string &path2)
-{
-    struct stat sb1;
-    struct stat sb2;
-
-    if (lstat(path1.c_str(), &sb1) < 0) {
-        LOGE("%s: Failed to stat: %s", path1.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (lstat(path2.c_str(), &sb2) < 0) {
-        LOGE("%s: Failed to stat: %s", path2.c_str(), strerror(errno));
-        return false;
-    }
-
-    return sb1.st_dev == sb2.st_dev && sb1.st_ino == sb2.st_ino;
+    return buf.data();
 }
 
 /*!
@@ -131,12 +92,10 @@ bool inodes_equal(const std::string &path1, const std::string &path2)
  *
  * \return Split pieces of the path
  */
-std::vector<std::string> path_split(const std::string &path)
+std::vector<std::string> path_split(std::string path)
 {
     char *p;
     char *save_ptr;
-    std::vector<char> copy(path.begin(), path.end());
-    copy.push_back('\0');
 
     std::vector<std::string> split;
 
@@ -145,7 +104,7 @@ std::vector<std::string> path_split(const std::string &path)
         split.push_back(std::string());
     }
 
-    p = strtok_r(copy.data(), "/", &save_ptr);
+    p = strtok_r(path.data(), "/", &save_ptr);
     while (p != nullptr) {
         // Ignore useless references to '.' in the path
         if (strcmp(p, ".") != 0) {
@@ -251,20 +210,19 @@ void normalize_path(std::vector<std::string> &components)
  * \note This function does not traverse the filesystem at all. It works purely
  *       on the given path strings.
  *
- * \return True if the relative path was successfully computed. False and errno
- *         set to \a EINVAL if:
+ * \return The relative path if it was successfully computed.
+ *         std::errc::invalid_argument if:
  *         - \a path is absolute and \a start is relative or vice versa
  *         - \a path or \a start is empty
  *         - an intermediate path could not be computed
  */
-bool relative_path(const std::string &path, const std::string &start,
-                   std::string &out)
+oc::result<std::string> relative_path(const std::string &path,
+                                      const std::string &start)
 {
     if (path.empty() || start.empty()
             || (path[0] == '/' && start[0] != '/')
             || (path[0] != '/' && start[0] == '/')) {
-        errno = EINVAL;
-        return false;
+        return std::errc::invalid_argument;
     }
 
     std::vector<std::string> path_pieces(path_split(path));
@@ -284,8 +242,7 @@ bool relative_path(const std::string &path, const std::string &start,
     // Add '..' for the remaining path segments in 'start'
     for (size_t i = common; i < start_pieces.size(); ++i) {
         if (start_pieces[i] == "..") {
-            errno = EINVAL;
-            return false;
+            return std::errc::invalid_argument;
         }
         result_pieces.push_back("..");
     }
@@ -295,9 +252,7 @@ bool relative_path(const std::string &path, const std::string &start,
         result_pieces.push_back(path_pieces[i]);
     }
 
-    out = path_join(result_pieces);
-
-    return true;
+    return path_join(result_pieces);
 }
 
 /*!
@@ -329,13 +284,15 @@ int path_compare(const std::string &path1, const std::string &path2)
     return path_join(path1_pieces).compare(path_join(path2_pieces));
 }
 
-bool wait_for_path(const std::string &path, unsigned int timeout_ms)
+bool wait_for_path(const std::string &path, std::chrono::milliseconds timeout)
 {
-    uint64_t until = current_time_ms() + timeout_ms;
+    using namespace std::chrono;
+
+    auto until = steady_clock::now() + timeout;
     struct stat sb;
     int ret;
 
-    while ((ret = stat(path.c_str(), &sb)) < 0 && current_time_ms() < until) {
+    while ((ret = stat(path.c_str(), &sb)) < 0 && steady_clock::now() < until) {
         usleep(10000);
     }
 

@@ -18,10 +18,6 @@
 
 #include "gui/blanktimer.hpp"
 
-#include <ctime>
-
-#include "mbutil/time.h"
-
 #include "minuitwrp/minui.h"
 
 #include "data.hpp"
@@ -30,6 +26,8 @@
 
 #include "config/config.hpp"
 #include "gui/pages.hpp"
+
+using namespace std::chrono;
 
 blanktimer::blanktimer()
 {
@@ -55,22 +53,21 @@ void blanktimer::setTime(int newtime)
 
 void blanktimer::setTimer()
 {
-    clock_gettime(CLOCK_MONOTONIC, &btimer);
+    btimer = steady_clock::now();
 }
 
 void blanktimer::checkForTimeout()
 {
     if (!(tw_device.tw_flags() & mb::device::TwFlag::NoScreenTimeout)) {
         pthread_mutex_lock(&mutex);
-        timespec curTime, diff;
-        clock_gettime(CLOCK_MONOTONIC, &curTime);
-        mb::util::timespec_diff(btimer, curTime, diff);
-        if (sleepTimer > 2 && diff.tv_sec > (sleepTimer - 2) && state == kOn) {
+        auto curTime = steady_clock::now();
+        auto diff = duration_cast<seconds>(curTime - btimer);
+        if (sleepTimer > 2 && diff.count() > (sleepTimer - 2) && state == kOn) {
             orig_brightness = getBrightness();
             state = kDim;
             TWFunc::Set_Brightness("5");
         }
-        if (sleepTimer && diff.tv_sec > sleepTimer && state < kOff) {
+        if (sleepTimer && diff.count() > sleepTimer && state < kOff) {
             state = kOff;
             TWFunc::Set_Brightness("0");
             PageManager::ChangeOverlay("lock");

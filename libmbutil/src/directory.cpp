@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,79 +19,68 @@
 
 #include "mbutil/directory.h"
 
-#include <vector>
-
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 
 #include <sys/stat.h>
 
+#include "mbcommon/error_code.h"
 #include "mbutil/path.h"
 
 namespace mb::util
 {
 
-bool mkdir_recursive(const std::string &dir, mode_t mode)
+oc::result<void> mkdir_recursive(std::string dir, mode_t perms)
 {
-    char *p;
-    char *save_ptr;
-    std::vector<char> temp;
-    std::vector<char> copy;
-
     if (dir.empty()) {
-        errno = EINVAL;
-        return false;
+        return std::errc::invalid_argument;
     }
 
-    copy.assign(dir.begin(), dir.end());
-    copy.push_back('\0');
-    temp.resize(dir.size() + 2);
-    temp[0] = '\0';
+    std::string temp;
+    temp.reserve(dir.size() + 1);
 
     if (dir[0] == '/') {
-        strcat(temp.data(), "/");
+        temp += '/';
     }
 
-    p = strtok_r(copy.data(), "/", &save_ptr);
-    while (p != nullptr) {
-        strcat(temp.data(), p);
-        strcat(temp.data(), "/");
+    char *save_ptr;
+    for (char *p = strtok_r(dir.data(), "/", &save_ptr); p;
+            p = strtok_r(nullptr, "/", &save_ptr)) {
+        temp += p;
+        temp += '/';
 
-        if (mkdir(temp.data(), mode) < 0 && errno != EEXIST) {
-            return false;
+        if (mkdir(temp.data(), perms) < 0 && errno != EEXIST) {
+            return ec_from_errno();
         }
-
-        p = strtok_r(nullptr, "/", &save_ptr);
     }
 
-    return true;
+    return oc::success();
 }
 
-bool mkdir_parent(const std::string &path, mode_t perms)
+oc::result<void> mkdir_parent(const std::string &path, mode_t perms)
 {
     if (path.empty()) {
-        errno = EINVAL;
-        return false;
+        return std::errc::invalid_argument;
     }
 
     struct stat sb;
     std::string dir = dir_name(path);
 
-    if (!mkdir_recursive(dir, perms) && errno != EEXIST) {
-        return false;
+    if (auto r = mkdir_recursive(dir, perms);
+            !r && r.error() != std::errc::file_exists) {
+        return r.as_failure();
     }
 
     if (stat(dir.c_str(), &sb) < 0) {
-        return false;
+        return ec_from_errno();
     }
 
     if (!S_ISDIR(sb.st_mode)) {
-        errno = ENOTDIR;
-        return false;
+        return std::errc::not_a_directory;
     }
 
-    return true;
+    return oc::success();
 }
 
 }

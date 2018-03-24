@@ -175,9 +175,9 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!mb::util::set_process_title_init(argc, argv)) {
+    if (auto ret = mb::util::set_process_title_init(argc, argv); !ret) {
         fprintf(stderr, "set_process_title_init() failed: %s\n",
-                strerror(errno));
+                ret.error().message().c_str());
         return EXIT_FAILURE;
     }
 

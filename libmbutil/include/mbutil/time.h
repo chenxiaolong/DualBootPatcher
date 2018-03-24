@@ -19,78 +19,15 @@
 
 #pragma once
 
+#include <chrono>
 #include <string>
 
-#include <cinttypes>
-#include <ctime>
+#include "mbcommon/outcome.h"
 
 namespace mb::util
 {
 
-inline void timespec_diff(const timespec &start, const timespec &end,
-                          timespec &result)
-{
-    result.tv_sec = end.tv_sec - start.tv_sec;
-    result.tv_nsec = end.tv_nsec - start.tv_nsec;
-    if (result.tv_nsec < 0) {
-        --result.tv_sec;
-        result.tv_nsec += 1e9;
-    }
-}
-
-inline void timeval_diff(const timeval &start, const timeval &end,
-                         timeval &result)
-{
-    result.tv_sec = end.tv_sec - start.tv_sec;
-    result.tv_usec = end.tv_usec - start.tv_usec;
-    if (result.tv_usec < 0) {
-        --result.tv_sec;
-        result.tv_usec += 1e6;
-    }
-}
-
-inline int64_t timespec_diff_s(const timespec &start, const timespec &end)
-{
-    return end.tv_sec - start.tv_sec;
-}
-
-inline int64_t timeval_diff_s(const timeval &start, const timeval &end)
-{
-    return end.tv_sec - start.tv_sec;
-}
-
-inline int64_t timespec_diff_ms(const timespec &start, const timespec &end)
-{
-    return (static_cast<int64_t>(end.tv_sec) * 1000 + end.tv_nsec / 1000000)
-            - (static_cast<int64_t>(start.tv_sec) * 1000 + start.tv_nsec / 1000000);
-}
-
-inline int64_t timeval_diff_ms(const timeval &start, const timeval &end)
-{
-    return (static_cast<int64_t>(end.tv_sec) * 1000 + end.tv_usec / 1000)
-            - (static_cast<int64_t>(start.tv_sec) * 1000 + start.tv_usec / 1000);
-}
-
-inline int64_t timespec_diff_us(const timespec &start, const timespec &end)
-{
-    return (static_cast<int64_t>(end.tv_sec) * 1000000 + end.tv_nsec / 1000)
-            - (static_cast<int64_t>(start.tv_sec) * 1000000 + start.tv_nsec / 1000);
-}
-
-inline int64_t timeval_diff_us(const timeval &start, const timeval &end)
-{
-    return (static_cast<int64_t>(end.tv_sec) * 1000000 + end.tv_usec)
-            - (static_cast<int64_t>(start.tv_sec) * 1000000 + start.tv_usec);
-}
-
-inline int64_t timespec_diff_ns(const timespec &start, const timespec &end)
-{
-    return (static_cast<int64_t>(end.tv_sec) * 1000000000 + end.tv_nsec)
-            - (static_cast<int64_t>(start.tv_sec) * 1000000000 + start.tv_nsec);
-}
-
-uint64_t current_time_ms();
-bool format_time(const std::string &format, std::string &out);
-std::string format_time(const std::string &format);
+oc::result<std::string> format_time(std::string_view format,
+                                    std::chrono::system_clock::time_point tp);
 
 }

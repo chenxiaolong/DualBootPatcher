@@ -29,6 +29,7 @@
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/path.h"
+#include "mbutil/vibrate.h"
 
 #include "config/config.hpp"
 #include "gui/blanktimer.hpp"
@@ -535,12 +536,16 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
             auto const &cpu_temp_path = tw_device.tw_cpu_temp_path();
             if (!cpu_temp_path.empty()) {
                 cpu_temp_file = cpu_temp_path;
-                if (!mb::util::file_first_line(cpu_temp_file, results)) {
+                if (auto r = mb::util::file_first_line(cpu_temp_file)) {
+                    results = std::move(r.value());
+                } else {
                     return -1;
                 }
             } else {
                 cpu_temp_file = "/sys/class/thermal/thermal_zone0/temp";
-                if (!mb::util::file_first_line(cpu_temp_file, results)) {
+                if (auto r = mb::util::file_first_line(cpu_temp_file)) {
+                    results = std::move(r.value());
+                } else {
                     return -1;
                 }
             }
@@ -616,7 +621,7 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
 void DataManager::ReadSettingsFile()
 {
 #ifndef TW_OEM_BUILD
-    mb::util::mkdir_parent(tw_settings_path, 0700);
+    (void) mb::util::mkdir_parent(tw_settings_path, 0700);
 
     LOGI("Attempt to load settings from settings file...");
     LoadValues(tw_settings_path);
@@ -627,9 +632,11 @@ void DataManager::ReadSettingsFile()
 
 void DataManager::Vibrate(const std::string& varName)
 {
+    using namespace std::chrono_literals;
+
     int vib_value = 0;
     GetValue(varName, vib_value);
     if (vib_value) {
-        vibrate(vib_value);
+        (void) mb::util::vibrate(std::chrono::milliseconds(vib_value), 0ms);
     }
 }

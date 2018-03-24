@@ -103,16 +103,17 @@ static bool redirect_output_to_file(const char *path, mode_t mode)
 
 static bool detect_device()
 {
-    std::vector<unsigned char> contents;
-    if (!mb::util::file_read_all(DEVICE_JSON_PATH, contents)) {
-        LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH, strerror(errno));
+    auto contents = mb::util::file_read_all(DEVICE_JSON_PATH);
+    if (!contents) {
+        LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH,
+             contents.error().message().c_str());
         return false;
     }
-    contents.push_back('\0');
+    contents.value().push_back('\0');
 
     JsonError error;
 
-    if (!device_from_json(reinterpret_cast<char *>(contents.data()),
+    if (!device_from_json(reinterpret_cast<char *>(contents.value().data()),
                           tw_device, error)) {
         LOGE("%s: Failed to load device", DEVICE_JSON_PATH);
         return false;
@@ -395,9 +396,9 @@ int main(int argc, char *argv[])
 
     umask(0);
 
-    if (!mb::util::mkdir_recursive(MBBOOTUI_BASE_PATH, 0755)) {
+    if (auto r = mb::util::mkdir_recursive(MBBOOTUI_BASE_PATH, 0755); !r) {
         LOGE("%s: Failed to create directory: %s",
-             MBBOOTUI_BASE_PATH, strerror(errno));
+             MBBOOTUI_BASE_PATH, r.error().message().c_str());
         return EXIT_FAILURE;
     }
 

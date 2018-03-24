@@ -1,4 +1,107 @@
 ---
+- name: Samsung Galaxy Tab A6 10.1 Wifi
+  id: gtaxlwifi
+  codenames:
+    - gtaxlwifi
+    - gtaxlwifixx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/13540000.dwmmc0/by-name
+    system:
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p22
+    boot:
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RADIO
+      - /dev/block/mmcblk0p13
+      - /dev/block/platform/13540000.dwmmc0/by-name/CDMA-RADIO
+      - /dev/block/mmcblk0p12
+      - /dev/block/platform/13540000.dwmmc0/by-name/EFS
+      - /dev/block/mmcblk0p3
+      - /dev/block/platform/13540000.dwmmc0/by-name/CPEFS
+      - /dev/block/mmcblk0p4
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs1
+      - /dev/block/mmcblk0p5
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs2
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs3
+      - /dev/block/mmcblk0p7
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Tab A6 10.1 LTE
+  id: gtaxllte
+  codenames:
+    - gtaxllte
+    - gtaxlltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/13540000.dwmmc0/by-name
+    system:
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RADIO
+      - /dev/block/mmcblk0p13
+      - /dev/block/platform/13540000.dwmmc0/by-name/CDMA-RADIO
+      - /dev/block/mmcblk0p12
+      - /dev/block/platform/13540000.dwmmc0/by-name/EFS
+      - /dev/block/mmcblk0p3
+      - /dev/block/platform/13540000.dwmmc0/by-name/CPEFS
+      - /dev/block/mmcblk0p4
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs1
+      - /dev/block/mmcblk0p5
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs2
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs3
+      - /dev/block/mmcblk0p7
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 - name: Samsung Galaxy Tab 2 7.0/10.1 (Wifi/3G)
   id: espresso10
   codenames:
