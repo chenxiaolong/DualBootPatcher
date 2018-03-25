@@ -31,7 +31,7 @@
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
-#include "mbcommon/string.h"
+#include "mbcommon/finally.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/android_error.h"
@@ -41,94 +41,74 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 namespace mtk
 {
 
-static int _mtk_header_update_size(Writer &writer, File &file,
-                                   uint64_t offset, uint32_t size)
+static oc::result<void>
+_mtk_header_update_size(Writer &writer, File &file,
+                        uint64_t offset, uint32_t size)
 {
     uint32_t le32_size = mb_htole32(size);
-    size_t n;
 
     if (offset > SIZE_MAX - offsetof(MtkHeader, size)) {
-        writer.set_error(make_error_code(MtkError::MtkHeaderOffsetTooLarge));
-        return RET_FATAL;
+        writer.set_fatal();
+        return MtkError::MtkHeaderOffsetTooLarge;
     }
 
-    if (!file.seek(static_cast<int64_t>(offset + offsetof(MtkHeader, size)),
-                   SEEK_SET, nullptr)) {
-        writer.set_error(file.error(),
-                         "Failed to seek to MTK size field: %s",
-                         file.error_string().c_str());
-        return file.is_fatal() ? RET_FATAL : RET_FAILED;
+    auto seek_ret = file.seek(
+            static_cast<int64_t>(offset + offsetof(MtkHeader, size)), SEEK_SET);
+    if (!seek_ret) {
+        if (file.is_fatal()) { writer.set_fatal(); }
+        return seek_ret.as_failure();
     }
 
-    if (!file_write_fully(file, &le32_size, sizeof(le32_size), n)) {
-        writer.set_error(file.error(),
-                         "Failed to write MTK size field: %s",
-                         file.error_string().c_str());
-        return file.is_fatal() ? RET_FATAL : RET_FAILED;
-    } else if (n != sizeof(le32_size)) {
-        writer.set_error(file.error(),
-                         "Unexpected EOF when writing MTK size field");
-        return RET_FAILED;
+    auto ret = file_write_exact(file, &le32_size, sizeof(le32_size));
+    if (!ret) {
+        if (file.is_fatal()) { writer.set_fatal(); }
+        return ret.as_failure();
     }
 
-    return RET_OK;
+    return oc::success();
 }
 
-static int _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
-                             File &file,
-                             unsigned char digest[SHA_DIGEST_LENGTH])
+static oc::result<void>
+_mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
+                  File &file, unsigned char digest[SHA_DIGEST_LENGTH])
 {
     SHA_CTX sha_ctx;
     char buf[10240];
-    size_t n;
 
     uint32_t kernel_mtkhdr_size = 0;
     uint32_t ramdisk_mtkhdr_size = 0;
 
     if (!SHA1_Init(&sha_ctx)) {
-        writer.set_error(make_error_code(
-                android::AndroidError::Sha1InitError));
-        return RET_FAILED;
+        return android::AndroidError::Sha1InitError;
     }
 
-    for (size_t i = 0; i < seg.entries_size(); ++i) {
-        auto const *entry = seg.entries_get(i);
-        uint64_t remain = entry->size;
+    for (auto const &entry : seg.entries()) {
+        uint64_t remain = *entry.size;
 
-        if (!file.seek(static_cast<int64_t>(entry->offset), SEEK_SET,
-                       nullptr)) {
-            writer.set_error(file.error(),
-                             "Failed to seek to entry %" MB_PRIzu ": %s",
-                             i, file.error_string().c_str());
-            return file.is_fatal() ? RET_FATAL : RET_FAILED;
+        auto seek_ret = file.seek(static_cast<int64_t>(entry.offset),
+                                  SEEK_SET);
+        if (!seek_ret) {
+            if (file.is_fatal()) { writer.set_fatal(); }
+            return seek_ret.as_failure();
         }
 
         // Update checksum with data
         while (remain > 0) {
             auto to_read = std::min<uint64_t>(remain, sizeof(buf));
 
-            if (!file_read_fully(file, buf, static_cast<size_t>(to_read), n)) {
-                writer.set_error(file.error(),
-                                 "Failed to read entry %" MB_PRIzu ": %s",
-                                 i, file.error_string().c_str());
-                return file.is_fatal() ? RET_FATAL : RET_FAILED;
-            } else if (n != to_read) {
-                writer.set_error(file.error(),
-                                 "Unexpected EOF when reading entry");
-                return RET_FAILED;
+            auto ret = file_read_exact(file, buf, static_cast<size_t>(to_read));
+            if (!ret) {
+                if (writer.is_fatal()) { writer.set_fatal(); }
+                return ret.as_failure();
             }
 
-            if (!SHA1_Update(&sha_ctx, buf, n)) {
-                writer.set_error(make_error_code(
-                        android::AndroidError::Sha1UpdateError));
-                return RET_FAILED;
+            if (!SHA1_Update(&sha_ctx, buf, static_cast<size_t>(to_read))) {
+                return android::AndroidError::Sha1UpdateError;
             }
 
             remain -= to_read;
@@ -137,51 +117,47 @@ static int _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
         uint32_t le32_size;
 
         // Update checksum with size
-        switch (entry->type) {
+        switch (entry.type) {
         case ENTRY_TYPE_MTK_KERNEL_HEADER:
-            kernel_mtkhdr_size = entry->size;
+            kernel_mtkhdr_size = *entry.size;
             continue;
         case ENTRY_TYPE_MTK_RAMDISK_HEADER:
-            ramdisk_mtkhdr_size = entry->size;
+            ramdisk_mtkhdr_size = *entry.size;
             continue;
         case ENTRY_TYPE_KERNEL:
-            le32_size = mb_htole32(entry->size + kernel_mtkhdr_size);
+            le32_size = mb_htole32(*entry.size + kernel_mtkhdr_size);
             break;
         case ENTRY_TYPE_RAMDISK:
-            le32_size = mb_htole32(entry->size + ramdisk_mtkhdr_size);
+            le32_size = mb_htole32(*entry.size + ramdisk_mtkhdr_size);
             break;
         case ENTRY_TYPE_SECONDBOOT:
-            le32_size = mb_htole32(entry->size);
+            le32_size = mb_htole32(*entry.size);
             break;
         case ENTRY_TYPE_DEVICE_TREE:
-            if (entry->size == 0) {
+            if (*entry.size == 0) {
                 continue;
             }
-            le32_size = mb_htole32(entry->size);
+            le32_size = mb_htole32(*entry.size);
             break;
         default:
             continue;
         }
 
         if (!SHA1_Update(&sha_ctx, &le32_size, sizeof(le32_size))) {
-            writer.set_error(make_error_code(
-                    android::AndroidError::Sha1UpdateError));
-            return RET_FAILED;
+            return android::AndroidError::Sha1UpdateError;
         }
     }
 
     if (!SHA1_Final(digest, &sha_ctx)) {
-        writer.set_error(make_error_code(
-                android::AndroidError::Sha1UpdateError));
-        return RET_FATAL;
+        return android::AndroidError::Sha1UpdateError;
     }
 
-    return RET_OK;
+    return oc::success();
 }
 
 MtkFormatWriter::MtkFormatWriter(Writer &writer)
     : FormatWriter(writer)
-    , _hdr()
+    , m_hdr()
 {
 }
 
@@ -197,34 +173,111 @@ std::string MtkFormatWriter::name()
     return FORMAT_NAME_MTK;
 }
 
-int MtkFormatWriter::get_header(File &file, Header &header)
+oc::result<void> MtkFormatWriter::open(File &file)
+{
+    (void) file;
+
+    m_seg = SegmentWriter();
+
+    return oc::success();
+}
+
+oc::result<void> MtkFormatWriter::close(File &file)
+{
+    auto reset_state = finally([&] {
+        m_hdr = {};
+        m_seg = {};
+    });
+
+    if (m_writer.is_open()) {
+        auto swentry = m_seg->entry();
+
+        // If successful, finish up the boot image
+        if (swentry == m_seg->entries().end()) {
+            auto file_size = file.seek(0, SEEK_CUR);
+            if (!file_size) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return file_size.as_failure();
+            }
+
+            // Truncate to set size
+            auto truncate_ret = file.truncate(file_size.value());
+            if (!truncate_ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return truncate_ret.as_failure();
+            }
+
+            // Update MTK header sizes
+            for (auto const &entry : m_seg->entries()) {
+                if (entry.type == ENTRY_TYPE_MTK_KERNEL_HEADER) {
+                    OUTCOME_TRYV(_mtk_header_update_size(
+                            m_writer, file, entry.offset,
+                            static_cast<uint32_t>(
+                                    m_hdr.kernel_size - sizeof(MtkHeader))));
+                } else if (entry.type == ENTRY_TYPE_MTK_RAMDISK_HEADER) {
+                    OUTCOME_TRYV(_mtk_header_update_size(
+                            m_writer, file, entry.offset,
+                            static_cast<uint32_t>(
+                                    m_hdr.ramdisk_size - sizeof(MtkHeader))));
+                }
+            }
+
+            // We need to take the performance hit and compute the SHA1 here.
+            // We can't fill in the sizes in the MTK headers when we're writing
+            // them. Thus, if we calculated the SHA1sum during write, it would
+            // be incorrect.
+            OUTCOME_TRYV(_mtk_compute_sha1(
+                    m_writer, *m_seg, file,
+                    reinterpret_cast<unsigned char *>(m_hdr.id)));
+
+            // Convert fields back to little-endian
+            android_fix_header_byte_order(m_hdr);
+
+            // Seek back to beginning to write header
+            auto seek_ret = file.seek(0, SEEK_SET);
+            if (!seek_ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return seek_ret.as_failure();
+            }
+
+            // Write header
+            auto ret = file_write_exact(file, &m_hdr, sizeof(m_hdr));
+            if (!ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return ret.as_failure();
+            }
+        }
+    }
+
+    return oc::success();
+}
+
+oc::result<void> MtkFormatWriter::get_header(File &file, Header &header)
 {
     (void) file;
 
     header.set_supported_fields(SUPPORTED_FIELDS);
 
-    return RET_OK;
+    return oc::success();
 }
 
-int MtkFormatWriter::write_header(File &file, const Header &header)
+oc::result<void> MtkFormatWriter::write_header(File &file, const Header &header)
 {
-    int ret;
-
     // Construct header
-    memset(&_hdr, 0, sizeof(_hdr));
-    memcpy(_hdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
+    m_hdr = {};
+    memcpy(m_hdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
 
     if (auto address = header.kernel_address()) {
-        _hdr.kernel_addr = *address;
+        m_hdr.kernel_addr = *address;
     }
     if (auto address = header.ramdisk_address()) {
-        _hdr.ramdisk_addr = *address;
+        m_hdr.ramdisk_addr = *address;
     }
     if (auto address = header.secondboot_address()) {
-        _hdr.second_addr = *address;
+        m_hdr.second_addr = *address;
     }
     if (auto address = header.kernel_tags_address()) {
-        _hdr.tags_addr = *address;
+        m_hdr.tags_addr = *address;
     }
     if (auto page_size = header.page_size()) {
         switch (*page_size) {
@@ -235,231 +288,111 @@ int MtkFormatWriter::write_header(File &file, const Header &header)
         case 32768:
         case 65536:
         case 131072:
-            _hdr.page_size = *page_size;
+            m_hdr.page_size = *page_size;
             break;
         default:
-            _writer.set_error(make_error_code(android::AndroidError::InvalidPageSize),
-                              "Invalid page size: %" PRIu32, *page_size);
-            return RET_FAILED;
+            //DEBUG("Invalid page size: %" PRIu32, *page_size);
+            return android::AndroidError::InvalidPageSize;
         }
     } else {
-        _writer.set_error(make_error_code(
-                android::AndroidError::MissingPageSize));
-        return RET_FAILED;
+        return android::AndroidError::MissingPageSize;
     }
 
     if (auto board_name = header.board_name()) {
-        if (board_name->size() >= sizeof(_hdr.name)) {
-            _writer.set_error(make_error_code(
-                    android::AndroidError::BoardNameTooLong));
-            return RET_FAILED;
+        if (board_name->size() >= sizeof(m_hdr.name)) {
+            return android::AndroidError::BoardNameTooLong;
         }
 
-        strncpy(reinterpret_cast<char *>(_hdr.name), board_name->c_str(),
-                sizeof(_hdr.name) - 1);
-        _hdr.name[sizeof(_hdr.name) - 1] = '\0';
+        strncpy(reinterpret_cast<char *>(m_hdr.name), board_name->c_str(),
+                sizeof(m_hdr.name) - 1);
+        m_hdr.name[sizeof(m_hdr.name) - 1] = '\0';
     }
     if (auto cmdline = header.kernel_cmdline()) {
-        if (cmdline->size() >= sizeof(_hdr.cmdline)) {
-            _writer.set_error(make_error_code(
-                    android::AndroidError::KernelCmdlineTooLong));
-            return RET_FAILED;
+        if (cmdline->size() >= sizeof(m_hdr.cmdline)) {
+            return android::AndroidError::KernelCmdlineTooLong;
         }
 
-        strncpy(reinterpret_cast<char *>(_hdr.cmdline), cmdline->c_str(),
-                sizeof(_hdr.cmdline) - 1);
-        _hdr.cmdline[sizeof(_hdr.cmdline) - 1] = '\0';
+        strncpy(reinterpret_cast<char *>(m_hdr.cmdline), cmdline->c_str(),
+                sizeof(m_hdr.cmdline) - 1);
+        m_hdr.cmdline[sizeof(m_hdr.cmdline) - 1] = '\0';
     }
 
     // TODO: UNUSED
     // TODO: ID
 
-    // Clear existing entries (none should exist unless this function fails and
-    // the user reattempts to call it)
-    _seg.entries_clear();
+    std::vector<SegmentWriterEntry> entries;
 
-    ret = _seg.entries_add(ENTRY_TYPE_MTK_KERNEL_HEADER,
-                           0, false, 0, _writer);
-    if (ret != RET_OK) { return ret; }
+    entries.push_back({ ENTRY_TYPE_MTK_KERNEL_HEADER, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, m_hdr.page_size });
+    entries.push_back({ ENTRY_TYPE_MTK_RAMDISK_HEADER, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, m_hdr.page_size });
+    entries.push_back({ ENTRY_TYPE_SECONDBOOT, 0, {}, m_hdr.page_size });
+    entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, m_hdr.page_size });
 
-    ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                           0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_MTK_RAMDISK_HEADER,
-                           0, false, 0, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                           0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
-                           0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                           0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) { return ret; }
+    OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
     // Start writing after first page
-    if (!file.seek(_hdr.page_size, SEEK_SET, nullptr)) {
-        _writer.set_error(file.error(),
-                          "Failed to seek to first page: %s",
-                          file.error_string().c_str());
-        return file.is_fatal() ? RET_FATAL : RET_FAILED;
+    auto seek_ret = file.seek(m_hdr.page_size, SEEK_SET);
+    if (!seek_ret) {
+        if (file.is_fatal()) { m_writer.set_fatal(); }
+        return seek_ret.as_failure();
     }
 
-    return RET_OK;
+    return oc::success();
 }
 
-int MtkFormatWriter::get_entry(File &file, Entry &entry)
+oc::result<void> MtkFormatWriter::get_entry(File &file, Entry &entry)
 {
-    return _seg.get_entry(file, entry, _writer);
+    return m_seg->get_entry(file, entry, m_writer);
 }
 
-int MtkFormatWriter::write_entry(File &file, const Entry &entry)
+oc::result<void> MtkFormatWriter::write_entry(File &file, const Entry &entry)
 {
-    return _seg.write_entry(file, entry, _writer);
+    return m_seg->write_entry(file, entry, m_writer);
 }
 
-int MtkFormatWriter::write_data(File &file, const void *buf, size_t buf_size,
-                                size_t &bytes_written)
+oc::result<size_t> MtkFormatWriter::write_data(File &file, const void *buf,
+                                               size_t buf_size)
 {
-    return _seg.write_data(file, buf, buf_size, bytes_written, _writer);
+    return m_seg->write_data(file, buf, buf_size, m_writer);
 }
 
-int MtkFormatWriter::finish_entry(File &file)
+oc::result<void> MtkFormatWriter::finish_entry(File &file)
 {
-    int ret;
+    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
 
-    ret = _seg.finish_entry(file, _writer);
-    if (ret != RET_OK) {
-        return ret;
-    }
-
-    auto const *swentry = _seg.entry();
+    auto swentry = m_seg->entry();
 
     if ((swentry->type == ENTRY_TYPE_KERNEL
             || swentry->type == ENTRY_TYPE_RAMDISK)
-            && swentry->size == UINT32_MAX - sizeof(MtkHeader)) {
-        _writer.set_error(make_error_code(
-                MtkError::EntryTooLargeToFitMtkHeader));
-        return RET_FATAL;
+            && *swentry->size == UINT32_MAX - sizeof(MtkHeader)) {
+        m_writer.set_fatal();
+        return MtkError::EntryTooLargeToFitMtkHeader;
     } else if ((swentry->type == ENTRY_TYPE_MTK_KERNEL_HEADER
             || swentry->type == ENTRY_TYPE_MTK_RAMDISK_HEADER)
-            && swentry->size != sizeof(MtkHeader)) {
-        _writer.set_error(make_error_code(
-                MtkError::InvalidEntrySizeForMtkHeader));
-        return RET_FATAL;
+            && *swentry->size != sizeof(MtkHeader)) {
+        m_writer.set_fatal();
+        return MtkError::InvalidEntrySizeForMtkHeader;
     }
 
     switch (swentry->type) {
     case ENTRY_TYPE_KERNEL:
-        _hdr.kernel_size = static_cast<uint32_t>(
-                swentry->size + sizeof(MtkHeader));
+        m_hdr.kernel_size = static_cast<uint32_t>(
+                *swentry->size + sizeof(MtkHeader));
         break;
     case ENTRY_TYPE_RAMDISK:
-        _hdr.ramdisk_size = static_cast<uint32_t>(
-                swentry->size + sizeof(MtkHeader));
+        m_hdr.ramdisk_size = static_cast<uint32_t>(
+                *swentry->size + sizeof(MtkHeader));
         break;
     case ENTRY_TYPE_SECONDBOOT:
-        _hdr.second_size = swentry->size;
+        m_hdr.second_size = *swentry->size;
         break;
     case ENTRY_TYPE_DEVICE_TREE:
-        _hdr.dt_size = swentry->size;
+        m_hdr.dt_size = *swentry->size;
         break;
     }
 
-    return RET_OK;
-}
-
-int MtkFormatWriter::close(File &file)
-{
-    int ret;
-    size_t n;
-
-    if (!_file_size) {
-        uint64_t file_size;
-        if (!file.seek(0, SEEK_CUR, &file_size)) {
-            _writer.set_error(file.error(),
-                              "Failed to get file offset: %s",
-                              file.error_string().c_str());
-            return file.is_fatal() ? RET_FATAL : RET_FAILED;
-        }
-
-        _file_size = file_size;
-    }
-
-    auto const *swentry = _seg.entry();
-
-    // If successful, finish up the boot image
-    if (!swentry) {
-        // Truncate to set size
-        if (!file.truncate(*_file_size)) {
-            _writer.set_error(file.error(),
-                              "Failed to truncate file: %s",
-                              file.error_string().c_str());
-            return file.is_fatal() ? RET_FATAL : RET_FAILED;
-        }
-
-        // Update MTK header sizes
-        for (size_t i = 0; i < _seg.entries_size(); ++i) {
-            auto const *entry = _seg.entries_get(i);
-            switch (entry->type) {
-            case ENTRY_TYPE_MTK_KERNEL_HEADER:
-                ret = _mtk_header_update_size(
-                        _writer, file, entry->offset,
-                        static_cast<uint32_t>(
-                                _hdr.kernel_size - sizeof(MtkHeader)));
-                break;
-            case ENTRY_TYPE_MTK_RAMDISK_HEADER:
-                ret = _mtk_header_update_size(
-                        _writer, file, entry->offset,
-                        static_cast<uint32_t>(
-                                _hdr.ramdisk_size - sizeof(MtkHeader)));
-                break;
-            default:
-                continue;
-            }
-
-            if (ret != RET_OK) {
-                return ret;
-            }
-        }
-
-        // We need to take the performance hit and compute the SHA1 here.
-        // We can't fill in the sizes in the MTK headers when we're writing
-        // them. Thus, if we calculated the SHA1sum during write, it would be
-        // incorrect.
-        ret = _mtk_compute_sha1(_writer, _seg, file,
-                                reinterpret_cast<unsigned char *>(_hdr.id));
-        if (ret != RET_OK) {
-            return ret;
-        }
-
-        // Convert fields back to little-endian
-        android::AndroidHeader hdr = _hdr;
-        android_fix_header_byte_order(hdr);
-
-        // Seek back to beginning to write header
-        if (!file.seek(0, SEEK_SET, nullptr)) {
-            _writer.set_error(file.error(),
-                              "Failed to seek to beginning: %s",
-                              file.error_string().c_str());
-            return file.is_fatal() ? RET_FATAL : RET_FAILED;
-        }
-
-        // Write header
-        if (!file_write_fully(file, &hdr, sizeof(hdr), n) || n != sizeof(hdr)) {
-            _writer.set_error(file.error(),
-                              "Failed to write header: %s",
-                              file.error_string().c_str());
-            return file.is_fatal() ? RET_FATAL : RET_FAILED;
-        }
-    }
-
-    return RET_OK;
+    return oc::success();
 }
 
 }
@@ -467,19 +400,11 @@ int MtkFormatWriter::close(File &file)
 /*!
  * \brief Set MTK boot image output format
  *
- * \return
- *   * #RET_OK if the format is successfully set
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-int Writer::set_format_mtk()
+oc::result<void> Writer::set_format_mtk()
 {
-    using namespace mtk;
-
-    MB_PRIVATE(Writer);
-
-    std::unique_ptr<FormatWriter> format{new MtkFormatWriter(*this)};
-    return priv->register_format(std::move(format));
+    return register_format(std::make_unique<mtk::MtkFormatWriter>(*this));
 }
 
-}
 }

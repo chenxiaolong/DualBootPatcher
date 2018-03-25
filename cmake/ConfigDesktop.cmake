@@ -29,4 +29,4 @@ endif()
 
 set(CPACK_PACKAGE_NAME "DualBootPatcher")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A patcher for Android ROMs to make them multibootable")
-set(CPACK_SOURCE_GENERATOR "TGZ;TBZ2;ZIP")
+set(CPACK_GENERATOR "ZIP")

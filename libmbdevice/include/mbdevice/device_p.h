@@ -19,13 +19,9 @@
 
 #pragma once
 
-#include "mbdevice/guard_p.h"
+#include "mbdevice/flags.h"
 
-#include "mbdevice/device.h"
-
-namespace mb
-{
-namespace device
+namespace mb::device::detail
 {
 
 struct BaseOptions
@@ -78,12 +74,4 @@ struct TwOptions
     bool operator==(const TwOptions &other) const;
 };
 
-class DevicePrivate
-{
-public:
-    BaseOptions base;
-    TwOptions tw;
-};
-
-}
 }

@@ -21,9 +21,9 @@
 
 #include "mbbootimg/guard_p.h"
 
-#include <openssl/sha.h>
+#include <optional>
 
-#include "mbcommon/optional.h"
+#include <openssl/sha.h>
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
@@ -31,14 +31,10 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
-class AndroidFormatWriter : public FormatWriter
+class AndroidFormatWriter : public detail::FormatWriter
 {
 public:
     AndroidFormatWriter(Writer &writer, bool is_bump);
@@ -47,32 +43,27 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)
 
-    virtual int type() override;
-    virtual std::string name() override;
+    int type() override;
+    std::string name() override;
 
-    virtual int init() override;
-    virtual int get_header(File &file, Header &header) override;
-    virtual int write_header(File &file, const Header &header) override;
-    virtual int get_entry(File &file, Entry &entry) override;
-    virtual int write_entry(File &file, const Entry &entry) override;
-    virtual int write_data(File &file, const void *buf, size_t buf_size,
-                           size_t &bytes_written) override;
-    virtual int finish_entry(File &file) override;
-    virtual int close(File &file) override;
+    oc::result<void> open(File &file) override;
+    oc::result<void> close(File &file) override;
+    oc::result<void> get_header(File &file, Header &header) override;
+    oc::result<void> write_header(File &file, const Header &header) override;
+    oc::result<void> get_entry(File &file, Entry &entry) override;
+    oc::result<void> write_entry(File &file, const Entry &entry) override;
+    oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size) override;
+    oc::result<void> finish_entry(File &file) override;
 
 private:
+    const bool m_is_bump;
+
     // Header values
-    AndroidHeader _hdr;
+    AndroidHeader m_hdr;
 
-    optional<uint64_t> _file_size;
+    SHA_CTX m_sha_ctx;
 
-    bool _is_bump;
-
-    SHA_CTX _sha_ctx;
-
-    SegmentWriter _seg;
+    std::optional<SegmentWriter> m_seg;
 };
 
-}
-}
 }

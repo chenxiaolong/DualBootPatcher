@@ -22,7 +22,6 @@
 #include <memory>
 
 #include "mbbootimg/entry.h"
-#include "mbbootimg/entry_p.h"
 
 using namespace mb::bootimg;
 
@@ -129,10 +128,6 @@ TEST(BootImgEntryTest, CheckMoveConstructAndAssign)
         auto size = entry2.size();
         ASSERT_TRUE(size);
         ASSERT_EQ(*size, 1024u);
-
-        ASSERT_FALSE(entry.type());
-        ASSERT_FALSE(entry.name());
-        ASSERT_FALSE(entry.size());
     }
 
     {
@@ -152,10 +147,6 @@ TEST(BootImgEntryTest, CheckMoveConstructAndAssign)
         auto size = entry2.size();
         ASSERT_TRUE(size);
         ASSERT_EQ(*size, 1024u);
-
-        ASSERT_FALSE(entry.type());
-        ASSERT_FALSE(entry.name());
-        ASSERT_FALSE(entry.size());
     }
 }
 

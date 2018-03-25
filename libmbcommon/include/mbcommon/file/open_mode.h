@@ -24,12 +24,12 @@ namespace mb
 
 enum class FileOpenMode
 {
-    READ_ONLY,
-    READ_WRITE,
-    WRITE_ONLY,
-    READ_WRITE_TRUNC,
-    APPEND,
-    READ_APPEND,
+    ReadOnly,
+    ReadWrite,
+    WriteOnly,
+    ReadWriteTrunc,
+    Append,
+    ReadAppend,
 };
 
 }

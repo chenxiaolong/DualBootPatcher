@@ -49,6 +49,7 @@
 #define PROP_BLOCK_DEV_RECOVERY_PATHS   "ro.patcher.blockdevs.recovery"
 #define PROP_BLOCK_DEV_EXTRA_PATHS      "ro.patcher.blockdevs.extra"
 #define PROP_USE_FUSE_EXFAT             "ro.patcher.use_fuse_exfat"
+#define PROP_DEVICE                     "ro.patcher.device"
 
 #define PROP_MULTIBOOT_VERSION          "ro.multiboot.version"
 #define PROP_MULTIBOOT_ROM_ID           "ro.multiboot.romid"

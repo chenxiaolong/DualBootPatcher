@@ -19,11 +19,9 @@
 
 #include "mbbootimg/format/android_error.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace android
+#include <string>
+
+namespace mb::bootimg::android
 {
 
 struct AndroidErrorCategory : std::error_category
@@ -81,6 +79,4 @@ std::string AndroidErrorCategory::message(int ev) const
     }
 }
 
-}
-}
 }

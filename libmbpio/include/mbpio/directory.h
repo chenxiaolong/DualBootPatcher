@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,9 +21,11 @@
 
 #include <string>
 
-namespace io
+#include "mbcommon/common.h"
+
+namespace mb::io
 {
 
-bool createDirectories(const std::string &path);
+MB_EXPORT bool create_directories(const std::string &path);
 
 }

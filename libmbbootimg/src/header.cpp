@@ -23,86 +23,53 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "mbbootimg/header_p.h"
+#define IS_SUPPORTED(FLAG) \
+    (m_fields_supported & (FLAG))
 
-#define IS_SUPPORTED(STRUCT, FLAG) \
-    ((STRUCT)->fields_supported & (FLAG))
-
-#define ENSURE_SUPPORTED(STRUCT, FLAG) \
+#define ENSURE_SUPPORTED(FLAG) \
     do { \
-        if (!IS_SUPPORTED(STRUCT, FLAG)) { \
+        if (!IS_SUPPORTED(FLAG)) { \
             return false; \
         } \
     } while (0)
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 Header::Header()
-    : _priv_ptr(new HeaderPrivate())
+    : m_fields_supported(ALL_FIELDS)
 {
-    MB_PRIVATE(Header);
-    priv->fields_supported = ALL_FIELDS;
-}
-
-Header::Header(const Header &header)
-    : _priv_ptr(new HeaderPrivate(*header._priv_ptr))
-{
-}
-
-Header::Header(Header &&header) noexcept
-    : Header()
-{
-    _priv_ptr.swap(header._priv_ptr);
 }
 
 Header::~Header() = default;
 
-Header & Header::operator=(const Header &header)
-{
-    *_priv_ptr = HeaderPrivate(*header._priv_ptr);
-    return *this;
-}
-
-Header & Header::operator=(Header &&header) noexcept
-{
-    _priv_ptr.swap(header._priv_ptr);
-    *header._priv_ptr = HeaderPrivate();
-    return *this;
-}
-
 bool Header::operator==(const Header &rhs) const
 {
-    auto const &field1 = _priv_ptr->field;
-    auto const &field2 = rhs._priv_ptr->field;
-
-    return field1.kernel_addr == field2.kernel_addr
-            && field1.ramdisk_addr == field2.ramdisk_addr
-            && field1.second_addr == field2.second_addr
-            && field1.tags_addr == field2.tags_addr
-            && field1.ipl_addr == field2.ipl_addr
-            && field1.rpm_addr == field2.rpm_addr
-            && field1.appsbl_addr == field2.appsbl_addr
-            && field1.page_size == field2.page_size
-            && field1.board_name == field2.board_name
-            && field1.cmdline == field2.cmdline
-            && field1.hdr_kernel_size == field2.hdr_kernel_size
-            && field1.hdr_ramdisk_size == field2.hdr_ramdisk_size
-            && field1.hdr_second_size == field2.hdr_second_size
-            && field1.hdr_dt_size == field2.hdr_dt_size
-            && field1.hdr_unused == field2.hdr_unused
-            && field1.hdr_id[0] == field2.hdr_id[0]
-            && field1.hdr_id[1] == field2.hdr_id[1]
-            && field1.hdr_id[2] == field2.hdr_id[2]
-            && field1.hdr_id[3] == field2.hdr_id[3]
-            && field1.hdr_id[4] == field2.hdr_id[4]
-            && field1.hdr_id[5] == field2.hdr_id[5]
-            && field1.hdr_id[6] == field2.hdr_id[6]
-            && field1.hdr_id[7] == field2.hdr_id[7]
-            && field1.hdr_entrypoint == field2.hdr_entrypoint;
+    return m_kernel_addr == rhs.m_kernel_addr
+            && m_ramdisk_addr == rhs.m_ramdisk_addr
+            && m_second_addr == rhs.m_second_addr
+            && m_tags_addr == rhs.m_tags_addr
+            && m_ipl_addr == rhs.m_ipl_addr
+            && m_rpm_addr == rhs.m_rpm_addr
+            && m_appsbl_addr == rhs.m_appsbl_addr
+            && m_page_size == rhs.m_page_size
+            && m_board_name == rhs.m_board_name
+            && m_cmdline == rhs.m_cmdline
+            && m_hdr_kernel_size == rhs.m_hdr_kernel_size
+            && m_hdr_ramdisk_size == rhs.m_hdr_ramdisk_size
+            && m_hdr_second_size == rhs.m_hdr_second_size
+            && m_hdr_dt_size == rhs.m_hdr_dt_size
+            && m_hdr_unused == rhs.m_hdr_unused
+            && m_hdr_id[0] == rhs.m_hdr_id[0]
+            && m_hdr_id[1] == rhs.m_hdr_id[1]
+            && m_hdr_id[2] == rhs.m_hdr_id[2]
+            && m_hdr_id[3] == rhs.m_hdr_id[3]
+            && m_hdr_id[4] == rhs.m_hdr_id[4]
+            && m_hdr_id[5] == rhs.m_hdr_id[5]
+            && m_hdr_id[6] == rhs.m_hdr_id[6]
+            && m_hdr_id[7] == rhs.m_hdr_id[7]
+            && m_hdr_entrypoint == rhs.m_hdr_entrypoint;
 }
 
 bool Header::operator!=(const Header &rhs) const
@@ -112,179 +79,176 @@ bool Header::operator!=(const Header &rhs) const
 
 void Header::clear()
 {
-    MB_PRIVATE(Header);
-    *priv = HeaderPrivate();
+    m_fields_supported = ALL_FIELDS;
+
+    m_kernel_addr = {};
+    m_ramdisk_addr = {};
+    m_second_addr = {};
+    m_tags_addr = {};
+    m_ipl_addr = {};
+    m_rpm_addr = {};
+    m_appsbl_addr = {};
+    m_page_size = {};
+    m_board_name = {};
+    m_cmdline = {};
+
+    m_hdr_kernel_size = {};
+    m_hdr_ramdisk_size = {};
+    m_hdr_second_size = {};
+    m_hdr_dt_size = {};
+    m_hdr_unused = {};
+
+    for (auto &id : m_hdr_id) {
+        id = {};
+    }
+
+    m_hdr_entrypoint = {};
 }
 
 // Supported fields
 
 HeaderFields Header::supported_fields() const
 {
-    MB_PRIVATE(const Header);
-    return priv->fields_supported;
+    return m_fields_supported;
 }
 
 void Header::set_supported_fields(HeaderFields fields)
 {
-    MB_PRIVATE(Header);
-    priv->fields_supported = fields & ALL_FIELDS;
+    m_fields_supported = fields & ALL_FIELDS;
 }
 
 // Fields
 
-optional<std::string> Header::board_name() const
+std::optional<std::string> Header::board_name() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.board_name;
+    return m_board_name;
 }
 
-bool Header::set_board_name(optional<std::string> name)
+bool Header::set_board_name(std::optional<std::string> name)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::BoardName);
-    priv->field.board_name = std::move(name);
+    ENSURE_SUPPORTED(HeaderField::BoardName);
+    m_board_name = std::move(name);
     return true;
 }
 
-optional<std::string> Header::kernel_cmdline() const
+std::optional<std::string> Header::kernel_cmdline() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.cmdline;
+    return m_cmdline;
 }
 
-bool Header::set_kernel_cmdline(optional<std::string> cmdline)
+bool Header::set_kernel_cmdline(std::optional<std::string> cmdline)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::KernelCmdline);
-    priv->field.cmdline = std::move(cmdline);
+    ENSURE_SUPPORTED(HeaderField::KernelCmdline);
+    m_cmdline = std::move(cmdline);
     return true;
 }
 
-optional<uint32_t> Header::page_size() const
+std::optional<uint32_t> Header::page_size() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.page_size;
+    return m_page_size;
 }
 
-bool Header::set_page_size(optional<uint32_t> page_size)
+bool Header::set_page_size(std::optional<uint32_t> page_size)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::PageSize);
-    priv->field.page_size = std::move(page_size);
+    ENSURE_SUPPORTED(HeaderField::PageSize);
+    m_page_size = std::move(page_size);
     return true;
 }
 
-optional<uint32_t> Header::kernel_address() const
+std::optional<uint32_t> Header::kernel_address() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.kernel_addr;
+    return m_kernel_addr;
 }
 
-bool Header::set_kernel_address(optional<uint32_t> address)
+bool Header::set_kernel_address(std::optional<uint32_t> address)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::KernelAddress);
-    priv->field.kernel_addr = std::move(address);
+    ENSURE_SUPPORTED(HeaderField::KernelAddress);
+    m_kernel_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::ramdisk_address() const
+std::optional<uint32_t> Header::ramdisk_address() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.ramdisk_addr;
+    return m_ramdisk_addr;
 }
 
-bool Header::set_ramdisk_address(optional<uint32_t> address)
+bool Header::set_ramdisk_address(std::optional<uint32_t> address)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::RamdiskAddress);
-    priv->field.ramdisk_addr = std::move(address);
+    ENSURE_SUPPORTED(HeaderField::RamdiskAddress);
+    m_ramdisk_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::secondboot_address() const
+std::optional<uint32_t> Header::secondboot_address() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.second_addr;
+    return m_second_addr;
 }
 
-bool Header::set_secondboot_address(optional<uint32_t> address)
+bool Header::set_secondboot_address(std::optional<uint32_t> address)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::SecondbootAddress);
-    priv->field.second_addr = std::move(address);
+    ENSURE_SUPPORTED(HeaderField::SecondbootAddress);
+    m_second_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::kernel_tags_address() const
+std::optional<uint32_t> Header::kernel_tags_address() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.tags_addr;
+    return m_tags_addr;
 }
 
-bool Header::set_kernel_tags_address(optional<uint32_t> address)
+bool Header::set_kernel_tags_address(std::optional<uint32_t> address)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::KernelTagsAddress);
-    priv->field.tags_addr = std::move(address);
+    ENSURE_SUPPORTED(HeaderField::KernelTagsAddress);
+    m_tags_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::sony_ipl_address() const
+std::optional<uint32_t> Header::sony_ipl_address() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.ipl_addr;
+    return m_ipl_addr;
 }
 
-bool Header::set_sony_ipl_address(optional<uint32_t> address)
+bool Header::set_sony_ipl_address(std::optional<uint32_t> address)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::SonyIplAddress);
-    priv->field.ipl_addr = std::move(address);
+    ENSURE_SUPPORTED(HeaderField::SonyIplAddress);
+    m_ipl_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::sony_rpm_address() const
+std::optional<uint32_t> Header::sony_rpm_address() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.rpm_addr;
+    return m_rpm_addr;
 }
 
-bool Header::set_sony_rpm_address(optional<uint32_t> address)
+bool Header::set_sony_rpm_address(std::optional<uint32_t> address)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::SonyRpmAddress);
-    priv->field.rpm_addr = std::move(address);
+    ENSURE_SUPPORTED(HeaderField::SonyRpmAddress);
+    m_rpm_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::sony_appsbl_address() const
+std::optional<uint32_t> Header::sony_appsbl_address() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.appsbl_addr;
+    return m_appsbl_addr;
 }
 
-bool Header::set_sony_appsbl_address(optional<uint32_t> address)
+bool Header::set_sony_appsbl_address(std::optional<uint32_t> address)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::SonyAppsblAddress);
-    priv->field.appsbl_addr = std::move(address);
+    ENSURE_SUPPORTED(HeaderField::SonyAppsblAddress);
+    m_appsbl_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::entrypoint_address() const
+std::optional<uint32_t> Header::entrypoint_address() const
 {
-    MB_PRIVATE(const Header);
-    return priv->field.hdr_entrypoint;
+    return m_hdr_entrypoint;
 }
 
-bool Header::set_entrypoint_address(optional<uint32_t> address)
+bool Header::set_entrypoint_address(std::optional<uint32_t> address)
 {
-    MB_PRIVATE(Header);
-    ENSURE_SUPPORTED(priv, HeaderField::Entrypoint);
-    priv->field.hdr_entrypoint = std::move(address);
+    ENSURE_SUPPORTED(HeaderField::Entrypoint);
+    m_hdr_entrypoint = std::move(address);
     return true;
 }
 
-}
 }

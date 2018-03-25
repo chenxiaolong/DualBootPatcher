@@ -17,6 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff;
 
+@SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class Constants {
     private Constants() {
     }

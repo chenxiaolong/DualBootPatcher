@@ -50,9 +50,16 @@ static bool file_read_all(const std::string &path,
         return false;
     }
 
-    fseek(fp, 0, SEEK_END);
+    if (fseeko64(fp, 0, SEEK_END) < 0) {
+        return false;
+    }
     auto size = ftello64(fp);
-    rewind(fp);
+    if (size < 0 || std::make_unsigned_t<decltype(size)>(size) > SIZE_MAX) {
+        return false;
+    }
+    if (fseeko64(fp, 0, SEEK_SET) < 0) {
+        return false;
+    }
 
     std::vector<unsigned char> data(static_cast<size_t>(size));
     if (fread(data.data(), data.size(), 1, fp) != 1) {

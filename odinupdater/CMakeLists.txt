@@ -12,6 +12,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
 
     target_link_libraries(
         odinupdater
+        PRIVATE
         interface.global.CXXVersion
         mbsparse-static
         mbutil-static
@@ -22,12 +23,15 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     )
     target_link_libraries(
         fuse-sparse
+        PRIVATE
         interface.global.CXXVersion
         mbsparse-static
         mbcommon-static
         mblog-static
         Fuse::Fuse
     )
+
+    android_link_allow_multiple_definitions(odinupdater fuse-sparse)
 
     install(
         TARGETS odinupdater fuse-sparse

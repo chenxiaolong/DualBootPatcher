@@ -3,7 +3,9 @@
   id: pmewhl
   codenames:
     - htc_pmewhl
+    - pmewhl
     - htc_pmewl
+    - pmewl
   architecture: arm64-v8a
 
   block_devs:
@@ -30,11 +32,16 @@
       - /dev/block/platform/soc/7464900.sdhci/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p60
+    extra:
+      - /dev/block/bootdevice/by-name/extra
+      - /dev/block/bootdevice/by-name/devlog
+      - /dev/block/bootdevice/by-name/carrier
+      - /dev/block/bootdevice/by-name/cota
+      - /dev/block/bootdevice/by-name/apppreload
 
   boot_ui:
     supported: yes
     flags:
-      # (??) The TWRP device tree has "TW_HAS_DOWNLOAD_MODE = true"
       - TW_HAS_DOWNLOAD_MODE
       - TW_QCOM_RTC_FIX
     graphics_backends:
@@ -45,6 +52,7 @@
   id: pmeuhl
   codenames:
     - htc_pmeuhl
+    - pmeuhl
   architecture: arm64-v8a
 
   block_devs:
@@ -71,6 +79,12 @@
       - /dev/block/platform/soc/7464900.sdhci/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p61
+    extra:
+      - /dev/block/bootdevice/by-name/extra
+      - /dev/block/bootdevice/by-name/devlog
+      - /dev/block/bootdevice/by-name/carrier
+      - /dev/block/bootdevice/by-name/cota
+      - /dev/block/bootdevice/by-name/apppreload
 
   boot_ui:
     supported: yes

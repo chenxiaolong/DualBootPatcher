@@ -40,16 +40,16 @@
 
 #include "mbcommon/common.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/selinux.h"
-#include "mbutil/string.h"
 
 #include "multiboot.h"
 
 #define LOG_TAG "mbtool/sepolpatch"
 
 
-extern "C" int policydb_index_decls(policydb_t *p);
+extern "C" int policydb_index_decls(sepol_handle_t *handle, policydb_t *p);
 
 namespace mb
 {
@@ -327,7 +327,7 @@ bool selinux_raw_reindex(policydb_t *pdb)
 {
     // Recreate maps like type_val_to_struct. libsepol will handle memory
     // deallocation for the old maps
-    return policydb_index_decls(pdb) == 0
+    return policydb_index_decls(nullptr, pdb) == 0
             && policydb_index_classes(pdb) == 0
             && policydb_index_others(nullptr, pdb, 0) == 0;
 }
@@ -431,8 +431,7 @@ bool selinux_make_permissive(policydb_t *pdb,
         return true;
     case SELinuxResult::Error:
         LOGE("Failed to set type %s to permissive", type_str);
-        [[gnu::fallthrough]];
-        [[clang::fallthrough]];
+        [[fallthrough]];
     default:
         return false;
     }
@@ -825,7 +824,7 @@ static inline bool add_rules(policydb_t *pdb,
     return true;
 }
 
-MB_UNUSED
+[[maybe_unused]]
 static inline bool remove_rules(policydb_t *pdb,
                                 const char *source,
                                 const char *target,
@@ -962,20 +961,23 @@ static bool fix_data_media_rules(policydb_t *pdb)
         return true;
     }
 
-    std::string context;
-    if (!util::selinux_lget_context(path, context)) {
-        LOGE("%s: Failed to get context: %s", path, strerror(errno));
+    auto context = util::selinux_lget_context(path);
+    if (!context) {
+        LOGE("%s: Failed to get context: %s",
+             path, context.error().message().c_str());
         path = "/data/media";
-        if (!util::selinux_lget_context(path, context)) {
-            LOGE("%s: Failed to get context: %s", path, strerror(errno));
+        context = util::selinux_lget_context(path);
+        if (!context) {
+            LOGE("%s: Failed to get context: %s",
+                 path, context.error().message().c_str());
             // Don't fail if /data/media does not exist
             return errno == ENOENT;
         }
     }
 
-    std::vector<std::string> pieces = util::split(context, ":");
+    std::vector<std::string> pieces = split(context.value(), ':');
     if (pieces.size() < 3) {
-        LOGE("%s: Malformed context string: %s", path, context.c_str());
+        LOGE("%s: Malformed context string: %s", path, context.value().c_str());
         return false;
     }
     const std::string &type = pieces[2];
@@ -1024,9 +1026,13 @@ static bool create_mbtool_types(policydb_t *pdb)
     }
 
     // Allow apps to connect to the daemon
-    ff(add_rules(pdb, "untrusted_app", "mb_exec", "unix_stream_socket", {
-        "connectto",
-    }));
+    for (auto const &type : { "untrusted_app", "untrusted_app_25" }) {
+        if (find_type(pdb, type)) {
+            ff(add_rules(pdb, type, "mb_exec", "unix_stream_socket", {
+                "connectto",
+            }));
+        }
+    }
 
     // Allow zygote to write to our stdout pipe when rebooting
     ff(add_rules(pdb, "zygote", "init", "fifo_file", { "write" }));

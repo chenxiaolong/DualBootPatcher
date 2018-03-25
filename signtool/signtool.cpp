@@ -26,10 +26,9 @@
 #include <openssl/err.h>
 
 // libmbsign
-#include "mbsign/mbsign.h"
+#include "mbsign/sign.h"
 
 using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
-using ScopedEVP_PKEY = std::unique_ptr<EVP_PKEY, decltype(EVP_PKEY_free) *>;
 
 static void openssl_log_errors()
 {
@@ -65,8 +64,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    ScopedEVP_PKEY private_key(mb::sign::load_private_key_from_file(
-            file_pkcs12, mb::sign::KEY_FORMAT_PKCS12, pass), EVP_PKEY_free);
+    auto private_key = mb::sign::load_private_key_from_file(
+            file_pkcs12, mb::sign::KeyFormat::Pkcs12, pass);
     if (!private_key) {
         return EXIT_FAILURE;
     }
@@ -84,20 +83,27 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    bool ret = mb::sign::sign_data(bio_data_in.get(), bio_sig_out.get(),
-                                   private_key.get());
+    if (auto ret = mb::sign::sign_data(
+            *bio_data_in, *bio_sig_out, *private_key.value()); !ret) {
+        fprintf(stderr, "Failed to sign data: %s\n",
+                ret.error().ec.message().c_str());
+        if (ret.error().has_openssl_error) {
+            openssl_log_errors();
+        }
+        return EXIT_FAILURE;
+    }
 
     if (!BIO_free(bio_data_in.release())) {
         fprintf(stderr, "%s: Failed to close input file\n", file_input);
         openssl_log_errors();
-        ret = false;
+        return EXIT_FAILURE;
     }
 
     if (!BIO_free(bio_sig_out.release())) {
         fprintf(stderr, "%s: Failed to close output file\n", file_output);
         openssl_log_errors();
-        ret = false;
+        return EXIT_FAILURE;
     }
 
-    return ret ? EXIT_SUCCESS : EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }

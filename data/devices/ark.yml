@@ -6,6 +6,8 @@
     - benefit
     - peach
     - trunk
+    - ark_benefit_a3
+    - benefit_a3
   architecture: armeabi-v7a
 
   block_devs:

@@ -1,0 +1,25 @@
+From aeb17694ab72e598e641a42e3de80a2812c84851 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
+Date: Sun, 24 Dec 2017 19:02:44 -0500
+Subject: [PATCH 4/5] libcutils: Fix missing includes
+
+---
+ libutils/PropertyMap.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libutils/PropertyMap.cpp b/libutils/PropertyMap.cpp
+index 4bcdd0f7f..c83203679 100644
+--- a/libutils/PropertyMap.cpp
++++ b/libutils/PropertyMap.cpp
+@@ -16,6 +16,8 @@
+ 
+ #define LOG_TAG "PropertyMap"
+ 
++#include <cstdlib>
++
+ #include <utils/PropertyMap.h>
+ 
+ // Enables debug output for the parser.
+-- 
+2.14.3
+

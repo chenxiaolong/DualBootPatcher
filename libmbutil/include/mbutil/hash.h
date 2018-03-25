@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,17 +19,18 @@
 
 #pragma once
 
+#include <array>
 #include <string>
 
 #include <openssl/sha.h>
 
-namespace mb
-{
-namespace util
+#include "mbcommon/outcome.h"
+
+namespace mb::util
 {
 
-bool sha512_hash(const std::string &path,
-                 unsigned char digest[SHA512_DIGEST_LENGTH]);
+using Sha512Digest = std::array<unsigned char, SHA512_DIGEST_LENGTH>;
 
-}
+oc::result<Sha512Digest> sha512_hash(const std::string &path);
+
 }

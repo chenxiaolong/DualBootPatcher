@@ -23,9 +23,7 @@
 
 #include <cstdio>
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 class MB_EXPORT StdioLogger : public BaseLogger
@@ -41,5 +39,4 @@ private:
     std::FILE *_stream;
 };
 
-}
 }

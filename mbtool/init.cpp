@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -36,9 +36,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "minizip/ioandroid.h"
-#include "minizip/ioapi_buf.h"
-#include "minizip/unzip.h"
+#include "mz.h"
+#include "mz_strm_android.h"
+#include "mz_strm_buf.h"
+#include "mz_zip.h"
 
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
@@ -199,26 +200,17 @@ static bool stop_daemon()
     return wait_for_pid("daemon", daemon_pid) != -1;
 }
 
-static util::CmdlineIterAction set_kernel_properties_cb(const std::string &name,
-                                                        const optional<std::string> &value,
-                                                        void *userdata)
-{
-    (void) userdata;
-
-    if (starts_with(name, "androidboot.") && name.size() > 12 && value) {
-        char buf[PROP_NAME_MAX];
-        int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name.c_str() + 12);
-        if (n >= 0 && n < static_cast<int>(sizeof(buf))) {
-            property_set(buf, *value);
-        }
-    }
-
-    return util::CmdlineIterAction::Continue;
-}
-
 static bool set_kernel_properties()
 {
-    util::kernel_cmdline_iter(&set_kernel_properties_cb, nullptr);
+    if (auto cmdline = util::kernel_cmdline()) {
+        for (auto const &[k, v] : cmdline.value()) {
+            if (starts_with(k, "androidboot.") && k.size() > 12 && v) {
+                std::string key("ro.boot.");
+                key += std::string_view(k).substr(12);
+                property_set(key, *v);
+            }
+        }
+    }
 
     struct {
         const char *src_prop;
@@ -275,13 +267,12 @@ static bool properties_cleanup()
 
 static std::string get_rom_id()
 {
-    std::string rom_id;
-
-    if (!util::file_first_line("/romid", rom_id)) {
+    auto rom_id = util::file_first_line("/romid");
+    if (!rom_id) {
         return {};
     }
 
-    return rom_id;
+    return std::move(rom_id.value());
 }
 
 // Operating on paths instead of fd's should be safe enough since, at this
@@ -882,10 +873,35 @@ static bool create_layout_version()
         return false;
     }
 
-    if (!util::selinux_set_context(
-            "/data/.layout_version", "u:object_r:install_data_file:s0")) {
+    if (auto ret = util::selinux_set_context("/data/.layout_version",
+            "u:object_r:install_data_file:s0"); !ret) {
         LOGE("%s: Failed to set SELinux context: %s",
-             "/data/.layout_version", strerror(errno));
+             "/data/.layout_version", ret.error().message().c_str());
+        return false;
+    }
+
+    return true;
+}
+
+static bool disable_installd()
+{
+    static constexpr char installd_init[] = "/system/etc/init/installd.rc";
+
+    if (access(installd_init, R_OK) < 0) {
+        if (errno == ENOENT) {
+            LOGV("%s: installd init file not found", installd_init);
+            return true;
+        } else {
+            LOGE("%s: Failed to access file: %s",
+                 installd_init, strerror(errno));
+            return false;
+        }
+    }
+
+    if (auto ret = util::mount(
+            "/dev/null", installd_init, "", MS_BIND | MS_RDONLY, ""); !ret) {
+        LOGE("%s: Failed to bind mount /dev/null: %s",
+             installd_init, ret.error().message().c_str());
         return false;
     }
 
@@ -906,13 +922,17 @@ static bool disable_spota()
         return true;
     }
 
-    if (!util::mkdir_recursive(spota_dir, 0) && errno != EEXIST) {
-        LOGE("%s: Failed to create directory: %s", spota_dir, strerror(errno));
+    if (auto r = util::mkdir_recursive(spota_dir, 0);
+            !r && r.error() != std::errc::file_exists) {
+        LOGE("%s: Failed to create directory: %s", spota_dir,
+             r.error().message().c_str());
         return false;
     }
 
-    if (!util::mount("tmpfs", spota_dir, "tmpfs", MS_RDONLY, "mode=0000")) {
-        LOGE("%s: Failed to mount tmpfs: %s", spota_dir, strerror(errno));
+    if (auto ret = util::mount(
+            "tmpfs", spota_dir, "tmpfs", MS_RDONLY, "mode=0000"); !ret) {
+        LOGE("%s: Failed to mount tmpfs: %s",
+             spota_dir, ret.error().message().c_str());
         return false;
     }
 
@@ -923,44 +943,68 @@ static bool disable_spota()
 
 static bool extract_zip(const char *source, const char *target)
 {
-    unzFile uf;
-    zlib_filefunc64_def zFunc;
-    ourbuffer_t iobuf;
+    void *stream;
+    if (!mz_stream_android_create(&stream)) {
+        LOGE("Failed to create base stream");
+        return false;
+    }
 
-    memset(&zFunc, 0, sizeof(zFunc));
-    memset(&iobuf, 0, sizeof(iobuf));
+    auto destroy_stream = finally([&] {
+        mz_stream_delete(&stream);
+    });
 
-    fill_android_filefunc64(&iobuf.filefunc64);
-    fill_buffer_filefunc64(&zFunc, &iobuf);
+    void *buf_stream;
+    if (!mz_stream_buffered_create(&buf_stream)) {
+        LOGE("Failed to create buffered stream");
+        return false;
+    }
 
-    uf = unzOpen2_64(source, &zFunc);
-    if (!uf) {
+    auto destroy_buf_stream = finally([&] {
+        mz_stream_delete(&buf_stream);
+    });
+
+    if (mz_stream_set_base(buf_stream, stream) != MZ_OK) {
+        LOGE("Failed to set base stream for buffered stream");
+        return false;
+    }
+
+    if (mz_stream_open(buf_stream, source, MZ_OPEN_MODE_READ) != MZ_OK) {
+        LOGE("%s: Failed to open stream", source);
+        return false;
+    }
+
+    auto close_stream = finally([&] {
+        mz_stream_close(buf_stream);
+    });
+
+    auto *handle = mz_zip_open(buf_stream, MZ_OPEN_MODE_READ);
+    if (!handle) {
         LOGE("%s: Failed to open zip", source);
         return false;
     }
 
     auto close_zip = finally([&]{
-        unzClose(uf);
+        mz_zip_close(handle);
     });
 
-    if (unzLocateFile(uf, "exec", nullptr) != UNZ_OK) {
+    if (mz_zip_locate_entry(handle, "exec", nullptr) != MZ_OK) {
         LOGE("%s: Failed to find 'exec' in zip", source);
         return false;
     }
 
-    if (unzOpenCurrentFile(uf) != UNZ_OK) {
+    if (mz_zip_entry_read_open(handle, 0, nullptr) != MZ_OK) {
         LOGE("%s: Failed to open file in zip", source);
         return false;
     }
 
-    auto close_inner_file = finally([&]{
-        unzCloseCurrentFile(uf);
+    auto close_inner_file = finally([&] {
+        mz_zip_entry_close(handle);
     });
 
     std::string target_file(target);
     target_file += "/exec";
 
-    util::mkdir_recursive(target, 0755);
+    (void) util::mkdir_recursive(target, 0755);
 
     FILE *fp = fopen(target_file.c_str(), "wb");
     if (!fp) {
@@ -969,23 +1013,27 @@ static bool extract_zip(const char *source, const char *target)
         return false;
     }
 
-    char buf[8192];
+    auto close_fp = finally([&] {
+        fclose(fp);
+    });
+
+    char buf[UINT16_MAX];
     int bytes_read;
 
-    while ((bytes_read = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
+    while ((bytes_read = mz_zip_entry_read(handle, buf, sizeof(buf))) > 0) {
         size_t bytes_written = fwrite(buf, 1, static_cast<size_t>(bytes_read),
                                       fp);
         if (bytes_written == 0) {
-            bool ret = !ferror(fp);
-            fclose(fp);
-            return ret;
+            LOGE("%s: Truncated write", target);
+            return false;
         }
     }
     if (bytes_read != 0) {
         LOGE("%s: Failed before reaching inner file's EOF", source);
-        fclose(fp);
         return false;
     }
+
+    close_fp.dismiss();
 
     if (fclose(fp) < 0) {
         LOGE("%s: Error when closing file: %s",
@@ -1002,12 +1050,11 @@ static bool launch_boot_menu()
     bool skip = false;
 
     if (stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
-        std::string skip_rom;
-        util::file_first_line(BOOT_UI_SKIP_PATH, skip_rom);
+        auto skip_rom = util::file_first_line(BOOT_UI_SKIP_PATH);
 
         std::string rom_id = get_rom_id();
 
-        if (skip_rom == rom_id) {
+        if (skip_rom && skip_rom.value() == rom_id) {
             LOGV("Performing one-time skipping of Boot UI");
             skip = true;
         } else {
@@ -1045,9 +1092,9 @@ static bool launch_boot_menu()
     }
 
     auto clean_up = finally([]{
-        if (!util::delete_recursive(BOOT_UI_PATH)) {
+        if (auto r = util::delete_recursive(BOOT_UI_PATH); !r) {
             LOGW("%s: Failed to recursively delete: %s",
-                 BOOT_UI_PATH, strerror(errno));
+                 BOOT_UI_PATH, r.error().message().c_str());
         }
     });
 
@@ -1159,8 +1206,8 @@ int init_main(int argc, char *argv[])
     mkdir("/system", 0755);
     mkdir("/cache", 0770);
     mkdir("/data", 0771);
-    util::chown("/cache", "system", "cache", 0);
-    util::chown("/data", "system", "system", 0);
+    (void) util::chown("/cache", "system", "cache", 0);
+    (void) util::chown("/data", "system", "system", 0);
 
     // Redirect std{in,out,err} to /dev/null
     open_devnull_stdio();
@@ -1174,9 +1221,14 @@ int init_main(int argc, char *argv[])
     LOGV("Booting up with version %s (%s)",
          version(), git_version());
 
-    std::vector<unsigned char> contents;
-    util::file_read_all(DEVICE_JSON_PATH, contents);
-    contents.push_back('\0');
+    auto contents = util::file_read_all(DEVICE_JSON_PATH);
+    if (!contents) {
+        LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH,
+             contents.error().message().c_str());
+        critical_failure();
+        return EXIT_FAILURE;
+    }
+    contents.value().push_back('\0');
 
     // Start probing for devices so we have somewhere to write logs for
     // critical_failure()
@@ -1185,8 +1237,8 @@ int init_main(int argc, char *argv[])
     Device device;
     JsonError error;
 
-    if (!device_from_json(
-            reinterpret_cast<char *>(contents.data()), device, error)) {
+    if (!device_from_json(reinterpret_cast<char *>(
+            contents.value().data()), device, error)) {
         LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
         critical_failure();
         return EXIT_FAILURE;
@@ -1212,7 +1264,7 @@ int init_main(int argc, char *argv[])
         LOGW("%s: Failed to access file: %s", fstab.c_str(), strerror(errno));
         LOGW("Continuing anyway...");
         fstab = "/fstab.MBTOOL_DUMMY_DO_NOT_USE";
-        util::create_empty_file(fstab);
+        (void) util::create_empty_file(fstab);
     }
 
     // Get ROM ID from /romid
@@ -1278,6 +1330,11 @@ int init_main(int argc, char *argv[])
     write_fstab_hack(fstab.c_str());
     add_mbtool_services(config.indiv_app_sharing);
     strip_manual_mounts();
+
+    // Disable installd on Android 7.0+
+    if (config.indiv_app_sharing) {
+        disable_installd();
+    }
 
     // Data modifications
     create_layout_version();

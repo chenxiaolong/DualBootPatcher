@@ -27,9 +27,7 @@
 
 using namespace rapidjson;
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 const char * find_schema(const std::string &uri)
@@ -44,5 +42,4 @@ const char * find_schema(const std::string &uri)
     return it == g_schemas.end() ? nullptr : it->second;
 }
 
-}
 }

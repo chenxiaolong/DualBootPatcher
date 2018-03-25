@@ -61,9 +61,7 @@
 #define VLOGD(...) TVLOGD(LOG_TAG, __VA_ARGS__)
 #define VLOGV(...) TVLOGV(LOG_TAG, __VA_ARGS__)
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 class BaseLogger;
@@ -78,5 +76,4 @@ MB_EXPORT void log_v(LogLevel prio, const char *tag, const char *fmt, va_list ap
 MB_EXPORT std::string format();
 MB_EXPORT void set_format(std::string fmt);
 
-}
 }

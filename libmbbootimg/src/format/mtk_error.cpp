@@ -19,11 +19,9 @@
 
 #include "mbbootimg/format/mtk_error.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace mtk
+#include <string>
+
+namespace mb::bootimg::mtk
 {
 
 struct MtkErrorCategory : std::error_category
@@ -71,6 +69,4 @@ std::string MtkErrorCategory::message(int ev) const
     }
 }
 
-}
-}
 }

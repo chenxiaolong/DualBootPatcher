@@ -23,38 +23,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         COMPILE_FLAGS
         "-Wno-format-nonliteral"
     )
-
-    set_source_files_properties(
-        src/external/musl/memmem.c
-        PROPERTIES
-        COMPILE_FLAGS
-        "-Wno-cast-qual -Wno-comma -Wno-conversion -Wno-sign-compare -Wno-sign-conversion"
-    )
-
-    if(ANDROID)
-        set_source_files_properties(
-            src/external/gnulib/getdelim.c
-            PROPERTIES
-            COMPILE_FLAGS
-            "-Wno-conditional-uninitialized -Wno-conversion -Wno-sign-conversion"
-        )
-    endif()
-endif()
-
-if(WIN32)
-    set_source_files_properties(
-        src/external/musl/memmem.c
-        PROPERTIES
-        COMPILE_FLAGS
-        "-Wno-cast-qual -Wno-conversion -Wno-sign-compare -Wno-sign-conversion"
-    )
-
-    set_source_files_properties(
-        src/external/gnulib/getdelim.c
-        PROPERTIES
-        COMPILE_FLAGS
-        "-Wno-conversion -Wno-sign-compare -Wno-sign-conversion"
-    )
 endif()
 
 set(variants)
@@ -78,7 +46,9 @@ foreach(variant ${variants})
         ${lib_target}
         ${uvariant}
         src/capi/util.cpp
+        src/common.cpp
         src/error.cpp
+        src/error_code.cpp
         src/file/callbacks.cpp
         src/file/fd.cpp
         src/file/memory.cpp
@@ -88,32 +58,16 @@ foreach(variant ${variants})
         src/file.cpp
         src/file_error.cpp
         src/file_util.cpp
-        src/libc/stdio.cpp
-        src/libc/string.cpp
         src/locale.cpp
         src/string.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
     )
 
-    if(ANDROID)
-        target_sources(${lib_target} PRIVATE src/external/musl/memmem.c)
-
-        if(${ANDROID_PLATFORM_LEVEL} LESS 21)
-            target_sources(
-                ${lib_target}
-                PRIVATE
-                src/external/gnulib/getdelim.c
-                src/external/gnulib/getline.c
-            )
-        endif()
-    elseif(WIN32)
+    if(WIN32)
         target_sources(
             ${lib_target}
             PRIVATE
             src/file/win32.cpp
-            src/external/gnulib/getdelim.c
-            src/external/gnulib/getline.c
-            src/external/musl/memmem.c
         )
     endif()
 
@@ -140,7 +94,7 @@ foreach(variant ${variants})
     target_link_libraries(
         ${lib_target}
         PUBLIC
-        optional
+        outcome
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library
@@ -180,9 +134,11 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/file/test_memory.cpp
         tests/file/test_posix.cpp
         tests/test_endian.cpp
+        tests/test_error_code.cpp
         tests/test_file.cpp
         tests/test_file_error.cpp
         tests/test_file_util.cpp
+        tests/test_integer.cpp
         tests/test_locale.cpp
         tests/test_string.cpp
     )

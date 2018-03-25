@@ -20,9 +20,7 @@
 #pragma once
 
 #ifdef __cplusplus
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 #endif
 
@@ -64,6 +62,5 @@ enum ErrorCode
 };
 
 #ifdef __cplusplus
-}
 }
 #endif

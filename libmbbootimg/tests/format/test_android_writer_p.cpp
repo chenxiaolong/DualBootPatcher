@@ -36,8 +36,8 @@ TEST(AndroidWriterInternalsTest, CheckHeaderCleared)
 
     MbBiHeader *header2;
 
-    ASSERT_EQ(header_set_page_size(ctx.client_header, 2048), RET_OK);
-    ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
+    ASSERT_TRUE(header_set_page_size(ctx.client_header, 2048));
+    ASSERT_TRUE(android_writer_get_header(biw.get(), &ctx, &header2));
     ASSERT_FALSE(header_page_size_is_set(header2));
 }
 
@@ -54,7 +54,7 @@ TEST(AndroidWriterInternalsTest, CheckHeaderSupportedFields)
     MbBiHeader *header2;
 
     // We don't care about the actual value, just that it was changed
-    ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
+    ASSERT_TRUE(android_writer_get_header(biw.get(), &ctx, &header2));
     ASSERT_NE(header_supported_fields(header2), HEADER_ALL_FIELDS);
 }
 
@@ -71,19 +71,19 @@ TEST(AndroidWriterInternalsTest, CheckHeaderFieldsSet)
     MbBiHeader *header2;
 
     // Get header instance
-    ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
+    ASSERT_TRUE(android_writer_get_header(biw.get(), &ctx, &header2));
 
     // Set some dummy values
-    ASSERT_EQ(header_set_kernel_address(header2, 0x11223344), RET_OK);
-    ASSERT_EQ(header_set_ramdisk_address(header2, 0x22334455), RET_OK);
-    ASSERT_EQ(header_set_secondboot_address(header2, 0x33445566), RET_OK);
-    ASSERT_EQ(header_set_kernel_tags_address(header2, 0x44556677), RET_OK);
-    ASSERT_EQ(header_set_page_size(header2, 2048), RET_OK);
-    ASSERT_EQ(header_set_board_name(header2, "hello"), RET_OK);
-    ASSERT_EQ(header_set_kernel_cmdline(header2, "world"), RET_OK);
+    ASSERT_TRUE(header_set_kernel_address(header2, 0x11223344));
+    ASSERT_TRUE(header_set_ramdisk_address(header2, 0x22334455));
+    ASSERT_TRUE(header_set_secondboot_address(header2, 0x33445566));
+    ASSERT_TRUE(header_set_kernel_tags_address(header2, 0x44556677));
+    ASSERT_TRUE(header_set_page_size(header2, 2048));
+    ASSERT_TRUE(header_set_board_name(header2, "hello"));
+    ASSERT_TRUE(header_set_kernel_cmdline(header2, "world"));
 
     // Write header
-    ASSERT_EQ(android_writer_write_header(biw.get(), &ctx, header2), RET_OK);
+    ASSERT_TRUE(android_writer_write_header(biw.get(), &ctx, header2));
 
     // Check that the native header matches
     ASSERT_EQ(ctx.hdr.kernel_addr, 0x11223344);
@@ -108,11 +108,10 @@ TEST(AndroidWriterInternalsTest, MissingPageSizeShouldFail)
     MbBiHeader *header2;
 
     // Get header instance
-    ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
+    ASSERT_TRUE(android_writer_get_header(biw.get(), &ctx, &header2));
 
     // Write header
-    ASSERT_EQ(android_writer_write_header(biw.get(), &ctx, header2),
-              RET_FAILED);
+    ASSERT_FALSE(android_writer_write_header(biw.get(), &ctx, header2));
     ASSERT_TRUE(strstr(writer_error_string(biw.get()), "Page size"));
 }
 
@@ -129,14 +128,13 @@ TEST(AndroidWriterInternalsTest, InvalidPageSizeShouldFail)
     MbBiHeader *header2;
 
     // Get header instance
-    ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
+    ASSERT_TRUE(android_writer_get_header(biw.get(), &ctx, &header2));
 
     // Set page size
-    ASSERT_EQ(header_set_page_size(header2, 1234), RET_OK);
+    ASSERT_TRUE(header_set_page_size(header2, 1234));
 
     // Write header
-    ASSERT_EQ(android_writer_write_header(biw.get(), &ctx, header2),
-              RET_FAILED);
+    ASSERT_FALSE(android_writer_write_header(biw.get(), &ctx, header2));
     ASSERT_TRUE(strstr(writer_error_string(biw.get()), "Invalid page size"));
 }
 
@@ -153,16 +151,15 @@ TEST(AndroidWriterInternalsTest, OversizedBoardNameShouldFail)
     MbBiHeader *header2;
 
     // Get header instance
-    ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
-    ASSERT_EQ(header_set_page_size(header2, 2048), RET_OK);
+    ASSERT_TRUE(android_writer_get_header(biw.get(), &ctx, &header2));
+    ASSERT_TRUE(header_set_page_size(header2, 2048));
 
     // Set board name
     std::string name(BOOT_NAME_SIZE, 'c');
-    ASSERT_EQ(header_set_board_name(header2, name.c_str()), RET_OK);
+    ASSERT_TRUE(header_set_board_name(header2, name.c_str()));
 
     // Write header
-    ASSERT_EQ(android_writer_write_header(biw.get(), &ctx, header2),
-              RET_FAILED);
+    ASSERT_FALSE(android_writer_write_header(biw.get(), &ctx, header2));
     ASSERT_TRUE(strstr(writer_error_string(biw.get()), "Board name"));
 }
 
@@ -179,16 +176,15 @@ TEST(AndroidWriterInternalsTest, OversizedCmdlineShouldFail)
     MbBiHeader *header2;
 
     // Get header instance
-    ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
-    ASSERT_EQ(header_set_page_size(header2, 2048), RET_OK);
+    ASSERT_TRUE(android_writer_get_header(biw.get(), &ctx, &header2));
+    ASSERT_TRUE(header_set_page_size(header2, 2048));
 
     // Set board name
     std::string args(BOOT_ARGS_SIZE, 'c');
-    ASSERT_EQ(header_set_kernel_cmdline(header2, args.c_str()), RET_OK);
+    ASSERT_TRUE(header_set_kernel_cmdline(header2, args.c_str()));
 
     // Write header
-    ASSERT_EQ(android_writer_write_header(biw.get(), &ctx, header2),
-              RET_FAILED);
+    ASSERT_FALSE(android_writer_write_header(biw.get(), &ctx, header2));
     ASSERT_TRUE(strstr(writer_error_string(biw.get()), "Kernel cmdline"));
 }
 #endif

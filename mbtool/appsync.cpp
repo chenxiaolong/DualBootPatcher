@@ -20,6 +20,7 @@
 #include "appsync.h"
 
 #include <algorithm>
+#include <chrono>
 
 #include <cassert>
 #include <cstdio>
@@ -55,7 +56,6 @@
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
 #include "mbutil/string.h"
-#include "mbutil/time.h"
 
 #include "appsyncmanager.h"
 #include "multiboot.h"
@@ -82,6 +82,8 @@
 #define COMMAND_BUF_SIZE                1024
 
 #define PACKAGES_XML_PATH_FMT           "%s/system/packages.xml"
+
+using namespace std::chrono;
 
 namespace mb
 {
@@ -157,7 +159,7 @@ static bool prepare_appsync()
         return false;
     }
 
-    uint64_t start = util::current_time_ms(), stop;
+    auto start = steady_clock::now();
 
     for (auto it = config.shared_pkgs.begin();
             it != config.shared_pkgs.end();) {
@@ -193,10 +195,12 @@ static bool prepare_appsync()
         disable_data_sharing = true;
     }
 
-    stop = util::current_time_ms();
-    LOGD("Initialization stage 1 took %" PRIu64 "ms", stop - start);
+    auto stop = steady_clock::now();
+    LOGD("Initialization stage 1 took %" PRIu64 "ms",
+         static_cast<uint64_t>(duration_cast<milliseconds>(
+                stop - start).count()));
 
-    start = util::current_time_ms();
+    start = steady_clock::now();
 
     // Actually share the data
     for (SharedPackage &shared_pkg : config.shared_pkgs) {
@@ -213,8 +217,10 @@ static bool prepare_appsync()
         }
     }
 
-    stop = util::current_time_ms();
-    LOGD("Initialization stage 2 took %" PRIu64 "ms", stop - start);
+    stop = steady_clock::now();
+    LOGD("Initialization stage 2 took %" PRIu64 "ms",
+         static_cast<uint64_t>(duration_cast<milliseconds>(
+                stop - start).count()));
 
     return true;
 }
@@ -257,16 +263,13 @@ static void put_socket_to_env(const char *name, int fd)
  */
 static int create_new_socket()
 {
-    struct sockaddr_un addr;
-    int fd;
-
-    fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (fd < 0) {
         LOGE("Failed to create socket: %s", strerror(errno));
         return -1;
     }
 
-    memset(&addr, 0, sizeof(addr));
+    sockaddr_un addr = {};
     addr.sun_family = AF_LOCAL;
     snprintf(addr.sun_path, sizeof(addr.sun_path), "%s",
              INSTALLD_SOCKET_PATH);
@@ -286,7 +289,7 @@ static int create_new_socket()
 
     chown(addr.sun_path, INSTALLD_SOCKET_UID, INSTALLD_SOCKET_GID);
     chmod(addr.sun_path, INSTALLD_SOCKET_PERMS);
-    util::selinux_set_context(addr.sun_path, INSTALLD_SOCKET_CONTEXT);
+    (void) util::selinux_set_context(addr.sun_path, INSTALLD_SOCKET_CONTEXT);
 
     // Make sure close-on-exec is cleared to the fd remains open across execve()
     fcntl(fd, F_SETFD, 0);
@@ -306,31 +309,35 @@ static int create_new_socket()
 static bool receive_message(int fd, char *buf, std::size_t size,
                             bool is_async, int &async_id)
 {
-    unsigned short count;
-
     if (is_async) {
-        if (!util::socket_read_int32(fd, async_id)) {
-            LOGE("Failed to receive async command ID: %s", strerror(errno));
+        auto ret = util::socket_read_int32(fd);
+        if (!ret) {
+            LOGE("Failed to receive async command ID: %s",
+                 ret.error().message().c_str());
             return false;
         }
+        async_id = ret.value();
     }
 
-    if (!util::socket_read_uint16(fd, count)) {
-        LOGE("Failed to read command size: %s", strerror(errno));
+    auto count = util::socket_read_uint16(fd);
+    if (!count) {
+        LOGE("Failed to read command size: %s",
+             count.error().message().c_str());
         return false;
     }
 
-    if (count < 1 || count >= size) {
-        LOGE("Invalid size %u", count);
+    if (count.value() < 1 || count.value() >= size) {
+        LOGE("Invalid size %u", count.value());
         return false;
     }
 
-    if (util::socket_read(fd, buf, count) != count) {
-        LOGE("Failed to read command: %s", strerror(errno));
+    if (auto ret = util::socket_read(fd, buf, count.value());
+            !ret || ret.value() != count.value()) {
+        LOGE("Failed to read command: %s", ret.error().message().c_str());
         return false;
     }
 
-    buf[count] = 0;
+    buf[count.value()] = 0;
 
     return true;
 }
@@ -344,19 +351,21 @@ static bool send_message(int fd, const char *command,
     auto count = static_cast<uint16_t>(strlen(command));
 
     if (is_async) {
-        if (!util::socket_write_int32(fd, async_id)) {
-            LOGE("Failed to write async command ID: %s", strerror(errno));
+        if (auto ret = util::socket_write_int32(fd, async_id); !ret) {
+            LOGE("Failed to write async command ID: %s",
+                 ret.error().message().c_str());
             return false;
         }
     }
 
-    if (!util::socket_write_uint16(fd, count)) {
-        LOGE("Failed to write command size: %s", strerror(errno));
+    if (auto ret = util::socket_write_uint16(fd, count); !ret) {
+        LOGE("Failed to write command size: %s", ret.error().message().c_str());
         return false;
     }
 
-    if (util::socket_write(fd, command, count) != count) {
-        LOGE("Failed to write command: %s", strerror(errno));
+    if (auto ret = util::socket_write(fd, command, count);
+            !ret || ret.value() != count) {
+        LOGE("Failed to write command: %s", ret.error().message().c_str());
         return false;
     }
 
@@ -374,9 +383,7 @@ static bool send_message(int fd, const char *command,
  */
 static int connect_to_installd()
 {
-    struct sockaddr_un addr;
-
-    memset(&addr, 0, sizeof(addr));
+    sockaddr_un addr = {};
     addr.sun_family = AF_LOCAL;
     snprintf(addr.sun_path, sizeof(addr.sun_path), "%s",
              INSTALLD_SOCKET_PATH);
@@ -467,8 +474,7 @@ static bool do_remove(const std::vector<std::string> &args)
 {
 #define TAG "[remove] "
     const std::string &pkgname = args[0];
-    MB_UNUSED
-    int userid;
+    int userid [[maybe_unused]];
     str_to_num(args[1].c_str(), 10, userid);
 
     for (auto it = config.shared_pkgs.begin();
@@ -503,7 +509,8 @@ static bool do_remove(const std::vector<std::string> &args)
 #undef TAG
 }
 
-struct CommandInfo {
+struct CommandInfo
+{
     const char *name;
     unsigned int nargs;
     bool (*func)(const std::vector<std::string> &args);
@@ -536,41 +543,40 @@ static bool handle_installd_event(int client_fd, int installd_fd,
     // Use the same buffer size as installd
     char buf[COMMAND_BUF_SIZE];
 
-    uint64_t time_start, time_stop;
-    uint64_t time_start_installd, time_stop_installd;
-    uint64_t time_start_send, time_stop_send;
-
     int async_id;
 
-    time_start = util::current_time_ms();
+    auto start = steady_clock::now();
 
-    time_start_installd = util::current_time_ms();
+    auto start_installd = steady_clock::now();
     if (!receive_message(
             installd_fd, buf, sizeof(buf), is_async, async_id)) {
         LOGE("Failed to receive reply from installd");
         return false;
     }
-    time_stop_installd = util::current_time_ms();
+    auto stop_installd = steady_clock::now();
 
     std::vector<std::string> args = parse_args(buf);
     LOGD("Received async (probably) reply: %s", args_to_string(args).c_str());
 
-    time_start_send = util::current_time_ms();
+    auto start_send = steady_clock::now();
     if (!send_message(client_fd, buf, is_async, async_id)) {
         LOGE("Failed to send reply to client");
         return false;
     }
-    time_stop_send = util::current_time_ms();
+    auto stop_send = steady_clock::now();
 
-    time_stop = util::current_time_ms();
+    auto stop = steady_clock::now();
 
     LOGD("Command stats:");
     LOGD("- Time to send result back to client:  %" PRIu64 "ms",
-         time_stop_send - time_start_send);
+         static_cast<uint64_t>(duration_cast<milliseconds>(
+                stop_send - start_send).count()));
     LOGD("- Time to receive reply from installd: %" PRIu64 "ms",
-         time_stop_installd - time_start_installd);
+         static_cast<uint64_t>(duration_cast<milliseconds>(
+                stop_installd - start_installd).count()));
     LOGD("- Time to complete entire proxy logic: %" PRIu64 "ms",
-         time_stop - time_start);
+         static_cast<uint64_t>(duration_cast<milliseconds>(
+                stop - start).count()));
     LOGD("---");
 
     return true;
@@ -582,10 +588,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
     // Use the same buffer size as installd
     char buf[COMMAND_BUF_SIZE];
 
-    uint64_t time_start, time_stop;
-    uint64_t time_start_installd, time_stop_installd;
-    uint64_t time_start_hook = 0, time_stop_hook = 0;
-    uint64_t time_start_send, time_stop_send;
+    steady_clock::time_point start_hook, stop_hook;
 
     int async_id;
 
@@ -594,7 +597,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
         return false;
     }
 
-    time_start = util::current_time_ms();
+    auto start = steady_clock::now();
 
     std::vector<std::string> args = parse_args(buf);
 
@@ -645,16 +648,16 @@ static bool handle_android_event(int client_fd, int installd_fd,
             LOGD("Received command: %s", args_to_string(args).c_str());
 
             if (can_appsync) {
-                time_start_hook = util::current_time_ms();
+                start_hook = steady_clock::now();
                 handle_command(args);
-                time_stop_hook = util::current_time_ms();
+                stop_hook = steady_clock::now();
             }
         } else {
             LOGW("Unrecognized command: %s", args_to_string(args).c_str());
         }
     }
 
-    time_start_installd = util::current_time_ms();
+    auto start_installd = steady_clock::now();
     if (!send_message(installd_fd, buf, is_async, async_id)) {
         LOGE("Failed to send request to installd");
         return false;
@@ -664,7 +667,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
         LOGE("Failed to receive reply from installd");
         return false;
     }
-    time_stop_installd = util::current_time_ms();
+    auto stop_installd = steady_clock::now();
 
     args = parse_args(buf);
 
@@ -672,27 +675,31 @@ static bool handle_android_event(int client_fd, int installd_fd,
         LOGD("Sending reply: %s", args_to_string(args).c_str());
     }
 
-    time_start_send = util::current_time_ms();
+    auto start_send = steady_clock::now();
     if (!send_message(client_fd, buf, is_async, async_id)) {
         LOGE("Failed to send reply to client");
         return false;
     }
-    time_stop_send = util::current_time_ms();
+    auto stop_send = steady_clock::now();
 
-    time_stop = util::current_time_ms();
+    auto stop = steady_clock::now();
 
     if (log_result) {
         LOGD("Command stats:");
         LOGD("- Time to send result back to client:  %" PRIu64 "ms",
-             time_stop_send - time_start_send);
+             static_cast<uint64_t>(duration_cast<milliseconds>(
+                    stop_send - start_send).count()));
         LOGD("- Time to complete installd command:   %" PRIu64 "ms",
-             time_stop_installd - time_start_installd);
+             static_cast<uint64_t>(duration_cast<milliseconds>(
+                    stop_installd - start_installd).count()));
         if (can_appsync) {
             LOGD("- Time to hook installd command:       %" PRIu64 "ms",
-                 time_stop_hook - time_start_hook);
+                 static_cast<uint64_t>(duration_cast<milliseconds>(
+                        stop_hook - start_hook).count()));
         }
         LOGD("- Time to complete entire proxy logic: %" PRIu64 "ms",
-             time_stop - time_start);
+             static_cast<uint64_t>(duration_cast<milliseconds>(
+                    stop - start).count()));
         LOGD("---");
     }
 
@@ -748,15 +755,16 @@ static bool proxy_process(int fd, bool can_appsync)
         // NOTE: We'll effectively make the connection sychronous because we
         //       always wait for a reply before receiving the next command.
         // See: https://github.com/CyanogenMod/android_frameworks_native/commit/8124b181d4b5a3a44796fdb0e3ea4e4171f102c7
-        bool is_async = util::file_find_one_of(
-                INSTALLD_PATH, { "failed to read transaction id" });
+        bool is_async = false;
+        if (auto r = util::file_find_one_of(INSTALLD_PATH,
+                { "failed to read transaction id" }); r && r.value()) {
+            is_async = true;
+        }
         LOGD("installd is CyanogenMod async version: %d", is_async);
 
         LOGD("---");
 
-        struct pollfd fds[2];
-        memset(fds, 0, sizeof(fds));
-
+        pollfd fds[2] = {};
         fds[0].fd = client_fd;
         fds[0].events = POLLIN;
         fds[1].fd = installd_fd;
@@ -781,9 +789,6 @@ static bool proxy_process(int fd, bool can_appsync)
             }
         }
     }
-
-    // Not reached
-    return true;
 }
 
 /*!
@@ -917,7 +922,8 @@ int appsync_main(int argc, char *argv[])
     }
 
 
-    if (!util::mkdir_parent(MULTIBOOT_LOG_APPSYNC, 0775) && errno != EEXIST) {
+    if (auto r = util::mkdir_parent(MULTIBOOT_LOG_APPSYNC, 0775);
+            !r && r.error() != std::errc::file_exists) {
         fprintf(stderr, "Failed to create parent directory of %s: %s\n",
                 MULTIBOOT_LOG_APPSYNC, strerror(errno));
         return EXIT_FAILURE;
@@ -951,14 +957,16 @@ int appsync_main(int argc, char *argv[])
         LOGW("Continuing to proxy installd anyway...");
     } else {
         if (config.indiv_app_sharing) {
-            uint64_t start = util::current_time_ms();
+            auto start = steady_clock::now();
             can_appsync = prepare_appsync();
-            uint64_t stop = util::current_time_ms();
+            auto stop = steady_clock::now();
             if (!can_appsync) {
                 LOGW("appsync preparation failed. "
                      "App sharing is completely disabled");
             }
-            LOGD("Entire appsync preparation took %" PRIu64 "ms", stop - start);
+            LOGD("Entire appsync preparation took %" PRIu64 "ms",
+                 static_cast<uint64_t>(duration_cast<milliseconds>(
+                        stop - start).count()));
         }
     }
 

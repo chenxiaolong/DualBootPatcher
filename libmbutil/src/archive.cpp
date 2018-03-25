@@ -46,9 +46,7 @@
 #define LIBARCHIVE_DISK_READER_FLAGS \
     ARCHIVE_READDISK_MAC_COPYFILE
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
@@ -92,11 +90,9 @@ bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
     ssize_t bytes_written;
     int64_t offset;
     int64_t progress = 0;
-    char null_buf[64 * 1024];
+    char null_buf[64 * 1024] = {};
     const void *buf;
     int ret;
-
-    memset(null_buf, 0, sizeof(null_buf));
 
     while ((ret = archive_read_data_block(
             in, &buf, &bytes_read, &offset)) == ARCHIVE_OK) {
@@ -215,15 +211,15 @@ bool libarchive_tar_extract(const std::string &filename,
     archive_read_support_format_tar(in.get());
 
     switch (compression) {
-    case CompressionType::NONE:
+    case CompressionType::None:
         break;
-    case CompressionType::LZ4:
+    case CompressionType::Lz4:
         archive_read_support_filter_lz4(in.get());
         break;
-    case CompressionType::GZIP:
+    case CompressionType::Gzip:
         archive_read_support_filter_gzip(in.get());
         break;
-    case CompressionType::XZ:
+    case CompressionType::Xz:
         archive_read_support_filter_xz(in.get());
         break;
     default:
@@ -395,15 +391,15 @@ bool libarchive_tar_create(const std::string &filename,
     archive_write_set_bytes_per_block(out.get(), 10240);
 
     switch (compression) {
-    case CompressionType::NONE:
+    case CompressionType::None:
         break;
-    case CompressionType::LZ4:
+    case CompressionType::Lz4:
         archive_write_add_filter_lz4(out.get());
         break;
-    case CompressionType::GZIP:
+    case CompressionType::Gzip:
         archive_write_add_filter_gzip(out.get());
         break;
-    case CompressionType::XZ:
+    case CompressionType::Xz:
         archive_write_add_filter_xz(out.get());
         break;
     default:
@@ -473,20 +469,21 @@ bool libarchive_tar_create(const std::string &filename,
             // the archive path to the relative path starting at base_dir
             const char *curpath = archive_entry_pathname(entry);
             if (curpath && path[0] != '/' && !base_dir.empty()) {
-                std::string relpath;
-                if (!relative_path(curpath, base_dir, relpath)) {
+                auto relpath = relative_path(curpath, base_dir);
+                if (!relpath) {
                     LOGE("Failed to compute relative path of %s starting at %s: %s",
-                         curpath, base_dir.c_str(), strerror(errno));
+                         curpath, base_dir.c_str(),
+                         relpath.error().message().c_str());
                     archive_entry_free(entry);
                     return false;
                 }
-                if (relpath.empty()) {
+                if (relpath.value().empty()) {
                     // If the relative path is empty, then the current path is
                     // the root of the directory tree. We don't need that, so
                     // skip it.
                     continue;
                 }
-                archive_entry_set_pathname(entry, relpath.c_str());
+                archive_entry_set_pathname(entry, relpath.value().c_str());
             }
 
             switch (archive_entry_filetype(entry)) {
@@ -614,9 +611,11 @@ bool extract_archive(const std::string &filename, const std::string &target)
 
     archive_entry *entry;
     int ret;
-    std::string cwd = get_cwd();
 
-    if (cwd.empty()) {
+    auto cwd = get_cwd();
+    if (!cwd) {
+        LOGE("Failed to get working directory: %s",
+             cwd.error().message().c_str());
         return false;
     }
 
@@ -626,9 +625,9 @@ bool extract_archive(const std::string &filename, const std::string &target)
 
     set_up_output(out.get());
 
-    if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
+    if (auto r = mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO); !r) {
         LOGE("%s: Failed to create directory: %s",
-             target.c_str(), strerror(errno));
+             target.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -639,7 +638,7 @@ bool extract_archive(const std::string &filename, const std::string &target)
     }
 
     auto chdir_back = finally([&] {
-        chdir(cwd.c_str());
+        chdir(cwd.value().c_str());
     });
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
@@ -674,10 +673,12 @@ bool extract_files(const std::string &filename, const std::string &target,
 
     archive_entry *entry;
     int ret;
-    std::string cwd = get_cwd();
     unsigned int count = 0;
 
-    if (cwd.empty()) {
+    auto cwd = get_cwd();
+    if (!cwd) {
+        LOGE("Failed to get working directory: %s",
+             cwd.error().message().c_str());
         return false;
     }
 
@@ -687,9 +688,9 @@ bool extract_files(const std::string &filename, const std::string &target,
 
     set_up_output(out.get());
 
-    if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
+    if (auto r = mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO); !r) {
         LOGE("%s: Failed to create directory: %s",
-             target.c_str(), strerror(errno));
+             target.c_str(), r.error().message().c_str());
         return false;
     }
 
@@ -700,7 +701,7 @@ bool extract_files(const std::string &filename, const std::string &target,
     }
 
     auto chdir_back = finally([&] {
-        chdir(cwd.c_str());
+        chdir(cwd.value().c_str());
     });
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
@@ -825,5 +826,4 @@ bool archive_exists(const std::string &filename,
     return true;
 }
 
-}
 }

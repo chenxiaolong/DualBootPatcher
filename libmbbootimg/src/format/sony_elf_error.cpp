@@ -19,11 +19,9 @@
 
 #include "mbbootimg/format/sony_elf_error.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace sonyelf
+#include <string>
+
+namespace mb::bootimg::sonyelf
 {
 
 struct SonyElfErrorCategory : std::error_category
@@ -60,13 +58,9 @@ std::string SonyElfErrorCategory::message(int ev) const
         return "kernel cmdline too long";
     case SonyElfError::InvalidTypeOrFlagsField:
         return "invalid type or flags field";
-    case SonyElfError::UnexpectedEndOfFile:
-        return "unexpected end of file";
     default:
         return "(unknown Sony ELF format error)";
     }
 }
 
-}
-}
 }

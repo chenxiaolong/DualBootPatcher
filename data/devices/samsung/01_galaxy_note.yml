@@ -481,6 +481,7 @@
   codenames:
     - greatlte
     - greatltexx
+    - greatlteks
   architecture: arm64-v8a
 
   block_devs:

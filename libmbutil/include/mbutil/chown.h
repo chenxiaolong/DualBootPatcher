@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -24,10 +24,9 @@
 #include <sys/types.h>
 
 #include "mbcommon/flags.h"
+#include "mbcommon/outcome.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 enum class ChownFlag : uint8_t
@@ -38,14 +37,13 @@ enum class ChownFlag : uint8_t
 MB_DECLARE_FLAGS(ChownFlags, ChownFlag)
 MB_DECLARE_OPERATORS_FOR_FLAGS(ChownFlags)
 
-bool chown(const std::string &path,
-           const std::string &user,
-           const std::string &group,
-           ChownFlags flags);
-bool chown(const std::string &path,
-           uid_t user,
-           gid_t group,
-           ChownFlags flags);
+oc::result<void> chown(const std::string &path,
+                       const std::string &user,
+                       const std::string &group,
+                       ChownFlags flags);
+oc::result<void> chown(const std::string &path,
+                       uid_t user,
+                       gid_t group,
+                       ChownFlags flags);
 
-}
 }

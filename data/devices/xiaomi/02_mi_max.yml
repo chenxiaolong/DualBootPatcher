@@ -3,6 +3,7 @@
   id: hydrogen
   codenames:
     - hydrogen
+    - hydrolium
   architecture: arm64-v8a
 
   block_devs:
@@ -56,6 +57,7 @@
   id: helium
   codenames:
     - helium
+    - hydrolium
   architecture: arm64-v8a
 
   block_devs:

@@ -48,7 +48,7 @@
 
 #define UEVENT_LOGGING 0
 
-static char bootdevice[PROP_VALUE_MAX];
+static std::string bootdevice;
 static int device_fd = -1;
 static int pipe_fd[2];
 static volatile bool run_thread = true;
@@ -90,7 +90,7 @@ static mode_t get_device_perm(const char *path,
 }
 
 static void make_device(const char *path,
-                        const char *upath MB_UNUSED,
+                        const char *upath [[maybe_unused]],
                         int block, int major, int minor,
                         const std::vector<std::string> &links)
 {
@@ -448,8 +448,8 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
             free(p);
         }
 
-        if (!pdevs.empty() && bootdevice[0] != '\0'
-                && strstr(device.c_str(), bootdevice)) {
+        if (!pdevs.empty() && !bootdevice.empty()
+                && device.find(bootdevice) != std::string::npos) {
             if (!dry_run) {
                 make_link_init(link_path, "/dev/block/bootdevice");
             }
@@ -641,7 +641,7 @@ static void handle_generic_device_event(struct uevent *uevent)
                     return;
                 }
                 if (!dry_run) {
-                    mb::util::mkdir_parent(devpath, 0755);
+                    (void) mb::util::mkdir_parent(devpath, 0755);
                 }
             } else {
                 // This imitates the file system that would be created
@@ -850,11 +850,12 @@ void device_init(bool dry_run_)
 {
     dry_run = dry_run_;
 
-    bootdevice[0] = '\0';
-    mb::optional<std::string> value;
-    if (mb::util::kernel_cmdline_get_option("androidboot.bootdevice", value)
-            && value) {
-        strlcpy(bootdevice, value->c_str(), sizeof(bootdevice));
+    bootdevice.clear();
+    if (auto cmdline = mb::util::kernel_cmdline()) {
+        auto it = cmdline.value().find("androidboot.bootdevice");
+        if (it != cmdline.value().end() && it->second) {
+            bootdevice.swap(*it->second);
+        }
     }
 
     // Is 256K enough? udev uses 16MB!

@@ -28,11 +28,7 @@
 
 #include "mbbootimg/format/android_defs.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
 struct AndroidHeader
@@ -78,6 +74,4 @@ static inline void android_fix_header_byte_order(AndroidHeader &header)
     //}
 }
 
-}
-}
 }

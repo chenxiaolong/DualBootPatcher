@@ -682,6 +682,44 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
+- name: Samsung Galaxy S5 Neo
+  id: s5neoltexx
+  codenames:
+    - s5neoltexx
+    - SM-G903F
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/13540000.dwmmc0/by-name
+    system:
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p10
+    recovery:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p11
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
+
 - name: Samsung Galaxy S6 Flat/Edge
   id: zerolte
   codenames:
@@ -695,6 +733,7 @@
     - zeroltebmc
     - zeroltetmo
     - zeroltexx
+    - zeroltexxx
   architecture: arm64-v8a
 
   block_devs:
@@ -1066,6 +1105,7 @@
   codenames:
     # Regular variant
     - dream2qlte
+    - dream2qltechn
     - dream2qltezh
     - dream2qltezhn
   architecture: arm64-v8a

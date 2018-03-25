@@ -23,6 +23,7 @@
 
 #include <fcntl.h>
 #include <getopt.h>
+#include <sched.h>
 #include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -133,8 +134,8 @@ static bool client_connection(int fd)
         return false;
     }
 
-    util::set_process_title(format("mbtool connection from pid: %u", cred.pid),
-                            nullptr);
+    (void) util::set_process_title(format(
+            "mbtool connection from pid: %u", cred.pid));
 
     LOGD("Client PID: %u", cred.pid);
     LOGD("Client UID: %u", cred.uid);
@@ -147,54 +148,55 @@ static bool client_connection(int fd)
     if (allow_root_client && cred.uid == 0 && cred.gid == 0) {
         LOGV("Received connection from client with root UID and GID");
         LOGW("WARNING: Cannot verify signature of root client process");
-        if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
-            LOGE("Failed to send credentials allowed message");
+        if (auto ret = util::socket_write_string(fd, RESPONSE_ALLOW); !ret) {
+            LOGE("Failed to send credentials allowed message: %s",
+                 ret.error().message().c_str());
             return false;
         }
     } else if (verify_credentials(cred.uid)) {
-        if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
-            LOGE("Failed to send credentials allowed message");
+        if (auto ret = util::socket_write_string(fd, RESPONSE_ALLOW); !ret) {
+            LOGE("Failed to send credentials allowed message: %s",
+                 ret.error().message().c_str());
             return false;
         }
     } else {
-        if (!util::socket_write_string(fd, RESPONSE_DENY)) {
-            LOGE("Failed to send credentials denied message");
+        if (auto ret = util::socket_write_string(fd, RESPONSE_DENY); !ret) {
+            LOGE("Failed to send credentials denied message: %s",
+                 ret.error().message().c_str());
         }
         return false;
     }
 
-    int32_t version;
-    if (!util::socket_read_int32(fd, version)) {
-        LOGE("Failed to get interface version");
+    auto version = util::socket_read_int32(fd);
+    if (!version) {
+        LOGE("Failed to get interface version: %s",
+             version.error().message().c_str());
         return false;
     }
 
-    if (version == 2) {
+    if (version.value() == 2) {
         LOGE("Protocol version 2 is no longer supported");
-        util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
+        (void) util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         return false;
-    } else if (version == 3) {
-        if (!util::socket_write_string(fd, RESPONSE_OK)) {
+    } else if (version.value() == 3) {
+        if (auto ret = util::socket_write_string(fd, RESPONSE_OK); !ret) {
+            LOGE("Failed to send OK message: %s",
+                 ret.error().message().c_str());
             return false;
         }
 
         connection_version_3(fd);
         return true;
     } else {
-        LOGE("Unsupported interface version: %d", version);
-        util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
+        LOGE("Unsupported interface version: %d", version.value());
+        (void) util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         return false;
     }
-
-    return true;
 }
 
 static bool run_daemon()
 {
-    int fd;
-    struct sockaddr_un addr;
-
-    fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (fd < 0) {
         LOGE("Failed to create socket: %s", strerror(errno));
         return false;
@@ -207,7 +209,7 @@ static bool run_daemon()
     char abs_name[] = "\0mbtool.daemon";
     size_t abs_name_len = sizeof(abs_name) - 1;
 
-    memset(&addr, 0, sizeof(addr));
+    sockaddr_un addr = {};
     addr.sun_family = AF_LOCAL;
     memcpy(addr.sun_path, abs_name, abs_name_len);
 
@@ -275,9 +277,10 @@ static bool run_daemon()
 
             // Change the process name so --replace doesn't kill existing
             // connections
-            if (!util::set_process_title(
-                    "mbtool connection initializing", nullptr)) {
-                LOGE("Failed to set process title: %s", strerror(errno));
+            if (auto ret = util::set_process_title(
+                    "mbtool connection initializing"); !ret) {
+                LOGE("Failed to set process title: %s",
+                     ret.error().message().c_str());
                 _exit(127);
             }
 
@@ -357,8 +360,8 @@ static bool daemon_init()
     } else if (log_to_kmsg) {
         log::set_logger(std::make_shared<log::KmsgLogger>(false));
     } else {
-        if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775)
-                && errno != EEXIST) {
+        if (auto r = util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775);
+                !r && r.error() != std::errc::file_exists) {
             LOGE("Failed to create parent directory of %s: %s",
                  MULTIBOOT_LOG_DAEMON, strerror(errno));
             return false;
@@ -382,7 +385,7 @@ static bool daemon_init()
     return true;
 }
 
-MB_NO_RETURN
+[[noreturn]]
 static void run_daemon_fork()
 {
     pid_t pid = fork();

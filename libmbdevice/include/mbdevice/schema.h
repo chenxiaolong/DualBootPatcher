@@ -27,9 +27,7 @@
 
 #include <rapidjson/schema.h>
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 MB_EXPORT const char * find_schema(const std::string &uri);
@@ -50,8 +48,8 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(DeviceSchemaProvider)
     MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(DeviceSchemaProvider)
 
-    virtual const SchemaDocumentType *
-    GetRemoteDocument(const char *uri, rapidjson::SizeType length)
+    const SchemaDocumentType *
+    GetRemoteDocument(const char *uri, rapidjson::SizeType length) override
     {
         using SchemaDocItem = typename decltype(_schema_docs)::value_type;
 
@@ -84,7 +82,7 @@ public:
             }
 
             std::unique_ptr<SchemaDocumentType> ptr(
-                    new SchemaDocumentType(d, this));
+                    new SchemaDocumentType(d, uri, length, this));
 
             _schema_docs.emplace_back(std::move(name), std::move(ptr));
 
@@ -102,5 +100,4 @@ private:
     std::vector<std::pair<std::string, std::unique_ptr<SchemaDocumentType>>> _schema_docs;
 };
 
-}
 }

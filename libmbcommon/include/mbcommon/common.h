@@ -67,52 +67,47 @@
     __attribute__((format(MB_PRINTF_FORMAT, fmt_arg, var_arg)))
 #  define MB_SCANF(fmt_arg, var_arg) \
     __attribute__((format(MB_SCANF_FORMAT, fmt_arg, var_arg)))
-#  define MB_UNUSED __attribute__((unused))
-#  define MB_NO_RETURN __attribute__((noreturn))
-#else
-#  define MB_PRINTF(fmtarg, firstvararg)
-#  define MB_SCANF(fmtarg, firstvararg)
-#  define MB_UNUSED
-#  define MB_NO_RETURN
 #endif
+
+#ifndef MB_PRINTF
+#  define MB_PRINTF(fmtarg, firstvararg)
+#endif
+#ifndef MB_SCANF
+#  define MB_SCANF(fmtarg, firstvararg)
+#endif
+
+#if defined(__GNUC__)
+#  define MB_BUILTIN_UNREACHABLE __builtin_unreachable()
+#elif defined(_MSC_VER)
+#  define MB_BUILTIN_UNREACHABLE __assume(false)
+#endif
+
+#ifndef NDEBUG
+#  define MB_UNREACHABLE(...) \
+       ::mb_unreachable(__FILE__, __LINE__, __func__, __VA_ARGS__)
+#elif defined(MB_BUILTIN_UNREACHABLE)
+#  define MB_UNREACHABLE(...) MB_BUILTIN_UNREACHABLE
+#else
+#  define MB_UNREACHABLE(...) ::mb_unreachable(NULL, 0, NULL, NULL)
+#endif
+
+/*!
+ * This function calls abort(), and prints the optional message to stderr.
+ * Use the MB_UNREACHABLE macro (that adds location info), instead of
+ * calling this function directly.
+ */
+[[noreturn]]
+MB_EXPORT
+// stdio.h might not have been included yet, which would make
+// __MINGW_PRINTF_FORMAT undefined on mingw
+#if !defined(_WIN32) || defined(__MINGW_PRINTF_FORMAT)
+MB_PRINTF(4, 5)
+#endif
+void mb_unreachable(const char *file, unsigned long line,
+                    const char *func, const char *fmt, ...);
 
 // C++-only macros and functions
 #ifdef __cplusplus
-
-// pimpl macros (inspired by Qt)
-template <typename T>
-static inline T * mb_get_ptr_helper(T *ptr)
-{
-    return ptr;
-}
-
-template <typename T>
-static inline typename T::pointer mb_get_ptr_helper(const T &p)
-{
-    return p.get();
-}
-
-#define MB_DECLARE_PRIVATE(CLASS) \
-    inline CLASS ## Private * _priv_func() { \
-        return reinterpret_cast<CLASS ## Private *>(mb_get_ptr_helper(_priv_ptr)); \
-    } \
-    inline const CLASS ## Private* _priv_func() const { \
-        return reinterpret_cast<const CLASS ## Private *>(mb_get_ptr_helper(_priv_ptr)); \
-    } \
-    friend class CLASS ## Private;
-
-#define MB_DECLARE_PUBLIC(CLASS) \
-    inline CLASS * _pub_func() { \
-        return static_cast<CLASS *>(_pub_ptr); \
-    } \
-    inline const CLASS* _pub_func() const { \
-        return static_cast<const CLASS *>(_pub_ptr); \
-    } \
-    friend class CLASS;
-
-#define MB_PRIVATE(CLASS) CLASS ## Private * const priv = _priv_func()
-#define MB_PUBLIC(CLASS) CLASS * const pub = _pub_func()
-
 
 // Constructor and assignment macros
 #define MB_DISABLE_COPY_CONSTRUCTOR(CLASS) \

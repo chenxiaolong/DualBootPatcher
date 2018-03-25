@@ -44,7 +44,8 @@
  * \sa FileInfo
  */
 
-extern "C" {
+extern "C"
+{
 
 /*!
  * \brief Create a new FileInfo object.

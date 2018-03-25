@@ -32,8 +32,9 @@ foreach(variant ${variants})
         interface.global.CXXVersion
         interface.mbcommon.dynamic-link
         mbbootimg-${variant}
-        mbpio-static
+        mbpio-${variant}
         mbcommon-${variant}
+        rapidjson
     )
 
     # Link dependencies
@@ -54,6 +55,8 @@ foreach(variant ${variants})
             LINK_FLAGS "-static"
             LINK_SEARCH_START_STATIC ON
         )
+
+        android_link_allow_multiple_definitions(${bin_target})
     endif()
 
     # Install binary

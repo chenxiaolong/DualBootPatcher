@@ -27,13 +27,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/string.h"
 #include "mbdevice/device.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
-#include "mbutil/string.h"
 
 #include "config/config.hpp"
 
@@ -213,7 +213,7 @@ GUIAction::GUIAction(xml_node<>* node)
     if (child) {
         attr = child->first_attribute("key");
         if (attr) {
-            std::vector<std::string> keys = mb::util::split(attr->value(), "+");
+            std::vector<std::string> keys = mb::split(attr->value(), '+');
             for (size_t i = 0; i < keys.size(); ++i) {
                 const int key = getKeyByName(keys[i]);
                 mKeys[key] = false;
@@ -765,8 +765,8 @@ int GUIAction::switch_rom(const std::string& arg)
         if (ret == 0) {
             // Skip boot menu for next boot
             static const char *skip_path = "/raw/cache/multiboot/bootui/skip";
-            mb::util::mkdir_parent(skip_path, 0755);
-            mb::util::file_write_data(skip_path, arg.data(), arg.size());
+            (void) mb::util::mkdir_parent(skip_path, 0755);
+            (void) mb::util::file_write_data(skip_path, arg.data(), arg.size());
         }
 
         // Reboot when exiting

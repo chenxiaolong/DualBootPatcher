@@ -36,3 +36,47 @@
     max_brightness: 255
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
+
+- name: Micromax Unite 2 A106
+  id: A106
+  codenames:
+    - A106
+    - a106
+    - Micromax
+    - Micromax_A106
+    - micromax_a106
+    - Unite_2
+    - unite_2
+    - Unite2
+    - unite2
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p5
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p6
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p7
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/bootimg
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/recovery
+
+  boot_ui:
+    supported: yes
+    flags:
+      - TW_BOARD_HAS_FLIPPED_SCREEN
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/class/power_supply/battery/batt_temp
+    theme: portrait_hdpi

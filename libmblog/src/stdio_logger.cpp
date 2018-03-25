@@ -19,9 +19,7 @@
 
 #include "mblog/stdio_logger.h"
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 StdioLogger::StdioLogger(std::FILE *stream)
@@ -44,5 +42,4 @@ bool StdioLogger::formatted()
     return true;
 }
 
-}
 }

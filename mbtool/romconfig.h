@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace mb
@@ -35,10 +36,12 @@ struct RomConfig
 {
     std::string id;
     std::string name;
+    std::unordered_map<std::string, std::string> cached_props;
     bool indiv_app_sharing = false;
     std::vector<SharedPackage> shared_pkgs;
 
     bool load_file(const std::string &path);
+    bool save_file(const std::string &path);
 };
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,14 +21,11 @@
 
 #include <string>
 
-#include "mbcommon/optional.h"
+#include "mbcommon/outcome.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
-bool blkid_get_fs_type(const std::string &path, optional<std::string> &type);
+oc::result<std::string> blkid_get_fs_type(const std::string &path);
 
-}
 }

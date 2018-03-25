@@ -99,8 +99,8 @@ static bool hex_to_binary(const char *hex, void **data, size_t *data_size)
     return true;
 }
 
-static mb::FileSearchAction search_result_cb(mb::File &file, void *userdata,
-                                             uint64_t offset)
+static mb::oc::result<mb::FileSearchAction>
+search_result_cb(mb::File &file, void *userdata, uint64_t offset)
 {
     (void) file;
     const char *name = static_cast<char *>(userdata);
@@ -109,29 +109,34 @@ static mb::FileSearchAction search_result_cb(mb::File &file, void *userdata,
 }
 
 static bool search(const char *name, mb::File &file,
-                   int64_t start, int64_t end,
+                   std::optional<uint64_t> start,
+                   std::optional<uint64_t> end,
                    size_t bsize, const void *pattern,
-                   size_t pattern_size, int64_t max_matches)
+                   size_t pattern_size, std::optional<uint64_t> max_matches)
 {
-    if (!mb::file_search(file, start, end, bsize, pattern, pattern_size,
-                         max_matches, &search_result_cb,
-                         const_cast<char *>(name))) {
+    auto ret = mb::file_search(file, start, end, bsize, pattern, pattern_size,
+                               max_matches, &search_result_cb,
+                               const_cast<char *>(name));
+    if (!ret) {
         fprintf(stderr, "%s: Search failed: %s\n",
-                name, file.error_string().c_str());
+                name, ret.error().message().c_str());
         return false;
     }
     return true;
 }
 
-static bool search_stdin(int64_t start, int64_t end,
+static bool search_stdin(std::optional<uint64_t> start,
+                         std::optional<uint64_t> end,
                          size_t bsize, const void *pattern,
-                         size_t pattern_size, int64_t max_matches)
+                         size_t pattern_size,
+                         std::optional<uint64_t> max_matches)
 {
-    mb::PosixFile file(stdin, false);
+    mb::PosixFile file;
 
-    if (!file.is_open()) {
+    auto ret = file.open(stdin, false);
+    if (!ret) {
         fprintf(stderr, "Failed to open stdin: %s\n",
-                file.error_string().c_str());
+                ret.error().message().c_str());
         return false;
     }
 
@@ -139,15 +144,19 @@ static bool search_stdin(int64_t start, int64_t end,
                   max_matches);
 }
 
-static bool search_file(const char *path, int64_t start, int64_t end,
+static bool search_file(const char *path,
+                        std::optional<uint64_t> start,
+                        std::optional<uint64_t> end,
                         size_t bsize, const void *pattern,
-                        size_t pattern_size, int64_t max_matches)
+                        size_t pattern_size,
+                        std::optional<uint64_t> max_matches)
 {
-    mb::StandardFile file(path, mb::FileOpenMode::READ_ONLY);
+    mb::StandardFile file;
 
-    if (!file.is_open()) {
+    auto ret = file.open(path, mb::FileOpenMode::ReadOnly);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
-                path, file.error_string().c_str());
+                path, ret.error().message().c_str());
         return false;
     }
 
@@ -157,10 +166,10 @@ static bool search_file(const char *path, int64_t start, int64_t end,
 
 int main(int argc, char *argv[])
 {
-    int64_t start = -1;
-    int64_t end = -1;
+    std::optional<uint64_t> start;
+    std::optional<uint64_t> end;
     size_t bsize = 0;
-    int64_t max_matches = -1;
+    std::optional<uint64_t> max_matches;
 
     const char *text_pattern = nullptr;
     const char *hex_pattern = nullptr;
@@ -198,13 +207,16 @@ int main(int argc, char *argv[])
     while ((opt = getopt_long(argc, argv, short_options,
                               long_options, &long_index)) != -1) {
         switch (opt) {
-        case 'n':
-            if (!mb::str_to_num(optarg, 10, max_matches)) {
+        case 'n': {
+            uint64_t value;
+            if (!mb::str_to_num(optarg, 10, value)) {
                 fprintf(stderr, "Invalid value for -n/--num-matches: %s\n",
                         optarg);
                 return EXIT_FAILURE;
             }
+            max_matches = value;
             break;
+        }
 
         case 'p':
             hex_pattern = optarg;
@@ -214,21 +226,27 @@ int main(int argc, char *argv[])
             text_pattern = optarg;
             break;
 
-        case OPT_START_OFFSET:
-            if (!mb::str_to_num(optarg, 0, start)) {
+        case OPT_START_OFFSET: {
+            uint64_t value;
+            if (!mb::str_to_num(optarg, 0, value)) {
                 fprintf(stderr, "Invalid value for --start-offset: %s\n",
                         optarg);
                 return EXIT_FAILURE;
             }
+            start = value;
             break;
+        }
 
-        case OPT_END_OFFSET:
-            if (!mb::str_to_num(optarg, 0, end)) {
+        case OPT_END_OFFSET: {
+            uint64_t value;
+            if (!mb::str_to_num(optarg, 0, value)) {
                 fprintf(stderr, "Invalid value for --end-offset: %s\n",
                         optarg);
                 return EXIT_FAILURE;
             }
+            end = value;
             break;
+        }
 
         case OPT_BUFFER_SIZE:
             if (!mb::str_to_num(optarg, 10, bsize)) {
