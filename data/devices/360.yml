@@ -114,7 +114,7 @@
   id: QK1707
   codenames:
     - QK1707-A01
-    - QK1707
+    - QK1707_A01
   architecture: arm64-v8a
 
   block_devs:
