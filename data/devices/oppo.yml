@@ -224,9 +224,10 @@
     theme: portrait_hdpi
 
 - name: OPPO R11
-  id: r11
+  id: R11
   codenames:
     - r11
+    - R11
   architecture: arm64-v8a
 
   block_devs:
