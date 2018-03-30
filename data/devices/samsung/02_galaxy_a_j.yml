@@ -394,3 +394,60 @@
       - fbdev
     pixel_format: BGRA_8888
     theme: portrait_hdpi
+    
+ name: Samsung Galaxy J5 (2017) (Exynos)
+  id: j5y17lte
+  codenames:
+    - j5y17lte
+    - j5y17ltexxm
+    - j5y17lteub
+    - j5y17lteubm
+    - j5y17ltedx
+    - j5y17ltextc
+    - j5y17ltektt
+    - j5y17ltelgt
+    - j5y17lteskt
+    - SM-J530F
+    - SM-J530FM
+    - SM-J530G
+    - SM-J530GM
+    - SM-J530Y
+    - SM-J530YM
+    - SM-J530K
+    - SM-J530L
+    - SM-J530S
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/13540000.dwmmc0/by-name
+    system:
+      - /dev/block/bootdevice/by-name/SYSTEM
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/bootdevice/by-name/CACHE
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/bootdevice/by-name/USERDATA
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p24
+    boot:
+      - /dev/block/bootdevice/by-name/BOOT
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p10
+    recovery:
+      - /dev/block/bootdevice/by-name/RECOVERY
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p11
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
