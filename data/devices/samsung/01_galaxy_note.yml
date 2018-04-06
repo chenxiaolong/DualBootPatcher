@@ -357,6 +357,10 @@
     - tre3g
     # N910U
     - trhplte
+    # N916K
+    - tre3caltektt
+    - tre3calteskt
+    - tre3caltelgt
   architecture: armeabi-v7a
 
   block_devs:
