@@ -395,7 +395,7 @@
     pixel_format: BGRA_8888
     theme: portrait_hdpi
     
- name: Samsung Galaxy J5 (2017) (Exynos)
+- name: Samsung Galaxy J5 (2017) (Exynos)
   id: j5y17lte
   codenames:
     - j5y17lte
@@ -501,7 +501,7 @@
     pixel_format: ABGR_8888
     theme: portrait_hdpi
 
-name: Samsung Galaxy A8+ (2018) (Exynos)
+- name: Samsung Galaxy A8+ (2018) (Exynos)
   id: jackpot2lte
   codenames:
     # Regular variant
