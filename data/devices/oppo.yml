@@ -83,11 +83,8 @@
     - r1c
     - R1C
     - R8200
-    - r8200
     - R8205
-    - r8205
     - R8207
-    - r8207
 
   architecture: armeabi-v7a
 
@@ -262,5 +259,48 @@
     pixel_format: RGBA_8888
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 255
+    theme: portrait_hdpi
+
+- name: OPPO A33
+  id: A33
+  codenames:
+    - a33
+    - A33
+
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p26
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p37
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p22
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p23
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    pixel_format: RGBA_8888
     theme: portrait_hdpi
 
