@@ -2,10 +2,10 @@
 - name: Ginzzu SMART Race 4G
   id: x2605b_fm45_mtc
   codenames:
-      - 4G
-      - Race
-      - SMART
-      - x2605b_fm45_mtc
+    - 4G
+    - Race
+    - SMART
+    - x2605b_fm45_mtc
   architecture: arm64-v8a
   block_devs:
     base_dirs:
@@ -26,7 +26,6 @@
       - /dev/block/mmcblk0p8
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
     extra:
-      - /dev/block/mmcblk1p1
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/expdb
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/flashinfo
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/frp
