@@ -30,7 +30,7 @@ struct PathSELinuxSetLabelError FLATBUFFERS_FINAL_CLASS : private flatbuffers::T
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -45,13 +45,13 @@ struct PathSELinuxSetLabelErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(PathSELinuxSetLabelError::VT_MSG, msg);
   }
-  PathSELinuxSetLabelErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathSELinuxSetLabelErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathSELinuxSetLabelErrorBuilder &operator=(const PathSELinuxSetLabelErrorBuilder &);
   flatbuffers::Offset<PathSELinuxSetLabelError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathSELinuxSetLabelError>(end);
     return o;
   }
@@ -94,9 +94,9 @@ struct PathSELinuxSetLabelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers:
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_PATH) &&
+           VerifyOffset(verifier, VT_PATH) &&
            verifier.Verify(path()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_LABEL) &&
+           VerifyOffset(verifier, VT_LABEL) &&
            verifier.Verify(label()) &&
            VerifyField<uint8_t>(verifier, VT_FOLLOW_SYMLINKS) &&
            verifier.EndTable();
@@ -115,13 +115,13 @@ struct PathSELinuxSetLabelRequestBuilder {
   void add_follow_symlinks(bool follow_symlinks) {
     fbb_.AddElement<uint8_t>(PathSELinuxSetLabelRequest::VT_FOLLOW_SYMLINKS, static_cast<uint8_t>(follow_symlinks), 0);
   }
-  PathSELinuxSetLabelRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathSELinuxSetLabelRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathSELinuxSetLabelRequestBuilder &operator=(const PathSELinuxSetLabelRequestBuilder &);
   flatbuffers::Offset<PathSELinuxSetLabelRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathSELinuxSetLabelRequest>(end);
     return o;
   }
@@ -169,9 +169,9 @@ struct PathSELinuxSetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -189,13 +189,13 @@ struct PathSELinuxSetLabelResponseBuilder {
   void add_error(flatbuffers::Offset<PathSELinuxSetLabelError> error) {
     fbb_.AddOffset(PathSELinuxSetLabelResponse::VT_ERROR, error);
   }
-  PathSELinuxSetLabelResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathSELinuxSetLabelResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathSELinuxSetLabelResponseBuilder &operator=(const PathSELinuxSetLabelResponseBuilder &);
   flatbuffers::Offset<PathSELinuxSetLabelResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathSELinuxSetLabelResponse>(end);
     return o;
   }

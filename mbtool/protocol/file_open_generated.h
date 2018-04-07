@@ -28,6 +28,19 @@ enum FileOpenFlag {
   FileOpenFlag_MAX = FileOpenFlag_WRONLY
 };
 
+inline FileOpenFlag (&EnumValuesFileOpenFlag())[7] {
+  static FileOpenFlag values[] = {
+    FileOpenFlag_APPEND,
+    FileOpenFlag_CREAT,
+    FileOpenFlag_EXCL,
+    FileOpenFlag_RDONLY,
+    FileOpenFlag_RDWR,
+    FileOpenFlag_TRUNC,
+    FileOpenFlag_WRONLY
+  };
+  return values;
+}
+
 inline const char **EnumNamesFileOpenFlag() {
   static const char *names[] = {
     "APPEND",
@@ -61,7 +74,7 @@ struct FileOpenError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -76,13 +89,13 @@ struct FileOpenErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(FileOpenError::VT_MSG, msg);
   }
-  FileOpenErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileOpenErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileOpenErrorBuilder &operator=(const FileOpenErrorBuilder &);
   flatbuffers::Offset<FileOpenError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileOpenError>(end);
     return o;
   }
@@ -125,9 +138,9 @@ struct FileOpenRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_PATH) &&
+           VerifyOffset(verifier, VT_PATH) &&
            verifier.Verify(path()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_FLAGS) &&
+           VerifyOffset(verifier, VT_FLAGS) &&
            verifier.Verify(flags()) &&
            VerifyField<uint32_t>(verifier, VT_PERMS) &&
            verifier.EndTable();
@@ -146,13 +159,13 @@ struct FileOpenRequestBuilder {
   void add_perms(uint32_t perms) {
     fbb_.AddElement<uint32_t>(FileOpenRequest::VT_PERMS, perms, 0);
   }
-  FileOpenRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileOpenRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileOpenRequestBuilder &operator=(const FileOpenRequestBuilder &);
   flatbuffers::Offset<FileOpenRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileOpenRequest>(end);
     return o;
   }
@@ -204,10 +217,10 @@ struct FileOpenResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
            VerifyField<int32_t>(verifier, VT_ID) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -228,13 +241,13 @@ struct FileOpenResponseBuilder {
   void add_error(flatbuffers::Offset<FileOpenError> error) {
     fbb_.AddOffset(FileOpenResponse::VT_ERROR, error);
   }
-  FileOpenResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileOpenResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileOpenResponseBuilder &operator=(const FileOpenResponseBuilder &);
   flatbuffers::Offset<FileOpenResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 4);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileOpenResponse>(end);
     return o;
   }
