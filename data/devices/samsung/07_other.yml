@@ -411,6 +411,7 @@
     brightness_path: /sys/class/backlight/panel/brightness
     default_brightness: 255
     theme: portrait_hdpi
+
 - name: Samsung Galaxy Tab E 9.6
   id: gtel3g
   codenames:
