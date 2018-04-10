@@ -411,3 +411,43 @@
     brightness_path: /sys/class/backlight/panel/brightness
     default_brightness: 255
     theme: portrait_hdpi
+- name: Samsung Galaxy Tab E 9.6
+  id: gtel3g
+  codenames:
+    # Main and non-3G version
+    # Yup, gtel3g and core33g using the same sources but slightly changed defconfig and dtb to make it boot.
+    - gtel3g
+    - SM-T561
+    - gtelwifi
+    - SM-T560
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sprd-sdhci.3/by-name
+    system:
+      - /dev/block/platform/sprd-sdhci.3/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/sprd-sdhci.3/by-name/cache
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/sprd-sdhci.3/by-name/data
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/sprd-sdhci.3/by-name/boot
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/platform/sprd-sdhci.3/by-name/recovery
+      - /dev/block/mmcblk0p21
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/backlight/panel/brightness
+    default_brightness: 255
+    theme: portrait_hdpi
