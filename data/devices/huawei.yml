@@ -625,6 +625,40 @@
     battery_path: /sys/class/power_supply/Battery
     theme: portrait_hdpi
 
+- name: Huawei Honor V8
+  id: KNT
+  codenames:
+    - KNT
+    - hi3650
+    - HWKNT
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p43
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p36
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p49
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p28
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p29
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd_backlight0/brightness
+    battery_path: /sys/class/power_supply/Battery
+    theme: portrait_hdpi
+
 - name: Huawei P9 Lite
   id: VNS
   codenames:
