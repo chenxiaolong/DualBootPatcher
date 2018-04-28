@@ -106,6 +106,42 @@
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
+- name: Lava Iris 870
+  id: lava_iris870
+  codenames:
+    - Lava_Iris870
+    - lava_iris8670
+    - iris870
+    - lava6737m_sp504_int
+    - 
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
 - name: LAVA iris X1Beats
   id: X1Beats
   codenames:
