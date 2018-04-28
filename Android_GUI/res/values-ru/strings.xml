@@ -101,7 +101,7 @@
   <!--ROM menu item for backing up the ROM-->
   <string name="rom_menu_backup_rom">Резервная копия прошивки</string>
   <!--ROM menu item for adding an icon to the home screen-->
-  <string name="rom_menu_add_to_home_screen">Добавить на доммашний экран</string>
+  <string name="rom_menu_add_to_home_screen">Добавить на домашний экран</string>
   <!--ROM menu item for changing the name-->
   <string name="rom_menu_edit_name">Изменить название</string>
   <!--ROM menu item for changing the image-->
