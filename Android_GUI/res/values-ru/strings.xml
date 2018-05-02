@@ -5,7 +5,7 @@
   <!--Name of the app built in debug mode-->
   <string name="app_name_debug">Dual Boot Patcher (Отладка)</string>
   <!--Name of the app built in snapshot mode-->
-  <string name="app_name_snapshot">Dual Boot Patcher (Снэпшот)</string>
+  <string name="app_name_snapshot">Dual Boot Patcher (Снапшот)</string>
   <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
   <string name="wait_until_finished">Подождите до окончания всех работ.</string>
   <!--Indicate the version of the app on the about screen-->
