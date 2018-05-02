@@ -84,8 +84,47 @@ enum ResponseType {
   ResponseType_MAX = ResponseType_PathReadlinkResponse
 };
 
-inline const char **EnumNamesResponseType() {
-  static const char *names[] = {
+inline const ResponseType (&EnumValuesResponseType())[33] {
+  static const ResponseType values[] = {
+    ResponseType_NONE,
+    ResponseType_Invalid,
+    ResponseType_Unsupported,
+    ResponseType_FileChmodResponse,
+    ResponseType_FileCloseResponse,
+    ResponseType_FileOpenResponse,
+    ResponseType_FileReadResponse,
+    ResponseType_FileSeekResponse,
+    ResponseType_FileStatResponse,
+    ResponseType_FileWriteResponse,
+    ResponseType_FileSELinuxGetLabelResponse,
+    ResponseType_FileSELinuxSetLabelResponse,
+    ResponseType_PathChmodResponse,
+    ResponseType_PathCopyResponse,
+    ResponseType_PathSELinuxGetLabelResponse,
+    ResponseType_PathSELinuxSetLabelResponse,
+    ResponseType_PathGetDirectorySizeResponse,
+    ResponseType_MbGetVersionResponse,
+    ResponseType_MbGetInstalledRomsResponse,
+    ResponseType_MbGetBootedRomIdResponse,
+    ResponseType_MbSwitchRomResponse,
+    ResponseType_MbSetKernelResponse,
+    ResponseType_MbWipeRomResponse,
+    ResponseType_MbGetPackagesCountResponse,
+    ResponseType_RebootResponse,
+    ResponseType_SignedExecOutputResponse,
+    ResponseType_SignedExecResponse,
+    ResponseType_ShutdownResponse,
+    ResponseType_PathDeleteResponse,
+    ResponseType_PathMkdirResponse,
+    ResponseType_CryptoDecryptResponse,
+    ResponseType_CryptoGetPwTypeResponse,
+    ResponseType_PathReadlinkResponse
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesResponseType() {
+  static const char * const names[] = {
     "NONE",
     "Invalid",
     "Unsupported",
@@ -141,123 +180,123 @@ template<> struct ResponseTypeTraits<Unsupported> {
   static const ResponseType enum_value = ResponseType_Unsupported;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::FileChmodResponse> {
+template<> struct ResponseTypeTraits<FileChmodResponse> {
   static const ResponseType enum_value = ResponseType_FileChmodResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::FileCloseResponse> {
+template<> struct ResponseTypeTraits<FileCloseResponse> {
   static const ResponseType enum_value = ResponseType_FileCloseResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::FileOpenResponse> {
+template<> struct ResponseTypeTraits<FileOpenResponse> {
   static const ResponseType enum_value = ResponseType_FileOpenResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::FileReadResponse> {
+template<> struct ResponseTypeTraits<FileReadResponse> {
   static const ResponseType enum_value = ResponseType_FileReadResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::FileSeekResponse> {
+template<> struct ResponseTypeTraits<FileSeekResponse> {
   static const ResponseType enum_value = ResponseType_FileSeekResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::FileStatResponse> {
+template<> struct ResponseTypeTraits<FileStatResponse> {
   static const ResponseType enum_value = ResponseType_FileStatResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::FileWriteResponse> {
+template<> struct ResponseTypeTraits<FileWriteResponse> {
   static const ResponseType enum_value = ResponseType_FileWriteResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::FileSELinuxGetLabelResponse> {
+template<> struct ResponseTypeTraits<FileSELinuxGetLabelResponse> {
   static const ResponseType enum_value = ResponseType_FileSELinuxGetLabelResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::FileSELinuxSetLabelResponse> {
+template<> struct ResponseTypeTraits<FileSELinuxSetLabelResponse> {
   static const ResponseType enum_value = ResponseType_FileSELinuxSetLabelResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::PathChmodResponse> {
+template<> struct ResponseTypeTraits<PathChmodResponse> {
   static const ResponseType enum_value = ResponseType_PathChmodResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::PathCopyResponse> {
+template<> struct ResponseTypeTraits<PathCopyResponse> {
   static const ResponseType enum_value = ResponseType_PathCopyResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::PathSELinuxGetLabelResponse> {
+template<> struct ResponseTypeTraits<PathSELinuxGetLabelResponse> {
   static const ResponseType enum_value = ResponseType_PathSELinuxGetLabelResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::PathSELinuxSetLabelResponse> {
+template<> struct ResponseTypeTraits<PathSELinuxSetLabelResponse> {
   static const ResponseType enum_value = ResponseType_PathSELinuxSetLabelResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::PathGetDirectorySizeResponse> {
+template<> struct ResponseTypeTraits<PathGetDirectorySizeResponse> {
   static const ResponseType enum_value = ResponseType_PathGetDirectorySizeResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::MbGetVersionResponse> {
+template<> struct ResponseTypeTraits<MbGetVersionResponse> {
   static const ResponseType enum_value = ResponseType_MbGetVersionResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::MbGetInstalledRomsResponse> {
+template<> struct ResponseTypeTraits<MbGetInstalledRomsResponse> {
   static const ResponseType enum_value = ResponseType_MbGetInstalledRomsResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::MbGetBootedRomIdResponse> {
+template<> struct ResponseTypeTraits<MbGetBootedRomIdResponse> {
   static const ResponseType enum_value = ResponseType_MbGetBootedRomIdResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::MbSwitchRomResponse> {
+template<> struct ResponseTypeTraits<MbSwitchRomResponse> {
   static const ResponseType enum_value = ResponseType_MbSwitchRomResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::MbSetKernelResponse> {
+template<> struct ResponseTypeTraits<MbSetKernelResponse> {
   static const ResponseType enum_value = ResponseType_MbSetKernelResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::MbWipeRomResponse> {
+template<> struct ResponseTypeTraits<MbWipeRomResponse> {
   static const ResponseType enum_value = ResponseType_MbWipeRomResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::MbGetPackagesCountResponse> {
+template<> struct ResponseTypeTraits<MbGetPackagesCountResponse> {
   static const ResponseType enum_value = ResponseType_MbGetPackagesCountResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::RebootResponse> {
+template<> struct ResponseTypeTraits<RebootResponse> {
   static const ResponseType enum_value = ResponseType_RebootResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::SignedExecOutputResponse> {
+template<> struct ResponseTypeTraits<SignedExecOutputResponse> {
   static const ResponseType enum_value = ResponseType_SignedExecOutputResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::SignedExecResponse> {
+template<> struct ResponseTypeTraits<SignedExecResponse> {
   static const ResponseType enum_value = ResponseType_SignedExecResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::ShutdownResponse> {
+template<> struct ResponseTypeTraits<ShutdownResponse> {
   static const ResponseType enum_value = ResponseType_ShutdownResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::PathDeleteResponse> {
+template<> struct ResponseTypeTraits<PathDeleteResponse> {
   static const ResponseType enum_value = ResponseType_PathDeleteResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::PathMkdirResponse> {
+template<> struct ResponseTypeTraits<PathMkdirResponse> {
   static const ResponseType enum_value = ResponseType_PathMkdirResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::CryptoDecryptResponse> {
+template<> struct ResponseTypeTraits<CryptoDecryptResponse> {
   static const ResponseType enum_value = ResponseType_CryptoDecryptResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::CryptoGetPwTypeResponse> {
+template<> struct ResponseTypeTraits<CryptoGetPwTypeResponse> {
   static const ResponseType enum_value = ResponseType_CryptoGetPwTypeResponse;
 };
 
-template<> struct ResponseTypeTraits<mbtool::daemon::v3::PathReadlinkResponse> {
+template<> struct ResponseTypeTraits<PathReadlinkResponse> {
   static const ResponseType enum_value = ResponseType_PathReadlinkResponse;
 };
 
@@ -274,13 +313,13 @@ struct Invalid FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct InvalidBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  InvalidBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit InvalidBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   InvalidBuilder &operator=(const InvalidBuilder &);
   flatbuffers::Offset<Invalid> Finish() {
-    const auto end = fbb_.EndTable(start_, 0);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Invalid>(end);
     return o;
   }
@@ -302,13 +341,13 @@ struct Unsupported FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct UnsupportedBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  UnsupportedBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit UnsupportedBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   UnsupportedBuilder &operator=(const UnsupportedBuilder &);
   flatbuffers::Offset<Unsupported> Finish() {
-    const auto end = fbb_.EndTable(start_, 0);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Unsupported>(end);
     return o;
   }
@@ -331,14 +370,239 @@ struct Response FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const void *response() const {
     return GetPointer<const void *>(VT_RESPONSE);
   }
+  template<typename T> const T *response_as() const;
+  const Invalid *response_as_Invalid() const {
+    return response_type() == ResponseType_Invalid ? static_cast<const Invalid *>(response()) : nullptr;
+  }
+  const Unsupported *response_as_Unsupported() const {
+    return response_type() == ResponseType_Unsupported ? static_cast<const Unsupported *>(response()) : nullptr;
+  }
+  const FileChmodResponse *response_as_FileChmodResponse() const {
+    return response_type() == ResponseType_FileChmodResponse ? static_cast<const FileChmodResponse *>(response()) : nullptr;
+  }
+  const FileCloseResponse *response_as_FileCloseResponse() const {
+    return response_type() == ResponseType_FileCloseResponse ? static_cast<const FileCloseResponse *>(response()) : nullptr;
+  }
+  const FileOpenResponse *response_as_FileOpenResponse() const {
+    return response_type() == ResponseType_FileOpenResponse ? static_cast<const FileOpenResponse *>(response()) : nullptr;
+  }
+  const FileReadResponse *response_as_FileReadResponse() const {
+    return response_type() == ResponseType_FileReadResponse ? static_cast<const FileReadResponse *>(response()) : nullptr;
+  }
+  const FileSeekResponse *response_as_FileSeekResponse() const {
+    return response_type() == ResponseType_FileSeekResponse ? static_cast<const FileSeekResponse *>(response()) : nullptr;
+  }
+  const FileStatResponse *response_as_FileStatResponse() const {
+    return response_type() == ResponseType_FileStatResponse ? static_cast<const FileStatResponse *>(response()) : nullptr;
+  }
+  const FileWriteResponse *response_as_FileWriteResponse() const {
+    return response_type() == ResponseType_FileWriteResponse ? static_cast<const FileWriteResponse *>(response()) : nullptr;
+  }
+  const FileSELinuxGetLabelResponse *response_as_FileSELinuxGetLabelResponse() const {
+    return response_type() == ResponseType_FileSELinuxGetLabelResponse ? static_cast<const FileSELinuxGetLabelResponse *>(response()) : nullptr;
+  }
+  const FileSELinuxSetLabelResponse *response_as_FileSELinuxSetLabelResponse() const {
+    return response_type() == ResponseType_FileSELinuxSetLabelResponse ? static_cast<const FileSELinuxSetLabelResponse *>(response()) : nullptr;
+  }
+  const PathChmodResponse *response_as_PathChmodResponse() const {
+    return response_type() == ResponseType_PathChmodResponse ? static_cast<const PathChmodResponse *>(response()) : nullptr;
+  }
+  const PathCopyResponse *response_as_PathCopyResponse() const {
+    return response_type() == ResponseType_PathCopyResponse ? static_cast<const PathCopyResponse *>(response()) : nullptr;
+  }
+  const PathSELinuxGetLabelResponse *response_as_PathSELinuxGetLabelResponse() const {
+    return response_type() == ResponseType_PathSELinuxGetLabelResponse ? static_cast<const PathSELinuxGetLabelResponse *>(response()) : nullptr;
+  }
+  const PathSELinuxSetLabelResponse *response_as_PathSELinuxSetLabelResponse() const {
+    return response_type() == ResponseType_PathSELinuxSetLabelResponse ? static_cast<const PathSELinuxSetLabelResponse *>(response()) : nullptr;
+  }
+  const PathGetDirectorySizeResponse *response_as_PathGetDirectorySizeResponse() const {
+    return response_type() == ResponseType_PathGetDirectorySizeResponse ? static_cast<const PathGetDirectorySizeResponse *>(response()) : nullptr;
+  }
+  const MbGetVersionResponse *response_as_MbGetVersionResponse() const {
+    return response_type() == ResponseType_MbGetVersionResponse ? static_cast<const MbGetVersionResponse *>(response()) : nullptr;
+  }
+  const MbGetInstalledRomsResponse *response_as_MbGetInstalledRomsResponse() const {
+    return response_type() == ResponseType_MbGetInstalledRomsResponse ? static_cast<const MbGetInstalledRomsResponse *>(response()) : nullptr;
+  }
+  const MbGetBootedRomIdResponse *response_as_MbGetBootedRomIdResponse() const {
+    return response_type() == ResponseType_MbGetBootedRomIdResponse ? static_cast<const MbGetBootedRomIdResponse *>(response()) : nullptr;
+  }
+  const MbSwitchRomResponse *response_as_MbSwitchRomResponse() const {
+    return response_type() == ResponseType_MbSwitchRomResponse ? static_cast<const MbSwitchRomResponse *>(response()) : nullptr;
+  }
+  const MbSetKernelResponse *response_as_MbSetKernelResponse() const {
+    return response_type() == ResponseType_MbSetKernelResponse ? static_cast<const MbSetKernelResponse *>(response()) : nullptr;
+  }
+  const MbWipeRomResponse *response_as_MbWipeRomResponse() const {
+    return response_type() == ResponseType_MbWipeRomResponse ? static_cast<const MbWipeRomResponse *>(response()) : nullptr;
+  }
+  const MbGetPackagesCountResponse *response_as_MbGetPackagesCountResponse() const {
+    return response_type() == ResponseType_MbGetPackagesCountResponse ? static_cast<const MbGetPackagesCountResponse *>(response()) : nullptr;
+  }
+  const RebootResponse *response_as_RebootResponse() const {
+    return response_type() == ResponseType_RebootResponse ? static_cast<const RebootResponse *>(response()) : nullptr;
+  }
+  const SignedExecOutputResponse *response_as_SignedExecOutputResponse() const {
+    return response_type() == ResponseType_SignedExecOutputResponse ? static_cast<const SignedExecOutputResponse *>(response()) : nullptr;
+  }
+  const SignedExecResponse *response_as_SignedExecResponse() const {
+    return response_type() == ResponseType_SignedExecResponse ? static_cast<const SignedExecResponse *>(response()) : nullptr;
+  }
+  const ShutdownResponse *response_as_ShutdownResponse() const {
+    return response_type() == ResponseType_ShutdownResponse ? static_cast<const ShutdownResponse *>(response()) : nullptr;
+  }
+  const PathDeleteResponse *response_as_PathDeleteResponse() const {
+    return response_type() == ResponseType_PathDeleteResponse ? static_cast<const PathDeleteResponse *>(response()) : nullptr;
+  }
+  const PathMkdirResponse *response_as_PathMkdirResponse() const {
+    return response_type() == ResponseType_PathMkdirResponse ? static_cast<const PathMkdirResponse *>(response()) : nullptr;
+  }
+  const CryptoDecryptResponse *response_as_CryptoDecryptResponse() const {
+    return response_type() == ResponseType_CryptoDecryptResponse ? static_cast<const CryptoDecryptResponse *>(response()) : nullptr;
+  }
+  const CryptoGetPwTypeResponse *response_as_CryptoGetPwTypeResponse() const {
+    return response_type() == ResponseType_CryptoGetPwTypeResponse ? static_cast<const CryptoGetPwTypeResponse *>(response()) : nullptr;
+  }
+  const PathReadlinkResponse *response_as_PathReadlinkResponse() const {
+    return response_type() == ResponseType_PathReadlinkResponse ? static_cast<const PathReadlinkResponse *>(response()) : nullptr;
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_RESPONSE_TYPE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_RESPONSE) &&
+           VerifyOffset(verifier, VT_RESPONSE) &&
            VerifyResponseType(verifier, response(), response_type()) &&
            verifier.EndTable();
   }
 };
+
+template<> inline const Invalid *Response::response_as<Invalid>() const {
+  return response_as_Invalid();
+}
+
+template<> inline const Unsupported *Response::response_as<Unsupported>() const {
+  return response_as_Unsupported();
+}
+
+template<> inline const FileChmodResponse *Response::response_as<FileChmodResponse>() const {
+  return response_as_FileChmodResponse();
+}
+
+template<> inline const FileCloseResponse *Response::response_as<FileCloseResponse>() const {
+  return response_as_FileCloseResponse();
+}
+
+template<> inline const FileOpenResponse *Response::response_as<FileOpenResponse>() const {
+  return response_as_FileOpenResponse();
+}
+
+template<> inline const FileReadResponse *Response::response_as<FileReadResponse>() const {
+  return response_as_FileReadResponse();
+}
+
+template<> inline const FileSeekResponse *Response::response_as<FileSeekResponse>() const {
+  return response_as_FileSeekResponse();
+}
+
+template<> inline const FileStatResponse *Response::response_as<FileStatResponse>() const {
+  return response_as_FileStatResponse();
+}
+
+template<> inline const FileWriteResponse *Response::response_as<FileWriteResponse>() const {
+  return response_as_FileWriteResponse();
+}
+
+template<> inline const FileSELinuxGetLabelResponse *Response::response_as<FileSELinuxGetLabelResponse>() const {
+  return response_as_FileSELinuxGetLabelResponse();
+}
+
+template<> inline const FileSELinuxSetLabelResponse *Response::response_as<FileSELinuxSetLabelResponse>() const {
+  return response_as_FileSELinuxSetLabelResponse();
+}
+
+template<> inline const PathChmodResponse *Response::response_as<PathChmodResponse>() const {
+  return response_as_PathChmodResponse();
+}
+
+template<> inline const PathCopyResponse *Response::response_as<PathCopyResponse>() const {
+  return response_as_PathCopyResponse();
+}
+
+template<> inline const PathSELinuxGetLabelResponse *Response::response_as<PathSELinuxGetLabelResponse>() const {
+  return response_as_PathSELinuxGetLabelResponse();
+}
+
+template<> inline const PathSELinuxSetLabelResponse *Response::response_as<PathSELinuxSetLabelResponse>() const {
+  return response_as_PathSELinuxSetLabelResponse();
+}
+
+template<> inline const PathGetDirectorySizeResponse *Response::response_as<PathGetDirectorySizeResponse>() const {
+  return response_as_PathGetDirectorySizeResponse();
+}
+
+template<> inline const MbGetVersionResponse *Response::response_as<MbGetVersionResponse>() const {
+  return response_as_MbGetVersionResponse();
+}
+
+template<> inline const MbGetInstalledRomsResponse *Response::response_as<MbGetInstalledRomsResponse>() const {
+  return response_as_MbGetInstalledRomsResponse();
+}
+
+template<> inline const MbGetBootedRomIdResponse *Response::response_as<MbGetBootedRomIdResponse>() const {
+  return response_as_MbGetBootedRomIdResponse();
+}
+
+template<> inline const MbSwitchRomResponse *Response::response_as<MbSwitchRomResponse>() const {
+  return response_as_MbSwitchRomResponse();
+}
+
+template<> inline const MbSetKernelResponse *Response::response_as<MbSetKernelResponse>() const {
+  return response_as_MbSetKernelResponse();
+}
+
+template<> inline const MbWipeRomResponse *Response::response_as<MbWipeRomResponse>() const {
+  return response_as_MbWipeRomResponse();
+}
+
+template<> inline const MbGetPackagesCountResponse *Response::response_as<MbGetPackagesCountResponse>() const {
+  return response_as_MbGetPackagesCountResponse();
+}
+
+template<> inline const RebootResponse *Response::response_as<RebootResponse>() const {
+  return response_as_RebootResponse();
+}
+
+template<> inline const SignedExecOutputResponse *Response::response_as<SignedExecOutputResponse>() const {
+  return response_as_SignedExecOutputResponse();
+}
+
+template<> inline const SignedExecResponse *Response::response_as<SignedExecResponse>() const {
+  return response_as_SignedExecResponse();
+}
+
+template<> inline const ShutdownResponse *Response::response_as<ShutdownResponse>() const {
+  return response_as_ShutdownResponse();
+}
+
+template<> inline const PathDeleteResponse *Response::response_as<PathDeleteResponse>() const {
+  return response_as_PathDeleteResponse();
+}
+
+template<> inline const PathMkdirResponse *Response::response_as<PathMkdirResponse>() const {
+  return response_as_PathMkdirResponse();
+}
+
+template<> inline const CryptoDecryptResponse *Response::response_as<CryptoDecryptResponse>() const {
+  return response_as_CryptoDecryptResponse();
+}
+
+template<> inline const CryptoGetPwTypeResponse *Response::response_as<CryptoGetPwTypeResponse>() const {
+  return response_as_CryptoGetPwTypeResponse();
+}
+
+template<> inline const PathReadlinkResponse *Response::response_as<PathReadlinkResponse>() const {
+  return response_as_PathReadlinkResponse();
+}
 
 struct ResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
@@ -349,13 +613,13 @@ struct ResponseBuilder {
   void add_response(flatbuffers::Offset<void> response) {
     fbb_.AddOffset(Response::VT_RESPONSE, response);
   }
-  ResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit ResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   ResponseBuilder &operator=(const ResponseBuilder &);
   flatbuffers::Offset<Response> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Response>(end);
     return o;
   }
@@ -385,123 +649,123 @@ inline bool VerifyResponseType(flatbuffers::Verifier &verifier, const void *obj,
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_FileChmodResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileChmodResponse *>(obj);
+      auto ptr = reinterpret_cast<const FileChmodResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_FileCloseResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileCloseResponse *>(obj);
+      auto ptr = reinterpret_cast<const FileCloseResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_FileOpenResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileOpenResponse *>(obj);
+      auto ptr = reinterpret_cast<const FileOpenResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_FileReadResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileReadResponse *>(obj);
+      auto ptr = reinterpret_cast<const FileReadResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_FileSeekResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileSeekResponse *>(obj);
+      auto ptr = reinterpret_cast<const FileSeekResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_FileStatResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileStatResponse *>(obj);
+      auto ptr = reinterpret_cast<const FileStatResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_FileWriteResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileWriteResponse *>(obj);
+      auto ptr = reinterpret_cast<const FileWriteResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_FileSELinuxGetLabelResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileSELinuxGetLabelResponse *>(obj);
+      auto ptr = reinterpret_cast<const FileSELinuxGetLabelResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_FileSELinuxSetLabelResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileSELinuxSetLabelResponse *>(obj);
+      auto ptr = reinterpret_cast<const FileSELinuxSetLabelResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_PathChmodResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathChmodResponse *>(obj);
+      auto ptr = reinterpret_cast<const PathChmodResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_PathCopyResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathCopyResponse *>(obj);
+      auto ptr = reinterpret_cast<const PathCopyResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_PathSELinuxGetLabelResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathSELinuxGetLabelResponse *>(obj);
+      auto ptr = reinterpret_cast<const PathSELinuxGetLabelResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_PathSELinuxSetLabelResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathSELinuxSetLabelResponse *>(obj);
+      auto ptr = reinterpret_cast<const PathSELinuxSetLabelResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_PathGetDirectorySizeResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathGetDirectorySizeResponse *>(obj);
+      auto ptr = reinterpret_cast<const PathGetDirectorySizeResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_MbGetVersionResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbGetVersionResponse *>(obj);
+      auto ptr = reinterpret_cast<const MbGetVersionResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_MbGetInstalledRomsResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbGetInstalledRomsResponse *>(obj);
+      auto ptr = reinterpret_cast<const MbGetInstalledRomsResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_MbGetBootedRomIdResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbGetBootedRomIdResponse *>(obj);
+      auto ptr = reinterpret_cast<const MbGetBootedRomIdResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_MbSwitchRomResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbSwitchRomResponse *>(obj);
+      auto ptr = reinterpret_cast<const MbSwitchRomResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_MbSetKernelResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbSetKernelResponse *>(obj);
+      auto ptr = reinterpret_cast<const MbSetKernelResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_MbWipeRomResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbWipeRomResponse *>(obj);
+      auto ptr = reinterpret_cast<const MbWipeRomResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_MbGetPackagesCountResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbGetPackagesCountResponse *>(obj);
+      auto ptr = reinterpret_cast<const MbGetPackagesCountResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_RebootResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::RebootResponse *>(obj);
+      auto ptr = reinterpret_cast<const RebootResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_SignedExecOutputResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::SignedExecOutputResponse *>(obj);
+      auto ptr = reinterpret_cast<const SignedExecOutputResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_SignedExecResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::SignedExecResponse *>(obj);
+      auto ptr = reinterpret_cast<const SignedExecResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_ShutdownResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::ShutdownResponse *>(obj);
+      auto ptr = reinterpret_cast<const ShutdownResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_PathDeleteResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathDeleteResponse *>(obj);
+      auto ptr = reinterpret_cast<const PathDeleteResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_PathMkdirResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathMkdirResponse *>(obj);
+      auto ptr = reinterpret_cast<const PathMkdirResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_CryptoDecryptResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::CryptoDecryptResponse *>(obj);
+      auto ptr = reinterpret_cast<const CryptoDecryptResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_CryptoGetPwTypeResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::CryptoGetPwTypeResponse *>(obj);
+      auto ptr = reinterpret_cast<const CryptoGetPwTypeResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ResponseType_PathReadlinkResponse: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathReadlinkResponse *>(obj);
+      auto ptr = reinterpret_cast<const PathReadlinkResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return false;
@@ -509,6 +773,7 @@ inline bool VerifyResponseType(flatbuffers::Verifier &verifier, const void *obj,
 }
 
 inline bool VerifyResponseTypeVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
   if (values->size() != types->size()) return false;
   for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
     if (!VerifyResponseType(
@@ -523,15 +788,30 @@ inline const mbtool::daemon::v3::Response *GetResponse(const void *buf) {
   return flatbuffers::GetRoot<mbtool::daemon::v3::Response>(buf);
 }
 
+inline const mbtool::daemon::v3::Response *GetSizePrefixedResponse(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<mbtool::daemon::v3::Response>(buf);
+}
+
 inline bool VerifyResponseBuffer(
     flatbuffers::Verifier &verifier) {
   return verifier.VerifyBuffer<mbtool::daemon::v3::Response>(nullptr);
+}
+
+inline bool VerifySizePrefixedResponseBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<mbtool::daemon::v3::Response>(nullptr);
 }
 
 inline void FinishResponseBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<mbtool::daemon::v3::Response> root) {
   fbb.Finish(root);
+}
+
+inline void FinishSizePrefixedResponseBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<mbtool::daemon::v3::Response> root) {
+  fbb.FinishSizePrefixed(root);
 }
 
 }  // namespace v3

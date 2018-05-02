@@ -26,13 +26,13 @@ struct MbSetKernelError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct MbSetKernelErrorBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  MbSetKernelErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbSetKernelErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbSetKernelErrorBuilder &operator=(const MbSetKernelErrorBuilder &);
   flatbuffers::Offset<MbSetKernelError> Finish() {
-    const auto end = fbb_.EndTable(start_, 0);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbSetKernelError>(end);
     return o;
   }
@@ -57,9 +57,9 @@ struct MbSetKernelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ROM_ID) &&
+           VerifyOffset(verifier, VT_ROM_ID) &&
            verifier.Verify(rom_id()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_BOOT_BLOCKDEV) &&
+           VerifyOffset(verifier, VT_BOOT_BLOCKDEV) &&
            verifier.Verify(boot_blockdev()) &&
            verifier.EndTable();
   }
@@ -74,13 +74,13 @@ struct MbSetKernelRequestBuilder {
   void add_boot_blockdev(flatbuffers::Offset<flatbuffers::String> boot_blockdev) {
     fbb_.AddOffset(MbSetKernelRequest::VT_BOOT_BLOCKDEV, boot_blockdev);
   }
-  MbSetKernelRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbSetKernelRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbSetKernelRequestBuilder &operator=(const MbSetKernelRequestBuilder &);
   flatbuffers::Offset<MbSetKernelRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbSetKernelRequest>(end);
     return o;
   }
@@ -120,7 +120,7 @@ struct MbSetKernelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table 
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -135,13 +135,13 @@ struct MbSetKernelResponseBuilder {
   void add_error(flatbuffers::Offset<MbSetKernelError> error) {
     fbb_.AddOffset(MbSetKernelResponse::VT_ERROR, error);
   }
-  MbSetKernelResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbSetKernelResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbSetKernelResponseBuilder &operator=(const MbSetKernelResponseBuilder &);
   flatbuffers::Offset<MbSetKernelResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbSetKernelResponse>(end);
     return o;
   }

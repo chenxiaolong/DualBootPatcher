@@ -16,9 +16,11 @@ public final class FileOpenRequest extends Table {
 
   public String path() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer pathAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
+  public ByteBuffer pathInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 4, 1); }
   public short flags(int j) { int o = __offset(6); return o != 0 ? bb.getShort(__vector(o) + j * 2) : 0; }
   public int flagsLength() { int o = __offset(6); return o != 0 ? __vector_len(o) : 0; }
   public ByteBuffer flagsAsByteBuffer() { return __vector_as_bytebuffer(6, 2); }
+  public ByteBuffer flagsInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 2); }
   public long perms() { int o = __offset(8); return o != 0 ? (long)bb.getInt(o + bb_pos) & 0xFFFFFFFFL : 0L; }
 
   public static int createFileOpenRequest(FlatBufferBuilder builder,

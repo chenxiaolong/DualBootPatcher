@@ -30,7 +30,7 @@ struct PathReadlinkError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -45,13 +45,13 @@ struct PathReadlinkErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(PathReadlinkError::VT_MSG, msg);
   }
-  PathReadlinkErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathReadlinkErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathReadlinkErrorBuilder &operator=(const PathReadlinkErrorBuilder &);
   flatbuffers::Offset<PathReadlinkError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathReadlinkError>(end);
     return o;
   }
@@ -86,7 +86,7 @@ struct PathReadlinkRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table 
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_PATH) &&
+           VerifyOffset(verifier, VT_PATH) &&
            verifier.Verify(path()) &&
            verifier.EndTable();
   }
@@ -98,13 +98,13 @@ struct PathReadlinkRequestBuilder {
   void add_path(flatbuffers::Offset<flatbuffers::String> path) {
     fbb_.AddOffset(PathReadlinkRequest::VT_PATH, path);
   }
-  PathReadlinkRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathReadlinkRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathReadlinkRequestBuilder &operator=(const PathReadlinkRequestBuilder &);
   flatbuffers::Offset<PathReadlinkRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathReadlinkRequest>(end);
     return o;
   }
@@ -139,9 +139,9 @@ struct PathReadlinkResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_TARGET) &&
+           VerifyOffset(verifier, VT_TARGET) &&
            verifier.Verify(target()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -156,13 +156,13 @@ struct PathReadlinkResponseBuilder {
   void add_error(flatbuffers::Offset<PathReadlinkError> error) {
     fbb_.AddOffset(PathReadlinkResponse::VT_ERROR, error);
   }
-  PathReadlinkResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathReadlinkResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathReadlinkResponseBuilder &operator=(const PathReadlinkResponseBuilder &);
   flatbuffers::Offset<PathReadlinkResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathReadlinkResponse>(end);
     return o;
   }

@@ -17,6 +17,7 @@ public final class FileSELinuxSetLabelRequest extends Table {
   public int id() { int o = __offset(4); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public String label() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer labelAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public ByteBuffer labelInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 1); }
 
   public static int createFileSELinuxSetLabelRequest(FlatBufferBuilder builder,
       int id,

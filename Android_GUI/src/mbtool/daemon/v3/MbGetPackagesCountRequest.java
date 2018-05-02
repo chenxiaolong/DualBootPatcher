@@ -16,6 +16,7 @@ public final class MbGetPackagesCountRequest extends Table {
 
   public String romId() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer romIdAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
+  public ByteBuffer romIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 4, 1); }
 
   public static int createMbGetPackagesCountRequest(FlatBufferBuilder builder,
       int rom_idOffset) {
