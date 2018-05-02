@@ -77,8 +77,44 @@ enum RequestType {
   RequestType_MAX = RequestType_PathReadlinkRequest
 };
 
-inline const char **EnumNamesRequestType() {
-  static const char *names[] = {
+inline const RequestType (&EnumValuesRequestType())[30] {
+  static const RequestType values[] = {
+    RequestType_NONE,
+    RequestType_FileChmodRequest,
+    RequestType_FileCloseRequest,
+    RequestType_FileOpenRequest,
+    RequestType_FileReadRequest,
+    RequestType_FileSeekRequest,
+    RequestType_FileStatRequest,
+    RequestType_FileWriteRequest,
+    RequestType_FileSELinuxGetLabelRequest,
+    RequestType_FileSELinuxSetLabelRequest,
+    RequestType_PathChmodRequest,
+    RequestType_PathCopyRequest,
+    RequestType_PathSELinuxGetLabelRequest,
+    RequestType_PathSELinuxSetLabelRequest,
+    RequestType_PathGetDirectorySizeRequest,
+    RequestType_MbGetVersionRequest,
+    RequestType_MbGetInstalledRomsRequest,
+    RequestType_MbGetBootedRomIdRequest,
+    RequestType_MbSwitchRomRequest,
+    RequestType_MbSetKernelRequest,
+    RequestType_MbWipeRomRequest,
+    RequestType_MbGetPackagesCountRequest,
+    RequestType_RebootRequest,
+    RequestType_SignedExecRequest,
+    RequestType_ShutdownRequest,
+    RequestType_PathDeleteRequest,
+    RequestType_PathMkdirRequest,
+    RequestType_CryptoDecryptRequest,
+    RequestType_CryptoGetPwTypeRequest,
+    RequestType_PathReadlinkRequest
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesRequestType() {
+  static const char * const names[] = {
     "NONE",
     "FileChmodRequest",
     "FileCloseRequest",
@@ -123,119 +159,119 @@ template<typename T> struct RequestTypeTraits {
   static const RequestType enum_value = RequestType_NONE;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::FileChmodRequest> {
+template<> struct RequestTypeTraits<FileChmodRequest> {
   static const RequestType enum_value = RequestType_FileChmodRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::FileCloseRequest> {
+template<> struct RequestTypeTraits<FileCloseRequest> {
   static const RequestType enum_value = RequestType_FileCloseRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::FileOpenRequest> {
+template<> struct RequestTypeTraits<FileOpenRequest> {
   static const RequestType enum_value = RequestType_FileOpenRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::FileReadRequest> {
+template<> struct RequestTypeTraits<FileReadRequest> {
   static const RequestType enum_value = RequestType_FileReadRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::FileSeekRequest> {
+template<> struct RequestTypeTraits<FileSeekRequest> {
   static const RequestType enum_value = RequestType_FileSeekRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::FileStatRequest> {
+template<> struct RequestTypeTraits<FileStatRequest> {
   static const RequestType enum_value = RequestType_FileStatRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::FileWriteRequest> {
+template<> struct RequestTypeTraits<FileWriteRequest> {
   static const RequestType enum_value = RequestType_FileWriteRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::FileSELinuxGetLabelRequest> {
+template<> struct RequestTypeTraits<FileSELinuxGetLabelRequest> {
   static const RequestType enum_value = RequestType_FileSELinuxGetLabelRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::FileSELinuxSetLabelRequest> {
+template<> struct RequestTypeTraits<FileSELinuxSetLabelRequest> {
   static const RequestType enum_value = RequestType_FileSELinuxSetLabelRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::PathChmodRequest> {
+template<> struct RequestTypeTraits<PathChmodRequest> {
   static const RequestType enum_value = RequestType_PathChmodRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::PathCopyRequest> {
+template<> struct RequestTypeTraits<PathCopyRequest> {
   static const RequestType enum_value = RequestType_PathCopyRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::PathSELinuxGetLabelRequest> {
+template<> struct RequestTypeTraits<PathSELinuxGetLabelRequest> {
   static const RequestType enum_value = RequestType_PathSELinuxGetLabelRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::PathSELinuxSetLabelRequest> {
+template<> struct RequestTypeTraits<PathSELinuxSetLabelRequest> {
   static const RequestType enum_value = RequestType_PathSELinuxSetLabelRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::PathGetDirectorySizeRequest> {
+template<> struct RequestTypeTraits<PathGetDirectorySizeRequest> {
   static const RequestType enum_value = RequestType_PathGetDirectorySizeRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::MbGetVersionRequest> {
+template<> struct RequestTypeTraits<MbGetVersionRequest> {
   static const RequestType enum_value = RequestType_MbGetVersionRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::MbGetInstalledRomsRequest> {
+template<> struct RequestTypeTraits<MbGetInstalledRomsRequest> {
   static const RequestType enum_value = RequestType_MbGetInstalledRomsRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::MbGetBootedRomIdRequest> {
+template<> struct RequestTypeTraits<MbGetBootedRomIdRequest> {
   static const RequestType enum_value = RequestType_MbGetBootedRomIdRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::MbSwitchRomRequest> {
+template<> struct RequestTypeTraits<MbSwitchRomRequest> {
   static const RequestType enum_value = RequestType_MbSwitchRomRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::MbSetKernelRequest> {
+template<> struct RequestTypeTraits<MbSetKernelRequest> {
   static const RequestType enum_value = RequestType_MbSetKernelRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::MbWipeRomRequest> {
+template<> struct RequestTypeTraits<MbWipeRomRequest> {
   static const RequestType enum_value = RequestType_MbWipeRomRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::MbGetPackagesCountRequest> {
+template<> struct RequestTypeTraits<MbGetPackagesCountRequest> {
   static const RequestType enum_value = RequestType_MbGetPackagesCountRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::RebootRequest> {
+template<> struct RequestTypeTraits<RebootRequest> {
   static const RequestType enum_value = RequestType_RebootRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::SignedExecRequest> {
+template<> struct RequestTypeTraits<SignedExecRequest> {
   static const RequestType enum_value = RequestType_SignedExecRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::ShutdownRequest> {
+template<> struct RequestTypeTraits<ShutdownRequest> {
   static const RequestType enum_value = RequestType_ShutdownRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::PathDeleteRequest> {
+template<> struct RequestTypeTraits<PathDeleteRequest> {
   static const RequestType enum_value = RequestType_PathDeleteRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::PathMkdirRequest> {
+template<> struct RequestTypeTraits<PathMkdirRequest> {
   static const RequestType enum_value = RequestType_PathMkdirRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::CryptoDecryptRequest> {
+template<> struct RequestTypeTraits<CryptoDecryptRequest> {
   static const RequestType enum_value = RequestType_CryptoDecryptRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::CryptoGetPwTypeRequest> {
+template<> struct RequestTypeTraits<CryptoGetPwTypeRequest> {
   static const RequestType enum_value = RequestType_CryptoGetPwTypeRequest;
 };
 
-template<> struct RequestTypeTraits<mbtool::daemon::v3::PathReadlinkRequest> {
+template<> struct RequestTypeTraits<PathReadlinkRequest> {
   static const RequestType enum_value = RequestType_PathReadlinkRequest;
 };
 
@@ -253,14 +289,218 @@ struct Request FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const void *request() const {
     return GetPointer<const void *>(VT_REQUEST);
   }
+  template<typename T> const T *request_as() const;
+  const FileChmodRequest *request_as_FileChmodRequest() const {
+    return request_type() == RequestType_FileChmodRequest ? static_cast<const FileChmodRequest *>(request()) : nullptr;
+  }
+  const FileCloseRequest *request_as_FileCloseRequest() const {
+    return request_type() == RequestType_FileCloseRequest ? static_cast<const FileCloseRequest *>(request()) : nullptr;
+  }
+  const FileOpenRequest *request_as_FileOpenRequest() const {
+    return request_type() == RequestType_FileOpenRequest ? static_cast<const FileOpenRequest *>(request()) : nullptr;
+  }
+  const FileReadRequest *request_as_FileReadRequest() const {
+    return request_type() == RequestType_FileReadRequest ? static_cast<const FileReadRequest *>(request()) : nullptr;
+  }
+  const FileSeekRequest *request_as_FileSeekRequest() const {
+    return request_type() == RequestType_FileSeekRequest ? static_cast<const FileSeekRequest *>(request()) : nullptr;
+  }
+  const FileStatRequest *request_as_FileStatRequest() const {
+    return request_type() == RequestType_FileStatRequest ? static_cast<const FileStatRequest *>(request()) : nullptr;
+  }
+  const FileWriteRequest *request_as_FileWriteRequest() const {
+    return request_type() == RequestType_FileWriteRequest ? static_cast<const FileWriteRequest *>(request()) : nullptr;
+  }
+  const FileSELinuxGetLabelRequest *request_as_FileSELinuxGetLabelRequest() const {
+    return request_type() == RequestType_FileSELinuxGetLabelRequest ? static_cast<const FileSELinuxGetLabelRequest *>(request()) : nullptr;
+  }
+  const FileSELinuxSetLabelRequest *request_as_FileSELinuxSetLabelRequest() const {
+    return request_type() == RequestType_FileSELinuxSetLabelRequest ? static_cast<const FileSELinuxSetLabelRequest *>(request()) : nullptr;
+  }
+  const PathChmodRequest *request_as_PathChmodRequest() const {
+    return request_type() == RequestType_PathChmodRequest ? static_cast<const PathChmodRequest *>(request()) : nullptr;
+  }
+  const PathCopyRequest *request_as_PathCopyRequest() const {
+    return request_type() == RequestType_PathCopyRequest ? static_cast<const PathCopyRequest *>(request()) : nullptr;
+  }
+  const PathSELinuxGetLabelRequest *request_as_PathSELinuxGetLabelRequest() const {
+    return request_type() == RequestType_PathSELinuxGetLabelRequest ? static_cast<const PathSELinuxGetLabelRequest *>(request()) : nullptr;
+  }
+  const PathSELinuxSetLabelRequest *request_as_PathSELinuxSetLabelRequest() const {
+    return request_type() == RequestType_PathSELinuxSetLabelRequest ? static_cast<const PathSELinuxSetLabelRequest *>(request()) : nullptr;
+  }
+  const PathGetDirectorySizeRequest *request_as_PathGetDirectorySizeRequest() const {
+    return request_type() == RequestType_PathGetDirectorySizeRequest ? static_cast<const PathGetDirectorySizeRequest *>(request()) : nullptr;
+  }
+  const MbGetVersionRequest *request_as_MbGetVersionRequest() const {
+    return request_type() == RequestType_MbGetVersionRequest ? static_cast<const MbGetVersionRequest *>(request()) : nullptr;
+  }
+  const MbGetInstalledRomsRequest *request_as_MbGetInstalledRomsRequest() const {
+    return request_type() == RequestType_MbGetInstalledRomsRequest ? static_cast<const MbGetInstalledRomsRequest *>(request()) : nullptr;
+  }
+  const MbGetBootedRomIdRequest *request_as_MbGetBootedRomIdRequest() const {
+    return request_type() == RequestType_MbGetBootedRomIdRequest ? static_cast<const MbGetBootedRomIdRequest *>(request()) : nullptr;
+  }
+  const MbSwitchRomRequest *request_as_MbSwitchRomRequest() const {
+    return request_type() == RequestType_MbSwitchRomRequest ? static_cast<const MbSwitchRomRequest *>(request()) : nullptr;
+  }
+  const MbSetKernelRequest *request_as_MbSetKernelRequest() const {
+    return request_type() == RequestType_MbSetKernelRequest ? static_cast<const MbSetKernelRequest *>(request()) : nullptr;
+  }
+  const MbWipeRomRequest *request_as_MbWipeRomRequest() const {
+    return request_type() == RequestType_MbWipeRomRequest ? static_cast<const MbWipeRomRequest *>(request()) : nullptr;
+  }
+  const MbGetPackagesCountRequest *request_as_MbGetPackagesCountRequest() const {
+    return request_type() == RequestType_MbGetPackagesCountRequest ? static_cast<const MbGetPackagesCountRequest *>(request()) : nullptr;
+  }
+  const RebootRequest *request_as_RebootRequest() const {
+    return request_type() == RequestType_RebootRequest ? static_cast<const RebootRequest *>(request()) : nullptr;
+  }
+  const SignedExecRequest *request_as_SignedExecRequest() const {
+    return request_type() == RequestType_SignedExecRequest ? static_cast<const SignedExecRequest *>(request()) : nullptr;
+  }
+  const ShutdownRequest *request_as_ShutdownRequest() const {
+    return request_type() == RequestType_ShutdownRequest ? static_cast<const ShutdownRequest *>(request()) : nullptr;
+  }
+  const PathDeleteRequest *request_as_PathDeleteRequest() const {
+    return request_type() == RequestType_PathDeleteRequest ? static_cast<const PathDeleteRequest *>(request()) : nullptr;
+  }
+  const PathMkdirRequest *request_as_PathMkdirRequest() const {
+    return request_type() == RequestType_PathMkdirRequest ? static_cast<const PathMkdirRequest *>(request()) : nullptr;
+  }
+  const CryptoDecryptRequest *request_as_CryptoDecryptRequest() const {
+    return request_type() == RequestType_CryptoDecryptRequest ? static_cast<const CryptoDecryptRequest *>(request()) : nullptr;
+  }
+  const CryptoGetPwTypeRequest *request_as_CryptoGetPwTypeRequest() const {
+    return request_type() == RequestType_CryptoGetPwTypeRequest ? static_cast<const CryptoGetPwTypeRequest *>(request()) : nullptr;
+  }
+  const PathReadlinkRequest *request_as_PathReadlinkRequest() const {
+    return request_type() == RequestType_PathReadlinkRequest ? static_cast<const PathReadlinkRequest *>(request()) : nullptr;
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_REQUEST_TYPE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_REQUEST) &&
+           VerifyOffset(verifier, VT_REQUEST) &&
            VerifyRequestType(verifier, request(), request_type()) &&
            verifier.EndTable();
   }
 };
+
+template<> inline const FileChmodRequest *Request::request_as<FileChmodRequest>() const {
+  return request_as_FileChmodRequest();
+}
+
+template<> inline const FileCloseRequest *Request::request_as<FileCloseRequest>() const {
+  return request_as_FileCloseRequest();
+}
+
+template<> inline const FileOpenRequest *Request::request_as<FileOpenRequest>() const {
+  return request_as_FileOpenRequest();
+}
+
+template<> inline const FileReadRequest *Request::request_as<FileReadRequest>() const {
+  return request_as_FileReadRequest();
+}
+
+template<> inline const FileSeekRequest *Request::request_as<FileSeekRequest>() const {
+  return request_as_FileSeekRequest();
+}
+
+template<> inline const FileStatRequest *Request::request_as<FileStatRequest>() const {
+  return request_as_FileStatRequest();
+}
+
+template<> inline const FileWriteRequest *Request::request_as<FileWriteRequest>() const {
+  return request_as_FileWriteRequest();
+}
+
+template<> inline const FileSELinuxGetLabelRequest *Request::request_as<FileSELinuxGetLabelRequest>() const {
+  return request_as_FileSELinuxGetLabelRequest();
+}
+
+template<> inline const FileSELinuxSetLabelRequest *Request::request_as<FileSELinuxSetLabelRequest>() const {
+  return request_as_FileSELinuxSetLabelRequest();
+}
+
+template<> inline const PathChmodRequest *Request::request_as<PathChmodRequest>() const {
+  return request_as_PathChmodRequest();
+}
+
+template<> inline const PathCopyRequest *Request::request_as<PathCopyRequest>() const {
+  return request_as_PathCopyRequest();
+}
+
+template<> inline const PathSELinuxGetLabelRequest *Request::request_as<PathSELinuxGetLabelRequest>() const {
+  return request_as_PathSELinuxGetLabelRequest();
+}
+
+template<> inline const PathSELinuxSetLabelRequest *Request::request_as<PathSELinuxSetLabelRequest>() const {
+  return request_as_PathSELinuxSetLabelRequest();
+}
+
+template<> inline const PathGetDirectorySizeRequest *Request::request_as<PathGetDirectorySizeRequest>() const {
+  return request_as_PathGetDirectorySizeRequest();
+}
+
+template<> inline const MbGetVersionRequest *Request::request_as<MbGetVersionRequest>() const {
+  return request_as_MbGetVersionRequest();
+}
+
+template<> inline const MbGetInstalledRomsRequest *Request::request_as<MbGetInstalledRomsRequest>() const {
+  return request_as_MbGetInstalledRomsRequest();
+}
+
+template<> inline const MbGetBootedRomIdRequest *Request::request_as<MbGetBootedRomIdRequest>() const {
+  return request_as_MbGetBootedRomIdRequest();
+}
+
+template<> inline const MbSwitchRomRequest *Request::request_as<MbSwitchRomRequest>() const {
+  return request_as_MbSwitchRomRequest();
+}
+
+template<> inline const MbSetKernelRequest *Request::request_as<MbSetKernelRequest>() const {
+  return request_as_MbSetKernelRequest();
+}
+
+template<> inline const MbWipeRomRequest *Request::request_as<MbWipeRomRequest>() const {
+  return request_as_MbWipeRomRequest();
+}
+
+template<> inline const MbGetPackagesCountRequest *Request::request_as<MbGetPackagesCountRequest>() const {
+  return request_as_MbGetPackagesCountRequest();
+}
+
+template<> inline const RebootRequest *Request::request_as<RebootRequest>() const {
+  return request_as_RebootRequest();
+}
+
+template<> inline const SignedExecRequest *Request::request_as<SignedExecRequest>() const {
+  return request_as_SignedExecRequest();
+}
+
+template<> inline const ShutdownRequest *Request::request_as<ShutdownRequest>() const {
+  return request_as_ShutdownRequest();
+}
+
+template<> inline const PathDeleteRequest *Request::request_as<PathDeleteRequest>() const {
+  return request_as_PathDeleteRequest();
+}
+
+template<> inline const PathMkdirRequest *Request::request_as<PathMkdirRequest>() const {
+  return request_as_PathMkdirRequest();
+}
+
+template<> inline const CryptoDecryptRequest *Request::request_as<CryptoDecryptRequest>() const {
+  return request_as_CryptoDecryptRequest();
+}
+
+template<> inline const CryptoGetPwTypeRequest *Request::request_as<CryptoGetPwTypeRequest>() const {
+  return request_as_CryptoGetPwTypeRequest();
+}
+
+template<> inline const PathReadlinkRequest *Request::request_as<PathReadlinkRequest>() const {
+  return request_as_PathReadlinkRequest();
+}
 
 struct RequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
@@ -271,13 +511,13 @@ struct RequestBuilder {
   void add_request(flatbuffers::Offset<void> request) {
     fbb_.AddOffset(Request::VT_REQUEST, request);
   }
-  RequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit RequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   RequestBuilder &operator=(const RequestBuilder &);
   flatbuffers::Offset<Request> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Request>(end);
     return o;
   }
@@ -299,119 +539,119 @@ inline bool VerifyRequestType(flatbuffers::Verifier &verifier, const void *obj, 
       return true;
     }
     case RequestType_FileChmodRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileChmodRequest *>(obj);
+      auto ptr = reinterpret_cast<const FileChmodRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_FileCloseRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileCloseRequest *>(obj);
+      auto ptr = reinterpret_cast<const FileCloseRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_FileOpenRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileOpenRequest *>(obj);
+      auto ptr = reinterpret_cast<const FileOpenRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_FileReadRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileReadRequest *>(obj);
+      auto ptr = reinterpret_cast<const FileReadRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_FileSeekRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileSeekRequest *>(obj);
+      auto ptr = reinterpret_cast<const FileSeekRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_FileStatRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileStatRequest *>(obj);
+      auto ptr = reinterpret_cast<const FileStatRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_FileWriteRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileWriteRequest *>(obj);
+      auto ptr = reinterpret_cast<const FileWriteRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_FileSELinuxGetLabelRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileSELinuxGetLabelRequest *>(obj);
+      auto ptr = reinterpret_cast<const FileSELinuxGetLabelRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_FileSELinuxSetLabelRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::FileSELinuxSetLabelRequest *>(obj);
+      auto ptr = reinterpret_cast<const FileSELinuxSetLabelRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_PathChmodRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathChmodRequest *>(obj);
+      auto ptr = reinterpret_cast<const PathChmodRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_PathCopyRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathCopyRequest *>(obj);
+      auto ptr = reinterpret_cast<const PathCopyRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_PathSELinuxGetLabelRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathSELinuxGetLabelRequest *>(obj);
+      auto ptr = reinterpret_cast<const PathSELinuxGetLabelRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_PathSELinuxSetLabelRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathSELinuxSetLabelRequest *>(obj);
+      auto ptr = reinterpret_cast<const PathSELinuxSetLabelRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_PathGetDirectorySizeRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathGetDirectorySizeRequest *>(obj);
+      auto ptr = reinterpret_cast<const PathGetDirectorySizeRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_MbGetVersionRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbGetVersionRequest *>(obj);
+      auto ptr = reinterpret_cast<const MbGetVersionRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_MbGetInstalledRomsRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbGetInstalledRomsRequest *>(obj);
+      auto ptr = reinterpret_cast<const MbGetInstalledRomsRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_MbGetBootedRomIdRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbGetBootedRomIdRequest *>(obj);
+      auto ptr = reinterpret_cast<const MbGetBootedRomIdRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_MbSwitchRomRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbSwitchRomRequest *>(obj);
+      auto ptr = reinterpret_cast<const MbSwitchRomRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_MbSetKernelRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbSetKernelRequest *>(obj);
+      auto ptr = reinterpret_cast<const MbSetKernelRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_MbWipeRomRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbWipeRomRequest *>(obj);
+      auto ptr = reinterpret_cast<const MbWipeRomRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_MbGetPackagesCountRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::MbGetPackagesCountRequest *>(obj);
+      auto ptr = reinterpret_cast<const MbGetPackagesCountRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_RebootRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::RebootRequest *>(obj);
+      auto ptr = reinterpret_cast<const RebootRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_SignedExecRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::SignedExecRequest *>(obj);
+      auto ptr = reinterpret_cast<const SignedExecRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_ShutdownRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::ShutdownRequest *>(obj);
+      auto ptr = reinterpret_cast<const ShutdownRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_PathDeleteRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathDeleteRequest *>(obj);
+      auto ptr = reinterpret_cast<const PathDeleteRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_PathMkdirRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathMkdirRequest *>(obj);
+      auto ptr = reinterpret_cast<const PathMkdirRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_CryptoDecryptRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::CryptoDecryptRequest *>(obj);
+      auto ptr = reinterpret_cast<const CryptoDecryptRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_CryptoGetPwTypeRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::CryptoGetPwTypeRequest *>(obj);
+      auto ptr = reinterpret_cast<const CryptoGetPwTypeRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case RequestType_PathReadlinkRequest: {
-      auto ptr = reinterpret_cast<const mbtool::daemon::v3::PathReadlinkRequest *>(obj);
+      auto ptr = reinterpret_cast<const PathReadlinkRequest *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return false;
@@ -419,6 +659,7 @@ inline bool VerifyRequestType(flatbuffers::Verifier &verifier, const void *obj, 
 }
 
 inline bool VerifyRequestTypeVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
   if (values->size() != types->size()) return false;
   for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
     if (!VerifyRequestType(
@@ -433,15 +674,30 @@ inline const mbtool::daemon::v3::Request *GetRequest(const void *buf) {
   return flatbuffers::GetRoot<mbtool::daemon::v3::Request>(buf);
 }
 
+inline const mbtool::daemon::v3::Request *GetSizePrefixedRequest(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<mbtool::daemon::v3::Request>(buf);
+}
+
 inline bool VerifyRequestBuffer(
     flatbuffers::Verifier &verifier) {
   return verifier.VerifyBuffer<mbtool::daemon::v3::Request>(nullptr);
+}
+
+inline bool VerifySizePrefixedRequestBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<mbtool::daemon::v3::Request>(nullptr);
 }
 
 inline void FinishRequestBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<mbtool::daemon::v3::Request> root) {
   fbb.Finish(root);
+}
+
+inline void FinishSizePrefixedRequestBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<mbtool::daemon::v3::Request> root) {
+  fbb.FinishSizePrefixed(root);
 }
 
 }  // namespace v3

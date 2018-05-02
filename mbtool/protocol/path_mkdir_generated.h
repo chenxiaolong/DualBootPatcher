@@ -30,7 +30,7 @@ struct PathMkdirError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -45,13 +45,13 @@ struct PathMkdirErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(PathMkdirError::VT_MSG, msg);
   }
-  PathMkdirErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathMkdirErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathMkdirErrorBuilder &operator=(const PathMkdirErrorBuilder &);
   flatbuffers::Offset<PathMkdirError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathMkdirError>(end);
     return o;
   }
@@ -94,7 +94,7 @@ struct PathMkdirRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_PATH) &&
+           VerifyOffset(verifier, VT_PATH) &&
            verifier.Verify(path()) &&
            VerifyField<uint32_t>(verifier, VT_MODE) &&
            VerifyField<uint8_t>(verifier, VT_RECURSIVE) &&
@@ -114,13 +114,13 @@ struct PathMkdirRequestBuilder {
   void add_recursive(bool recursive) {
     fbb_.AddElement<uint8_t>(PathMkdirRequest::VT_RECURSIVE, static_cast<uint8_t>(recursive), 0);
   }
-  PathMkdirRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathMkdirRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathMkdirRequestBuilder &operator=(const PathMkdirRequestBuilder &);
   flatbuffers::Offset<PathMkdirRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathMkdirRequest>(end);
     return o;
   }
@@ -168,9 +168,9 @@ struct PathMkdirResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -188,13 +188,13 @@ struct PathMkdirResponseBuilder {
   void add_error(flatbuffers::Offset<PathMkdirError> error) {
     fbb_.AddOffset(PathMkdirResponse::VT_ERROR, error);
   }
-  PathMkdirResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathMkdirResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathMkdirResponseBuilder &operator=(const PathMkdirResponseBuilder &);
   flatbuffers::Offset<PathMkdirResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathMkdirResponse>(end);
     return o;
   }

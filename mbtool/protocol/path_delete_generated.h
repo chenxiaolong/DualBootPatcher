@@ -25,8 +25,18 @@ enum PathDeleteFlag {
   PathDeleteFlag_MAX = PathDeleteFlag_RECURSIVE
 };
 
-inline const char **EnumNamesPathDeleteFlag() {
-  static const char *names[] = {
+inline const PathDeleteFlag (&EnumValuesPathDeleteFlag())[4] {
+  static const PathDeleteFlag values[] = {
+    PathDeleteFlag_REMOVE,
+    PathDeleteFlag_UNLINK,
+    PathDeleteFlag_RMDIR,
+    PathDeleteFlag_RECURSIVE
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesPathDeleteFlag() {
+  static const char * const names[] = {
     "REMOVE",
     "UNLINK",
     "RMDIR",
@@ -55,7 +65,7 @@ struct PathDeleteError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -70,13 +80,13 @@ struct PathDeleteErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(PathDeleteError::VT_MSG, msg);
   }
-  PathDeleteErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathDeleteErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathDeleteErrorBuilder &operator=(const PathDeleteErrorBuilder &);
   flatbuffers::Offset<PathDeleteError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathDeleteError>(end);
     return o;
   }
@@ -115,7 +125,7 @@ struct PathDeleteRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_PATH) &&
+           VerifyOffset(verifier, VT_PATH) &&
            verifier.Verify(path()) &&
            VerifyField<int16_t>(verifier, VT_FLAG) &&
            verifier.EndTable();
@@ -131,13 +141,13 @@ struct PathDeleteRequestBuilder {
   void add_flag(PathDeleteFlag flag) {
     fbb_.AddElement<int16_t>(PathDeleteRequest::VT_FLAG, static_cast<int16_t>(flag), 0);
   }
-  PathDeleteRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathDeleteRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathDeleteRequestBuilder &operator=(const PathDeleteRequestBuilder &);
   flatbuffers::Offset<PathDeleteRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathDeleteRequest>(end);
     return o;
   }
@@ -181,9 +191,9 @@ struct PathDeleteResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -201,13 +211,13 @@ struct PathDeleteResponseBuilder {
   void add_error(flatbuffers::Offset<PathDeleteError> error) {
     fbb_.AddOffset(PathDeleteResponse::VT_ERROR, error);
   }
-  PathDeleteResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathDeleteResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathDeleteResponseBuilder &operator=(const PathDeleteResponseBuilder &);
   flatbuffers::Offset<PathDeleteResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathDeleteResponse>(end);
     return o;
   }

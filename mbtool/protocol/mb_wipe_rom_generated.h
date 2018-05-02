@@ -24,8 +24,19 @@ enum MbWipeTarget {
   MbWipeTarget_MAX = MbWipeTarget_MULTIBOOT
 };
 
-inline const char **EnumNamesMbWipeTarget() {
-  static const char *names[] = {
+inline const MbWipeTarget (&EnumValuesMbWipeTarget())[5] {
+  static const MbWipeTarget values[] = {
+    MbWipeTarget_SYSTEM,
+    MbWipeTarget_CACHE,
+    MbWipeTarget_DATA,
+    MbWipeTarget_DALVIK_CACHE,
+    MbWipeTarget_MULTIBOOT
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesMbWipeTarget() {
+  static const char * const names[] = {
     "SYSTEM",
     "CACHE",
     "DATA",
@@ -54,9 +65,9 @@ struct MbWipeRomRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ROM_ID) &&
+           VerifyOffset(verifier, VT_ROM_ID) &&
            verifier.Verify(rom_id()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_TARGETS) &&
+           VerifyOffset(verifier, VT_TARGETS) &&
            verifier.Verify(targets()) &&
            verifier.EndTable();
   }
@@ -71,13 +82,13 @@ struct MbWipeRomRequestBuilder {
   void add_targets(flatbuffers::Offset<flatbuffers::Vector<int16_t>> targets) {
     fbb_.AddOffset(MbWipeRomRequest::VT_TARGETS, targets);
   }
-  MbWipeRomRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbWipeRomRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbWipeRomRequestBuilder &operator=(const MbWipeRomRequestBuilder &);
   flatbuffers::Offset<MbWipeRomRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbWipeRomRequest>(end);
     return o;
   }
@@ -116,9 +127,9 @@ struct MbWipeRomResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_SUCCEEDED) &&
+           VerifyOffset(verifier, VT_SUCCEEDED) &&
            verifier.Verify(succeeded()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_FAILED) &&
+           VerifyOffset(verifier, VT_FAILED) &&
            verifier.Verify(failed()) &&
            verifier.EndTable();
   }
@@ -133,13 +144,13 @@ struct MbWipeRomResponseBuilder {
   void add_failed(flatbuffers::Offset<flatbuffers::Vector<int16_t>> failed) {
     fbb_.AddOffset(MbWipeRomResponse::VT_FAILED, failed);
   }
-  MbWipeRomResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbWipeRomResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbWipeRomResponseBuilder &operator=(const MbWipeRomResponseBuilder &);
   flatbuffers::Offset<MbWipeRomResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbWipeRomResponse>(end);
     return o;
   }

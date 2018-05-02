@@ -30,7 +30,7 @@ struct FileChmodError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -45,13 +45,13 @@ struct FileChmodErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(FileChmodError::VT_MSG, msg);
   }
-  FileChmodErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileChmodErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileChmodErrorBuilder &operator=(const FileChmodErrorBuilder &);
   flatbuffers::Offset<FileChmodError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileChmodError>(end);
     return o;
   }
@@ -105,13 +105,13 @@ struct FileChmodRequestBuilder {
   void add_mode(uint32_t mode) {
     fbb_.AddElement<uint32_t>(FileChmodRequest::VT_MODE, mode, 0);
   }
-  FileChmodRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileChmodRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileChmodRequestBuilder &operator=(const FileChmodRequestBuilder &);
   flatbuffers::Offset<FileChmodRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileChmodRequest>(end);
     return o;
   }
@@ -145,9 +145,9 @@ struct FileChmodResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -165,13 +165,13 @@ struct FileChmodResponseBuilder {
   void add_error(flatbuffers::Offset<FileChmodError> error) {
     fbb_.AddOffset(FileChmodResponse::VT_ERROR, error);
   }
-  FileChmodResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileChmodResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileChmodResponseBuilder &operator=(const FileChmodResponseBuilder &);
   flatbuffers::Offset<FileChmodResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileChmodResponse>(end);
     return o;
   }
