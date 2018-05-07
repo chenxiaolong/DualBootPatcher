@@ -2,6 +2,7 @@
   id: M653
   codenames:
     - wt86617
+    - A3S
   architecture: arm64-v8a
 
   block_devs:
