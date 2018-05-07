@@ -1,6 +1,7 @@
 - name: M653 
   id: M653
   codenames:
+    - M653
     - wt86617
     - A3S
   architecture: arm64-v8a
