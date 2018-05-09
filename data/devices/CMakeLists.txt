@@ -66,6 +66,7 @@ set(files
     xiaomi/03_redmi.yml
     xiaomi/04_redmi_note.yml
     xiaomi/05_other.yml
+    xiaomi/rosy.yml
     yu.yml
     zoji.yml
     zte.yml
