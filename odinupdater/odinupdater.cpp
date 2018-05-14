@@ -48,16 +48,13 @@
 // libmbutil
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
+#include "mbutil/file.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 
 // minizip
 #include <archive.h>
 #include <archive_entry.h>
-
-#define DEBUG_SKIP_FLASH_SYSTEM 0
-#define DEBUG_SKIP_FLASH_CSC    0
-#define DEBUG_SKIP_FLASH_BOOT   0
 
 #define SYSTEM_SPARSE_FILE      "system.img.sparse"
 #define CACHE_SPARSE_FILE       "cache.img.sparse"
@@ -69,6 +66,7 @@
 #define TEMP_CACHE_MOUNT_FILE   "/tmp/cache.img"
 #define TEMP_CACHE_MOUNT_DIR    "/tmp/cache"
 #define TEMP_CSC_ZIP_FILE       TEMP_CACHE_MOUNT_DIR "/recovery/sec_csc.zip"
+#define TEMP_OMC_ZIP_FILE       TEMP_CACHE_MOUNT_DIR "/recovery/sec_omc.zip"
 #define TEMP_FUSE_SPARSE_FILE   "/tmp/fuse-sparse"
 
 #define EFS_SALES_CODE_FILE     "/efs/imei/mps_code.dat"
@@ -91,7 +89,7 @@ static int interface;
 static int output_fd;
 static const char *zip_file;
 
-static char sales_code[10];
+static std::string sales_code;
 static std::string system_block_dev;
 static std::string boot_block_dev;
 
@@ -143,10 +141,8 @@ static void info(const char *fmt, ...)
     fputc('\n', stdout);
 }
 
-static bool mount_system()
+static bool run_command(const std::vector<std::string> &argv)
 {
-    // mbtool will redirect the call
-    std::vector<std::string> argv{ "mount", "/system" };
     int status = mb::util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
@@ -159,20 +155,16 @@ static bool mount_system()
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
+static bool mount_system()
+{
+    // mbtool will redirect the call
+    return run_command({ "mount", "/system" });
+}
+
 static bool umount_system()
 {
     // mbtool will redirect the call
-    std::vector<std::string> argv{ "umount", "/system" };
-    int status = mb::util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
-    if (status < 0) {
-        error("Failed to run command: %s", strerror(errno));
-        return false;
-    } else if (WIFSIGNALED(status)) {
-        error("Command killed by signal: %d", WTERMSIG(status));
-        return false;
-    }
-
-    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    return run_command({ "unmount", "/system" });
 }
 
 static bool la_open_zip(archive *a, const char *filename)
@@ -218,33 +210,21 @@ static ExtractResult la_skip_to(archive *a, const char *filename,
 
 static bool load_sales_code()
 {
-    int fd = open64(EFS_SALES_CODE_FILE, O_RDONLY | O_CLOEXEC);
-    if (fd < 0) {
-        error("%s: Failed to open file: %s",
-              EFS_SALES_CODE_FILE, strerror(errno));
+    auto line = mb::util::file_first_line(EFS_SALES_CODE_FILE);
+    if (!line) {
+        error("%s: Failed to read file: %s",
+              EFS_SALES_CODE_FILE, line.error().message().c_str());
         return false;
-    } else {
-        ssize_t n = read(fd, sales_code, sizeof(sales_code) - 1);
-        close(fd);
-        if (n < 0) {
-            error("%s: Failed to read file: %s",
-                  EFS_SALES_CODE_FILE, strerror(errno));
-            return false;
-        }
-        sales_code[n] = '\0';
-
-        char *newline = strchr(sales_code, '\n');
-        if (newline) {
-            *newline = '\0';
-        }
     }
 
-    if (!*sales_code) {
+    sales_code = std::move(line.value());
+
+    if (sales_code.empty()) {
         error("Sales code is empty");
         return false;
     }
 
-    info("EFS partition says sales code is: %s", sales_code);
+    info("EFS partition says sales code is: %s", sales_code.c_str());
     return true;
 }
 
@@ -312,7 +292,6 @@ static bool load_block_devs()
         return stat(path.c_str(), &sb) == 0 && S_ISBLK(sb.st_mode);
     };
 
-#if !DEBUG_SKIP_FLASH_SYSTEM
     {
         auto devs = device.system_block_devs();
         auto it = std::find_if(devs.begin(), devs.end(), is_blk_device);
@@ -322,9 +301,7 @@ static bool load_block_devs()
         }
         system_block_dev = *it;
     }
-#endif
 
-#if !DEBUG_SKIP_FLASH_BOOT
     {
         auto devs = device.boot_block_devs();
         auto it = std::find_if(devs.begin(), devs.end(), is_blk_device);
@@ -334,7 +311,6 @@ static bool load_block_devs()
         }
         boot_block_dev = *it;
     }
-#endif
 
     info("System block device: %s", system_block_dev.c_str());
     info("Boot block device: %s", boot_block_dev.c_str());
@@ -368,9 +344,6 @@ static mb::oc::result<size_t> cb_zip_read(mb::File &file, void *userdata,
     return static_cast<size_t>(total);
 }
 
-#if DEBUG_SKIP_FLASH_SYSTEM
-[[maybe_unused]]
-#endif
 static ExtractResult extract_sparse_file(const char *zip_filename,
                                          const char *out_filename)
 {
@@ -606,9 +579,9 @@ static bool apply_multi_csc()
     char sales_code_csc_contents[100];
 
     snprintf(sales_code_system, sizeof(sales_code_system),
-             "/system/csc/%s/system", sales_code);
+             "/system/csc/%s/system", sales_code.c_str());
     snprintf(sales_code_csc_contents, sizeof(sales_code_csc_contents),
-             "/system/csc/%s/csc_contents", sales_code);
+             "/system/csc/%s/csc_contents", sales_code.c_str());
 
     // TODO: TouchWiz hard links files that go in /system/app
 
@@ -633,22 +606,14 @@ static bool apply_multi_csc()
     return true;
 }
 
-static bool flash_csc_zip()
+static bool flash_carrier_package_zip(const char *path)
 {
     ScopedArchive matcher{archive_match_new(), &archive_match_free};
     ScopedArchive in{archive_read_new(), &archive_read_free};
     ScopedArchive out{archive_write_disk_new(), &archive_write_free};
 
-    if (!matcher) {
-        error("libarchive: Out of memory when creating matcher");
-        return false;
-    }
-    if (!in) {
-        error("libarchive: Out of memory when creating archive reader");
-        return false;
-    }
-    if (!out) {
-        error("libarchive: Out of memory when creating disk writer");
+    if (!matcher || !in || !out) {
+        error("libarchive: Out of memory");
         return false;
     }
 
@@ -676,10 +641,10 @@ static bool flash_csc_zip()
                                  | ARCHIVE_EXTRACT_MAC_METADATA
                                  | ARCHIVE_EXTRACT_SPARSE);
 
-    if (archive_read_open_filename(in.get(), TEMP_CSC_ZIP_FILE, 10240)
+    if (archive_read_open_filename(in.get(), path, 10240)
             != ARCHIVE_OK) {
         error("libarchive: %s: Failed to open file: %s",
-              zip_file, archive_error_string(in.get()));
+              path, archive_error_string(in.get()));
         return false;
     }
 
@@ -691,18 +656,16 @@ static bool flash_csc_zip()
         if (ret == ARCHIVE_EOF) {
             break;
         } else if (ret == ARCHIVE_RETRY) {
-            info("libarchive: %s: Retrying header read", zip_file);
             continue;
         } else if (ret != ARCHIVE_OK) {
             error("libarchive: %s: Failed to read header: %s",
-                  zip_file, archive_error_string(in.get()));
+                  path, archive_error_string(in.get()));
             return false;
         }
 
         const char *path = archive_entry_pathname(entry);
         if (!path || !*path) {
-            error("libarchive: %s: Header has null or empty filename",
-                  zip_file);
+            error("libarchive: %s: Header has null or empty filename", path);
             return false;
         }
 
@@ -731,9 +694,8 @@ static bool flash_csc_zip()
     return true;
 }
 
-static ExtractResult flash_csc()
+static ExtractResult flash_carrier_package()
 {
-    int status;
     ExtractResult result;
 
     result = extract_raw_file(CACHE_SPARSE_FILE, TEMP_CACHE_SPARSE_FILE);
@@ -756,22 +718,11 @@ static ExtractResult flash_csc()
     close(open(TEMP_CACHE_MOUNT_FILE, O_CREAT | O_WRONLY | O_CLOEXEC, 0600));
 
     // Mount sparse file with fuse-sparse
-    {
-        std::vector<std::string> argv{
-            TEMP_FUSE_SPARSE_FILE,
-            TEMP_CACHE_SPARSE_FILE,
-            TEMP_CACHE_MOUNT_FILE
-        };
-        status = mb::util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
-    }
-    if (status < 0) {
-        error("Failed to run command: %s", strerror(errno));
-        return ExtractResult::Error;
-    } else if (WIFSIGNALED(status)) {
-        error("Command killed by signal: %d", WTERMSIG(status));
-        return ExtractResult::Error;
-    } else if (WEXITSTATUS(status) != 0) {
-        error("Command returned non-zero exit status: %d", WEXITSTATUS(status));
+    if (!run_command({
+        TEMP_FUSE_SPARSE_FILE,
+        TEMP_CACHE_SPARSE_FILE,
+        TEMP_CACHE_MOUNT_FILE
+    })) {
         return ExtractResult::Error;
     }
 
@@ -806,13 +757,23 @@ static ExtractResult flash_csc()
         umount_system();
     });
 
-    if (!flash_csc_zip()) {
-        error("Failed to flash CSC zip");
-        return ExtractResult::Error;
-    }
+    if (access(TEMP_CSC_ZIP_FILE, R_OK) == 0) {
+        if (!flash_carrier_package_zip(TEMP_CSC_ZIP_FILE)) {
+            error("Failed to flash CSC zip");
+            return ExtractResult::Error;
+        }
 
-    if (!apply_multi_csc()) {
-        error("Failed to apply Multi-CSC");
+        if (!apply_multi_csc()) {
+            error("Failed to apply Multi-CSC");
+            return ExtractResult::Error;
+        }
+    } else if (access(TEMP_OMC_ZIP_FILE, R_OK) == 0) {
+        if (!flash_carrier_package_zip(TEMP_OMC_ZIP_FILE)) {
+            error("Failed to flash OMC zip");
+            return ExtractResult::Error;
+        }
+    } else {
+        error("No CSC/OMC package found in the cache image");
         return ExtractResult::Error;
     }
 
@@ -850,14 +811,9 @@ static bool flash_zip()
         return false;
     }
 
-#if !DEBUG_SKIP_FLASH_SYSTEM || !DEBUG_SKIP_FLASH_CSC || !DEBUG_SKIP_FLASH_BOOT
     ExtractResult result;
-#endif
 
     // Flash system.img.ext4
-#if DEBUG_SKIP_FLASH_SYSTEM
-    ui_print("[DEBUG] Skipping flashing of system image");
-#else
     ui_print("Flashing system image");
     result = extract_sparse_file(SYSTEM_SPARSE_FILE, system_block_dev.c_str());
     switch (result) {
@@ -871,31 +827,23 @@ static bool flash_zip()
         ui_print("Successfully flashed system image");
         break;
     }
-#endif
 
-    // Flash CSC from cache.img.ext4
-#if DEBUG_SKIP_FLASH_CSC
-    ui_print("[DEBUG] Skipping flashing of CSC");
-#else
-    ui_print("Flashing CSC from cache image");
-    result = flash_csc();
+    // Flash carrier package from cache.img.ext4
+    ui_print("Flashing carrier package from cache image");
+    result = flash_carrier_package();
     switch (result) {
     case ExtractResult::Error:
-        ui_print("Failed to flash CSC");
+        ui_print("Failed to flash carrier package");
         return false;
     case ExtractResult::Missing:
-        ui_print("[WARNING] Cache image not found. Won't flash CSC");
+        ui_print("[WARNING] Cache image not found. Won't flash carrier package");
         break;
     case ExtractResult::Ok:
-        ui_print("Successfully flashed CSC");
+        ui_print("Successfully flashed carrier package");
         break;
     }
-#endif
 
     // Flash boot.img
-#if DEBUG_SKIP_FLASH_BOOT
-    ui_print("[DEBUG] Skipping flashing of boot image");
-#else
     ui_print("Flashing boot image");
     result = extract_raw_file(BOOT_IMAGE_FILE, boot_block_dev.c_str());
     if (result != ExtractResult::Ok) {
@@ -903,7 +851,6 @@ static bool flash_zip()
         return false;
     }
     ui_print("Successfully flashed boot image");
-#endif
 
     ui_print("---");
     ui_print("Flashing completed. The bootloader");

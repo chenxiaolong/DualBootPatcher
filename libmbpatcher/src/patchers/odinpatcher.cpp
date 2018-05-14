@@ -204,7 +204,7 @@ bool OdinPatcher::patch_tar()
 
     if (m_cancelled) return false;
 
-    if (!process_contents(m_a_input, 0)) {
+    if (!process_contents(m_a_input, 0, nullptr)) {
         return false;
     }
 
@@ -403,9 +403,10 @@ struct NestedCtx
     }
 };
 
-bool OdinPatcher::process_contents(archive *a, unsigned int depth)
+bool OdinPatcher::process_contents(archive *a, unsigned int depth,
+                                   const char *raw_entry_name)
 {
-    if (depth > 1) {
+    if (!raw_entry_name && depth > 1) {
         LOGW("Not traversing nested archive: depth > 1");
         return true;
     }
@@ -415,6 +416,10 @@ bool OdinPatcher::process_contents(archive *a, unsigned int depth)
 
     while ((la_ret = archive_read_next_header(a, &entry)) == ARCHIVE_OK) {
         if (m_cancelled) return false;
+
+        if (raw_entry_name) {
+            archive_entry_set_pathname(entry, raw_entry_name);
+        }
 
         const char *name = archive_entry_pathname(entry);
         if (!name) {
@@ -430,22 +435,7 @@ bool OdinPatcher::process_contents(archive *a, unsigned int depth)
             continue;
         }
 
-        if (strcmp(name, "boot.img") == 0) {
-            LOGV("%sHandling boot image: %s", indent(depth), name);
-            m_added_files.insert(name);
-
-            if (!process_file(a, entry, false)) {
-                return false;
-            }
-        } else if (starts_with(name, "cache.img")
-                || starts_with(name, "system.img")) {
-            LOGV("%sHandling sparse image: %s", indent(depth), name);
-            m_added_files.insert(name);
-
-            if (!process_file(a, entry, true)) {
-                return false;
-            }
-        } else if (ends_with(name, ".tar.md5") || ends_with(name, ".tar")) {
+        if (ends_with(name, ".tar.md5") || ends_with(name, ".tar")) {
             LOGV("%sHandling nested tarball: %s", indent(depth), name);
 
             NestedCtx ctx(a);
@@ -465,7 +455,51 @@ bool OdinPatcher::process_contents(archive *a, unsigned int depth)
                 return false;
             }
 
-            if (!process_contents(ctx.nested, depth + 1)) {
+            if (!process_contents(ctx.nested, depth + 1, nullptr)) {
+                return false;
+            }
+        } else if (ends_with(name, ".lz4")) {
+            LOGV("%sHandling nested LZ4-compressed image: %s",
+                 indent(depth), name);
+
+            NestedCtx ctx(a);
+            if (!ctx.nested) {
+                m_error = ErrorCode::MemoryAllocationError;
+                return false;
+            }
+
+            archive_read_support_filter_lz4(ctx.nested);
+            archive_read_support_format_raw(ctx.nested);
+
+            int ret = archive_read_open2(ctx.nested, &ctx, nullptr,
+                                         &la_nested_read_cb, nullptr, nullptr);
+            if (ret != ARCHIVE_OK) {
+                LOGE("libarchive: Failed to open nested archive: %s: %s",
+                     name, archive_error_string(ctx.nested));
+                m_error = ErrorCode::ArchiveReadOpenError;
+                return false;
+            }
+
+            // Strip off ".lz4"
+            std::string new_entry_name(name, name + strlen(name) - 4);
+
+            if (!process_contents(ctx.nested, depth + 1,
+                                  new_entry_name.c_str())) {
+                return false;
+            }
+        } else if (strcmp(name, "boot.img") == 0) {
+            LOGV("%sHandling boot image: %s", indent(depth), name);
+            m_added_files.insert(name);
+
+            if (!process_file(a, entry, false)) {
+                return false;
+            }
+        } else if (starts_with(name, "cache.img")
+                || starts_with(name, "system.img")) {
+            LOGV("%sHandling sparse image: %s", indent(depth), name);
+            m_added_files.insert(name);
+
+            if (!process_file(a, entry, true)) {
                 return false;
             }
         } else {
