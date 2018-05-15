@@ -1,6 +1,6 @@
 # Building DualBootUtilities Zip
 
-Please follow the directions in [`BUILD-App-Android.md`](BUILD-App-Android.md) up until the build step. The same dependencies are needed for building the utilities zip.
+Please follow the directions in [`App-Android.md`](App-Android.md) up until the build step. The same dependencies are needed for building the utilities zip.
 
 ## Build process
 
