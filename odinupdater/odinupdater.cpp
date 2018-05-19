@@ -164,7 +164,7 @@ static bool mount_system()
 static bool umount_system()
 {
     // mbtool will redirect the call
-    return run_command({ "unmount", "/system" });
+    return run_command({ "umount", "/system" });
 }
 
 static bool la_open_zip(archive *a, const char *filename)
