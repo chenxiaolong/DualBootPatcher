@@ -606,7 +606,7 @@ static bool apply_multi_csc()
     return true;
 }
 
-static bool flash_carrier_package_zip(const char *path)
+static bool flash_carrier_package_zip(const char *zip_path)
 {
     ScopedArchive matcher{archive_match_new(), &archive_match_free};
     ScopedArchive in{archive_read_new(), &archive_read_free};
@@ -641,10 +641,10 @@ static bool flash_carrier_package_zip(const char *path)
                                  | ARCHIVE_EXTRACT_MAC_METADATA
                                  | ARCHIVE_EXTRACT_SPARSE);
 
-    if (archive_read_open_filename(in.get(), path, 10240)
+    if (archive_read_open_filename(in.get(), zip_path, 10240)
             != ARCHIVE_OK) {
         error("libarchive: %s: Failed to open file: %s",
-              path, archive_error_string(in.get()));
+              zip_path, archive_error_string(in.get()));
         return false;
     }
 
@@ -659,7 +659,7 @@ static bool flash_carrier_package_zip(const char *path)
             continue;
         } else if (ret != ARCHIVE_OK) {
             error("libarchive: %s: Failed to read header: %s",
-                  path, archive_error_string(in.get()));
+                  zip_path, archive_error_string(in.get()));
             return false;
         }
 
