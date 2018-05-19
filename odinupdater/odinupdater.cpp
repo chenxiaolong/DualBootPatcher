@@ -554,7 +554,7 @@ static bool retry_unmount(const char *mount_point, unsigned int attempts)
         info("[Attempt %d/%d] Unmounting %s",
              attempt + 1, attempts, mount_point);
 
-        if (!mb::util::umount(TEMP_CACHE_MOUNT_DIR)) {
+        if (!mb::util::umount(mount_point)) {
             error("WARNING: Failed to unmount %s: %s",
                   mount_point, strerror(errno));
             info("[Attempt %d/%d] Waiting 1 second before next attempt",
@@ -563,7 +563,7 @@ static bool retry_unmount(const char *mount_point, unsigned int attempts)
             continue;
         }
 
-        info("Successfully unmounted temporary cache image mountpoints");
+        info("Successfully unmounted %s", mount_point);
         return true;
     }
 
