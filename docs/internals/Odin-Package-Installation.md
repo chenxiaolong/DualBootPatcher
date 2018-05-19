@@ -19,6 +19,13 @@ _NOTE: The digital signature for `fuse-sparse` is currently not checked. This wi
 
 The system image is stored as an Android sparse image in the zip file. It is simply desparsed and extracted to the system block device (without any intermediate temporary files).
 
+After flashing the system image, the RLC (remote lock control) mechanism will be removed to prevent the device from getting stuck in a 7 day bootloader lock period after the next reboot. DualBootPatcher normally does not make any functional modifications to ROMs, but this issue is significant enough to warrant it. The removal is done by:
+
+* Deleting `/system/priv-app/Rlc`
+* Changing the `ro.security.vaultkeeper.feature` property, if present, to `0` in `/system/build.prop` and `/vendor/build.prop`.
+
+`com.samsung.android.rlc.service.RmmTask.registerRcv()` in `/system/framework/services.jar` checks that the RLC app is installed and that the property value is `1`. If either condition fails, RLC is disabled.
+
 ### CSC/OMC Package
 
 The carrier package (CSC/OMC) is included in the cache partition sparse image within an Odin package. Inside the image, the carrier files are stored within a flashable ZIP file at `recovery/sec_csc.zip` or `recovery/sec_omc.zip`.
