@@ -164,7 +164,7 @@ static bool mount_system()
 static bool umount_system()
 {
     // mbtool will redirect the call
-    return run_command({ "unmount", "/system" });
+    return run_command({ "umount", "/system" });
 }
 
 static bool la_open_zip(archive *a, const char *filename)
@@ -554,7 +554,7 @@ static bool retry_unmount(const char *mount_point, unsigned int attempts)
         info("[Attempt %d/%d] Unmounting %s",
              attempt + 1, attempts, mount_point);
 
-        if (!mb::util::umount(TEMP_CACHE_MOUNT_DIR)) {
+        if (!mb::util::umount(mount_point)) {
             error("WARNING: Failed to unmount %s: %s",
                   mount_point, strerror(errno));
             info("[Attempt %d/%d] Waiting 1 second before next attempt",
@@ -563,7 +563,7 @@ static bool retry_unmount(const char *mount_point, unsigned int attempts)
             continue;
         }
 
-        info("Successfully unmounted temporary cache image mountpoints");
+        info("Successfully unmounted %s", mount_point);
         return true;
     }
 
@@ -606,7 +606,7 @@ static bool apply_multi_csc()
     return true;
 }
 
-static bool flash_carrier_package_zip(const char *path)
+static bool flash_carrier_package_zip(const char *zip_path)
 {
     ScopedArchive matcher{archive_match_new(), &archive_match_free};
     ScopedArchive in{archive_read_new(), &archive_read_free};
@@ -641,10 +641,10 @@ static bool flash_carrier_package_zip(const char *path)
                                  | ARCHIVE_EXTRACT_MAC_METADATA
                                  | ARCHIVE_EXTRACT_SPARSE);
 
-    if (archive_read_open_filename(in.get(), path, 10240)
+    if (archive_read_open_filename(in.get(), zip_path, 10240)
             != ARCHIVE_OK) {
         error("libarchive: %s: Failed to open file: %s",
-              path, archive_error_string(in.get()));
+              zip_path, archive_error_string(in.get()));
         return false;
     }
 
@@ -659,7 +659,7 @@ static bool flash_carrier_package_zip(const char *path)
             continue;
         } else if (ret != ARCHIVE_OK) {
             error("libarchive: %s: Failed to read header: %s",
-                  path, archive_error_string(in.get()));
+                  zip_path, archive_error_string(in.get()));
             return false;
         }
 
