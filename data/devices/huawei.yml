@@ -33,7 +33,7 @@
     brightness_path: /sys/devices/platform/balong_fb.1/leds/lcd_backlight0/brightness
     max_brightness: 255
     default_brightness: 162
-    battery_path: /sys/devices/battery.0/power_supply/Battery/
+    battery_path: /sys/devices/battery.0/power_supply/Battery
     theme: portrait_hdpi
 
 - name: Huawei Ascend P7
