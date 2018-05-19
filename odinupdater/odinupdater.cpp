@@ -38,6 +38,7 @@
 #include "mbcommon/file/standard.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/integer.h"
+#include "mbcommon/string.h"
 
 // libmbsparse
 #include "mbsparse/sparse.h"
@@ -48,6 +49,7 @@
 // libmbutil
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
+#include "mbutil/delete.h"
 #include "mbutil/file.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
@@ -74,7 +76,8 @@
 #define PROP_SYSTEM_DEV         "system"
 #define PROP_BOOT_DEV           "boot"
 
-typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
+using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 using namespace mb::device;
 
@@ -515,6 +518,145 @@ static ExtractResult extract_raw_file(const char *zip_filename,
     return ExtractResult::Ok;
 }
 
+static bool disable_vaultkeeper(const char *path)
+{
+    // Open old properties file
+    ScopedFILE fp_old(fopen(path, "rb"), fclose);
+    if (!fp_old) {
+        if (errno == ENOENT) {
+            return true;
+        } else {
+            error("%s: Failed to open for reading: %s",
+                  path, strerror(errno));
+            return false;
+        }
+    }
+
+    // Create temp file for modified properties file
+    std::string new_path(path);
+    new_path += ".XXXXXX";
+
+    int fd = mkstemp(new_path.data());
+    if (fd < 0) {
+        error("%s: Failed to create temporary file: %s",
+              path, strerror(errno));
+        return false;
+    }
+
+    auto unlink_new_path = mb::finally([&] {
+        unlink(new_path.c_str());
+    });
+
+    auto close_fd = mb::finally([&] {
+        close(fd);
+    });
+
+    ScopedFILE fp_new(fdopen(fd, "wb"), fclose);
+    if (!fp_new) {
+        error("%s: Failed to open for writing: %s",
+              new_path.c_str(), strerror(errno));
+        return false;
+    }
+
+    // fclose() will close the file descriptor
+    close_fd.dismiss();
+
+    char *line = nullptr;
+    size_t len = 0;
+    ssize_t read = 0;
+
+    auto free_line = mb::finally([&] {
+        free(line);
+    });
+
+    static const char *prefix = "ro.security.vaultkeeper.feature=";
+
+    bool changed = false;
+
+    while ((read = getline(&line, &len, fp_old.get())) >= 0) {
+        if (mb::starts_with(line, prefix)) {
+            changed = true;
+
+            if (fprintf(fp_new.get(), "%s0\n", prefix) < 0) {
+                error("%s: Failed to write file: %s",
+                      new_path.c_str(), strerror(errno));
+                return false;
+            }
+        } else {
+            if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
+                    != static_cast<size_t>(read)) {
+                error("%s: Failed to write file: %s",
+                      new_path.c_str(), strerror(errno));
+                return false;
+            }
+        }
+    }
+
+    // Atomically replace old properties file if it was changed
+    if (changed) {
+        struct stat sb;
+
+        if (fstat(fileno(fp_old.get()), &sb) < 0) {
+            error("%s: Failed to stat file: %s",
+                  path, strerror(errno));
+            return false;
+        }
+
+        if (fchown(fileno(fp_new.get()), sb.st_uid, sb.st_gid) < 0) {
+            error("%s: Failed to chown file: %s",
+                  new_path.c_str(), strerror(errno));
+            return false;
+        }
+
+        if (fchmod(fileno(fp_new.get()), sb.st_mode & 0777) < 0) {
+            error("%s: Failed to chmod file: %s",
+                  new_path.c_str(), strerror(errno));
+            return false;
+        }
+
+        if (rename(new_path.c_str(), path) < 0) {
+            error("%s: Failed to rename file: %s",
+                  new_path.c_str(), strerror(errno));
+            return false;
+        }
+
+        unlink_new_path.dismiss();
+    }
+
+    return true;
+}
+
+static bool kill_rlc()
+{
+    if (!mount_system()) {
+        error("Failed to mount system");
+        return false;
+    }
+
+    auto unmount_system_dir = mb::finally([]{
+        umount_system();
+    });
+
+    bool ret = true;
+
+    // Kill RLC app
+    if (auto r = mb::util::delete_recursive("/system/priv-app/Rlc"); !r) {
+        ret = false;
+    }
+
+    // Kill RLC/vaultkeeper property
+    for (auto path : {
+        "/system/build.prop",
+        "/vendor/build.prop",
+    }) {
+        if (!disable_vaultkeeper(path)) {
+            ret = false;
+        }
+    }
+
+    return ret;
+}
+
 static bool copy_dir_if_exists(const char *source_dir,
                                const char *target_dir)
 {
@@ -826,6 +968,18 @@ static bool flash_zip()
     case ExtractResult::Ok:
         ui_print("Successfully flashed system image");
         break;
+    }
+
+    // Kill RLC (remote lock control) as early as possible so the bootloader
+    // doesn't get relocked if the user decides to reboot into a partially
+    // flashed ROM
+    ui_print("Removing RLC (if present)");
+    if (!kill_rlc()) {
+        ui_print("--- WARNING WARNING WARNING ---");
+        ui_print("FAILED TO FULLY DISABLE RLC");
+        ui_print("YOUR BOOTLOADER MIGHT GET RELOCKED IF YOU REBOOT");
+        ui_print("--- WARNING WARNING WARNING ---");
+        return false;
     }
 
     // Flash carrier package from cache.img.ext4
