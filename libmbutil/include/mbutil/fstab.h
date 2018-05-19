@@ -91,6 +91,11 @@ constexpr unsigned long MF_ERASEBLKSIZE     = 1 << 23;
 constexpr unsigned long MF_LOGICALBLKSIZE   = 1 << 24;
 constexpr unsigned long MF_AVB              = 1 << 25;
 
+std::pair<unsigned long, std::vector<std::string>>
+parse_mount_options(std::string_view options);
+std::pair<unsigned long, std::vector<std::string>>
+parse_fs_mgr_options(std::string_view options);
+
 struct FstabRec
 {
     // Block device to mount

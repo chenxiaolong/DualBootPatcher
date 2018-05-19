@@ -810,24 +810,19 @@ bool Installer::change_root(const std::string &path)
     {
         std::vector<std::string> to_unmount;
 
-        ScopedFILE fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
-        if (!fp) {
-            LOGE("%s: Failed to read file: %s", util::PROC_MOUNTS,
-                 strerror(errno));
+        if (auto entries = util::get_mount_entries()) {
+            for (auto const &entry : entries.value()) {
+                // TODO: Use util::path_compare() instead of dumb string prefix
+                //       matching
+                if (entry.target != "/" && !starts_with(entry.target, path)) {
+                    to_unmount.push_back(std::move(entry.target));
+                }
+            }
+        } else {
+            LOGE("Failed to get mount entries: %s",
+                 entries.error().message().c_str());
             return false;
         }
-
-        while (auto entry = util::get_mount_entry(fp.get())) {
-            // TODO: Use util::path_compare() instead of dumb string prefix
-            //       matching
-            if (entry.value().dir != "/"
-                    && !starts_with(entry.value().dir, path)) {
-                to_unmount.push_back(std::move(entry.value().dir));
-            }
-        }
-
-        // Close procfs fd
-        fp.reset();
 
         // Unmount in reverse order
         for (auto it = to_unmount.rbegin(); it != to_unmount.rend(); ++it) {
