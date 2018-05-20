@@ -676,9 +676,9 @@ class RomDetailActivity : AppCompatActivity(), RomNameInputDialogListener,
 
         val creator = if (result === CacheWallpaperResult.UP_TO_DATE
                 || result === CacheWallpaperResult.UPDATED) {
-            Picasso.with(this).load(wallpaperFile).error(R.drawable.material)
+            Picasso.get().load(wallpaperFile).error(R.drawable.material)
         } else {
-            Picasso.with(this).load(R.drawable.material)
+            Picasso.get().load(R.drawable.material)
         }
 
         creator

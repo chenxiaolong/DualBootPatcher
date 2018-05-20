@@ -36,7 +36,6 @@ import com.squareup.picasso.Picasso
 import java.io.File
 
 class RomCardAdapter(
-        private val context: Context,
         private val roms: List<RomInformation>,
         private val listener: RomCardActionListener?
 ) : RecyclerView.Adapter<BaseViewHolder>() {
@@ -98,12 +97,12 @@ class RomCardAdapter(
 
             val f = File(rom.thumbnailPath!!)
             if (f.exists() && f.canRead()) {
-                Picasso.with(context)
+                Picasso.get()
                         .load(f)
                         .error(rom.imageResId)
                         .into(holder.vThumbnail)
             } else {
-                Picasso.with(context)
+                Picasso.get()
                         .load(rom.imageResId)
                         .into(holder.vThumbnail)
             }

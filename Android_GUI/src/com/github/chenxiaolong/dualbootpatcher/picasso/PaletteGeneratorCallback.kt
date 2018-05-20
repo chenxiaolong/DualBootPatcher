@@ -29,7 +29,7 @@ abstract class PaletteGeneratorCallback(private val target: ImageView) : Callbac
         onObtainedPalette(palette)
     }
 
-    override fun onError() {
+    override fun onError(e: Exception) {
         onObtainedPalette(null)
     }
 
