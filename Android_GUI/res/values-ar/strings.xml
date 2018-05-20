@@ -303,10 +303,6 @@
   <string name="patcher_card_subtitle_cancelled">مَلغي</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">اعدادات المُثبِّت</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">مسار تحديث الـ\"ROM\" الأساسي:</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">حدّث الـ\"ROM\" الأساسي من غير التأثير على بقية الـ\"ROMS\"</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">مُثبّت الى %s</string>
   <!--Text box hint for specifying the data slot ID-->

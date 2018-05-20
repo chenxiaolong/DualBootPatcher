@@ -296,10 +296,6 @@
   <string name="patcher_card_subtitle_cancelled">已取消</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">補丁處理選項</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">用於升級主系統</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">這個選項僅用於處在分區中的主系統,雖然有所不同,但是本質上打不打補丁是一樣的</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">該係統將會被安裝到%s</string>
   <!--Text box hint for specifying the data slot ID-->

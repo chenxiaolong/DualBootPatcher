@@ -375,11 +375,6 @@
     <!-- Patcher options dialog title -->
     <string name="patcher_options_dialog_title">Patcher options</string>
 
-    <!-- Name for primary ROM upgrade installation location -->
-    <string name="install_location_primary_upgrade">Primary ROM Upgrade</string>
-    <!-- Description for primary ROM upgrade installation location -->
-    <string name="install_location_primary_upgrade_desc">Update primary ROM without affecting other
-        ROMS</string>
     <!-- Description for all other installation locations -->
     <string name="install_location_desc">Installs ROM to %s</string>
     <!-- Text box hint for specifying the data slot ID -->
