@@ -1361,6 +1361,12 @@ int init_main(int argc, char *argv[])
     // Kill properties service and clean up
     properties_cleanup();
 
+    // Hack to work around issue where Magisk unconditionally unmounts /system
+    // https://github.com/topjohnwu/Magisk/pull/387
+    if (util::file_find_one_of("/init.orig", {"MagiskPolicy v16"})) {
+        mount("/system", "/system", "", MS_BIND, "");
+    }
+
     // Remove mbtool init symlink and restore original binary
     unlink("/init");
     rename("/init.orig", "/init");
