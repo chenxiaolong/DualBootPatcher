@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=lz4
-pkgver=1.8.0
+pkgver=1.8.2
 pkgrel=1
 pkgdesc="Very fast lossless compression algorithm"
 arch=(armv7 aarch64 x86 x86_64)
