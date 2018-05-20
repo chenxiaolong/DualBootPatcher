@@ -165,13 +165,13 @@ endif()
 # liblzma for Android
 ################################################################################
 
-set(LIBLZMA_VER "5.2.3-2")
+set(LIBLZMA_VER "5.2.4-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(liblzma ${LIBLZMA_VER} armeabi-v7a SHA512=2fd3c5578a6313abc7737d9862c9e2dde35296004439ab7fe41b42a54ee094295a04a83b0a565ac4801c01cbfb050189405163d0ab7a6b6bf48e128e6adb2bb1)
-    get_prebuilt(liblzma ${LIBLZMA_VER} arm64-v8a   SHA512=aacf52a9779c448182f0dcb011bbe0b658019d4b8b6a436070b8c57140787a8638a7696c9cbc5a04c0947b2d309d78a7aa98a85d28a67329a34c0fb01018608b)
-    get_prebuilt(liblzma ${LIBLZMA_VER} x86         SHA512=c685fe430601bb35609e9159427a98db4d8e9e5b1f414335216366b643b154c978a02815e5c2507cf73f2fcad32956e4dcc243c3fafbe6afd8e4a948e78d9a67)
-    get_prebuilt(liblzma ${LIBLZMA_VER} x86_64      SHA512=e48433585641d3caf86d17fd2ecac8fdeacd236705997303a06ba9a45ecdba94f6d9713386e1d5fa1413743cb459222fd37c3334d10e29e88ff90d1915e34092)
+    get_prebuilt(liblzma ${LIBLZMA_VER} armeabi-v7a SHA512=486f0390e37e873fbafa965f1f6dc4363c0aa7f131f21191c888ef191decf68a077f199748b4208e56e0d7f0b0415aad500cb187577ae717ccc239abeb045db9)
+    get_prebuilt(liblzma ${LIBLZMA_VER} arm64-v8a   SHA512=fc84f2fd6288c8b7f793a3d79d39e9dde1a29117da13f70d9955a7787d369346d1f6ac6615da4d7487fe9e9441a990b1bbecee78a120096e9c60e6e30d90c7f1)
+    get_prebuilt(liblzma ${LIBLZMA_VER} x86         SHA512=e37174e6fcdfd26d23f79233a56d3b46455c60d58360b50e0bc4a268bcd43792bc1d964da6c8416129c8b6e0298bae1f4d63e2aad7320c6c6d2322916cbf4ac6)
+    get_prebuilt(liblzma ${LIBLZMA_VER} x86_64      SHA512=6d4b93ed1ede309df14057165e95b309e34aa4a510d8227fbd8e76a380a2f262f5ebe34d142f3730b88fbb31b7259fc235ef1d7241862dd915e77bbb419c49bd)
 elseif(ANDROID)
     set(liblzma_root "${MBP_PREBUILTS_BINARY_DIR}/liblzma/${LIBLZMA_VER}/${ANDROID_ABI}")
     list(APPEND CMAKE_FIND_ROOT_PATH "${liblzma_root}")
