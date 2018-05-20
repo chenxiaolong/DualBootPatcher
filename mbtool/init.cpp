@@ -695,22 +695,6 @@ static bool add_props_to_default_prop(const Device &device)
     // Write ROM ID property
     fprintf(fp.get(), PROP_MULTIBOOT_ROM_ID "=%s\n", get_rom_id().c_str());
 
-    // Block device paths (deprecated)
-    fprintf(fp.get(), "ro.patcher.blockdevs.base=%s\n",
-            encode_list(device.block_dev_base_dirs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.system=%s\n",
-            encode_list(device.system_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.cache=%s\n",
-            encode_list(device.cache_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.data=%s\n",
-            encode_list(device.data_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.boot=%s\n",
-            encode_list(device.boot_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.recovery=%s\n",
-            encode_list(device.recovery_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.extra=%s\n",
-            encode_list(device.extra_block_devs()).c_str());
-
     return true;
 }
 
