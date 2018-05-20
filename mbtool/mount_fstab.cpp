@@ -525,7 +525,8 @@ static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_r
     return false;
 }
 
-static bool mount_target(const char *source, const char *target, bool bind)
+static bool mount_target(const char *source, const char *target, bool bind,
+                         bool read_only)
 {
     struct stat sb;
 
@@ -553,11 +554,34 @@ static bool mount_target(const char *source, const char *target, bool bind)
 
     auto ret = util::mount(source, target,
                            bind ? "" : "auto",
-                           bind ? MS_BIND : 0,
+                           (bind ? MS_BIND : 0) | (read_only ? MS_RDONLY : 0),
                            "");
     if (!ret) {
         LOGE("%s: Failed to mount: %s: %s", target, source, strerror(errno));
         return false;
+    }
+
+    if (bind && read_only) {
+        // The kernel does not support MS_BIND | MS_RDONLY in one step. A
+        // separate MS_BIND | MS_REMOUNT | MS_RDONLY mount call is required to
+        // make the bind mount read-only. This is what util-linux does, but
+        // in addition to that, we have to add the existing mount options.
+        // Otherwise, the MS_REMOUNT will clear flags, such as MS_NOSUID.
+        //
+        // See:
+        // - https://github.com/karelzak/util-linux/blob/475ecbad15943d6831fc508ce72016d581763b2b/libmount/src/context_mount.c#L134
+        // - https://github.com/karelzak/util-linux/issues/637
+        // - https://lwn.net/Articles/281157/
+
+        unsigned long flags;
+        std::tie(flags, std::ignore) = util::parse_mount_options("foobar");
+
+        ret = util::mount("", target, "",
+                          MS_BIND | MS_REMOUNT | MS_RDONLY | flags, "");
+        if (!ret) {
+            LOGE("%s: Failed to remount: %s", target, strerror(errno));
+            return false;
+        }
     }
 
     return true;
@@ -580,7 +604,8 @@ static bool mount_all_system_images()
             mount_point += rom->id;
             std::string system_path(rom->full_system_path());
 
-            if (!mount_target(system_path.c_str(), mount_point.c_str(), false)) {
+            if (!mount_target(system_path.c_str(), mount_point.c_str(),
+                              false, true)) {
                 LOGW("Failed to mount image for %s", rom->id.c_str());
                 failed = true;
             }
@@ -954,15 +979,18 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
         return false;
     }
 
-    if (!mount_target(target_system.c_str(), "/system", !rom->system_is_image)) {
+    if (!mount_target(target_system.c_str(), "/system", !rom->system_is_image,
+                      true)) {
         return false;
     }
 
-    if (!mount_target(target_cache.c_str(), "/cache", !rom->cache_is_image)) {
+    if (!mount_target(target_cache.c_str(), "/cache", !rom->cache_is_image,
+                      false)) {
         return false;
     }
 
-    if (!mount_target(target_data.c_str(), "/data", !rom->data_is_image)) {
+    if (!mount_target(target_data.c_str(), "/data", !rom->data_is_image,
+                      false)) {
         return false;
     }
 

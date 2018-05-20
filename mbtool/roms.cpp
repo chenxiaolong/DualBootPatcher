@@ -485,22 +485,21 @@ std::string Roms::get_extsd_partition()
     static constexpr char prefix_storage[] = "/storage/";
 
     // Look for mounted MMC partitions
-    ScopedFILE fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
-    if (fp) {
-        while (auto entry = util::get_mount_entry(fp.get())) {
+    if (auto entries = util::get_mount_entries()) {
+        for (auto const &entry : entries.value()) {
             // Skip useless mounts
-            if (!starts_with(entry.value().dir.c_str(), prefix_mnt)) {
+            if (!starts_with(entry.target, prefix_mnt)) {
                 continue;
             }
 
-            if (stat(entry.value().fsname.c_str(), &sb) < 0) {
+            if (stat(entry.source.c_str(), &sb) < 0) {
                 LOGW("%s: Failed to stat: %s",
-                     entry.value().fsname.c_str(), strerror(errno));
+                     entry.source.c_str(), strerror(errno));
                 continue;
             }
 
             if (major(sb.st_rdev) == 179) {
-                std::string_view suffix(entry.value().dir);
+                std::string_view suffix(entry.target);
                 suffix.remove_prefix(strlen(prefix_mnt));
 
                 std::string path(prefix_storage);
