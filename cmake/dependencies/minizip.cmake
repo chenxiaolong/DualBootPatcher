@@ -18,30 +18,23 @@ if(NOT MSVC)
     target_compile_options(
         libminizip
         PRIVATE
-        -Wno-cast-qual
         -Wno-conversion
         -Wno-empty-body
-        -Wno-missing-declarations
-        -Wno-missing-field-initializers
-        -Wno-missing-prototypes
         -Wno-pedantic
-        -Wno-sign-compare
         -Wno-sign-conversion
-        -Wno-unused-parameter
-        -Wno-unused-variable
     )
 
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         target_compile_options(
             libminizip
             PRIVATE
-            -Wno-missing-variable-declarations
+            -Wno-unreachable-code
         )
     else()
         target_compile_options(
             libminizip
             PRIVATE
-            -Wno-unused-but-set-variable
+            -Wno-stringop-overflow
         )
     endif()
 endif()
