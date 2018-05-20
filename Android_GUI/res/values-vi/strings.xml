@@ -315,11 +315,6 @@ hàng đợi.</string>
   <string name="patcher_card_subtitle_cancelled">Bị hủy bỏ</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Tùy chọn vá</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Primary ROM nâng cấp</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Cập nhật ROM chính mà không ảnh hưởng đến
-ROM khác</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Cài đặt ROM %s</string>
   <!--Text box hint for specifying the data slot ID-->

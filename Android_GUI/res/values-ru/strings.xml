@@ -316,11 +316,6 @@
   <string name="patcher_card_subtitle_cancelled">Отменен</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Настройки патчера</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Обновление основной прошивки</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Обновление основной прошивки,
-        не затрагивая остальные прошивки</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Установит прошивку в %s</string>
   <!--Text box hint for specifying the data slot ID-->

@@ -289,10 +289,6 @@ Wollen Sie den Kernel jetzt setzen?</string>
   <string name="patcher_card_subtitle_cancelled">Abgebrochen</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Patcher Optionen</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Primäres ROM upgrade</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Primäre ROM updaten, ohne andere ROMs damit beeinzuflussen.</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Rom wird nach %s installiert</string>
   <!--Text box hint for specifying the data slot ID-->

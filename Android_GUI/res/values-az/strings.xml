@@ -298,11 +298,6 @@ Hal-hazırda kernel çalışır. Kernelin indi qoyulmasını istəyirsiniz?</str
   <string name="patcher_card_subtitle_cancelled">Ləğv edildi</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Yama variantları</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">İlkin ROM təkmilləşdirilməsi</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Başqa ROM\'ları təsir olmadan ilkin
-        ROM\'u yeniləyin</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">ROM\'u quraşdırır %s</string>
   <!--Text box hint for specifying the data slot ID-->

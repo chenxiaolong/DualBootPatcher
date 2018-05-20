@@ -316,11 +316,6 @@ lista.</string>
   <string name="patcher_card_subtitle_cancelled">Parche cancelado</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Opciones del parchador</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Actualización de la ROM primaria</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Actualizar la ROM primaria sin afectar otras
-ROMS</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Instala la ROM en %s</string>
   <!--Text box hint for specifying the data slot ID-->
