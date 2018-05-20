@@ -643,29 +643,7 @@ static bool strip_manual_mounts()
     return true;
 }
 
-static std::string encode_list(const std::vector<std::string> &list)
-{
-    std::string result;
-
-    bool first = true;
-    for (auto const &item : list) {
-        if (!first) {
-            result += ',';
-        } else {
-            first = false;
-        }
-        for (auto c : item) {
-            if (c == ',' || c == '\\') {
-                result += '\\';
-            }
-            result += c;
-        }
-    }
-
-    return result;
-}
-
-static bool add_props_to_default_prop(const Device &device)
+static bool add_props_to_default_prop()
 {
     ScopedFILE fp(fopen(DEFAULT_PROP_PATH, "r+b"), fclose);
     if (!fp) {
@@ -694,22 +672,6 @@ static bool add_props_to_default_prop(const Device &device)
     fprintf(fp.get(), PROP_MULTIBOOT_VERSION "=%s\n", version());
     // Write ROM ID property
     fprintf(fp.get(), PROP_MULTIBOOT_ROM_ID "=%s\n", get_rom_id().c_str());
-
-    // Block device paths (deprecated)
-    fprintf(fp.get(), "ro.patcher.blockdevs.base=%s\n",
-            encode_list(device.block_dev_base_dirs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.system=%s\n",
-            encode_list(device.system_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.cache=%s\n",
-            encode_list(device.cache_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.data=%s\n",
-            encode_list(device.data_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.boot=%s\n",
-            encode_list(device.boot_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.recovery=%s\n",
-            encode_list(device.recovery_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.extra=%s\n",
-            encode_list(device.extra_block_devs()).c_str());
 
     return true;
 }
@@ -1251,7 +1213,7 @@ int init_main(int argc, char *argv[])
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
     symlink_base_dir(device);
 
-    add_props_to_default_prop(device);
+    add_props_to_default_prop();
 
     // initialize properties
     properties_setup();
@@ -1360,6 +1322,12 @@ int init_main(int argc, char *argv[])
 
     // Kill properties service and clean up
     properties_cleanup();
+
+    // Hack to work around issue where Magisk unconditionally unmounts /system
+    // https://github.com/topjohnwu/Magisk/pull/387
+    if (util::file_find_one_of("/init.orig", {"MagiskPolicy v16"})) {
+        mount("/system", "/system", "", MS_BIND, "");
+    }
 
     // Remove mbtool init symlink and restore original binary
     unlink("/init");

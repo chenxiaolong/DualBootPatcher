@@ -16,6 +16,7 @@ public final class PathDeleteRequest extends Table {
 
   public String path() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer pathAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
+  public ByteBuffer pathInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 4, 1); }
   public short flag() { int o = __offset(6); return o != 0 ? bb.getShort(o + bb_pos) : 0; }
 
   public static int createPathDeleteRequest(FlatBufferBuilder builder,

@@ -314,11 +314,6 @@ dapat menyusun file.</string>
   <string name="patcher_card_subtitle_cancelled">Dibatalkan</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Opsi pemasang</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Mengupgrade ROM utama</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Memperbarui ROM utama tanpa memengaruhi
-ROM lain</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Memasang ROM ke %s</string>
   <!--Text box hint for specifying the data slot ID-->

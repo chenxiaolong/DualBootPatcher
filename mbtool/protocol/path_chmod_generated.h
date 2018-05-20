@@ -30,7 +30,7 @@ struct PathChmodError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -45,13 +45,13 @@ struct PathChmodErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(PathChmodError::VT_MSG, msg);
   }
-  PathChmodErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathChmodErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathChmodErrorBuilder &operator=(const PathChmodErrorBuilder &);
   flatbuffers::Offset<PathChmodError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathChmodError>(end);
     return o;
   }
@@ -90,7 +90,7 @@ struct PathChmodRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_PATH) &&
+           VerifyOffset(verifier, VT_PATH) &&
            verifier.Verify(path()) &&
            VerifyField<uint32_t>(verifier, VT_MODE) &&
            verifier.EndTable();
@@ -106,13 +106,13 @@ struct PathChmodRequestBuilder {
   void add_mode(uint32_t mode) {
     fbb_.AddElement<uint32_t>(PathChmodRequest::VT_MODE, mode, 0);
   }
-  PathChmodRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathChmodRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathChmodRequestBuilder &operator=(const PathChmodRequestBuilder &);
   flatbuffers::Offset<PathChmodRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathChmodRequest>(end);
     return o;
   }
@@ -156,9 +156,9 @@ struct PathChmodResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -176,13 +176,13 @@ struct PathChmodResponseBuilder {
   void add_error(flatbuffers::Offset<PathChmodError> error) {
     fbb_.AddOffset(PathChmodResponse::VT_ERROR, error);
   }
-  PathChmodResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathChmodResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathChmodResponseBuilder &operator=(const PathChmodResponseBuilder &);
   flatbuffers::Offset<PathChmodResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathChmodResponse>(end);
     return o;
   }

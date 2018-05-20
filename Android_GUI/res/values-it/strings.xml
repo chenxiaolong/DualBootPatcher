@@ -288,10 +288,6 @@ Continuare</string>
   <string name="patcher_card_subtitle_cancelled">Annullato</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Opzioni patcher</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Aggiornamento ROM primaria</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Aggiorna la ROM primaria senza intaccare le altre ROM</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Installa ROM in %s</string>
   <!--Text box hint for specifying the data slot ID-->

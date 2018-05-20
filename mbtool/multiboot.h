@@ -41,13 +41,6 @@
 #define FILE_CONTEXTS_BIN               "/file_contexts.bin"
 #define FILE_CONTEXTS                   "/file_contexts"
 
-#define PROP_BLOCK_DEV_BASE_DIRS        "ro.patcher.blockdevs.base"
-#define PROP_BLOCK_DEV_SYSTEM_PATHS     "ro.patcher.blockdevs.system"
-#define PROP_BLOCK_DEV_CACHE_PATHS      "ro.patcher.blockdevs.cache"
-#define PROP_BLOCK_DEV_DATA_PATHS       "ro.patcher.blockdevs.data"
-#define PROP_BLOCK_DEV_BOOT_PATHS       "ro.patcher.blockdevs.boot"
-#define PROP_BLOCK_DEV_RECOVERY_PATHS   "ro.patcher.blockdevs.recovery"
-#define PROP_BLOCK_DEV_EXTRA_PATHS      "ro.patcher.blockdevs.extra"
 #define PROP_USE_FUSE_EXFAT             "ro.patcher.use_fuse_exfat"
 #define PROP_DEVICE                     "ro.patcher.device"
 

@@ -41,8 +41,8 @@ object PatcherUtils {
     const val PATCHER_ID_ODINPATCHER = "OdinPatcher"
 
     private val PRIMARY_SLOT = InstallLocation("primary",
-            R.string.install_location_primary_upgrade,
-            R.string.install_location_primary_upgrade_desc)
+            R.string.primary, emptyArray(),
+            R.string.install_location_desc, arrayOf("/system"))
 
     private val SECONDARY_SLOT = InstallLocation("dual",
             R.string.secondary, emptyArray(),

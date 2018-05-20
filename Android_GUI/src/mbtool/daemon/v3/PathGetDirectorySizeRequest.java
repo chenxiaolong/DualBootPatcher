@@ -16,6 +16,7 @@ public final class PathGetDirectorySizeRequest extends Table {
 
   public String path() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer pathAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
+  public ByteBuffer pathInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 4, 1); }
   public String exclusions(int j) { int o = __offset(6); return o != 0 ? __string(__vector(o) + j * 4) : null; }
   public int exclusionsLength() { int o = __offset(6); return o != 0 ? __vector_len(o) : 0; }
 

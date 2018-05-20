@@ -464,8 +464,8 @@ void MainWindow::populateInstallationLocations()
 
     d->instLocs << InstallLocation{
         QStringLiteral("primary"),
-        tr("Primary ROM Upgrade"),
-        tr("Update primary ROM without affecting other ROMS")
+        tr("Primary"),
+        tr("Installs ROM to /system")
     };
     d->instLocs << InstallLocation{
         QStringLiteral("dual"),

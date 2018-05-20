@@ -6,6 +6,7 @@ set(files
     360.yml
     acer.yml
     alcatel.yml
+    amazon.yml
     archos.yml
     ark.yml
     asus.yml
@@ -18,6 +19,7 @@ set(files
     doogee.yml
     elephone.yml
     energy_sistem.yml
+    ginzzu.yml
     gionee.yml
     google.yml
     gree.yml
