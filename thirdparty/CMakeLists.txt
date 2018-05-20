@@ -184,13 +184,13 @@ endif()
 # lz4 for Android
 ################################################################################
 
-set(LZ4_VER "1.8.0-1")
+set(LZ4_VER "1.8.2-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(lz4 ${LZ4_VER} armeabi-v7a SHA512=b3dc0e3eca7f81fb7aa20257f37d2ae873af62981b16554f1d022643fcbfe6e7aaa22864c26be9091acc5449a0bc08039c9e0bd5fed04f10e7060456b807311d)
-    get_prebuilt(lz4 ${LZ4_VER} arm64-v8a   SHA512=534a6f6c39bc25f89d328dc937ade807a041f863bcac5653e405d23509357ea3f0bd4ea948b878b69a97925c46d40b943ee5fa63f2ccf4f3e42030eb1dd21d2e)
-    get_prebuilt(lz4 ${LZ4_VER} x86         SHA512=b8f491d9bd164f4cf3b114117f42b1a6f28381516e517d059e19036d2e86e6e5522a9e63d9ce778553ef8743c7f9a02a7cdf4b5eb7f171b94954b4be9f364c52)
-    get_prebuilt(lz4 ${LZ4_VER} x86_64      SHA512=d29bfa4508136cb4fae29216ca1dd6fbc2fc5d09b6472ffc462f2a782602021ed9c12296cf27f6aa7eefa968130eb232b9aab90c9c6afebe9efe77e321667cdc)
+    get_prebuilt(lz4 ${LZ4_VER} armeabi-v7a SHA512=54a0dc9a4f09cd952156ba7ba17fb60b450262b6ef900b6be94bdf4e9acd5b8676f8087c1b79c9a8a176661e6766e61e672677ddf874f246f74440ff87b96d6f)
+    get_prebuilt(lz4 ${LZ4_VER} arm64-v8a   SHA512=c6700378d31860c7704fb88265f2a5bd076f57b528f6acc436c8bd360bd1f307e056cfef245c73eb0e07ddf67c286d8af259f0ac66d1394f843b2cc0931565e4)
+    get_prebuilt(lz4 ${LZ4_VER} x86         SHA512=51d71fd538c7f21373592bd3e6957484768aaa74112fbb296df2bb885d2f92d05f3319e2b0cbe62eceb365b05fbfe32f763dc5000b6d9a7ac4927e4422d31aa0)
+    get_prebuilt(lz4 ${LZ4_VER} x86_64      SHA512=86448cce689ca3b0eb69c157a7020d1197a4e11592dbb53eded858cc18ed1c34041f4a9e8c52df18906a838f310816977fdb88190b6cdd4b239da47345e63149)
 elseif(ANDROID)
     set(lz4_root "${MBP_PREBUILTS_BINARY_DIR}/lz4/${LZ4_VER}/${ANDROID_ABI}")
     list(APPEND CMAKE_FIND_ROOT_PATH "${lz4_root}")
