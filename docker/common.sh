@@ -1,3 +1,3 @@
 repo=chenxiaolong/dualbootpatcher
 version=9.3.0
-release=4
+release=5
