@@ -643,29 +643,7 @@ static bool strip_manual_mounts()
     return true;
 }
 
-static std::string encode_list(const std::vector<std::string> &list)
-{
-    std::string result;
-
-    bool first = true;
-    for (auto const &item : list) {
-        if (!first) {
-            result += ',';
-        } else {
-            first = false;
-        }
-        for (auto c : item) {
-            if (c == ',' || c == '\\') {
-                result += '\\';
-            }
-            result += c;
-        }
-    }
-
-    return result;
-}
-
-static bool add_props_to_default_prop(const Device &device)
+static bool add_props_to_default_prop()
 {
     ScopedFILE fp(fopen(DEFAULT_PROP_PATH, "r+b"), fclose);
     if (!fp) {
@@ -1235,7 +1213,7 @@ int init_main(int argc, char *argv[])
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
     symlink_base_dir(device);
 
-    add_props_to_default_prop(device);
+    add_props_to_default_prop();
 
     // initialize properties
     properties_setup();
