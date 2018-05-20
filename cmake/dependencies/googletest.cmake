@@ -12,6 +12,8 @@ if(MBP_ENABLE_TESTS)
                 -Wno-conversion
                 -Wno-duplicated-branches
                 -Wno-missing-declarations
+                # https://github.com/google/googletest/issues/1303
+                -Wno-null-dereference
                 -Wno-sign-conversion
                 -Wno-zero-as-null-pointer-constant
             )
