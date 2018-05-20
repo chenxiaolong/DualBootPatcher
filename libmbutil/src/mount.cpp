@@ -83,8 +83,6 @@ const char * MountErrorCategory::name() const noexcept
 std::string MountErrorCategory::message(int ev) const
 {
     switch (static_cast<MountError>(ev)) {
-    case MountError::EndOfFile:
-        return "end of file";
     case MountError::PathNotMounted:
         return "path not mounted";
     default:

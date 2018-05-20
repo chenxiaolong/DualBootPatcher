@@ -29,8 +29,7 @@ namespace mb::util
 
 enum class MountError
 {
-    EndOfFile = 1,
-    PathNotMounted,
+    PathNotMounted = 1,
 };
 
 std::error_code make_error_code(MountError e);
