@@ -423,7 +423,7 @@ class SwitcherListFragment : Fragment(), RomCardActionListener, SetKernelNeededD
      */
     private fun initCardList() {
         roms = ArrayList()
-        romCardAdapter = RomCardAdapter(activity!!, roms!!, this)
+        romCardAdapter = RomCardAdapter(roms!!, this)
 
         cardListView = activity!!.findViewById(R.id.card_list)
         cardListView.setHasFixedSize(true)
