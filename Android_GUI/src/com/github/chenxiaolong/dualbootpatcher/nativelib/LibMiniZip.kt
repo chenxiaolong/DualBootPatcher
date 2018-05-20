@@ -61,6 +61,7 @@ object LibMiniZip {
         @JvmField var disk_offset: Long /* uint64_t */ = 0
         @JvmField var internal_fa: Short /* uint16_t */ = 0
         @JvmField var external_fa: Int /* uint32_t */ = 0
+        @JvmField var zip64: Short /* uint16_t */ = 0
 
         @JvmField var filename: Pointer? /* char * */ = null
         @JvmField var extrafield: Pointer? /* uint8_t * */ = null
@@ -75,7 +76,7 @@ object LibMiniZip {
                     "compression_method", "modified_date", "accessed_date", "creation_date", "crc",
                     "compressed_size", "uncompressed_size", "filename_size", "extrafield_size",
                     "comment_size", "disk_number", "disk_offset", "internal_fa", "external_fa",
-                    "filename", "extrafield", "comment")
+                    "zip64", "filename", "extrafield", "comment")
         }
     }
 
