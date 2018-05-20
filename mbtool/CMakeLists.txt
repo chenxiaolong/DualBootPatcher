@@ -155,7 +155,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             PRIVATE
             .
             ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
-            ${CMAKE_SOURCE_DIR}/external/minizip/src
+            ${CMAKE_SOURCE_DIR}/external/minizip
             ${CMAKE_SOURCE_DIR}/external/pugixml/src
             ${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers
         )
