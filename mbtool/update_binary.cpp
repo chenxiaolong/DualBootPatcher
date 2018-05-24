@@ -169,7 +169,7 @@ int update_binary_main(int argc, char *argv[])
     if (mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
         fprintf(stderr, "Failed to set private mount propagation: %s\n",
                 strerror(errno));
-        return false;
+        return EXIT_FAILURE;
     }
 
     // Make stdout unbuffered

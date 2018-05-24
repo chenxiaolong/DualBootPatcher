@@ -821,6 +821,28 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
     return true;
 }
 
+static bool unshare_mount_namespace()
+{
+    if (unshare(CLONE_NEWNS) < 0) {
+        fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
+        return false;
+    }
+
+    if (mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
+        fprintf(stderr, "Failed to set private mount propagation: %s\n",
+                strerror(errno));
+        return false;
+    }
+
+    if (mount("", "/", "", MS_REMOUNT, "") < 0) {
+        fprintf(stderr, "Failed to remount rootfs as writable: %s\n",
+                strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
 static bool ensure_partitions_mounted()
 {
     std::string system_partition(Roms::get_system_partition());
@@ -1031,6 +1053,10 @@ int backup_main(int argc, char *argv[])
 
     warn_selinux_context();
 
+    if (!unshare_mount_namespace()) {
+        return EXIT_FAILURE;
+    }
+
     if (!ensure_partitions_mounted()) {
         return EXIT_FAILURE;
     }
@@ -1145,6 +1171,10 @@ int restore_main(int argc, char *argv[])
     }
 
     warn_selinux_context();
+
+    if (!unshare_mount_namespace()) {
+        return EXIT_FAILURE;
+    }
 
     if (!ensure_partitions_mounted()) {
         return EXIT_FAILURE;
