@@ -80,6 +80,9 @@ constexpr char BACKUP_NAME_BOOT_IMAGE[]    = "boot.img";
 constexpr char BACKUP_NAME_CONFIG[]        = "config.json";
 constexpr char BACKUP_NAME_THUMBNAIL[]     = "thumbnail.webp";
 
+// Max file size for FAT32
+constexpr uint64_t DEFAULT_ARCHIVE_SPLIT_SIZE = UINT32_MAX - 1;
+
 using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
 
 enum class Result
@@ -917,7 +920,7 @@ static void backup_usage(FILE *stream)
             "                   (Default: lz4)\n"
             "  -s, --split-size <size>\n"
             "                   Split archive maximum size in bytes (0 to disable)\n"
-            "                   (Default: 4GiB = 4,294,967,296 bytes)\n"
+            "                   (Default: %" PRIu64 " bytes)\n"
             "  -d, --backupdir <directory>\n"
             "                   Directory to store backups\n"
             "                   (Default: " MULTIBOOT_BACKUP_DIR ")\n"
@@ -928,7 +931,8 @@ static void backup_usage(FILE *stream)
             "  system,cache,data,boot,config\n"
             "\n"
             "NOTE: This tool is still in development and the arguments above\n"
-            "have not yet been finalized.\n");
+            "have not yet been finalized.\n",
+            DEFAULT_ARCHIVE_SPLIT_SIZE);
 }
 
 static void restore_usage(FILE *stream)
@@ -979,7 +983,7 @@ int backup_main(int argc, char *argv[])
     std::string name;
     std::string backupdir(MULTIBOOT_BACKUP_DIR);
     util::CompressionType compression = util::CompressionType::Lz4;
-    uint64_t split_archive_size = 4ull * 1024 * 1024 * 1024;
+    uint64_t split_archive_size = DEFAULT_ARCHIVE_SPLIT_SIZE;
     bool force = false;
 
     if (auto n = util::format_time("%Y.%m.%d-%H.%M.%S",
