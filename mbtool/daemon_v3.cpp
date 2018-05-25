@@ -1374,6 +1374,9 @@ static bool v3_shutdown(int fd, const v3::Request *msg)
     // we'll still send it for the sake of symmetry
     bool ret = false;
     switch (request->type()) {
+    case v3::ShutdownType_FRAMEWORK:
+        ret = util::shutdown_via_framework(request->confirm());
+        break;
     case v3::ShutdownType_INIT:
         ret = util::shutdown_via_init();
         break;
