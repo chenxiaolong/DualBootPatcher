@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,22 +19,31 @@
 
 #include "mbutil/reboot.h"
 
+#include <chrono>
+#include <thread>
+
 #include <cstring>
 
+#include <fcntl.h>
+#include <linux/reboot.h>
 #include <sys/reboot.h>
+#include <sys/syscall.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/command.h"
+#include "mbutil/file.h"
+#include "mbutil/mount.h"
 #include "mbutil/properties.h"
-
-#include "external/android_reboot.h"
 
 #define LOG_TAG "mbutil/reboot"
 
 namespace mb::util
 {
+
+constexpr char ANDROID_RB_PROPERTY[] = "sys.powerctl";
 
 static void log_output(const char *line, bool error, void *userdata)
 {
@@ -82,13 +91,51 @@ bool reboot_via_init(const std::string &reboot_arg)
     return true;
 }
 
+static bool remount_ro_done()
+{
+    auto entries = util::get_mount_entries();
+    if (!entries) {
+        return true;
+    }
+
+    for (auto const &entry : entries.value()) {
+        if (starts_with(entry.source, "/dev/block")
+                && !starts_with(entry.vfs_options, "rw,")) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool remount_ro()
+{
+    using namespace std::chrono;
+    using namespace std::chrono_literals;
+
+    if (!file_write_data("/proc/sysrq-trigger", "u", 1)) {
+        return false;
+    }
+
+    // Allow 1 minute to remount read-only
+    auto stop_tp = steady_clock::now() + 1min;
+
+    while (!remount_ro_done() && steady_clock::now() < stop_tp) {
+        std::this_thread::sleep_for(100ms);
+    }
+
+    return true;
+}
+
 bool reboot_via_syscall(const std::string &reboot_arg)
 {
-    // Reboot to system if arg is empty
-    unsigned int reason = reboot_arg.empty()
-            ? ANDROID_RB_RESTART : ANDROID_RB_RESTART2;
+    sync();
+    remount_ro();
 
-    if (android_reboot(reason, reboot_arg.c_str()) < 0) {
+    auto ret = syscall(__NR_reboot, LINUX_REBOOT_MAGIC1,
+                       LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART2,
+                       reboot_arg.c_str());
+    if (ret < 0) {
         LOGE("Failed to reboot via syscall: %s", strerror(errno));
         return false;
     }
@@ -111,7 +158,10 @@ bool shutdown_via_init()
 
 bool shutdown_via_syscall()
 {
-    if (android_reboot(ANDROID_RB_POWEROFF, nullptr) < 0) {
+    sync();
+    remount_ro();
+
+    if (reboot(RB_POWER_OFF) < 0) {
         LOGE("Failed to shut down via syscall: %s", strerror(errno));
         return false;
     }
