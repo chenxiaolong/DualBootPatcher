@@ -39,6 +39,7 @@
 #include "init.h"
 #include "miniadbd.h"
 #include "properties.h"
+#include "reboot.h"
 #include "sepolpatch.h"
 #include "signature.h"
 #include "uevent_dump.h"
@@ -78,7 +79,9 @@ static Tool g_tools[] = {
     { "init", mb::init_main },
     { "miniadbd", mb::miniadbd_main },
     { "properties", mb::properties_main },
+    { "reboot", mb::reboot_main },
     { "sepolpatch", mb::sepolpatch_main },
+    { "shutdown", mb::shutdown_main },
     { "sigverify", mb::sigverify_main },
     { "uevent_dump", mb::uevent_dump_main },
 #endif
