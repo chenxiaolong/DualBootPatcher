@@ -18,7 +18,7 @@ table RebootRequest {
     // Reboot mechanism
     type : RebootType = FRAMEWORK;
 
-    // Confirm reboot? (Only valid for RebootType::Framework)
+    // Confirm reboot? (Only valid for RebootType::FRAMEWORK)
     confirm : bool;
 }
 
