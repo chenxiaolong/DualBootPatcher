@@ -62,33 +62,11 @@ static void log_output(const char *line, bool error, void *userdata)
     LOGD("Reboot command output: %s", copy.c_str());
 }
 
-bool reboot_via_framework(bool show_confirm_dialog)
+static bool run_command_and_log(const std::vector<std::string> &args)
 {
-    std::vector<std::string> argv{
-        "am", "start",
-        //"-W",
-        "--ez", "android.intent.extra.KEY_CONFIRM",
-            show_confirm_dialog ? "true" : "false",
-        "-a", "android.intent.action.REBOOT",
-    };
-
-    int status = run_command(argv[0], argv, {}, {}, &log_output, nullptr);
+    int status = run_command(args[0], args, {}, {}, &log_output, nullptr);
 
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
-}
-
-bool reboot_via_init(const std::string &reboot_arg)
-{
-    std::string prop_value{"reboot,"};
-    prop_value += reboot_arg;
-
-    if (!property_set(ANDROID_RB_PROPERTY, prop_value)) {
-        LOGE("Failed to set property '%s'='%s'",
-             ANDROID_RB_PROPERTY, prop_value.c_str());
-        return false;
-    }
-
-    return true;
 }
 
 static bool remount_ro_done()
@@ -127,6 +105,31 @@ static bool remount_ro()
     return true;
 }
 
+bool reboot_via_framework(bool show_confirm_dialog)
+{
+    return run_command_and_log({
+        "am", "start",
+        //"-W",
+        "--ez", "android.intent.extra.KEY_CONFIRM",
+            show_confirm_dialog ? "true" : "false",
+        "-a", "android.intent.action.REBOOT",
+    });
+}
+
+bool reboot_via_init(const std::string &reboot_arg)
+{
+    std::string prop_value{"reboot,"};
+    prop_value += reboot_arg;
+
+    if (!property_set(ANDROID_RB_PROPERTY, prop_value)) {
+        LOGE("Failed to set property '%s'='%s'",
+             ANDROID_RB_PROPERTY, prop_value.c_str());
+        return false;
+    }
+
+    return true;
+}
+
 bool reboot_via_syscall(const std::string &reboot_arg)
 {
     sync();
@@ -141,6 +144,27 @@ bool reboot_via_syscall(const std::string &reboot_arg)
     }
 
     return true;
+}
+
+bool shutdown_via_framework(bool show_confirm_dialog)
+{
+    for (auto const &action : {
+        "com.android.internal.intent.action.REQUEST_SHUTDOWN",
+        "android.intent.action.ACTION_REQUEST_SHUTDOWN",
+    }) {
+        if (run_command_and_log({
+            "am", "start",
+            //"-W",
+            "--ez", "android.intent.extra.KEY_CONFIRM",
+                show_confirm_dialog ? "true" : "false",
+            "--ez", "android.intent.extra.USER_REQUESTED_SHUTDOWN", "true",
+            "-a", action,
+        })) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool shutdown_via_init()
