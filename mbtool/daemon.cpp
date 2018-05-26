@@ -317,6 +317,7 @@ static bool redirect_stdio_to_dev_null()
 {
     bool ret = true;
 
+    // O_CLOEXEC should not be set
     int fd = open("/dev/null", O_RDWR);
     if (fd < 0) {
         LOGE("Failed to open /dev/null: %s", strerror(errno));
@@ -367,7 +368,7 @@ static bool daemon_init()
             return false;
         }
 
-        log_fp.reset(fopen(get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w"));
+        log_fp.reset(fopen(get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "we"));
         if (!log_fp) {
             LOGE("Failed to open log file %s: %s",
                  MULTIBOOT_LOG_DAEMON, strerror(errno));

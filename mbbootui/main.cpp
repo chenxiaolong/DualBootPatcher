@@ -79,6 +79,7 @@ static mb::patcher::PatcherConfig pc;
 
 static bool redirect_output_to_file(const char *path, mode_t mode)
 {
+    // O_CLOEXEC should not be enabled here
     int flags = O_WRONLY | O_CREAT;
 #if APPEND_TO_LOG
     flags |= O_APPEND;

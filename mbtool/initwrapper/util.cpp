@@ -82,6 +82,7 @@ void open_devnull_stdio(void)
 {
     static const char *name = "/dev/__null__";
     if (mknod(name, S_IFCHR | 0600, (1 << 8) | 3) == 0) {
+        // O_CLOEXEC should not be used
         int fd = open(name, O_RDWR);
         unlink(name);
         if (fd >= 0) {

@@ -168,7 +168,7 @@ oc::result<std::vector<MountEntry>> get_mount_entries()
     });
 
     {
-        ScopedFILE fp(fopen(PROC_MOUNTINFO, "r"), fclose);
+        ScopedFILE fp(fopen(PROC_MOUNTINFO, "re"), fclose);
         if (fp) {
             while (getline(&line, &len, fp.get()) != -1) {
                 MountEntry &entry = entries.emplace_back();
@@ -249,7 +249,7 @@ oc::result<std::vector<MountEntry>> get_mount_entries()
     }
 
     {
-        ScopedFILE fp(fopen(PROC_MOUNTS, "r"), fclose);
+        ScopedFILE fp(fopen(PROC_MOUNTS, "re"), fclose);
         if (fp) {
             while (getline(&line, &len, fp.get()) != -1) {
                 MountEntry &entry = entries.emplace_back();

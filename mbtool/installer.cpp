@@ -1051,6 +1051,7 @@ bool Installer::run_real_updater()
             }
 
             // Make sure the updater won't run interactively
+            // O_CLOEXEC should not be set
             int fd_dev_null = open("/dev/null", O_RDONLY);
             if (fd_dev_null < 0) {
                 LOGE("%s: Failed to open: %s", "/dev/null", strerror(errno));

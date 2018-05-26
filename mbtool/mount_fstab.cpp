@@ -949,7 +949,7 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
 
     // Rewrite fstab file
     if (ret && (flags & MountFlag::RewriteFstab)) {
-        int fd = open(path, O_RDWR | O_TRUNC);
+        int fd = open(path, O_RDWR | O_TRUNC | O_CLOEXEC);
         if (fd < 0) {
             LOGE("%s: Failed to open file: %s", path, strerror(errno));
             return false;

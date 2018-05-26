@@ -196,7 +196,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // Create fake /etc/fstab file to please installers that read the file
     std::string etc_fstab(in_chroot("/etc/fstab"));
     if (access(etc_fstab.c_str(), R_OK) < 0 && errno == ENOENT) {
-        ScopedFILE fp(fopen(etc_fstab.c_str(), "w"), fclose);
+        ScopedFILE fp(fopen(etc_fstab.c_str(), "we"), fclose);
         if (fp) {
             auto system_devs = _device.system_block_devs();
             auto cache_devs = _device.cache_block_devs();
@@ -589,7 +589,7 @@ int rom_installer_main(int argc, char *argv[])
     }
 
 
-    ScopedFILE fp(fopen(MULTIBOOT_LOG_INSTALLER, "wb"), fclose);
+    ScopedFILE fp(fopen(MULTIBOOT_LOG_INSTALLER, "wbe"), fclose);
     if (!fp) {
         fprintf(stderr, "Failed to open %s: %s\n",
                 MULTIBOOT_LOG_INSTALLER, strerror(errno));
@@ -600,6 +600,7 @@ int rom_installer_main(int argc, char *argv[])
 
     // Close stdin
 #if !DEBUG_LEAVE_STDIN_OPEN
+    // O_CLOEXEC should not be set
     int fd = open("/dev/null", O_RDONLY);
     if (fd >= 0) {
         dup2(fd, STDIN_FILENO);

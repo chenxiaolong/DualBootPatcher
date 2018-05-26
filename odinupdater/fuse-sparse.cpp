@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
-        fd = open(arg_ctx.source_file, O_RDONLY);
+        fd = open(arg_ctx.source_file, O_RDONLY | O_CLOEXEC);
         if (fd < 0) {
             fprintf(stderr, "%s: Failed to open: %s\n",
                     arg_ctx.source_file, strerror(errno));

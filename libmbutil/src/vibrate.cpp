@@ -48,7 +48,7 @@ static constexpr char VIBRATOR_PATH[] =
  */
 oc::result<void> vibrate(milliseconds timeout, milliseconds wait)
 {
-    int fd = open(VIBRATOR_PATH, O_WRONLY);
+    int fd = open(VIBRATOR_PATH, O_WRONLY | O_CLOEXEC);
     if (fd < 0) {
         return ec_from_errno();
     }
