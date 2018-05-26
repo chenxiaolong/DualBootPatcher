@@ -211,7 +211,7 @@ parse_fs_mgr_options(std::string_view options)
 // Much simplified version of fs_mgr's fstab parsing code
 FstabResult<FstabRecs> read_fstab(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
     if (!fp) {
         return FstabErrorInfo{{}, ec_from_errno()};
     }
@@ -289,7 +289,7 @@ FstabResult<FstabRecs> read_fstab(const std::string &path)
 
 FstabResult<TwrpFstabRecs> read_twrp_fstab(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
     if (!fp) {
         return FstabErrorInfo{{}, ec_from_errno()};
     }

@@ -309,7 +309,7 @@ static bool fix_file_contexts(const char *path)
     std::string new_path(path);
     new_path += ".new";
 
-    ScopedFILE fp_old(fopen(path, "rb"), fclose);
+    ScopedFILE fp_old(fopen(path, "rbe"), fclose);
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -320,7 +320,7 @@ static bool fix_file_contexts(const char *path)
         }
     }
 
-    ScopedFILE fp_new(fopen(new_path.c_str(), "wb"), fclose);
+    ScopedFILE fp_new(fopen(new_path.c_str(), "wbe"), fclose);
     if (!fp_new) {
         LOGE("%s: Failed to open for writing: %s",
              new_path.c_str(), strerror(errno));
@@ -427,7 +427,7 @@ static bool is_completely_whitespace(const char *str)
 
 static bool add_mbtool_services(bool enable_appsync)
 {
-    ScopedFILE fp_old(fopen("/init.rc", "rb"), fclose);
+    ScopedFILE fp_old(fopen("/init.rc", "rbe"), fclose);
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -437,7 +437,7 @@ static bool add_mbtool_services(bool enable_appsync)
         }
     }
 
-    ScopedFILE fp_new(fopen("/init.rc.new", "wb"), fclose);
+    ScopedFILE fp_new(fopen("/init.rc.new", "wbe"), fclose);
     if (!fp_new) {
         LOGE("Failed to open /init.rc.new for writing: %s",
              strerror(errno));
@@ -503,7 +503,7 @@ static bool add_mbtool_services(bool enable_appsync)
     }
 
     // Create /init.multiboot.rc
-    ScopedFILE fp_multiboot(fopen("/init.multiboot.rc", "wb"), fclose);
+    ScopedFILE fp_multiboot(fopen("/init.multiboot.rc", "wbe"), fclose);
     if (!fp_multiboot) {
         LOGE("Failed to open /init.multiboot.rc for writing: %s",
              strerror(errno));
@@ -573,7 +573,7 @@ static bool strip_manual_mounts()
         std::string path("/");
         path += ent->d_name;
 
-        ScopedFILE fp(fopen(path.c_str(), "r"), fclose);
+        ScopedFILE fp(fopen(path.c_str(), "re"), fclose);
         if (!fp) {
             LOGE("Failed to open %s for reading: %s",
                  path.c_str(), strerror(errno));
@@ -620,7 +620,7 @@ static bool strip_manual_mounts()
         std::string new_path(path);
         new_path += ".new";
 
-        ScopedFILE fp_new(fopen(new_path.c_str(), "w"), fclose);
+        ScopedFILE fp_new(fopen(new_path.c_str(), "we"), fclose);
         if (!fp_new) {
             LOGE("Failed to open %s for writing: %s",
                  new_path.c_str(), strerror(errno));
@@ -645,7 +645,7 @@ static bool strip_manual_mounts()
 
 static bool add_props_to_default_prop()
 {
-    ScopedFILE fp(fopen(DEFAULT_PROP_PATH, "r+b"), fclose);
+    ScopedFILE fp(fopen(DEFAULT_PROP_PATH, "r+be"), fclose);
     if (!fp) {
         if (errno == ENOENT) {
             return true;
@@ -735,7 +735,7 @@ static std::string find_fstab()
         std::string path("/");
         path += ent->d_name;
 
-        ScopedFILE fp(fopen(path.c_str(), "r"), fclose);
+        ScopedFILE fp(fopen(path.c_str(), "re"), fclose);
         if (!fp) {
             continue;
         }
@@ -968,7 +968,7 @@ static bool extract_zip(const char *source, const char *target)
 
     (void) util::mkdir_recursive(target, 0755);
 
-    FILE *fp = fopen(target_file.c_str(), "wb");
+    FILE *fp = fopen(target_file.c_str(), "wbe");
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              target_file.c_str(), strerror(errno));

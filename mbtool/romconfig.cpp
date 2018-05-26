@@ -221,7 +221,7 @@ static bool load_root(RomConfig &config, const Value &node)
 
 bool RomConfig::load_file(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "r"), &fclose);
+    ScopedFILE fp(fopen(path.c_str(), "re"), &fclose);
     if (!fp) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), strerror(errno));
@@ -293,7 +293,7 @@ bool RomConfig::save_file(const std::string &path)
         d.AddMember(KEY_APP_SHARING, v_app_sharing, alloc);
     }
 
-    ScopedFILE fp(fopen(path.c_str(), "w"), &fclose);
+    ScopedFILE fp(fopen(path.c_str(), "we"), &fclose);
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), strerror(errno));

@@ -45,7 +45,7 @@ public:
 static bool file_read_all(const std::string &path,
                           std::vector<unsigned char> &data_out)
 {
-    FILE *fp = fopen(path.c_str(), "rb");
+    FILE *fp = fopen(path.c_str(), "rbe");
     if (!fp) {
         return false;
     }

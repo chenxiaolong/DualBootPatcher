@@ -48,7 +48,7 @@ static bool _rp_write_rom_id(const std::string &dir, const std::string &rom_id)
     std::string path(dir);
     path += "/romid";
 
-    FILE *fp = fopen(path.c_str(), "wb");
+    FILE *fp = fopen(path.c_str(), "wbe");
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), strerror(errno));
@@ -110,7 +110,7 @@ static bool _rp_patch_default_prop(const std::string &dir,
         close(tmp_fd);
     });
 
-    FILE *fp_in = fopen(path.c_str(), "rb");
+    FILE *fp_in = fopen(path.c_str(), "rbe");
     if (!fp_in) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), strerror(errno));

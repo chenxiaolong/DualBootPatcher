@@ -188,7 +188,7 @@ static int vk_init(struct ev *e)
 
     // Some devices split the keys from the touchscreen
     e->vk_count = 0;
-    vk_fd = open(vk_path, O_RDONLY);
+    vk_fd = open(vk_path, O_RDONLY | O_CLOEXEC);
     if (vk_fd >= 0) {
         len = read(vk_fd, vks, sizeof(vks) - 1);
         close(vk_fd);

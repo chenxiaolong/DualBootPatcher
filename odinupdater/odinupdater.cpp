@@ -521,7 +521,7 @@ static ExtractResult extract_raw_file(const char *zip_filename,
 static bool disable_vaultkeeper(const char *path)
 {
     // Open old properties file
-    ScopedFILE fp_old(fopen(path, "rb"), fclose);
+    ScopedFILE fp_old(fopen(path, "rbe"), fclose);
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;

@@ -251,7 +251,7 @@ typedef PropIterAction (*PropIterCb)(const std::string &key,
 static bool iterate_property_file(const std::string &path, PropIterCb cb,
                                   void *cookie)
 {
-    ScopedFILE fp(fopen(path.c_str(), "r"), &fclose);
+    ScopedFILE fp(fopen(path.c_str(), "re"), &fclose);
     if (!fp) {
         return false;
     }
@@ -380,7 +380,7 @@ bool property_file_get_all(const std::string &path,
 bool property_file_write_all(const std::string &path,
                              const std::unordered_map<std::string, std::string> &map)
 {
-    ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "wbe"), fclose);
     if (!fp) {
         return false;
     }

@@ -52,15 +52,13 @@ using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
  */
 oc::result<void> create_empty_file(const std::string &path)
 {
-    int fd;
-    if ((fd = open(path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR |
-                                                   S_IRGRP | S_IWGRP |
-                                                   S_IROTH | S_IWOTH)) < 0) {
+    if (int fd = open(path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC, 0666);
+            fd >= 0) {
+        close(fd);
+        return oc::success();
+    } else {
         return ec_from_errno();
     }
-
-    close(fd);
-    return oc::success();
 }
 
 /*!
@@ -75,7 +73,7 @@ oc::result<void> create_empty_file(const std::string &path)
  */
 oc::result<std::string> file_first_line(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
     if (!fp) {
         return ec_from_errno();
     }
@@ -118,7 +116,7 @@ oc::result<std::string> file_first_line(const std::string &path)
 oc::result<void> file_write_data(const std::string &path,
                                  const void *data, size_t size)
 {
-    ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "wbe"), fclose);
     if (!fp) {
         return ec_from_errno();
     }
@@ -146,7 +144,7 @@ oc::result<bool> file_find_one_of(const std::string &path,
     void *map = MAP_FAILED;
     int fd = -1;
 
-    if ((fd = open(path.c_str(), O_RDONLY)) < 0) {
+    if ((fd = open(path.c_str(), O_RDONLY | O_CLOEXEC)) < 0) {
         return ec_from_errno();
     }
 
@@ -180,7 +178,7 @@ oc::result<bool> file_find_one_of(const std::string &path,
 
 oc::result<std::vector<unsigned char>> file_read_all(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
     if (!fp) {
         return ec_from_errno();
     }
@@ -213,7 +211,7 @@ oc::result<std::vector<unsigned char>> file_read_all(const std::string &path)
 
 oc::result<uint64_t> get_blockdev_size(const std::string &path)
 {
-    int fd = open(path.c_str(), O_RDONLY);
+    int fd = open(path.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
         return ec_from_errno();
     }

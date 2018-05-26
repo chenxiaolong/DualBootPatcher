@@ -108,7 +108,7 @@ static oc::result<void> dump_kernel_log(const char *file)
         return ec_from_errno();
     }
 
-    ScopedFILE fp(fopen(file, "wb"), fclose);
+    ScopedFILE fp(fopen(file, "wbe"), fclose);
     if (!fp) {
         return ec_from_errno();
     }
