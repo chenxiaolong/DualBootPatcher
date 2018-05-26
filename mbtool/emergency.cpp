@@ -37,11 +37,11 @@
 #include "mbutil/file.h"
 #include "mbutil/fts.h"
 #include "mbutil/mount.h"
+#include "mbutil/reboot.h"
 #include "mbutil/time.h"
 #include "mbutil/vibrate.h"
 
 #include "multiboot.h"
-#include "reboot.h"
 
 #define LOG_TAG "mbtool/emergency"
 
@@ -271,7 +271,7 @@ bool emergency_reboot()
     fix_multiboot_permissions();
 
     // Does not return if successful
-    reboot_directly("recovery");
+    util::reboot_via_syscall("recovery");
 
     return false;
 }

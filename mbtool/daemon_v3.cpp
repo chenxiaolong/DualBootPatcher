@@ -40,13 +40,13 @@
 #include "mbutil/fts.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
+#include "mbutil/reboot.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
 #include "mbutil/string.h"
 
 #include "init.h"
 #include "packages.h"
-#include "reboot.h"
 #include "romconfig.h"
 #include "roms.h"
 #include "signature.h"
@@ -1336,13 +1336,13 @@ static bool v3_reboot(int fd, const v3::Request *msg)
     bool ret = false;
     switch (request->type()) {
     case v3::RebootType_FRAMEWORK:
-        ret = reboot_via_framework(request->confirm());
+        ret = util::reboot_via_framework(request->confirm());
         break;
     case v3::RebootType_INIT:
-        ret = reboot_via_init(reboot_arg);
+        ret = util::reboot_via_init(reboot_arg);
         break;
     case v3::RebootType_DIRECT:
-        ret = reboot_directly(reboot_arg);
+        ret = util::reboot_via_syscall(reboot_arg);
         break;
     default:
         LOGE("Invalid reboot type: %d", request->type());
@@ -1374,11 +1374,14 @@ static bool v3_shutdown(int fd, const v3::Request *msg)
     // we'll still send it for the sake of symmetry
     bool ret = false;
     switch (request->type()) {
+    case v3::ShutdownType_FRAMEWORK:
+        ret = util::shutdown_via_framework(request->confirm());
+        break;
     case v3::ShutdownType_INIT:
-        ret = shutdown_via_init();
+        ret = util::shutdown_via_init();
         break;
     case v3::ShutdownType_DIRECT:
-        ret = shutdown_directly();
+        ret = util::shutdown_via_syscall();
         break;
     default:
         LOGE("Invalid shutdown type: %d", request->type());

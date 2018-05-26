@@ -25,8 +25,8 @@
 
 #include "file_sync_service.h"
 
-// mbtool
-#include "reboot.h"
+// libmbutil
+#include "mbutil/reboot.h"
 
 struct stinfo {
     void (*func)(int fd, void *cookie);
@@ -44,8 +44,8 @@ void *service_bootstrap_func(void *x)
 }
 
 static bool reboot_service_impl(int fd, const char* arg) {
-    // Android init won't be running so we can't use mb::reboot_via_init()
-    return mb::reboot_directly(arg);
+    // Android init won't be running so we can't use mb::util::reboot_via_init()
+    return mb::util::reboot_via_syscall(arg);
 }
 
 void reboot_service(int fd, void* arg)
