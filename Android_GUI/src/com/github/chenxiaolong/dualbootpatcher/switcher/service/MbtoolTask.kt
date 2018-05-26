@@ -294,14 +294,8 @@ class MbtoolTask(
         args.add(params.romId!!)
         args.add("-t")
         args.add(params.targets!!.joinToString(","))
-        if (params.backupName != null) {
-            args.add("-n")
-            args.add(params.backupName!!)
-        }
-        if (backupDir != null) {
-            args.add("-d")
-            args.add(translateEmulatedPath(backupDir))
-        }
+        args.add("-d")
+        args.add(translateEmulatedPath(backupDir) + File.separator + params.backupName)
         if (params.force) {
             args.add("-f")
         }
