@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.2.30'
+    ext.kotlin_version = '1.2.41'
 
     repositories {
         jcenter()
@@ -37,7 +37,7 @@ android {
     defaultConfig {
         applicationId "com.github.chenxiaolong.dualbootpatcher"
         minSdkVersion 17
-        targetSdkVersion 25
+        targetSdkVersion 27
         versionCode 1
         versionName "@MBP_VERSION@"
     }
