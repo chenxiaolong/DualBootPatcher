@@ -53,7 +53,6 @@
 
 // libmbpio
 #include <mbpio/directory.h>
-#include <mbpio/error.h>
 #include <mbpio/path.h>
 
 #define FIELD_CMDLINE                   "cmdline"
@@ -863,9 +862,9 @@ static bool unpack_main(int argc, char *argv[])
 
     prepend_if_empty(paths, output_dir, prefix);
 
-    if (!mb::io::create_directories(output_dir)) {
+    if (auto r = mb::io::create_directories(output_dir); !r) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
-                output_dir.c_str(), mb::io::last_error_string().c_str());
+                output_dir.c_str(), r.error().message().c_str());
         return false;
     }
 

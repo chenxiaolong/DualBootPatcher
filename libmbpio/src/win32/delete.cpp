@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -26,16 +26,13 @@
 
 #include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
-#include "mbcommon/string.h"
-
-#include "mbpio/error.h"
 
 namespace mb::io::win32
 {
 
 using ScopedFindHandle = std::unique_ptr<std::remove_pointer_t<HANDLE>, decltype(FindClose) *>;
 
-static bool _win32_recursive_delete(const std::wstring &path)
+static oc::result<void> _win32_recursive_delete(const std::wstring &path)
 {
     std::wstring mask(path);
     mask += L"\\*";
@@ -52,12 +49,8 @@ static bool _win32_recursive_delete(const std::wstring &path)
         0                       // dwAdditionalFlags
     );
     if (_search_handle == INVALID_HANDLE_VALUE) {
-        DWORD error = GetLastError();
-        if (error != ERROR_FILE_NOT_FOUND) {
-            set_last_error(Error::PlatformError, mb::format(
-                    "FindFirstFileExW() failed: %s",
-                    mb::ec_from_win32(error).message().c_str()));
-            return false;
+        if (auto error = GetLastError(); error != ERROR_FILE_NOT_FOUND) {
+            return ec_from_win32(error);
         }
     } else {
         ScopedFindHandle search_handle(_search_handle, &FindClose);
@@ -72,28 +65,18 @@ static bool _win32_recursive_delete(const std::wstring &path)
                 child_path += find_data.cFileName;
 
                 if (is_directory) {
-                    if (!_win32_recursive_delete(child_path)) {
-                        return false;
-                    }
+                    OUTCOME_TRYV(_win32_recursive_delete(child_path));
                 } else {
                     if (!DeleteFileW(child_path.c_str())) {
-                        DWORD error = GetLastError();
-                        set_last_error(Error::PlatformError, mb::format(
-                                "DeleteFileW() failed: %s",
-                                mb::ec_from_win32(error).message().c_str()));
-                        return false;
+                        return ec_from_win32();
                     }
                 }
             }
 
             // Advance to the next file in the directory
             if (!FindNextFileW(search_handle.get(), &find_data)) {
-                DWORD error = GetLastError();
-                if (error != ERROR_NO_MORE_FILES) {
-                    set_last_error(Error::PlatformError, mb::format(
-                            "FindNextFileW() failed: %s",
-                            mb::ec_from_win32(error).message().c_str()));
-                    return false;
+                if (auto error = GetLastError(); error != ERROR_NO_MORE_FILES) {
+                    return ec_from_win32(error);
                 }
                 break;
             }
@@ -101,25 +84,17 @@ static bool _win32_recursive_delete(const std::wstring &path)
     }
 
     if (!RemoveDirectoryW(path.c_str())) {
-        DWORD error = GetLastError();
-        set_last_error(Error::PlatformError, mb::format(
-                "RemoveDirectoryW() failed: %s",
-                mb::ec_from_win32(error).message().c_str()));
-        return false;
+        return ec_from_win32();
     }
 
-    return true;
+    return oc::success();
 }
 
-bool delete_recursively(const std::string &path)
+oc::result<void> delete_recursively(const std::string &path)
 {
-    auto w_path = mb::utf8_to_wcs(path);
+    OUTCOME_TRY(w_path, mb::utf8_to_wcs(path));
 
-    if (!w_path) {
-        return false;
-    }
-
-    return _win32_recursive_delete(w_path.value());
+    return _win32_recursive_delete(w_path);
 }
 
 }

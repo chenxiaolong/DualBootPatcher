@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,36 +19,30 @@
 
 #include "mbpio/posix/delete.h"
 
-#include <cerrno>
-#include <cstring>
-
 #include <ftw.h>
 
-#include "mbcommon/string.h"
-
-#include "mbpio/error.h"
+#include "mbcommon/error_code.h"
 
 namespace mb::io::posix
 {
 
 static int _delete_cb(const char *fpath, const struct stat *sb,
-                      int typeflag, struct FTW *ftwbuf)
+                      int typeflag, FTW *ftwbuf)
 {
     (void) sb;
     (void) typeflag;
     (void) ftwbuf;
 
-    int ret = remove(fpath);
-    if (ret < 0) {
-        set_last_error(Error::PlatformError, mb::format(
-                "%s: Failed to remove: %s", fpath, strerror(errno)));
-    }
-    return ret;
+    return remove(fpath);
 }
 
-bool delete_recursively(const std::string &path)
+oc::result<void> delete_recursively(const std::string &path)
 {
-    return nftw(path.c_str(), _delete_cb, 64, FTW_DEPTH | FTW_PHYS) == 0;
+    if (nftw(path.c_str(), _delete_cb, 64, FTW_DEPTH | FTW_PHYS) < 0) {
+        return ec_from_errno();
+    }
+
+    return oc::success();
 }
 
 }

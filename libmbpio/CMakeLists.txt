@@ -20,7 +20,6 @@ foreach(variant ${variants})
         ${uvariant}
         src/delete.cpp
         src/directory.cpp
-        src/error.cpp
         src/path.cpp
     )
 
