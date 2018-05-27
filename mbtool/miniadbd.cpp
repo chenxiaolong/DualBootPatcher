@@ -111,16 +111,16 @@ static bool initialize_adb()
     legacy_properties_init();
 
     // Load /default.prop
-    std::unordered_map<std::string, std::string> props;
-    util::property_file_get_all("/default.prop", props);
-    for (auto const &pair : props) {
-        legacy_property_set(pair.first.c_str(), pair.second.c_str());
+    if (auto props = util::property_file_get_all("/default.prop")) {
+        for (auto const &pair : *props) {
+            legacy_property_set(pair.first.c_str(), pair.second.c_str());
+        }
     }
     // Load /system/build.prop
-    props.clear();
-    util::property_file_get_all("/system/build.prop", props);
-    for (auto const &pair : props) {
-        legacy_property_set(pair.first.c_str(), pair.second.c_str());
+    if (auto props = util::property_file_get_all("/system/build.prop")) {
+        for (auto const &pair : *props) {
+            legacy_property_set(pair.first.c_str(), pair.second.c_str());
+        }
     }
 
     legacy_get_property_workspace(&propfd, &propsz);

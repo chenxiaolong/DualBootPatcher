@@ -1047,19 +1047,33 @@ static bool v3_mb_get_installed_roms(int fd, const v3::Request *msg)
         }
         build_prop += "/build.prop";
 
-        std::unordered_map<std::string, std::string> props;
+        struct {
+            const char *key;
+            fb::Offset<fb::String> &offset;
+        } needed_props[] = {
+            { "ro.build.version.release", fb_version },
+            { "ro.build.display.id", fb_build },
+        };
 
         RomConfig config;
         config.load_file(r->config_path());
-        props.swap(config.cached_props);
+        auto &props = config.cached_props;
 
-        util::property_file_get_all(build_prop, props);
+        util::property_file_iter(build_prop, {}, [&](std::string_view key,
+                                                     std::string_view value) {
+            for (auto const &item : needed_props) {
+                if (item.key == key) {
+                    props.insert_or_assign(std::string(key), std::string(value));
+                }
+            }
 
-        if (auto it = props.find("ro.build.version.release"); it != props.end()) {
-            fb_version = builder.CreateString(it->second);
-        }
-        if (auto it = props.find("ro.build.display.id"); it != props.end()) {
-            fb_build = builder.CreateString(it->second);
+            return util::PropertyIterAction::Continue;
+        });
+
+        for (auto const &item : needed_props) {
+            if (auto it = props.find(item.key); it != props.end()) {
+                item.offset = builder.CreateString(it->second);
+            }
         }
 
         v3::MbRomBuilder mrb(builder);

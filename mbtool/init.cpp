@@ -873,11 +873,10 @@ static bool disable_spota()
 {
     static const char *spota_dir = "/data/security/spota";
 
-    std::unordered_map<std::string, std::string> props;
-    util::property_file_get_all("/system/build.prop", props);
+    auto props = util::property_file_get_all("/system/build.prop");
 
-    if (strcasecmp(props["ro.product.manufacturer"].c_str(), "samsung") != 0
-            && strcasecmp(props["ro.product.brand"].c_str(), "samsung") != 0) {
+    if (props && strcasecmp((*props)["ro.product.brand"].c_str(), "samsung") != 0
+            && strcasecmp((*props)["ro.product.manufacturer"].c_str(), "samsung") != 0) {
         // Not a Samsung device
         LOGV("Not mounting empty tmpfs over: %s", spota_dir);
         return true;

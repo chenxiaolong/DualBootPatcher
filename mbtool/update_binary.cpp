@@ -90,9 +90,10 @@ std::string RecoveryInstaller::get_install_type()
 std::unordered_map<std::string, std::string> RecoveryInstaller::get_properties()
 {
     // Copy the recovery's properties
-    std::unordered_map<std::string, std::string> props;
-    util::property_get_all(props);
-    return props;
+    if (auto p = util::property_get_all()) {
+        return std::move(*p);
+    }
+    return {};
 }
 
 Installer::ProceedState RecoveryInstaller::on_initialize()

@@ -1326,7 +1326,9 @@ Installer::ProceedState Installer::install_stage_set_up_environment()
     }
 
     // Load info.prop
-    if (!util::property_file_get_all(_temp + "/info.prop", _prop)) {
+    if (auto p = util::property_file_get_all(_temp + "/info.prop")) {
+        p->swap(_prop);
+    } else {
         display_msg("Failed to read multiboot/info.prop");
         return ProceedState::Fail;
     }
@@ -1769,18 +1771,17 @@ Installer::ProceedState Installer::install_stage_installation()
     run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
 
     // Grab version and display ID so that can be cached in config.json later
-    std::string build_prop(in_chroot("/system/build.prop"));
-    std::unordered_map<std::string, std::string> props;
-    util::property_file_get_all(build_prop, props);
+    if (auto props = util::property_file_get_all(
+            in_chroot("/system/build.prop"))) {
+        auto to_cache = {
+            "ro.build.version.release",
+            "ro.build.display.id",
+        };
 
-    auto to_cache = {
-        "ro.build.version.release",
-        "ro.build.display.id",
-    };
-
-    for (auto const &prop : to_cache) {
-        if (auto it = props.find(prop); it != props.end()) {
-            _cached_prop[it->first] = it->second;
+        for (auto const &prop : to_cache) {
+            if (auto it = props->find(prop); it != props->end()) {
+                _cached_prop[it->first] = it->second;
+            }
         }
     }
 
