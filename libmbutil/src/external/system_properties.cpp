@@ -54,6 +54,8 @@
 #include <sys/un.h>
 #include <sys/xattr.h>
 
+#include "mbcommon/error.h"
+
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include "mbutil/external/_system_properties.h"
 #include "mbutil/external/system_properties.h"
@@ -71,9 +73,6 @@
 // Allow client to directly write to the property area
 // (for mb::util::property_set_direct())
 #define MB_ALLOW_DIRECT_CLIENT_WRITES 1
-
-// The check is useless since we statically compile libc
-#define MB_OMIT_API_VERSION_CHECK 1
 
 // Because we have our own logging library
 #define CHECK(predicate) \
@@ -225,15 +224,6 @@ struct prop_info {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(prop_info);
-};
-
-struct find_nth_cookie {
-  uint32_t count;
-  const uint32_t n;
-  const prop_info* pi;
-
-  explicit find_nth_cookie(uint32_t n) : count(0), n(n), pi(nullptr) {
-  }
 };
 
 // This is public because it was exposed in the NDK. As of 2017-01, ~60 apps reference this symbol.
@@ -609,9 +599,9 @@ class PropertyServiceConnection {
     socklen_t alen = namelen + offsetof(sockaddr_un, sun_path) + 1;
 
     if (TEMP_FAILURE_RETRY(connect(socket_, reinterpret_cast<sockaddr*>(&addr), alen)) == -1) {
+      last_error_ = errno;
       close(socket_);
       socket_ = -1;
-      last_error_ = errno;
     }
   }
 
@@ -764,14 +754,6 @@ static int send_prop_msg(const prop_msg* msg) {
   }
 
   return result;
-}
-
-static void find_nth_fn(const prop_info* pi, void* ptr) {
-  find_nth_cookie* cookie = reinterpret_cast<find_nth_cookie*>(ptr);
-
-  if (cookie->n == cookie->count) cookie->pi = pi;
-
-  cookie->count++;
 }
 
 bool prop_area::foreach_property(prop_bt* const trie,
@@ -1174,14 +1156,21 @@ static bool initialize_properties() {
     return true;
   }
 
-  // TODO: Change path to /system/property_contexts after b/27805372
-  if (!initialize_properties_from_file("/plat_property_contexts")) {
-    return false;
+  // Use property_contexts from /system & /vendor, fall back to those from /
+  if (access("/system/etc/selinux/plat_property_contexts", R_OK) != -1) {
+    if (!initialize_properties_from_file("/system/etc/selinux/plat_property_contexts")) {
+      return false;
+    }
+    // Don't check for failure here, so we always have a sane list of properties.
+    // E.g. In case of recovery, the vendor partition will not have mounted and we
+    // still need the system / platform properties to function.
+    initialize_properties_from_file("/vendor/etc/selinux/nonplat_property_contexts");
+  } else {
+    if (!initialize_properties_from_file("/plat_property_contexts")) {
+      return false;
+    }
+    initialize_properties_from_file("/nonplat_property_contexts");
   }
-
-  // TODO: Change path to /vendor/property_contexts after b/27805372
-  // device-specific property context is optional, so load if it exists.
-  initialize_properties_from_file("/nonplat_property_contexts");
 
   return true;
 }
@@ -1204,6 +1193,9 @@ static void free_and_unmap_contexts() {
 }
 
 int mb__system_properties_init() {
+  // This is called from __libc_init_common, and should leave errno at 0 (http://b/37248982).
+  mb::ErrorRestorer error_restorer;
+
   if (initialized) {
     list_foreach(contexts, [](context_node* l) { l->reset_access(); });
     return 0;
@@ -1322,7 +1314,7 @@ int mb__system_property_read(const prop_info* pi, char* name, char* value) {
         size_t namelen = strlcpy(name, pi->name, PROP_NAME_MAX);
         if (namelen >= PROP_NAME_MAX) {
           LOGE("The property name length for \"%s\" is >= %d;"
-               " please use __system_property_read_callback"
+               " please use mb__system_property_read_callback"
                " to read this property. (the name is truncated to \"%s\")",
                pi->name, PROP_NAME_MAX - 1, name);
         }
@@ -1358,7 +1350,7 @@ void mb__system_property_read_callback(const prop_info* pi,
     memcpy(value_buf, pi->value, len);
     value_buf[len] = '\0';
 
-    // TODO: see todo in __system_property_read function
+    // TODO: see todo in mb__system_property_read function
     atomic_thread_fence(memory_order_acquire);
     if (serial == load_const_atomic(&(pi->serial), memory_order_relaxed)) {
       callback(cookie, pi->name, value_buf, serial);
@@ -1515,7 +1507,7 @@ int mb__system_property_add(const char* name, unsigned int namelen, const char* 
   prop_area* pa = get_prop_area_for_name(name);
 
   if (!pa) {
-    LOGW("Access denied adding property \"%s\"", name);
+    LOGE("Access denied adding property \"%s\"", name);
     return -1;
   }
 
@@ -1576,23 +1568,20 @@ bool mb__system_property_wait(const prop_info* pi,
   return true;
 }
 
-const prop_info* __system_property_find_nth(unsigned n) {
-#if !MB_OMIT_API_VERSION_CHECK
-  if (bionic_get_application_target_sdk_version() >= __ANDROID_API_O__) {
-    __libc_fatal(
-        "__system_property_find_nth is not supported since Android O,"
-        " please use __system_property_foreach instead.");
-  }
-#endif
+const prop_info* mb__system_property_find_nth(unsigned n) {
+  struct find_nth {
+    const uint32_t sought;
+    uint32_t current;
+    const prop_info* result;
 
-  find_nth_cookie cookie(n);
-
-  const int err = mb__system_property_foreach(find_nth_fn, &cookie);
-  if (err < 0) {
-    return nullptr;
-  }
-
-  return cookie.pi;
+    explicit find_nth(uint32_t n) : sought(n), current(0), result(nullptr) {}
+    static void fn(const prop_info* pi, void* ptr) {
+      find_nth* self = reinterpret_cast<find_nth*>(ptr);
+      if (self->current++ == self->sought) self->result = pi;
+    }
+  } state(n);
+  mb__system_property_foreach(find_nth::fn, &state);
+  return state.result;
 }
 
 int mb__system_property_foreach(void (*propfn)(const prop_info* pi, void* cookie), void* cookie) {
@@ -1608,7 +1597,7 @@ int mb__system_property_foreach(void (*propfn)(const prop_info* pi, void* cookie
 
   list_foreach(contexts, [propfn, cookie](context_node* l) {
     if (l->check_access_and_open()) {
-      l->pa()->foreach (propfn, cookie);
+      l->pa()->foreach(propfn, cookie);
     }
   });
   return 0;
