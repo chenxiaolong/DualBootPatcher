@@ -60,8 +60,6 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
-#include "external/property_service.h"
-
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
 #include "daemon.h"
@@ -71,6 +69,7 @@
 #include "romconfig.h"
 #include "sepolpatch.h"
 #include "signature.h"
+#include "util/property_service.h"
 
 #define RUN_ADB_BEFORE_EXEC_OR_REBOOT 0
 
@@ -98,6 +97,8 @@ using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 static pid_t daemon_pid = -1;
+
+static PropertyService g_property_service;
 
 static void init_usage(FILE *stream)
 {
@@ -207,7 +208,7 @@ static bool set_kernel_properties()
             if (starts_with(k, "androidboot.") && k.size() > 12 && v) {
                 std::string key("ro.boot.");
                 key += std::string_view(k).substr(12);
-                property_set(key, *v);
+                g_property_service.set(key, *v);
             }
         }
     }
@@ -226,8 +227,8 @@ static bool set_kernel_properties()
     };
 
     for (auto const &p : prop_map) {
-        std::string value = ::property_get(p.src_prop);
-        property_set(p.dst_prop, !value.empty() ? value : p.default_value);
+        auto value = g_property_service.get(p.src_prop);
+        g_property_service.set(p.dst_prop, value ? *value : p.default_value);
     }
 
     return true;
@@ -235,7 +236,7 @@ static bool set_kernel_properties()
 
 static bool properties_setup()
 {
-    if (!property_init()) {
+    if (!g_property_service.initialize()) {
         LOGW("Failed to initialize properties area");
     }
 
@@ -245,10 +246,10 @@ static bool properties_setup()
     }
 
     // Load /default.prop
-    property_load_boot_defaults();
+    g_property_service.load_boot_props();
 
     // Start properties service (to allow other processes to set properties)
-    if (!start_property_service()) {
+    if (!g_property_service.start_thread()) {
         LOGW("Failed to start properties service");
     }
 
@@ -257,7 +258,7 @@ static bool properties_setup()
 
 static bool properties_cleanup()
 {
-    if (!stop_property_service()) {
+    if (!g_property_service.stop_thread()) {
         LOGW("Failed to stop properties service");
     }
 
