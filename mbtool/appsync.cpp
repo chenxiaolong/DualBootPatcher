@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <thread>
 
 #include <cassert>
 #include <cstdio>
@@ -399,7 +400,7 @@ static int connect_to_installd()
         LOGV("Connecting to installd [Attempt %d/%d]", attempt + 1, 5);
         if (connect(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
             LOGW("Failed: %s", strerror(errno));
-            sleep(1);
+            std::this_thread::sleep_for(1s);
         } else {
             break;
         }

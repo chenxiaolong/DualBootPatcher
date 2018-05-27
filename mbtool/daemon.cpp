@@ -20,6 +20,8 @@
 #include "daemon.h"
 
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 #include <fcntl.h>
 #include <getopt.h>
@@ -482,6 +484,8 @@ static void daemon_usage(bool error)
 
 int daemon_main(int argc, char *argv[])
 {
+    using namespace std::chrono_literals;
+
     int opt;
     bool fork_flag = false;
     bool replace_flag = false;
@@ -611,7 +615,7 @@ int daemon_main(int argc, char *argv[])
         }
 
         // Give processes a chance to exit
-        usleep(500000);
+        std::this_thread::sleep_for(500ms);
     }
 
     if (fork_flag) {
