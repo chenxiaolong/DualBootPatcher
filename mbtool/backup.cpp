@@ -45,7 +45,6 @@
 #include "mbutil/path.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
-#include "mbutil/time.h"
 
 #include "installer_util.h"
 #include "image.h"
@@ -879,13 +878,20 @@ static bool remount_partitions_writable()
             && mount("", data_partition.c_str(), "", MS_REMOUNT, "") == 0;
 }
 
-static bool is_valid_backup_name(const std::string &name)
+static bool is_non_empty_dir(const std::string &path)
 {
-    // No empty strings, hidden paths, '..', or directory separators
-    return !name.empty()                            // Must be non-empty
-            && name.find('/') == std::string::npos  // and contain no slashes
-            && name != "."                          // and not current directory
-            && name != "..";                        // and not parent directory
+    ScopedDIR dp(opendir(path.c_str()), closedir);
+    if (dp) {
+        dirent *ent;
+        while ((ent = readdir(dp.get()))) {
+            if (strcmp(ent->d_name, ".") != 0
+                    && strcmp(ent->d_name, "..") != 0) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 static void warn_selinux_context()
@@ -905,16 +911,13 @@ static void warn_selinux_context()
 static void backup_usage(FILE *stream)
 {
     fprintf(stream,
-            "Usage: backup -r <romid> -t <targets> [-n <name>] [OPTION...]\n\n"
+            "Usage: backup -r <romid> -t <targets> [OPTION...]\n\n"
             "Options:\n"
             "  -r, --romid <ROM ID>"
             "                   ROM ID to backup\n"
             "  -t, --targets <targets>\n"
             "                   Comma-separated list of targets to backup\n"
             "                   (Default: 'all')\n"
-            "  -n, --name <name>\n"
-            "                   Name of backup\n"
-            "                   (Default: YYYY.MM.DD-HH.MM.SS)\n"
             "  -c, --compression <compression type>\n"
             "                   Compression type (none, lz4, gzip, xz)\n"
             "                   (Default: lz4)\n"
@@ -922,8 +925,7 @@ static void backup_usage(FILE *stream)
             "                   Split archive maximum size in bytes (0 to disable)\n"
             "                   (Default: %" PRIu64 " bytes)\n"
             "  -d, --backupdir <directory>\n"
-            "                   Directory to store backups\n"
-            "                   (Default: " MULTIBOOT_BACKUP_DIR ")\n"
+            "                   Directory to store backup\n"
             "  -f, --force      Allow overwriting old backup with the same name\n"
             "  -h, --help       Display this help message\n"
             "\n"
@@ -938,18 +940,15 @@ static void backup_usage(FILE *stream)
 static void restore_usage(FILE *stream)
 {
     fprintf(stream,
-            "Usage: restore -r <romid> -t <targets> -n <name> [OPTION...]\n\n"
+            "Usage: restore -r <romid> -t <targets> -d <directory> [OPTION...]\n\n"
             "Options:\n"
             "  -r, --romid <ROM ID>\n"
             "                   ROM ID to restore to\n"
             "  -t, --targets <targets>\n"
             "                   Comma-separated list of targets to restore\n"
             "                   (Default: 'all')\n"
-            "  -n, --name <name>\n"
-            "                   Name of backup to restore\n"
             "  -d, --backupdir <directory>\n"
-            "                   Directory containing backups\n"
-            "                   (Default: " MULTIBOOT_BACKUP_DIR ")\n"
+            "                   Backup directory to restore from\n"
             "  -h, --help       Display this help message\n"
             "\n"
             "Valid backup targets: 'all' or some combination of the following:\n"
@@ -963,11 +962,10 @@ int backup_main(int argc, char *argv[])
 {
     int opt;
 
-    static const char *short_options = "r:t:n:c:d:s:fh";
+    static const char *short_options = "r:t:c:d:s:fh";
     static struct option long_options[] = {
         {"romid",       required_argument, 0, 'r'},
         {"targets",     required_argument, 0, 't'},
-        {"name",        required_argument, 0, 'n'},
         {"compression", required_argument, 0, 'c'},
         {"backupdir",   required_argument, 0, 'd'},
         {"split-size",  required_argument, 0, 's'},
@@ -980,19 +978,10 @@ int backup_main(int argc, char *argv[])
 
     std::string romid;
     std::string targets_str("all");
-    std::string name;
-    std::string backupdir(MULTIBOOT_BACKUP_DIR);
+    std::string backupdir;
     util::CompressionType compression = util::CompressionType::Lz4;
     uint64_t split_archive_size = DEFAULT_ARCHIVE_SPLIT_SIZE;
     bool force = false;
-
-    if (auto n = util::format_time("%Y.%m.%d-%H.%M.%S",
-                                   std::chrono::system_clock::now())) {
-        n.value().swap(name);
-    } else {
-        fprintf(stderr, "Failed to format current time\n");
-        return EXIT_FAILURE;
-    }
 
     while ((opt = getopt_long(argc, argv, short_options,
             long_options, &long_index)) != -1) {
@@ -1002,9 +991,6 @@ int backup_main(int argc, char *argv[])
             break;
         case 't':
             targets_str = optarg;
-            break;
-        case 'n':
-            name = optarg;
             break;
         case 'c':
             if (!parse_compression_type(optarg, compression)) {
@@ -1044,14 +1030,14 @@ int backup_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    BackupTargets targets = parse_targets_string(targets_str);
-    if (!targets) {
-        fprintf(stderr, "Invalid targets: %s\n", targets_str.c_str());
+    if (backupdir.empty()) {
+        fprintf(stderr, "No backup directory specified\n");
         return EXIT_FAILURE;
     }
 
-    if (!is_valid_backup_name(name)) {
-        fprintf(stderr, "Invalid backup name: %s\n", name.c_str());
+    BackupTargets targets = parse_targets_string(targets_str);
+    if (!targets) {
+        fprintf(stderr, "Invalid targets: %s\n", targets_str.c_str());
         return EXIT_FAILURE;
     }
 
@@ -1074,24 +1060,20 @@ int backup_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    std::string output_dir(backupdir);
-    output_dir += "/";
-    output_dir += name;
-
-    struct stat sb;
-    if (!force && stat(output_dir.c_str(), &sb) == 0) {
-        fprintf(stderr, "Backup '%s' already exists. Choose another name or "
-                "pass -f/--force to use this name anyway.\n", name.c_str());
+    if (!force && is_non_empty_dir(backupdir)) {
+        fprintf(stderr, "'%s' already exists and is not empty. Choose another "
+                "directory or pass -f/--force to use this directory anyway.\n",
+                backupdir.c_str());
         return EXIT_FAILURE;
     }
 
-    if (auto r = util::mkdir_recursive(output_dir, 0755); !r) {
+    if (auto r = util::mkdir_recursive(backupdir, 0755); !r) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
-                output_dir.c_str(), r.error().message().c_str());
+                backupdir.c_str(), r.error().message().c_str());
         return EXIT_FAILURE;
     }
 
-    bool ret = backup_rom(rom, output_dir, targets, compression,
+    bool ret = backup_rom(rom, backupdir, targets, compression,
                           split_archive_size);
     if (ret) {
         LOGI("=== Finished ===");
@@ -1106,11 +1088,10 @@ int restore_main(int argc, char *argv[])
 {
     int opt;
 
-    static const char *short_options = "r:t:n:d:h";
+    static const char *short_options = "r:t:d:h";
     static struct option long_options[] = {
         {"romid",     required_argument, 0, 'r'},
         {"targets",   required_argument, 0, 't'},
-        {"name",      required_argument, 0, 'n'},
         {"backupdir", required_argument, 0, 'd'},
         {"help",      no_argument,       0, 'h'},
         {0, 0, 0, 0}
@@ -1120,8 +1101,7 @@ int restore_main(int argc, char *argv[])
 
     std::string romid;
     std::string targets_str("all");
-    std::string name;
-    std::string backupdir(MULTIBOOT_BACKUP_DIR);
+    std::string backupdir;
 
     while ((opt = getopt_long(argc, argv, short_options,
             long_options, &long_index)) != -1) {
@@ -1131,9 +1111,6 @@ int restore_main(int argc, char *argv[])
             break;
         case 't':
             targets_str = optarg;
-            break;
-        case 'n':
-            name = optarg;
             break;
         case 'd':
             backupdir = optarg;
@@ -1158,19 +1135,14 @@ int restore_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (name.empty()) {
-        fprintf(stderr, "No backup name specified\n");
+    if (backupdir.empty()) {
+        fprintf(stderr, "No backup directory specified\n");
         return EXIT_FAILURE;
     }
 
     BackupTargets targets = parse_targets_string(targets_str);
     if (!targets) {
         fprintf(stderr, "Invalid targets: %s\n", targets_str.c_str());
-        return EXIT_FAILURE;
-    }
-
-    if (!is_valid_backup_name(name)) {
-        fprintf(stderr, "Invalid backup name: %s\n", name.c_str());
         return EXIT_FAILURE;
     }
 
@@ -1196,17 +1168,13 @@ int restore_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    std::string input_dir(backupdir);
-    input_dir += "/";
-    input_dir += name;
-
     struct stat sb;
-    if (stat(input_dir.c_str(), &sb) < 0) {
-        fprintf(stderr, "Backup '%s' does not exist\n", name.c_str());
+    if (stat(backupdir.c_str(), &sb) < 0) {
+        fprintf(stderr, "'%s' does not exist\n", backupdir.c_str());
         return EXIT_FAILURE;
     }
 
-    bool ret = restore_rom(rom, input_dir, targets);
+    bool ret = restore_rom(rom, backupdir, targets);
     if (ret) {
         LOGI("=== Finished ===");
         return EXIT_SUCCESS;
