@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2007-2014 The Android Open Source Project
- * Copyright (C) 2015 Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018 Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #include "initwrapper/devices.h"
 
 #include <mutex>
+#include <thread>
 
 #include <cstdlib>
 #include <cstring>
@@ -26,7 +27,6 @@
 #include <fcntl.h>
 #include <fnmatch.h>
 #include <poll.h>
-#include <pthread.h>
 #include <sys/socket.h>
 #include <sys/sysmacros.h>
 #include <unistd.h>
@@ -52,7 +52,7 @@ static std::string bootdevice;
 static int device_fd = -1;
 static int pipe_fd[2];
 static volatile bool run_thread = true;
-static pthread_t thread;
+static std::thread thread;
 static bool dry_run = false;
 
 struct uevent {
@@ -819,7 +819,7 @@ static void coldboot(const char *path)
     }
 }
 
-void * device_thread(void *)
+static void device_thread()
 {
     struct pollfd fds[2];
     fds[0].fd = pipe_fd[0];
@@ -842,8 +842,6 @@ void * device_thread(void *)
             handle_device_fd();
         }
     }
-
-    return nullptr;
 }
 
 void device_init(bool dry_run_)
@@ -872,7 +870,7 @@ void device_init(bool dry_run_)
 
     run_thread = true;
     pipe(pipe_fd);
-    pthread_create(&thread, nullptr, &device_thread, nullptr);
+    thread = std::thread(device_thread);
 }
 
 void device_close()
@@ -880,7 +878,7 @@ void device_close()
     run_thread = false;
     write(pipe_fd[1], "", 1);
 
-    pthread_join(thread, nullptr);
+    thread.join();
 
     close(device_fd);
     device_fd = -1;
