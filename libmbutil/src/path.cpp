@@ -20,6 +20,7 @@
 #include "mbutil/path.h"
 
 #include <chrono>
+#include <thread>
 #include <vector>
 
 #include <cerrno>
@@ -287,13 +288,14 @@ int path_compare(const std::string &path1, const std::string &path2)
 bool wait_for_path(const std::string &path, std::chrono::milliseconds timeout)
 {
     using namespace std::chrono;
+    using namespace std::chrono_literals;
 
     auto until = steady_clock::now() + timeout;
     struct stat sb;
     int ret;
 
     while ((ret = stat(path.c_str(), &sb)) < 0 && steady_clock::now() < until) {
-        usleep(10000);
+        std::this_thread::sleep_for(10ms);
     }
 
     return ret == 0;

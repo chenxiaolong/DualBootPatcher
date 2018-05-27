@@ -19,8 +19,12 @@
 
 #include "mbutil/selinux.h"
 
+#include <chrono>
+#include <thread>
+
 #include <cerrno>
 #include <cstring>
+
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -100,6 +104,8 @@ private:
 
 bool selinux_read_policy(const std::string &path, policydb_t *pdb)
 {
+    using namespace std::chrono_literals;
+
     struct policy_file pf;
     struct stat sb;
     void *map;
@@ -111,7 +117,7 @@ bool selinux_read_policy(const std::string &path, policydb_t *pdb)
             LOGE("[%d/%d] %s: Failed to open sepolicy: %s",
                  i + 1, OPEN_ATTEMPTS, path.c_str(), strerror(errno));
             if (errno == EBUSY) {
-                usleep(500 * 1000);
+                std::this_thread::sleep_for(500ms);
                 continue;
             } else {
                 return false;
@@ -157,6 +163,8 @@ bool selinux_read_policy(const std::string &path, policydb_t *pdb)
 // See: http://marc.info/?l=selinux&m=141882521027239&w=2
 bool selinux_write_policy(const std::string &path, policydb_t *pdb)
 {
+    using namespace std::chrono_literals;
+
     void *data;
     size_t len;
     sepol_handle_t *handle;
@@ -185,7 +193,7 @@ bool selinux_write_policy(const std::string &path, policydb_t *pdb)
             LOGE("[%d/%d] %s: Failed to open sepolicy: %s",
                  i + 1, OPEN_ATTEMPTS, path.c_str(), strerror(errno));
             if (errno == EBUSY) {
-                usleep(500 * 1000);
+                std::this_thread::sleep_for(500ms);
                 continue;
             } else {
                 return false;

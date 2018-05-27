@@ -20,6 +20,8 @@
 #include "mount_fstab.h"
 
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 #include <cerrno>
 #include <cstdio>
@@ -457,6 +459,8 @@ static std::vector<std::string> split_patterns(const char *patterns)
 static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_recs,
                                       const char *mount_point, mode_t perms)
 {
+    using namespace std::chrono_literals;
+
     if (extsd_recs.empty()) {
         LOGD("No external SD fstab entries to mount");
         return true;
@@ -515,7 +519,7 @@ static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_r
 
         if (i < max_attempts - 1) {
             LOGW("No external SD patterns were matched; waiting 1 second");
-            sleep(1);
+            std::this_thread::sleep_for(1s);
         }
     }
 

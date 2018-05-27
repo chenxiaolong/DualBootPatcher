@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -18,7 +18,9 @@
  */
 
 #include <algorithm>
+#include <chrono>
 #include <memory>
+#include <thread>
 #include <vector>
 
 #include <cerrno>
@@ -692,6 +694,8 @@ static bool copy_dir_if_exists(const char *source_dir,
 // fuse mountpoint on the first try (kernel bug?)
 static bool retry_unmount(const char *mount_point, unsigned int attempts)
 {
+    using namespace std::chrono_literals;
+
     for (unsigned int attempt = 0; attempt < attempts; ++attempt) {
         info("[Attempt %d/%d] Unmounting %s",
              attempt + 1, attempts, mount_point);
@@ -701,7 +705,7 @@ static bool retry_unmount(const char *mount_point, unsigned int attempts)
                   mount_point, strerror(errno));
             info("[Attempt %d/%d] Waiting 1 second before next attempt",
                  attempt + 1, attempts);
-            sleep(1);
+            std::this_thread::sleep_for(1s);
             continue;
         }
 
