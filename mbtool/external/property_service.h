@@ -16,16 +16,7 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <sys/socket.h>
 #include <string>
-
-#include "mbutil/external/system_properties.h"
-
-struct property_audit_data {
-    ucred *cr;
-    const char* name;
-};
 
 bool property_init();
 void property_load_boot_defaults();

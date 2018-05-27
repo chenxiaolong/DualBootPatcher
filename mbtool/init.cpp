@@ -223,12 +223,11 @@ static bool set_kernel_properties()
         { "ro.boot.bootloader", "ro.bootloader", "unknown" },
         { "ro.boot.hardware",   "ro.hardware",   "unknown" },
         { "ro.boot.revision",   "ro.revision",   "0"       },
-        { nullptr,              nullptr,         nullptr   },
     };
 
-    for (auto it = prop_map; it ->src_prop; ++it) {
-        std::string value = ::property_get(it->src_prop);
-        property_set(it->dst_prop, !value.empty() ? value : it->default_value);
+    for (auto const &p : prop_map) {
+        std::string value = ::property_get(p.src_prop);
+        property_set(p.dst_prop, !value.empty() ? value : p.default_value);
     }
 
     return true;

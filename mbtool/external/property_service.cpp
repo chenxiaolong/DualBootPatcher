@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
+#include "property_service.h"
+
 #include <chrono>
 #include <memory>
+#include <thread>
 #include <vector>
 
-#include <cerrno>
 #include <cctype>
+#include <cerrno>
 #include <cinttypes>
 #include <climits>
 #include <cstdarg>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -30,7 +34,6 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <pthread.h>
 #include <sys/mman.h>
 #include <sys/poll.h>
 #include <sys/select.h>
@@ -43,6 +46,8 @@
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include "mbutil/external/_system_properties.h"
 
+#include "mbcommon/error.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 
 #include "mblog/logging.h"
@@ -50,16 +55,12 @@
 #include "mbutil/external/bionic_macros.h"
 #include "mbutil/file.h"
 
-#include "property_service.h"
-
 #define LOG_TAG "mbtool/external/property_service"
-
-#define ALLOW_LOCAL_PROP_OVERRIDE 1
 
 static int property_set_fd = -1;
 static int stop_pipe_fd[2];
 
-static pthread_t thread;
+static std::thread thread;
 
 bool property_init() {
     if (mb__system_property_area_init()) {
@@ -71,8 +72,16 @@ bool property_init() {
 }
 
 std::string property_get(const char* name) {
-    char value[PROP_VALUE_MAX] = {0};
-    mb__system_property_get(name, value);
+    std::string value;
+
+    const prop_info *pi = mb__system_property_find(name);
+    if (pi) {
+        mb__system_property_read_callback(
+                pi, [](void *cookie, const char *, const char *v, uint32_t) {
+            *static_cast<std::string *>(cookie) = v;
+        }, &value);
+    }
+
     return value;
 }
 
@@ -83,7 +92,7 @@ bool is_legal_property_name(const std::string& name) {
     if (name[0] == '.') return false;
     if (name[namelen - 1] == '.') return false;
 
-    /* Only allow alphanumeric, plus '.', '-', '@', or '_' */
+    /* Only allow alphanumeric, plus '.', '-', '@', ':', or '_' */
     /* Don't allow ".." to appear in a property name */
     for (size_t i = 0; i < namelen; i++) {
         if (name[i] == '.') {
@@ -91,7 +100,7 @@ bool is_legal_property_name(const std::string& name) {
             if (name[i-1] == '.') return false;
             continue;
         }
-        if (name[i] == '_' || name[i] == '-' || name[i] == '@') continue;
+        if (name[i] == '_' || name[i] == '-' || name[i] == '@' || name[i] == ':') continue;
         if (name[i] >= 'a' && name[i] <= 'z') continue;
         if (name[i] >= 'A' && name[i] <= 'Z') continue;
         if (name[i] >= '0' && name[i] <= '9') continue;
@@ -101,7 +110,7 @@ bool is_legal_property_name(const std::string& name) {
     return true;
 }
 
-uint32_t property_set(const std::string& name, const std::string& value) {
+static uint32_t PropertySetImpl(const std::string& name, const std::string& value) {
     size_t valuelen = value.size();
 
     if (!is_legal_property_name(name)) {
@@ -137,6 +146,10 @@ uint32_t property_set(const std::string& name, const std::string& value) {
     }
 
     return PROP_SUCCESS;
+}
+
+uint32_t property_set(const std::string& name, const std::string& value) {
+    return PropertySetImpl(name, value);
 }
 
 class SocketConnection {
@@ -349,7 +362,7 @@ static void handle_property_set_fd() {
     }
 }
 
-static void load_properties_from_file(const char *, const char *);
+static bool load_properties_from_file(const char *, const char *);
 
 /*
  * Filter is used to decide which properties to load: NULL loads all keys,
@@ -413,14 +426,14 @@ static void load_properties(char *data, const char *filter)
 
 // Filter is used to decide which properties to load: NULL loads all keys,
 // "ro.foo.*" is a prefix match, and "ro.foo.bar" is an exact match.
-static void load_properties_from_file(const char* filename, const char* filter) {
+static bool load_properties_from_file(const char* filename, const char* filter) {
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 
     auto data = mb::util::file_read_all(filename);
     if (!data) {
-        LOGW("Couldn't load properties from %s: %s",
+        LOGW("%s: Couldn't load property file: %s",
              filename, data.error().message().c_str());
-        return;
+        return false;
     }
     data.value().push_back('\n');
     data.value().push_back('\0');
@@ -430,10 +443,18 @@ static void load_properties_from_file(const char* filename, const char* filter) 
     std::chrono::duration<double> elapsed = end - start;
 
     LOGV("(Loading properties from %s took %.2fs.)", filename, elapsed.count());
+
+    return true;
 }
 
 void property_load_boot_defaults() {
-    load_properties_from_file("/default.prop", NULL);
+    if (!load_properties_from_file("/system/etc/prop.default", NULL)) {
+        // Try recovery path
+        if (!load_properties_from_file("/prop.default", NULL)) {
+            // Try legacy path
+            load_properties_from_file("/default.prop", NULL);
+        }
+    }
     load_properties_from_file("/odm/default.prop", NULL);
     load_properties_from_file("/vendor/default.prop", NULL);
 }
@@ -445,9 +466,9 @@ void load_system_props() {
     load_properties_from_file("/factory/factory.prop", "ro.*");
 }
 
-void * property_service_thread(void *)
+void property_service_thread()
 {
-    struct pollfd fds[2];
+    pollfd fds[2];
     fds[0].fd = stop_pipe_fd[0];
     fds[0].events = POLLIN;
     fds[1].fd = property_set_fd;
@@ -468,54 +489,70 @@ void * property_service_thread(void *)
             handle_property_set_fd();
         }
     }
-
-    return nullptr;
 }
 
 #define ANDROID_SOCKET_DIR           "/dev/socket"
 
-static int create_socket(const char *name, int type, mode_t perm, uid_t uid,
-                         gid_t gid)
-{
-    struct sockaddr_un addr;
-    int fd, ret;
-
-    fd = socket(PF_UNIX, type, 0);
+static int CreateSocket(const char* name, int type, bool passcred, mode_t perm,
+                        uid_t uid, gid_t gid) {
+    int fd = socket(PF_UNIX, type, 0);
     if (fd < 0) {
         LOGE("Failed to open socket '%s': %s", name, strerror(errno));
         return -1;
     }
 
+    auto close_fd = mb::finally([&] {
+        mb::ErrorRestorer restorer;
+        close(fd);
+    });
+
+    struct sockaddr_un addr;
     memset(&addr, 0 , sizeof(addr));
     addr.sun_family = AF_UNIX;
-    snprintf(addr.sun_path, sizeof(addr.sun_path), ANDROID_SOCKET_DIR"/%s",
+    snprintf(addr.sun_path, sizeof(addr.sun_path), ANDROID_SOCKET_DIR "/%s",
              name);
 
-    ret = unlink(addr.sun_path);
-    if (ret != 0 && errno != ENOENT) {
+    if ((unlink(addr.sun_path) != 0) && (errno != ENOENT)) {
         LOGE("Failed to unlink old socket '%s': %s", name, strerror(errno));
-        goto out_close;
+        return -1;
     }
 
-    ret = bind(fd, (struct sockaddr *) &addr, sizeof (addr));
+    if (passcred) {
+        int on = 1;
+        if (setsockopt(fd, SOL_SOCKET, SO_PASSCRED, &on, sizeof(on))) {
+            LOGE("Failed to set SO_PASSCRED '%s': %s", name, strerror(errno));
+            return -1;
+        }
+    }
+
+    int ret = bind(fd, (struct sockaddr *) &addr, sizeof (addr));
+
+    auto unlink_socket = mb::finally([&] {
+        mb::ErrorRestorer restorer;
+        unlink(addr.sun_path);
+    });
+
     if (ret) {
         LOGE("Failed to bind socket '%s': %s", name, strerror(errno));
-        goto out_unlink;
+        return -1;
     }
 
-    chown(addr.sun_path, uid, gid);
-    chmod(addr.sun_path, perm);
+    if (lchown(addr.sun_path, uid, gid)) {
+        LOGE("Failed to lchown socket '%s': %s", addr.sun_path, strerror(errno));
+        return -1;
+    }
+    if (fchmodat(AT_FDCWD, addr.sun_path, perm, AT_SYMLINK_NOFOLLOW)) {
+        LOGE("Failed to fchmodat socket '%s': %s", addr.sun_path, strerror(errno));
+        return -1;
+    }
 
-    LOGI("Created socket '%s' with mode '%o', user '%d', group '%d'\n",
+    LOGI("Created socket '%s', mode %o, user %d, group %d",
          addr.sun_path, perm, uid, gid);
 
-    return fd;
+    close_fd.dismiss();
+    unlink_socket.dismiss();
 
-out_unlink:
-    unlink(addr.sun_path);
-out_close:
-    close(fd);
-    return -1;
+    return fd;
 }
 
 #undef ANDROID_SOCKET_DIR
@@ -528,43 +565,38 @@ bool start_property_service() {
 
     property_set("ro.property_service.version", "2");
 
-    property_set_fd = create_socket(PROP_SERVICE_NAME, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK,
-                                    0666, 0, 0);
+    property_set_fd = CreateSocket(PROP_SERVICE_NAME, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK,
+                                   false, 0666, 0, 0);
     if (property_set_fd == -1) {
-        LOGE("start_property_service socket creation failed: %s",
-             strerror(errno));
-        goto error;
+        LOGE("start_property_service socket creation failed");
+        return false;
     }
+
+    auto close_fd = mb::finally([&] {
+        close(property_set_fd);
+        property_set_fd = -1;
+    });
 
     if (listen(property_set_fd, 8) < 0) {
         LOGE("Failed to listen on socket: %s", strerror(errno));
-        goto error;
+        return false;
     }
 
     if (pipe(stop_pipe_fd) < 0) {
         LOGE("Failed to create pipe: %s", strerror(errno));
-        goto error;
+        return false;
     }
 
-    if (pthread_create(&thread, nullptr, &property_service_thread, nullptr) < 0) {
-        LOGE("Failed to start property service thread: %s", strerror(errno));
-        goto error;
-    }
+    thread = std::thread(property_service_thread);
 
     LOGD("Started property service");
 
-    return true;
+    close_fd.dismiss();
 
-error:
-    if (property_set_fd >= 0) {
-        close(property_set_fd);
-        property_set_fd = -1;
-    }
-    return false;
+    return true;
 }
 
-bool stop_property_service()
-{
+bool stop_property_service() {
     if (property_set_fd < 0) {
         LOGW("Property service has not yet started");
         return false;
@@ -572,7 +604,7 @@ bool stop_property_service()
 
     write(stop_pipe_fd[1], "", 1);
 
-    pthread_join(thread, nullptr);
+    thread.join();
 
     close(property_set_fd);
     property_set_fd = -1;
