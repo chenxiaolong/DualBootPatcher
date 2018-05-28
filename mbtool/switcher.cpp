@@ -133,11 +133,13 @@ bool checksums_read(std::unordered_map<std::string, std::string> *props)
 {
     std::string checksums_path = get_raw_path(CHECKSUMS_PATH);
 
-    if (!util::property_file_get_all(checksums_path, *props)) {
+    if (auto p = util::property_file_get_all(checksums_path)) {
+        p->swap(*props);
+        return true;
+    } else {
         LOGE("%s: Failed to load properties", checksums_path.c_str());
         return false;
     }
-    return true;
 }
 
 /*!

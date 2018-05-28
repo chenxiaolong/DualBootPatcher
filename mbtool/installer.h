@@ -28,6 +28,7 @@
 #include "mbdevice/device.h"
 
 #include "roms.h"
+#include "util/legacy_property_service.h"
 
 namespace mb
 {
@@ -99,6 +100,8 @@ protected:
     std::unordered_map<std::string, std::string> _prop;
     std::unordered_map<std::string, std::string> _chroot_prop;
     std::unordered_map<std::string, std::string> _cached_prop;
+
+    LegacyPropertyService _legacy_prop_svc;
 
     std::string _temp_image_path;
     bool _has_block_image;

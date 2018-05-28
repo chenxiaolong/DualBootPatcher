@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,42 +19,31 @@
 
 #pragma once
 
+#include <functional>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 #include "mbcommon/integer.h"
 
-#include "mbutil/external/system_properties.h"
-
-struct timespec;
 
 namespace mb::util
 {
 
-typedef void (*PropertyListCb)(const std::string &key,
-                               const std::string &value,
-                               void *cookie);
+enum class PropertyIterAction
+{
+    Continue,
+    Stop,
+};
 
-// Non-deprecated libc system properties wrapper functions
-
-int libc_system_property_set(const char *key, const char *value);
-const prop_info *libc_system_property_find(const char *name);
-void libc_system_property_read_callback(
-        const prop_info *pi,
-        void (*callback)(void *cookie, const char *name, const char *value,
-                         uint32_t serial),
-        void *cookie);
-int libc_system_property_foreach(
-        void (*propfn)(const prop_info *pi, void *cookie),
-        void *cookie);
-bool libc_system_property_wait(const prop_info *pi,
-                               uint32_t old_serial,
-                               uint32_t *new_serial_ptr,
-                               const struct timespec *relative_timeout);
+using PropertyIterCb = PropertyIterAction(std::string_view key,
+                                          std::string_view value);
+using PropertiesMap = std::unordered_map<std::string, std::string>;
 
 // Helper functions
 
-bool property_get(const std::string &key, std::string &value_out);
+std::optional<std::string> property_get(const std::string &key);
 std::string property_get_string(const std::string &key,
                                 const std::string &default_value);
 bool property_get_bool(const std::string &key, bool default_value);
@@ -62,11 +51,11 @@ bool property_get_bool(const std::string &key, bool default_value);
 template<typename IntType>
 inline IntType property_get_num(const std::string &key, IntType default_value)
 {
-    std::string value;
-    IntType result;
-
-    if (property_get(key, value) && str_to_num(value.c_str(), 10, result)) {
-        return result;
+    if (auto value = property_get(key)) {
+        IntType result;
+        if (str_to_num(value->c_str(), 10, result)) {
+            return result;
+        }
     }
 
     return default_value;
@@ -75,14 +64,14 @@ inline IntType property_get_num(const std::string &key, IntType default_value)
 bool property_set(const std::string &key, const std::string &value);
 bool property_set_direct(const std::string &key, const std::string &value);
 
-bool property_list(PropertyListCb prop_fn, void *cookie);
+bool property_iter(const std::function<PropertyIterCb> &fn);
 
-bool property_get_all(std::unordered_map<std::string, std::string> &map);
+std::optional<PropertiesMap> property_get_all();
 
 // Properties file functions
 
-bool property_file_get(const std::string &path, const std::string &key,
-                       std::string &value_out);
+std::optional<std::string> property_file_get(const std::string &path,
+                                             const std::string &key);
 std::string property_file_get_string(const std::string &path,
                                      const std::string &key,
                                      const std::string &default_value);
@@ -94,24 +83,21 @@ inline IntType property_file_get_num(const std::string &path,
                                      const std::string &key,
                                      IntType default_value)
 {
-    std::string value;
-    IntType result;
-
-    if (property_file_get(path, key, value)
-            && str_to_num(value.c_str(), 10, result)) {
-        return result;
+    if (auto value = property_file_get(path, key)) {
+        IntType result;
+        if (str_to_num(value->c_str(), 10, result)) {
+            return result;
+        }
     }
 
     return default_value;
 }
 
-bool property_file_list(const std::string &path, PropertyListCb prop_fn,
-                        void *cookie);
+bool property_file_iter(const std::string &path, std::string_view filter,
+                        const std::function<PropertyIterCb> &fn);
 
-bool property_file_get_all(const std::string &path,
-                           std::unordered_map<std::string, std::string> &map);
+std::optional<PropertiesMap> property_file_get_all(const std::string &path);
 
-bool property_file_write_all(const std::string &path,
-                             const std::unordered_map<std::string, std::string> &map);
+bool property_file_write_all(const std::string &path, const PropertiesMap &map);
 
 }

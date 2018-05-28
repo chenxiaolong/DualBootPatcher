@@ -220,8 +220,10 @@ Installer::ProceedState RomInstaller::on_checked_device()
     }
 
     // Load recovery properties
-    util::property_file_get_all(
-            in_chroot("/default.recovery.prop"), _recovery_props);
+    if (auto p = util::property_file_get_all(
+            in_chroot("/default.recovery.prop"))) {
+        p->swap(_recovery_props);
+    }
 
     return ProceedState::Continue;
 }

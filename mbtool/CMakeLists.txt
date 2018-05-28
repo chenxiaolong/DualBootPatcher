@@ -35,20 +35,6 @@ set_source_files_properties(
 )
 
 set_source_files_properties(
-    external/legacy_property_service.cpp
-    PROPERTIES
-    COMPILE_FLAGS
-    "-Wno-cast-align -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-sign-conversion"
-)
-
-set_source_files_properties(
-    external/property_service.cpp
-    PROPERTIES
-    COMPILE_FLAGS
-    "-Wno-gnu-statement-expression -Wno-missing-prototypes -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-sign-conversion"
-)
-
-set_source_files_properties(
     initwrapper/cutils/uevent.cpp
     PROPERTIES
     COMPILE_FLAGS
@@ -60,6 +46,20 @@ set_source_files_properties(
     PROPERTIES
     COMPILE_FLAGS
     "-Wno-missing-prototypes -Wno-shorten-64-to-32 -Wno-sign-conversion"
+)
+
+set_source_files_properties(
+    src/util/legacy_property_service.cpp
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-shorten-64-to-32 -Wno-sign-conversion"
+)
+
+set_source_files_properties(
+    src/util/property_service.cpp
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-gnu-statement-expression -Wno-shorten-64-to-32 -Wno-sign-conversion"
 )
 
 set_source_files_properties(
@@ -114,12 +114,12 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         switcher.cpp
         uevent_dump.cpp
         wipe.cpp
-        external/legacy_property_service.cpp
         external/audit/libaudit.cpp
-        external/property_service.cpp
         initwrapper/cutils/uevent.cpp
         initwrapper/devices.cpp
         initwrapper/util.cpp
+        src/util/legacy_property_service.cpp
+        src/util/property_service.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
         ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
     )
@@ -144,7 +144,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         update_binary_tool.cpp
         utilities.cpp
         wipe.cpp
-        external/legacy_property_service.cpp
+        src/util/legacy_property_service.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
     )
 
@@ -154,6 +154,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             ${target}
             PRIVATE
             .
+            include
             ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
             ${CMAKE_SOURCE_DIR}/external/minizip
             ${CMAKE_SOURCE_DIR}/external/pugixml/src

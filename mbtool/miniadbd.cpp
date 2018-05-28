@@ -31,13 +31,13 @@
 #include "miniadbd/adb.h"
 #include "miniadbd/transport.h"
 
-#include "external/legacy_property_service.h"
-
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
+
+#include "util/legacy_property_service.h"
 
 #define LOG_TAG "mbtool/miniadbd"
 
@@ -106,33 +106,38 @@ static bool initialize_adb()
     // ANDROID_PROPERTY_WORKSPACE environment variable). This doesn't actually
     // start a "real" properties service (setprop will never work), but it's
     // enough to prevent the segfaults.
-    char tmp[32];
-    int propfd, propsz;
-    legacy_properties_init();
 
-    // Load /default.prop
-    std::unordered_map<std::string, std::string> props;
-    util::property_file_get_all("/default.prop", props);
-    for (auto const &pair : props) {
-        legacy_property_set(pair.first.c_str(), pair.second.c_str());
+    LegacyPropertyService lps;
+
+    if (lps.initialize()) {
+        // Load /default.prop
+        if (auto props = util::property_file_get_all("/default.prop")) {
+            for (auto const &pair : *props) {
+                lps.set(pair.first, pair.second);
+            }
+        }
+        // Load /system/build.prop
+        if (auto props = util::property_file_get_all("/system/build.prop")) {
+            for (auto const &pair : *props) {
+                lps.set(pair.first, pair.second);
+            }
+        }
+
+        auto [fd, size] = lps.workspace();
+        char tmp[32];
+
+        snprintf(tmp, sizeof(tmp), "%d,%zu", dup(fd), size);
+
+        char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
+        LOGD("Original properties environment: %s",
+             orig_prop_env ? orig_prop_env : "(null)");
+
+        setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
+
+        LOGD("Switched to legacy properties environment: %s", tmp);
+    } else {
+        LOGE("Failed to initialize legacy property service");
     }
-    // Load /system/build.prop
-    props.clear();
-    util::property_file_get_all("/system/build.prop", props);
-    for (auto const &pair : props) {
-        legacy_property_set(pair.first.c_str(), pair.second.c_str());
-    }
-
-    legacy_get_property_workspace(&propfd, &propsz);
-    snprintf(tmp, sizeof(tmp), "%d,%d", dup(propfd), propsz);
-
-    char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
-    LOGD("Original properties environment: %s",
-         orig_prop_env ? orig_prop_env : "null");
-
-    setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
-
-    LOGD("Switched to legacy properties environment: %s", tmp);
 
     return ret;
 }

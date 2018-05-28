@@ -87,15 +87,14 @@ int properties_main(int argc, char *argv[])
 
     if (strcmp(action, "get") == 0) {
         if (argc - optind == 0) {
-            util::property_list([](const std::string &key,
-                                   const std::string &value,
-                                   void *cookie){
-                (void) cookie;
-                fputs(key.c_str(), stdout);
+            util::property_iter([](std::string_view key,
+                                   std::string_view value) {
+                fwrite(key.data(), 1, key.size(), stdout);
                 fputc('=', stdout);
-                fputs(value.c_str(), stdout);
+                fwrite(value.data(), 1, value.size(), stdout);
                 fputc('\n', stdout);
-            }, nullptr);
+                return util::PropertyIterAction::Continue;
+            });
         } else if (argc - optind == 1) {
             std::string value = util::property_get_string(argv[optind], {});
 
@@ -118,9 +117,8 @@ int properties_main(int argc, char *argv[])
         if (force) {
             ret = util::property_set_direct(key, value);
         } else {
-            prop_info *pi = const_cast<prop_info *>(
-                    util::libc_system_property_find(key));
-            if (pi && starts_with(key, "ro.")) {
+            if (auto r = util::property_get(key);
+                    r && starts_with(key, "ro.")) {
                 fprintf(stderr, "Cannot overwrite read-only property '%s'"
                         " without -f/--force\n", key);
                 return EXIT_FAILURE;

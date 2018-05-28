@@ -40,9 +40,6 @@
 // Linux
 #include <linux/loop.h>
 
-// Legacy properties
-#include "external/legacy_property_service.h"
-
 // libmbcommon
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
@@ -848,18 +845,24 @@ bool Installer::set_up_legacy_properties()
     // We don't need to worry about /dev/__properties__ since that's not present
     // in the chroot. Bionic will automatically fall back to getting the fd from
     // the ANDROID_PROPERTY_WORKSPACE environment variable.
-    char tmp[32];
-    int propfd, propsz;
-    legacy_properties_init();
-    for (auto const &pair : _chroot_prop) {
-        legacy_property_set(pair.first.c_str(), pair.second.c_str());
+
+    if (!_legacy_prop_svc.initialize()) {
+        LOGE("Failed to initialize legacy property service");
+        return false;
     }
-    legacy_get_property_workspace(&propfd, &propsz);
-    snprintf(tmp, sizeof(tmp), "%d,%d", dup(propfd), propsz);
+
+    for (auto const &pair : _chroot_prop) {
+        _legacy_prop_svc.set(pair.first, pair.second);
+    }
+
+    auto [fd, size] = _legacy_prop_svc.workspace();
+    char tmp[32];
+
+    snprintf(tmp, sizeof(tmp), "%d,%zu", dup(fd), size);
 
     char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
     LOGD("Original properties environment: %s",
-         orig_prop_env ? orig_prop_env : "null");
+         orig_prop_env ? orig_prop_env : "(null)");
 
     setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
 
@@ -1326,7 +1329,9 @@ Installer::ProceedState Installer::install_stage_set_up_environment()
     }
 
     // Load info.prop
-    if (!util::property_file_get_all(_temp + "/info.prop", _prop)) {
+    if (auto p = util::property_file_get_all(_temp + "/info.prop")) {
+        p->swap(_prop);
+    } else {
         display_msg("Failed to read multiboot/info.prop");
         return ProceedState::Fail;
     }
@@ -1769,18 +1774,17 @@ Installer::ProceedState Installer::install_stage_installation()
     run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
 
     // Grab version and display ID so that can be cached in config.json later
-    std::string build_prop(in_chroot("/system/build.prop"));
-    std::unordered_map<std::string, std::string> props;
-    util::property_file_get_all(build_prop, props);
+    if (auto props = util::property_file_get_all(
+            in_chroot("/system/build.prop"))) {
+        auto to_cache = {
+            "ro.build.version.release",
+            "ro.build.display.id",
+        };
 
-    auto to_cache = {
-        "ro.build.version.release",
-        "ro.build.display.id",
-    };
-
-    for (auto const &prop : to_cache) {
-        if (auto it = props.find(prop); it != props.end()) {
-            _cached_prop[it->first] = it->second;
+        for (auto const &prop : to_cache) {
+            if (auto it = props->find(prop); it != props->end()) {
+                _cached_prop[it->first] = it->second;
+            }
         }
     }
 
