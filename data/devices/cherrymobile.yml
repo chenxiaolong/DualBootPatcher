@@ -10,6 +10,7 @@
     - fs5
     - CMFS5
     - cmfs5
+    - RGxS5
   architecture: arm64-v8a
  
   block_devs:
