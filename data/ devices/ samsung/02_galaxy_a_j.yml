@@ -575,39 +575,7 @@
     recovery:
       - /dev/block/mmcblk0p11
       - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
-    extra:
-      - /dev/block/mmcblk1p1
-      - /dev/block/platform/13540000.dwmmc0/by-name/EFS
-      - /dev/block/platform/13540000.dwmmc0/by-name/OTA
-      - /dev/block/platform/13540000.dwmmc0/by-name/RADIO
-      - /dev/block/platform/13540000.dwmmc0/by-num/p1
-      - /dev/block/platform/13540000.dwmmc0/by-num/p10
-      - /dev/block/platform/13540000.dwmmc0/by-num/p11
-      - /dev/block/platform/13540000.dwmmc0/by-num/p12
-      - /dev/block/platform/13540000.dwmmc0/by-num/p13
-      - /dev/block/platform/13540000.dwmmc0/by-num/p14
-      - /dev/block/platform/13540000.dwmmc0/by-num/p15
-      - /dev/block/platform/13540000.dwmmc0/by-num/p16
-      - /dev/block/platform/13540000.dwmmc0/by-num/p17
-      - /dev/block/platform/13540000.dwmmc0/by-num/p18
-      - /dev/block/platform/13540000.dwmmc0/by-num/p19
-      - /dev/block/platform/13540000.dwmmc0/by-num/p2
-      - /dev/block/platform/13540000.dwmmc0/by-num/p20
-      - /dev/block/platform/13540000.dwmmc0/by-num/p21
-      - /dev/block/platform/13540000.dwmmc0/by-num/p22
-      - /dev/block/platform/13540000.dwmmc0/by-num/p23
-      - /dev/block/platform/13540000.dwmmc0/by-num/p24
-      - /dev/block/platform/13540000.dwmmc0/by-num/p25
-      - /dev/block/platform/13540000.dwmmc0/by-num/p3
-      - /dev/block/platform/13540000.dwmmc0/by-num/p4
-      - /dev/block/platform/13540000.dwmmc0/by-num/p5
-      - /dev/block/platform/13540000.dwmmc0/by-num/p6
-      - /dev/block/platform/13540000.dwmmc0/by-num/p7
-      - /dev/block/platform/13540000.dwmmc0/by-num/p8
-      - /dev/block/platform/13540000.dwmmc0/by-num/p9
-      - /dev/block/mmcblk1
-      - /dev/block/mmcblk1p1
- 
+  
   boot_ui:
     supported: true
     flags:
