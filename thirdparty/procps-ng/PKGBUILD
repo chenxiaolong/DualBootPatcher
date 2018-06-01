@@ -15,7 +15,7 @@
 
 pkgname=procps-ng
 pkgver=3.3.15
-pkgrel=1
+pkgrel=2
 pkgdesc="Utilities that provide information out of /proc"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://gitlab.com/procps-ng/procps"
@@ -37,7 +37,7 @@ prepare() {
 build() {
     local abi api
     abi=$(android_get_abi_name)
-    api=21
+    api=28
 
     android_build_standalone_toolchain "${srcdir}/toolchain" "${api}"
     export PATH="${srcdir}/toolchain/bin:${PATH}"
