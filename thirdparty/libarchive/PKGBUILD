@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,12 +16,12 @@
 _prebuilts='https://dbp.noobdev.io/repo/prebuilts'
 _ver_libiconv=1.15-1
 _ver_liblzma=5.2.4-1
-_ver_lz4=1.8.2-1
+_ver_lz4=1.8.2-2
 
 pkgbase=libarchive
 pkgname=(libarchive libarchive-lowapi)
 pkgver=3.3.2
-pkgrel=2
+pkgrel=3
 pkgdesc="Multi-format archive and compression library"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://www.libarchive.org/"
@@ -74,7 +74,7 @@ build() {
 
     local abi api lowapi
     abi=$(android_get_abi_name)
-    api=android-21
+    api=android-28
 
     case "${abi}" in
     armeabi-v7a)
@@ -143,23 +143,23 @@ sha512sums_armv7=('408d375cdedce1c3545a2b1e29c3d86780f9fe726eee5b23348540ee03223
                   'SKIP'
                   '486f0390e37e873fbafa965f1f6dc4363c0aa7f131f21191c888ef191decf68a077f199748b4208e56e0d7f0b0415aad500cb187577ae717ccc239abeb045db9'
                   'SKIP'
-                  '54a0dc9a4f09cd952156ba7ba17fb60b450262b6ef900b6be94bdf4e9acd5b8676f8087c1b79c9a8a176661e6766e61e672677ddf874f246f74440ff87b96d6f'
+                  '2ad7ffc1a1c94c7d304722bb2e5f1c9b668986a849193e36bec8ba2f58ec35fe6c8b750287fa4404284a7099d15578df879bd5b84f78524ac6b5023fe1a78900'
                   'SKIP')
 sha512sums_aarch64=('ce1229780ecd372d014ef8a876eba0ec3942f494cd2532985961c827b92ae9853f99e8bd06566bac218619e384bfe7edcb9eaf4da8efbc159d6b5763cbd56255'
                     'SKIP'
                     'fc84f2fd6288c8b7f793a3d79d39e9dde1a29117da13f70d9955a7787d369346d1f6ac6615da4d7487fe9e9441a990b1bbecee78a120096e9c60e6e30d90c7f1'
                     'SKIP'
-                    'c6700378d31860c7704fb88265f2a5bd076f57b528f6acc436c8bd360bd1f307e056cfef245c73eb0e07ddf67c286d8af259f0ac66d1394f843b2cc0931565e4'
+                    '38e156af25ff155dd7c02318bc47b2290c17fe37e635bf68fd8be2d592c3d53ccf9c79d71e0b322e8c0afb9f92e173da8ae4c2534add53c67d9df1e0b9fd4bc4'
                     'SKIP')
 sha512sums_x86=('6fff503771eab5e021eaf8bbc7952d0d4d1d358f9f7a24ebb2e8e72613d51be04eee0824a10b5271dc32f00f1432b0320758678b4462c7b056ebb543f9ca8556'
                 'SKIP'
                 'e37174e6fcdfd26d23f79233a56d3b46455c60d58360b50e0bc4a268bcd43792bc1d964da6c8416129c8b6e0298bae1f4d63e2aad7320c6c6d2322916cbf4ac6'
                 'SKIP'
-                '51d71fd538c7f21373592bd3e6957484768aaa74112fbb296df2bb885d2f92d05f3319e2b0cbe62eceb365b05fbfe32f763dc5000b6d9a7ac4927e4422d31aa0'
+                '7d43d6e50eaf3840de2252bdc65134ce3b5022104f01087920271ca6e27881e5e91f6404afea2f364bb8f8ced2b62cf11df7f36761534a2673ff70a1b7e59554'
                 'SKIP')
 sha512sums_x86_64=('5da1a7282e9cae8bd9d73efcec61163c740a1d04e513f24445b03b3ef1bab97b4fa2fc5bed245519c0a62ab521484e07eca0ea09696dd7922184380cdb596ec3'
                    'SKIP'
                    '6d4b93ed1ede309df14057165e95b309e34aa4a510d8227fbd8e76a380a2f262f5ebe34d142f3730b88fbb31b7259fc235ef1d7241862dd915e77bbb419c49bd'
                    'SKIP'
-                   '86448cce689ca3b0eb69c157a7020d1197a4e11592dbb53eded858cc18ed1c34041f4a9e8c52df18906a838f310816977fdb88190b6cdd4b239da47345e63149'
+                   'aaf77816d72c50553e1f7092e545e4fc7b8d133f847b8d57eaf3c50a2283c473904f64fc79c0de7225c29c21d77a5040e11b00b1a0645b35c3a4a9f1e1d43810'
                    'SKIP')
