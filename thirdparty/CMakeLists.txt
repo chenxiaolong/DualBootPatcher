@@ -262,13 +262,13 @@ endif()
 # libdrm for Android
 ################################################################################
 
-set(LIBDRM_VER "8.1.0_r2-1")
+set(LIBDRM_VER "8.1.0_r2-2")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libdrm ${LIBDRM_VER} armeabi-v7a SHA512=ddc784d7a4289ca86fe98fb524a1a1fa5d087b38dd2bd94f7eb3bc5396cc39237cd0cac681a6b7fc14af27828d9723ddc0181fce0cf1db732bb54ccb42cd33d3)
-    get_prebuilt(libdrm ${LIBDRM_VER} arm64-v8a   SHA512=71e310ba96825699907c97d8dd2d0b738bd54f080c4838e965e322ad6329c36439efbc9594e519593c3590e7b0ea4d2a256603d4d3c1e114b14c5b5098b9b2eb)
-    get_prebuilt(libdrm ${LIBDRM_VER} x86         SHA512=f045f2c33a0bd287eb2ddf3f1ddc375c061db4ec9149300e38e2783f72de795716219213f9f3368860893e69ca1384cba1ffdecc5b25ab04c3e3b1ce0e7ec49d)
-    get_prebuilt(libdrm ${LIBDRM_VER} x86_64      SHA512=715a2cc39f7dd057764bff715ce1f60509bda182780c1c63a941d1ea1a3729ace097ef79370174da1e7f89ed2c217338979e57bcafca9e7ace2c01bed9c60542)
+    get_prebuilt(libdrm ${LIBDRM_VER} armeabi-v7a SHA512=58f854e894955e44659c99fb59f17c00fc631fe6e89a31243beb51840813e3207f3417cc582ddb59a03ec465013782d21595f51d243385640ba81ad43b85838a)
+    get_prebuilt(libdrm ${LIBDRM_VER} arm64-v8a   SHA512=fbf7022ddca22345a004ba733edf5129e5af4ee35a6b95e3305a51aea834af138e63e5ba640d13d0a0212ac1308bf36f61ee3064484f35a1e91277eb37554bd5)
+    get_prebuilt(libdrm ${LIBDRM_VER} x86         SHA512=ec738a7ca9c208eea70083a823c2b739261b65e213fd025d8df5a436dbc55f000cb95abc8ac0ffdc5b219d2c32c409c6d46019d976bc291b6a42f4aab313d3e3)
+    get_prebuilt(libdrm ${LIBDRM_VER} x86_64      SHA512=dfbcb7caba8d27cf66d9010e67a555b8fe722b00b97d63578c94433a8e6f74016cb7890b30c72f34e03573b13501cfa2b375066f03a4c80a7ac84556f69a7d2f)
 elseif(ANDROID)
     set(libdrm_root "${MBP_PREBUILTS_BINARY_DIR}/libdrm/${LIBDRM_VER}/${ANDROID_ABI}")
     list(APPEND CMAKE_FIND_ROOT_PATH "${libdrm_root}")
