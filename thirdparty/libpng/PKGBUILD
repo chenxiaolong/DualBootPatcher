@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
 pkgname=libpng
 pkgver=8.1.0_r2
-pkgrel=1
+pkgrel=2
 pkgdesc="A collection of routines used to create PNG format graphics"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://android.googlesource.com/platform/external/libpng"
@@ -23,7 +23,7 @@ license=(custom)
 source=("git+https://android.googlesource.com/platform/external/libpng#tag=android-${pkgver}"
         0001-Add-Android.mk.patch)
 sha512sums=('SKIP'
-            '31acc6ef823f99ec1cc5d319d264f7e3cde6d9ebd12bec2051902ace099ecd44f656402335925391abbdd6c0ab3d07aa89e3273bdcd68609a7ee877113156ef0')
+            'a73c6b0bddebbc7bb55be7842b81852b7a56e9c162f7c1e8b23ec4bd287c7da253b491d334f64d73654b18b5d123a0e1e227ae52d7748518e29a54e7b92acbbd')
 
 prepare() {
     cd "${pkgname}"
@@ -41,7 +41,7 @@ build() {
         NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-21 \
+        APP_PLATFORM=android-28 \
         "${MAKEFLAGS}"
 }
 
