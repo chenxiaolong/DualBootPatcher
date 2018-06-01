@@ -362,13 +362,13 @@ endif()
 # procps-ng for Android
 ################################################################################
 
-set(PROCPS_NG_VER "3.3.15-1")
+set(PROCPS_NG_VER "3.3.15-2")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(procps-ng ${PROCPS_NG_VER} armeabi-v7a SHA512=3aea9851282dbb891077b46ba5e2c984ec04180324ca6f37f7443fcf30dbb94e17b24237ff3982422b7351f6d7c4e029cc8a0f7b4a70b386a54ad30d005eb037)
-    get_prebuilt(procps-ng ${PROCPS_NG_VER} arm64-v8a   SHA512=d0cc134647a9048513b0daf24febc11958b68b2dad766e7f89b5ab4dc08cb082372b9c57e210904e0b48a07ec01e97dd925e4dd60ef5a684c34fd6e300bf0010)
-    get_prebuilt(procps-ng ${PROCPS_NG_VER} x86         SHA512=d1ffe70ac9466e9a98e1f70e3c366720e249c9bb35bf54812950a40eaceca355876163a33569bd30da0a8ecd3759b13d80a7fff6a1c3c9a6d2329aca7c1a25c8)
-    get_prebuilt(procps-ng ${PROCPS_NG_VER} x86_64      SHA512=44ac1e86920b53108fc6983d1b63b90e846572974968c6f6984df0043bf658134c8a8a77cf161b54856f5c97e4f15e1ad7a53a7eb4c3594fd08ffe95f1d4985e)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} armeabi-v7a SHA512=5b19abafb5a806bdd82666289a0315126689d5c8a6ef44b84a68ca652a55d34ec7a4e8e0628fed6f9a6f84ec25d9fcf2749bbbcffc7cd02d790cfed99ac28030)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} arm64-v8a   SHA512=50f3af6e4de8dc63ed079f491a5706604cfc16eea09283628b69a578a081e4e6415d42cffb7c899a47f998d5c113ad30972d438554815d5f3afd98cdc118861e)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} x86         SHA512=825c3a17b8844d311c3753d173856fe389a56ffb9e37d2771e86819261e4d36d1699a5b846c7a31f5202344e9359831896d134114c19d4669b30559014586fca)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} x86_64      SHA512=629a3556096751ca6bd30aa336acd7459d4806b3df5fa8bf4daf8d1858aa4d13b91a2e86db1d15be3ff1624e16da2e4b397ae6a7d6b7ea8d7f3fbc726db9ccc9)
 elseif(ANDROID)
     set(procps_root "${MBP_PREBUILTS_BINARY_DIR}/procps-ng/${PROCPS_NG_VER}/${ANDROID_ABI}")
     list(APPEND CMAKE_FIND_ROOT_PATH "${procps_root}")
