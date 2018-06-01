@@ -17,7 +17,7 @@ _commit_fuse=3ecfa58e23f723914cb479262dbf393ee4821295
 
 pkgname=exfat
 pkgver=1.2.8
-pkgrel=1
+pkgrel=2
 pkgdesc="FUSE-based exfat driver"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://github.com/relan/exfat"
@@ -44,7 +44,7 @@ prepare() {
 build() {
     local abi api
     abi=$(android_get_abi_name)
-    api=21
+    api=28
 
     android_build_standalone_toolchain "${srcdir}/toolchain" "${api}"
     export PATH="${srcdir}/toolchain/bin:${PATH}"
