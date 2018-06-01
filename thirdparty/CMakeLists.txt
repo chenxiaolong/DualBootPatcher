@@ -90,13 +90,13 @@ endif()
 # fuse-exfat for Android
 ################################################################################
 
-set(EXFAT_VER "1.2.8-1")
+set(EXFAT_VER "1.2.8-2")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(exfat ${EXFAT_VER} armeabi-v7a SHA512=66a9bcb02c3d759e0297382d993ed82637f7d0e1c056bdd39ea81574edc517e80fff38692966c08f221f656c3a41e2b6cdf8750eb4a019e57e29ec4e1ad6fa7c)
-    get_prebuilt(exfat ${EXFAT_VER} arm64-v8a   SHA512=0f0615ea4fe1716d1ec24c77ef55404374a932d963d9349caaf30868909f6704dc8142b9272d6bb10f9f46e6cd4ccfcaab09eac63235497eeb946e192b0da62c)
-    get_prebuilt(exfat ${EXFAT_VER} x86         SHA512=03290cdafbe1b570f655241a27a66e579e47d880f595adb0f578287cb5d8a6b56fb3d68569efdf5722afb71a21622673ca82c4aa3dead15a0294546167814db2)
-    get_prebuilt(exfat ${EXFAT_VER} x86_64      SHA512=36e280594185a865e16a6aae7366497a079f27bc9851a664e181f012d2aa39d31ac9b79fff8fca681386da1696be0e5937161409abaadf1ee3258598c39905ab)
+    get_prebuilt(exfat ${EXFAT_VER} armeabi-v7a SHA512=1881c13e25674f0bbd4237c7984c11350a8c7fca15ea103227b8f526892fa1d6b3cbd57fdf2a033627c7a2f7d41231f29396ffbb88d02b3e4278b213dd832891)
+    get_prebuilt(exfat ${EXFAT_VER} arm64-v8a   SHA512=6f449e102e3c073b6ec2cb99ccf4b3cfbc931b9b53008e1cf3f0ca366093f26d999463c5c2e19b49638679c78ae926f8c0dd834aa243fffdc9d724f39efc55ce)
+    get_prebuilt(exfat ${EXFAT_VER} x86         SHA512=bc83d33920b7ac4728b0e5ad0bd3e002a493a7a3469e348fe552deb095e29d50c65eb4894b0a281346526e84c2bb4577ab1f1dfca9f7bdd4ddd62bea3298a80b)
+    get_prebuilt(exfat ${EXFAT_VER} x86_64      SHA512=f612a063267811e5d614dbc83910adf0ace9aa872b309f49177b92f1c217c48f0f069ab79465fa6d25dae3b451e99f460ee166a64e961f1b51406ed677477180)
 
     foreach(abi armeabi-v7a arm64-v8a x86 x86_64)
         add_sign_files_target(
