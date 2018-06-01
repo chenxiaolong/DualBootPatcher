@@ -222,13 +222,13 @@ endif()
 # libpng for Android
 ################################################################################
 
-set(LIBPNG_VER "8.1.0_r2-1")
+set(LIBPNG_VER "8.1.0_r2-2")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libpng ${LIBPNG_VER} armeabi-v7a SHA512=0f1a34e27b39cb54aea366c9ba496ccec5faca4dcdb03ba75e91b5e8cadb4f6c88a6feb48e00df136561df360e0a7ce5540a300223f7377b3fc93df1c8f07958)
-    get_prebuilt(libpng ${LIBPNG_VER} arm64-v8a   SHA512=fb5110df17096581e0b2faf6d1ff3e6abfe080380a1d87877c3fee854b2ac4719440107e3b6f5eb9a390c226ead8f726765e2062cd098c3fc3ac22443d1506f9)
-    get_prebuilt(libpng ${LIBPNG_VER} x86         SHA512=b3fff96d96e43d6776b61007146e54138cc41c25b10ed14e2b75ff82ac07c244f66d34d2097f6708d5ebf08d8eae7acb5105131d303208d4e1f5023b6410ad7e)
-    get_prebuilt(libpng ${LIBPNG_VER} x86_64      SHA512=7551c14005976f505c301f6470ca777f5505d9e1e99e2d7457917e31855e04fc3cf7f6f1d1ec8fb1c64b71bfdf11d9c035aa40046a2e61d67676949ea0d93f39)
+    get_prebuilt(libpng ${LIBPNG_VER} armeabi-v7a SHA512=d7e3a1d01b06db858e0fa76248db06a7e7e40f5c9eb9df8a484f0102c4bf637cecbdfbb96d5aef29cc52cb1804eb134631d0e1c4dbb444c0585af8270f5bfc20)
+    get_prebuilt(libpng ${LIBPNG_VER} arm64-v8a   SHA512=b53337eb0e552bc0aeeeffdabd99216ab441bac17ece16542a24c36504d6c12953e95f3c7c3a1b0a10146fa1c91f3e0c7fbe9781e967a9c20f975c1b00758642)
+    get_prebuilt(libpng ${LIBPNG_VER} x86         SHA512=187b79724027d65e46973e516559532b8216aeb02b886ca7932d074c1365dc0b83cab75139616a8a657a873a4dc5ae2fbe36e4d406d85b51fc43b4662760f9e3)
+    get_prebuilt(libpng ${LIBPNG_VER} x86_64      SHA512=70bfd7733dc5f1fb5886a7d6cbe3bca57795ed1047ffaa9eb446dde5250bb8e0bcfb6804c35b48d49d0341a3b6662154ba34ea74934b0ca453ae2931032e29db)
 elseif(ANDROID)
     set(libpng_root "${MBP_PREBUILTS_BINARY_DIR}/libpng/${LIBPNG_VER}/${ANDROID_ABI}")
     list(APPEND CMAKE_FIND_ROOT_PATH "${libpng_root}")
