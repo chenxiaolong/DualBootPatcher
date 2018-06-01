@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,21 +14,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 _prebuilts='https://dbp.noobdev.io/repo/prebuilts'
-_ver_safe_iop=8.1.0_r2-1
+_ver_safe_iop=8.1.0_r2-2
 
 pkgname=android-system-core
 pkgver=8.1.0_r2
-pkgrel=1
+pkgrel=2
 pkgdesc="Libraries from AOSP's system/core sources"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://android.googlesource.com/platform/system/core"
 license=(Apache)
 source=("git+https://android.googlesource.com/platform/system/core#tag=android-${pkgver}"
         0001-Make-this-NDK-buildable.patch
-        0002-Remove-support-for-arbitrary-length-properties.patch
-        0003-libutils-Remove-support-for-waiting-for-properties.patch
-        0004-libcutils-Fix-missing-includes.patch
-        0005-liblog-Fix-missing-includes.patch)
+        0004-libcutils-Fix-missing-includes.patch)
 _source_template=("${_prebuilts}/safe-iop-${_ver_safe_iop}-@ARCH@.pkg.tar.xz"
                   "${_prebuilts}/safe-iop-${_ver_safe_iop}-@ARCH@.pkg.tar.xz.sig")
 source_armv7=("${_source_template[@]/@ARCH@/armv7}")
@@ -41,10 +38,7 @@ validpgpkeys=('2233C479609BDCEC43BE9232F6A3B19090EFF32C')
 prepare() {
     cd core
     patch -p1 -i ../0001-Make-this-NDK-buildable.patch
-    patch -p1 -i ../0002-Remove-support-for-arbitrary-length-properties.patch
-    patch -p1 -i ../0003-libutils-Remove-support-for-waiting-for-properties.patch
     patch -p1 -i ../0004-libcutils-Fix-missing-includes.patch
-    patch -p1 -i ../0005-liblog-Fix-missing-includes.patch
 
     mkdir -p common
     cd common
@@ -70,8 +64,8 @@ build() {
             NDK_TOOLCHAIN_VERSION=clang \
             APP_BUILD_SCRIPT=Android.mk \
             APP_ABI="${abi}" \
-            APP_PLATFORM=android-21 \
-            APP_STL=gnustl_static \
+            APP_PLATFORM=android-28 \
+            APP_STL=c++_static \
             APP_CFLAGS="-DHAVE_ANDROID_OS -DOS_PATH_SEPARATOR=\\'/\\'" \
             "${MAKEFLAGS}"
 
@@ -102,16 +96,13 @@ package() {
 }
 
 sha512sums=('SKIP'
-            '38eef9822955cec01e4dd1795b1679bdf09fe138ec018faf471cdfdfc8cc62849b7ff6257a0e4d3ed549844ac6522b4f271b76549789b6baf3a7b913ff4e7307'
-            'b494829b44f7adec83b85a85647096791d9d3dc648a4df985f0c5dd0fb752235f10340f2d0b632e995341d159eea5c7ee30593a68e56b0e2290e08a23f23f01d'
-            '22c8c73cd568ea6a50321deb0a5e21db5992ec0531771623f465ca397d4cb1462f077e7b973fe6acac8a295fb61c6f854b3bc0072fdb4ceaf6d26f560422fbfa'
-            '9eba042dbd3d060719768b0c2707a8863258498111199e0b90d6ce1d1fe46f11f87d60b89ae809093ea9efdfe3791597f2d7923eea1389ed3827ce418e2b3e0f'
-            '314581b8d50fd7e53727fd55829e106e149b325b761d45cfce10e5d75c0d6c9678d1f86d0d0091a46a1d48ea33b0a508173402a4c130ce6ee67d27708a162b15')
-sha512sums_armv7=('420ed2ad3734c0424166802b5db626393aab45dbaaa3482d318555d97c97a62a6a2221b80123eab9ff2338d10333efa7c408a52560d84153a4eb6b28d1ee2270'
+            'b89e05cbc9bfb70d62f107e1d62d4ceb099739fd22e49ffbd0072ca9e68991fc4488fe682e61dda5d41799fdfa55fada30541e1c45f6e8c460ed11371973b42b'
+            '9eba042dbd3d060719768b0c2707a8863258498111199e0b90d6ce1d1fe46f11f87d60b89ae809093ea9efdfe3791597f2d7923eea1389ed3827ce418e2b3e0f')
+sha512sums_armv7=('6332d33ce3dae5e5a00e998cfc686778f25802f1852015db2a2438a1a8cd1d4712548b13b36d6e3194405d64a0e02878c5ff12d16e69138f25e97342fe521323'
                   'SKIP')
-sha512sums_aarch64=('97688da51630653470e6a8cc5dbc23c1bb5f6bb6866ab9fd6726c4062f77c14b28f0723f33d28c5e493b33449fd28305332245fdfe22c6ab6c86df24cdd18f19'
+sha512sums_aarch64=('4cf43213649fafc166f64540ac30c5c4679082d55946f110b45910fe2eeed6a304626cd674ee2aa0ac7accf87066d6243a6bd7b4b2282e3becdb85367457e84c'
                     'SKIP')
-sha512sums_x86=('f846ed837ac644bfa6d2cbf5dcef86126a8b1ce02b3f740f028e37b25d882c6b0d28018450796796ceef5426155d2c990e9ee1903f7cd3b8c9760247a6dbffbe'
+sha512sums_x86=('407def1bbf213798a92bb44cdee9e3100f1b77b927184b8ca0d1b14c1b967956b87f59c67d9ef84fedfe4cdafb73615e242de37b656fe3dcdebc34c6eceeedc5'
                 'SKIP')
-sha512sums_x86_64=('4b6cf93ac93b575bb0c0c909643f844fda52adff491ff27631f4698348c11e751b5ade69a58d9247734c3c5c2e7092b82ae6d6d04ddd3d011979dddb0329a691'
+sha512sums_x86_64=('2be8d010913d81a902cca40721398647fe8fea5011213e4f0eebaa1f06abf40b2defe72e47a6ed8cc145b1a59f870cb967b9a084cf2fad65f90f7d3a6c369e3c'
                    'SKIP')
