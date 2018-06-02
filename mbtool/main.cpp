@@ -37,7 +37,6 @@
 #include "auditd.h"
 #include "daemon.h"
 #include "init.h"
-#include "miniadbd.h"
 #include "properties.h"
 #include "reboot.h"
 #include "sepolpatch.h"
@@ -72,12 +71,10 @@ static Tool g_tools[] = {
     { "update-binary-tool", mb::update_binary_tool_main },
     { "utilities", mb::utilities_main },
 #else
-    { "adbd", mb::miniadbd_main },
     { "appsync", mb::appsync_main },
     { "auditd", mb::auditd_main },
     { "daemon", mb::daemon_main },
     { "init", mb::init_main },
-    { "miniadbd", mb::miniadbd_main },
     { "properties", mb::properties_main },
     { "reboot", mb::reboot_main },
     { "sepolpatch", mb::sepolpatch_main },

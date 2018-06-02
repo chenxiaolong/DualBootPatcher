@@ -71,13 +71,6 @@
 #include "signature.h"
 #include "util/property_service.h"
 
-#define RUN_ADB_BEFORE_EXEC_OR_REBOOT 0
-
-#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
-#include "miniadbd.h"
-#include "miniadbd/adb_log.h"
-#endif
-
 #if defined(__i386__) || defined(__arm__)
 #define PCRE_PATH               "/system/lib/libpcre.so"
 #elif defined(__x86_64__) || defined(__aarch64__)
@@ -1087,36 +1080,8 @@ static bool launch_boot_menu()
     return true;
 }
 
-#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
-static void run_adb()
-{
-    // Mount /system if we can so we can use adb shell
-    if (!util::is_mounted("/system") && util::is_mounted("/raw/system")) {
-        mount("/raw/system", "/system", "", MS_BIND, "");
-    }
-
-    pid_t pid = fork();
-    if (pid == 0) {
-        // Don't spam the kernel log
-        adb_log_mask = ADB_SERV;
-
-        char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
-        _exit(miniadbd_main(1, adb_argv));
-    } else if (pid >= 0) {
-        LOGV("miniadbd is running as pid %d; kill it to continue", pid);
-        wait_for_pid("miniadbd", pid);
-    } else {
-        LOGW("Failed to fork to run miniadbd: %s", strerror(errno));
-    }
-}
-#endif
-
 static bool critical_failure()
 {
-#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
-    run_adb();
-#endif
-
     return emergency_reboot();
 }
 
@@ -1331,10 +1296,6 @@ int init_main(int argc, char *argv[])
     // Remove mbtool init symlink and restore original binary
     unlink("/init");
     rename("/init.orig", "/init");
-
-#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
-    run_adb();
-#endif
 
     // Unmount partitions
     selinux_unmount();
