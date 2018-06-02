@@ -21,7 +21,6 @@ set_source_files_properties(
 
 set_source_files_properties(
     auditd.cpp
-    miniadbd.cpp
     PROPERTIES
     COMPILE_FLAGS
     "-Wno-gnu-statement-expression -Wno-zero-length-array"
@@ -76,21 +75,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
     )
 
-    add_library(
-        miniadbd-static
-        STATIC
-        miniadbd/adb.cpp
-        miniadbd/adb_io.cpp
-        miniadbd/adb_log.cpp
-        miniadbd/adb_utils.cpp
-        miniadbd/fdevent.cpp
-        miniadbd/file_sync_service.cpp
-        miniadbd/services.cpp
-        miniadbd/sockets.cpp
-        miniadbd/transport.cpp
-        miniadbd/transport_usb.cpp
-        miniadbd/usb_linux_client.cpp
-    )
     add_executable(
         mbtool
         appsync.cpp
@@ -101,7 +85,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         emergency.cpp
         init.cpp
         main.cpp
-        miniadbd.cpp
         mount_fstab.cpp
         multiboot.cpp
         packages.cpp
@@ -176,33 +159,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         -DRECOVERY
     )
 
-    # miniadbd includes
-    target_include_directories(
-        miniadbd-static
-        PRIVATE
-        .
-    )
-
-    # Ugly, but I don't want to deviate too much from upstream to fix it
-    target_compile_options(
-        miniadbd-static
-        PRIVATE
-        -Wno-conditional-uninitialized
-        -Wno-conversion
-        -Wno-gnu-statement-expression
-        -Wno-missing-field-initializers
-        -Wno-missing-noreturn
-        -Wno-missing-prototypes
-        -Wno-missing-variable-declarations
-        -Wno-old-style-cast
-        -Wno-pedantic
-        -Wno-shadow
-        -Wno-shorten-64-to-32
-        -Wno-sign-conversion
-        -Wno-unreachable-code-return
-        -Wno-unused-parameter
-    )
-
     set_target_properties(
         mbtool mbtool_recovery
         PROPERTIES
@@ -213,17 +169,9 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     android_link_allow_multiple_definitions(mbtool mbtool_recovery)
 
     target_link_libraries(
-        miniadbd-static
-        PRIVATE
-        interface.global.CXXVersion
-        mblog-static
-        mbutil-static
-    )
-    target_link_libraries(
         mbtool
         PRIVATE
         interface.global.CXXVersion
-        miniadbd-static
         mbutil-static
         mbsign-static
         mbdevice-static
@@ -238,7 +186,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbtool_recovery
         PRIVATE
         interface.global.CXXVersion
-        miniadbd-static
         mbutil-static
         mbsign-static
         mblog-static
