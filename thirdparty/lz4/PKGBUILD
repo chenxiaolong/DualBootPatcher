@@ -15,7 +15,7 @@
 
 pkgname=lz4
 pkgver=1.8.2
-pkgrel=1
+pkgrel=2
 pkgdesc="Very fast lossless compression algorithm"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://github.com/Cyan4973/lz4"
@@ -41,7 +41,7 @@ build() {
         NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-21 \
+        APP_PLATFORM=android-28 \
         "${MAKEFLAGS}"
 }
 

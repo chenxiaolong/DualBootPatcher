@@ -1,4 +1,4 @@
-From d262df38b8516170e599695bc92ebdbc9d5f7f56 Mon Sep 17 00:00:00 2001
+From f45790b51450cde0ae74f448a376a9a0bec542f8 Mon Sep 17 00:00:00 2001
 From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
 Date: Sun, 24 Dec 2017 15:15:01 -0500
 Subject: [PATCH] Add Android.mk
@@ -10,7 +10,7 @@ Subject: [PATCH] Add Android.mk
 
 diff --git a/Android.mk b/Android.mk
 new file mode 100644
-index 0000000..a09ff39
+index 0000000..ad97c5f
 --- /dev/null
 +++ b/Android.mk
 @@ -0,0 +1,37 @@
@@ -43,7 +43,7 @@ index 0000000..a09ff39
 +		arm/arm_init.c \
 +		arm/filter_neon.S \
 +		arm/filter_neon_intrinsics.c
-+	LOCAL_CFLAGS += -DPNG_ARM_NEON_OPT=2
++	LOCAL_CFLAGS += -DPNG_ARM_NEON_OPT=2 -fno-integrated-as
 +else ifneq (,$(filter $(TARGET_ARCH_ABI),x86 x86_64))
 +	LOCAL_SRC_FILES += \
 +		contrib/intel/intel_init.c \
@@ -52,5 +52,5 @@ index 0000000..a09ff39
 +endif
 +include $(BUILD_STATIC_LIBRARY)
 -- 
-2.14.3
+2.17.1
 
