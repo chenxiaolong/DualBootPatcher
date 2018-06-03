@@ -291,6 +291,25 @@ void DeviceHandler::HandleDeviceEvent(const Uevent& uevent) {
             // ignore other USB events
             return;
         }
+    // Keep up to date with ueventd.rc
+    } else if (uevent.subsystem == "adf") {
+        devpath = "/dev/" + uevent.device_name;
+    } else if (uevent.subsystem == "graphics") {
+        devpath = "/dev/graphics/" + mb::util::base_name(uevent.path);
+    } else if (uevent.subsystem == "drm") {
+        devpath = "/dev/dri/" + mb::util::base_name(uevent.path);
+    } else if (uevent.subsystem == "oncrpc") {
+        devpath = "/dev/oncrpc/" + mb::util::base_name(uevent.path);
+    } else if (uevent.subsystem == "adsp") {
+        devpath = "/dev/adsp/" + mb::util::base_name(uevent.path);
+    } else if (uevent.subsystem == "msm_camera") {
+        devpath = "/dev/msm_camera/" + mb::util::base_name(uevent.path);
+    } else if (uevent.subsystem == "input") {
+        devpath = "/dev/input/" + mb::util::base_name(uevent.path);
+    } else if (uevent.subsystem == "mtd") {
+        devpath = "/dev/mtd/" + mb::util::base_name(uevent.path);
+    } else if (uevent.subsystem == "sound") {
+        devpath = "/dev/snd/" + mb::util::base_name(uevent.path);
     } else {
         devpath = "/dev/" + mb::util::base_name(uevent.path);
     }
