@@ -24,6 +24,7 @@
 #include <vector>
 
 #include <cerrno>
+#include <climits>
 #include <cstdlib>
 #include <cstring>
 
@@ -77,6 +78,25 @@ oc::result<std::string> read_link(const std::string &path)
 
     buf[static_cast<size_t>(len)] = '\0';
     return buf.data();
+}
+
+/*!
+ * \brief Wrapper around libc's realpath()
+ *
+ * \param path Path to canonicalize
+ *
+ * \return Canonicalized absolute path. Fails if the result woule be longer than
+ *         PATH_MAX bytes.
+ */
+oc::result<std::string> real_path(const std::string &path)
+{
+    char buf[PATH_MAX];
+
+    if (!realpath(path.c_str(), buf)) {
+        return ec_from_errno();
+    }
+
+    return buf;
 }
 
 /*!
