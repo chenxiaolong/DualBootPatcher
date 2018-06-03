@@ -22,6 +22,7 @@
 #include <cerrno>
 #include <cstring>
 
+#include <fcntl.h>
 #include <unistd.h>
 
 #include "mbcommon/finally.h"
@@ -53,7 +54,7 @@ bool UeventThread::start()
         return false;
     }
 
-    if (pipe(m_cancel_pipe) < 0) {
+    if (pipe2(m_cancel_pipe, O_CLOEXEC) < 0) {
         LOGE("Failed to create cancellation pipe: %s", strerror(errno));
         return false;
     }
