@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -1921,10 +1921,10 @@ Installer::ProceedState Installer::install_stage_finish()
     std::string hash = util::hex_string(digest.value().data(),
                                         digest.value().size());
 
-    std::unordered_map<std::string, std::string> props;
-    checksums_read(&props);
-    checksums_update(&props, _rom->id, "boot.img", hash);
-    checksums_write(props);
+    ChecksumProps props;
+    props.load_file();
+    props.set(_rom->id, "boot.img", hash);
+    props.save_file();
 
     // Write cached properties to config
     std::string config_path(_rom->config_path());
