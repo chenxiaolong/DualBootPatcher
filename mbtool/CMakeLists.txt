@@ -34,20 +34,6 @@ set_source_files_properties(
 )
 
 set_source_files_properties(
-    initwrapper/cutils/uevent.cpp
-    PROPERTIES
-    COMPILE_FLAGS
-    "-Wno-cast-align -Wno-old-style-cast -Wno-sign-conversion"
-)
-
-set_source_files_properties(
-    initwrapper/devices.cpp
-    PROPERTIES
-    COMPILE_FLAGS
-    "-Wno-missing-prototypes -Wno-shorten-64-to-32 -Wno-sign-conversion"
-)
-
-set_source_files_properties(
     src/util/legacy_property_service.cpp
     PROPERTIES
     COMPILE_FLAGS
@@ -98,11 +84,12 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         uevent_dump.cpp
         wipe.cpp
         external/audit/libaudit.cpp
-        initwrapper/cutils/uevent.cpp
-        initwrapper/devices.cpp
-        initwrapper/util.cpp
+        src/initwrapper/cutils/uevent.cpp
+        src/initwrapper/devices.cpp
+        src/initwrapper/uevent_listener.cpp
         src/util/legacy_property_service.cpp
         src/util/property_service.cpp
+        src/util/uevent_thread.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
         ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
     )

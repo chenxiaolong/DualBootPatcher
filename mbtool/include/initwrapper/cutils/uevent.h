@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2011 The Android Open Source Project
  * Copyright (C) 2015 Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,9 @@
 
 #pragma once
 
-void sanitize(char *p);
-void make_link_init(const char *oldpath, const char *newpath);
-void remove_link(const char *oldpath, const char *newpath);
-void open_devnull_stdio(void);
+#include <sys/types.h>
+
+int uevent_open_socket(int buf_sz, bool passcred);
+ssize_t uevent_kernel_multicast_recv(int socket, void *buffer, size_t length);
+ssize_t uevent_kernel_multicast_uid_recv(int socket, void *buffer, size_t length, uid_t *uid);
+ssize_t uevent_kernel_recv(int socket, void *buffer, size_t length, bool require_group, uid_t *uid);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,11 +20,12 @@
 #include "uevent_dump.h"
 
 #include <cstdlib>
+
 #include <getopt.h>
 
 #include "mbcommon/version.h"
 
-#include "initwrapper/devices.h"
+#include "initwrapper/uevent_listener.h"
 
 namespace mb
 {
@@ -44,16 +45,20 @@ static void uevent_dump_usage(bool error)
 
 int uevent_dump_main(int argc, char *argv[])
 {
+    using namespace android::init;
+
     int opt;
 
+    static constexpr char short_options[] = "h";
     static struct option long_options[] = {
-        {"help",      no_argument, 0, 'h'},
+        {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0}
     };
 
     int long_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, short_options,
+                              long_options, &long_index)) != -1) {
         switch (opt) {
         case 'h':
             uevent_dump_usage(false);
@@ -72,10 +77,19 @@ int uevent_dump_main(int argc, char *argv[])
 
     printf("mbtool version %s (%s)\n", version(), git_version());
 
-    // Start probing for devices
-    device_init(true);
-    // Kill uevent thread and close uevent socket
-    device_close();
+    UeventListener listener;
+
+    listener.RegenerateUevents([] (const Uevent &uevent) {
+        printf("uevent { action=%s, path=%s, subsystem=%s, firmware=%s, "
+               "partition_name=%s, device_name=%s, partition_num=%d, "
+               "major=%d, minor=%d }\n",
+               uevent.action.c_str(), uevent.path.c_str(),
+               uevent.subsystem.c_str(), uevent.firmware.c_str(),
+               uevent.partition_name.c_str(), uevent.device_name.c_str(),
+               uevent.partition_num, uevent.major, uevent.minor);
+
+        return ListenerAction::kContinue;
+    });
 
     return EXIT_SUCCESS;
 }

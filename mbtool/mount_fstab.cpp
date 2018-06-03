@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -456,7 +456,8 @@ static std::vector<std::string> split_patterns(const char *patterns)
  * This will *not* do anything if the system wasn't booted using initwrapper.
  * It relies an the sysfs -> block devices map created by initwrapper/devices.cpp
  */
-static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_recs,
+static bool mount_extsd_fstab_entries(const android::init::DeviceHandler &handler,
+                                      const std::vector<util::FstabRec> &extsd_recs,
                                       const char *mount_point, mode_t perms)
 {
     using namespace std::chrono_literals;
@@ -483,7 +484,7 @@ static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_r
         LOGV("[Attempt %d/%d] Finding and mounting external SD",
              i + 1, max_attempts);
 
-        auto devices_map = get_block_dev_mappings();
+        auto devices_map = handler.GetBlockDeviceMap();
 
         for (const util::FstabRec &rec : extsd_recs) {
             std::vector<std::string> patterns =
@@ -494,7 +495,7 @@ static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_r
                 LOGD("Matching devices against pattern: %s", pattern.c_str());
 
                 for (auto const &pair : devices_map) {
-                    const BlockDevInfo &info = pair.second;
+                    auto const &info = pair.second;
 
                     if (path_matches(pair.first.c_str(), pattern.c_str())) {
                         LOGV("Matched external SD block dev: "
@@ -877,7 +878,8 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
  * \return Whether all of the
  */
 bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                 const Device &device, MountFlags flags)
+                 const Device &device, MountFlags flags,
+                 const android::init::DeviceHandler &handler)
 {
     std::vector<std::string> successful;
     FstabRecs recs;
@@ -935,7 +937,8 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     }
 
     if (ret && !recs.extsd.empty() && require_extsd) {
-        if (mount_extsd_fstab_entries(recs.extsd, EXTSD_MOUNT_POINT, 0755)) {
+        if (mount_extsd_fstab_entries(
+                handler, recs.extsd, EXTSD_MOUNT_POINT, 0755)) {
             successful.push_back(EXTSD_MOUNT_POINT);
         } else {
             LOGE("Failed to mount " EXTSD_MOUNT_POINT);
