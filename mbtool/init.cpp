@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -33,6 +33,7 @@
 #include <signal.h>
 #include <sys/klog.h>
 #include <sys/mount.h>
+#include <sys/sysmacros.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -60,8 +61,6 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
-#include "initwrapper/devices.h"
-#include "initwrapper/util.h"
 #include "daemon.h"
 #include "emergency.h"
 #include "mount_fstab.h"
@@ -70,6 +69,7 @@
 #include "sepolpatch.h"
 #include "signature.h"
 #include "util/property_service.h"
+#include "util/uevent_thread.h"
 
 #if defined(__i386__) || defined(__arm__)
 #define PCRE_PATH               "/system/lib/libpcre.so"
@@ -92,6 +92,7 @@ using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 static pid_t daemon_pid = -1;
 
 static PropertyService g_property_service;
+static UeventThread g_uevent_thread;
 
 static void init_usage(FILE *stream)
 {
@@ -1080,6 +1081,25 @@ static bool launch_boot_menu()
     return true;
 }
 
+static void redirect_stdio_null()
+{
+    static constexpr char name[] = "/dev/__null__";
+
+    if (mknod(name, S_IFCHR | 0600, makedev(1, 3)) == 0) {
+        // O_CLOEXEC should not be used
+        int fd = open(name, O_RDWR);
+        unlink(name);
+        if (fd >= 0) {
+            dup2(fd, 0);
+            dup2(fd, 1);
+            dup2(fd, 2);
+            if (fd > 2) {
+                close(fd);
+            }
+        }
+    }
+}
+
 static bool critical_failure()
 {
     return emergency_reboot();
@@ -1136,7 +1156,7 @@ int init_main(int argc, char *argv[])
     (void) util::chown("/data", "system", "system", 0);
 
     // Redirect std{in,out,err} to /dev/null
-    open_devnull_stdio();
+    redirect_stdio_null();
 
     // Log to kmsg
     log::set_logger(std::make_shared<log::KmsgLogger>(true));
@@ -1158,7 +1178,7 @@ int init_main(int argc, char *argv[])
 
     // Start probing for devices so we have somewhere to write logs for
     // critical_failure()
-    device_init(false);
+    g_uevent_thread.start();
 
     Device device;
     JsonError error;
@@ -1211,7 +1231,8 @@ int init_main(int argc, char *argv[])
             | MountFlag::MountCache
             | MountFlag::MountData
             | MountFlag::MountExternalSd;
-    if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
+    if (!mount_fstab(fstab.c_str(), rom, device, flags,
+                     g_uevent_thread.device_handler())) {
         LOGE("Failed to mount fstab");
         critical_failure();
         return EXIT_FAILURE;
@@ -1282,7 +1303,7 @@ int init_main(int argc, char *argv[])
     }
 
     // Kill uevent thread and close uevent socket
-    device_close();
+    g_uevent_thread.stop();
 
     // Kill properties service and clean up
     properties_cleanup();

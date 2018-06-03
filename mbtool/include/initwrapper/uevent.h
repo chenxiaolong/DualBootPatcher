@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
- * Copyright (C) 2015 Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017 The Android Open Source Project
+ * Copyright (C) 2015-2018 Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,22 @@
 
 #pragma once
 
-#include <sys/types.h>
+#include <string>
 
-int uevent_open_socket(int buf_sz, bool passcred);
-ssize_t uevent_kernel_multicast_recv(int socket, void *buffer, size_t length);
-ssize_t uevent_kernel_multicast_uid_recv(int socket, void *buffer, size_t length, uid_t *uid);
-ssize_t uevent_kernel_recv(int socket, void *buffer, size_t length, bool require_group, uid_t *uid);
+namespace android {
+namespace init {
+
+struct Uevent {
+    std::string action;
+    std::string path;
+    std::string subsystem;
+    std::string firmware;
+    std::string partition_name;
+    std::string device_name;
+    int partition_num;
+    int major;
+    int minor;
+};
+
+}  // namespace init
+}  // namespace android

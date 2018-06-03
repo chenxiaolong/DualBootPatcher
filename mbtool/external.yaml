@@ -1,6 +1,14 @@
 ---
 - files:
+    - include/initwrapper/cutils/uevent.h
+    - include/initwrapper/devices.h
+    - include/initwrapper/uevent.h
+    - include/initwrapper/uevent_listener.h
+    - include/initwrapper/unique_fd.h
     - include/util/property_service.h
+    - src/initwrapper/cutils/uevent.cpp
+    - src/initwrapper/devices.cpp
+    - src/initwrapper/uevent_listener.cpp
     - src/util/property_service.cpp
   repo: https://android.googlesource.com/platform/system/core
   tag: android-8.1.0_r29

@@ -129,16 +129,16 @@ std::vector<std::string_view> split_sv(std::string_view str, const DelimType &de
 }
 
 /*!
- * \brief Join a string from a vector of components
+ * \brief Join a string from a container of components
  *
- * \param list Vector of strings or string views
+ * \param list Container of strings or string views
  * \param delim Delimiter to join the strings. Can be any type accepted by
  *              `std::string`'s operator+=().
  *
  * \return Joined string
  */
-template<typename StringType, typename DelimType>
-std::string join(const std::vector<StringType> &list, const DelimType &delim)
+template<typename Container, typename DelimType>
+std::string join(const Container &list, const DelimType &delim)
 {
     std::string result;
     bool first = true;
