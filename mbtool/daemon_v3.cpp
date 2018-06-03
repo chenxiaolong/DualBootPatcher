@@ -204,7 +204,8 @@ static bool v3_file_open(int fd, const v3::Request *msg)
     fb::Offset<v3::FileOpenError> error;
     int id = -1;
 
-    int ffd = open(request->path()->c_str(), flags, request->perms());
+    int ffd = open(request->path()->c_str(), flags,
+                   static_cast<mode_t>(request->perms()));
     int saved_errno = errno;
 
     if (ffd >= 0) {
