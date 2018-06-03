@@ -78,12 +78,12 @@ static bool remount_ro_done()
 
     for (auto const &entry : entries.value()) {
         if (starts_with(entry.source, "/dev/block")
-                && !starts_with(entry.vfs_options, "rw,")) {
-            return true;
+                && starts_with(entry.vfs_options, "rw,")) {
+            return false;
         }
     }
 
-    return false;
+    return true;
 }
 
 static bool remount_ro()
