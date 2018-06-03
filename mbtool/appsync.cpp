@@ -389,7 +389,7 @@ static int connect_to_installd()
     snprintf(addr.sun_path, sizeof(addr.sun_path), "%s",
              INSTALLD_SOCKET_PATH);
 
-    int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    int fd = socket(AF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if (fd < 0) {
         LOGE("Failed to create socket: %s", strerror(errno));
         return -1;
@@ -728,7 +728,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
 static bool proxy_process(int fd, bool can_appsync)
 {
     while (true) {
-        int client_fd = accept(fd, nullptr, nullptr);
+        int client_fd = accept4(fd, nullptr, nullptr, SOCK_CLOEXEC);
         if (client_fd < 0) {
             LOGE("Failed to accept client connection: %s", strerror(errno));
             return false;

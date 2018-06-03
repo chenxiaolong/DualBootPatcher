@@ -198,7 +198,7 @@ static bool client_connection(int fd)
 
 static bool run_daemon()
 {
-    int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    int fd = socket(AF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if (fd < 0) {
         LOGE("Failed to create socket: %s", strerror(errno));
         return false;
@@ -259,7 +259,7 @@ static bool run_daemon()
     LOGD("Socket ready, waiting for connections");
 
     int client_fd;
-    while ((client_fd = accept(fd, nullptr, nullptr)) >= 0) {
+    while ((client_fd = accept4(fd, nullptr, nullptr, SOCK_CLOEXEC)) >= 0) {
         pid_t child_pid = fork();
         if (child_pid < 0) {
             LOGE("Failed to fork: %s", strerror(errno));
@@ -419,7 +419,7 @@ static void run_daemon_fork()
 
     // Create pipe for the daemon to tell us it is listening for connections
     send_ok_to_pipe = true;
-    if (pipe(pipe_fds) < 0) {
+    if (pipe2(pipe_fds, O_CLOEXEC) < 0) {
         fprintf(stderr, "Failed to create pipe: %s\n", strerror(errno));
         _exit(EXIT_FAILURE);
     }
