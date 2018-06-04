@@ -68,9 +68,9 @@ public:
     RomInstaller(std::string zip_file, std::string rom_id, std::FILE *log_fp,
                  InstallerFlags flags);
 
-    virtual void display_msg(const std::string& msg) override;
-    virtual void updater_print(const std::string &msg) override;
-    virtual void command_output(const std::string &line) override;
+    virtual void display_msg(std::string_view msg) override;
+    virtual void updater_print(std::string_view msg) override;
+    virtual void command_output(std::string_view line) override;
     virtual std::string get_install_type() override;
     virtual std::unordered_map<std::string, std::string> get_properties() override;
     virtual ProceedState on_checked_device() override;
@@ -108,22 +108,24 @@ RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
 {
 }
 
-void RomInstaller::display_msg(const std::string &msg)
+void RomInstaller::display_msg(std::string_view msg)
 {
-    printf("[MultiBoot] %s\n", msg.c_str());
-    LOGV("%s", msg.c_str());
+    fputs("[MultiBoot] ", stdout);
+    fwrite(msg.data(), 1, msg.size(), stdout);
+    fputc('\n', stdout);
+    LOGV("%.*s", static_cast<int>(msg.size()), msg.data());
 }
 
-void RomInstaller::updater_print(const std::string &msg)
+void RomInstaller::updater_print(std::string_view msg)
 {
-    fprintf(_log_fp, "%s", msg.c_str());
+    fwrite(msg.data(), 1, msg.size(), _log_fp);
     fflush(_log_fp);
-    printf("%s", msg.c_str());
+    fwrite(msg.data(), 1, msg.size(), stdout);
 }
 
-void RomInstaller::command_output(const std::string &line)
+void RomInstaller::command_output(std::string_view line)
 {
-    fprintf(_log_fp, "%s", line.c_str());
+    fwrite(line.data(), 1, line.size(), _log_fp);
     fflush(_log_fp);
 }
 

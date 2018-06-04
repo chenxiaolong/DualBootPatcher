@@ -381,8 +381,7 @@ static bool fix_binary_file_contexts(const char *path)
     };
 
     // Decompile binary file_contexts to temporary file
-    int ret = util::run_command(decompile_argv[0], decompile_argv,
-                                {}, {}, nullptr, nullptr);
+    int ret = util::run_command(decompile_argv[0], decompile_argv, {}, {}, {});
     if (ret < 0 || !WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
         LOGE("%s: Failed to decompile file_contexts", path);
         return false;
@@ -395,8 +394,7 @@ static bool fix_binary_file_contexts(const char *path)
     }
 
     // Recompile binary file_contexts
-    ret = util::run_command(compile_argv[0], compile_argv,
-                            {}, {}, nullptr, nullptr);
+    ret = util::run_command(compile_argv[0], compile_argv, {}, {}, {});
     if (ret < 0 || !WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
         LOGE("%s: Failed to compile binary file_contexts", tmp_path.c_str());
         unlink(tmp_path.c_str());
@@ -1061,7 +1059,7 @@ static bool launch_boot_menu()
     start_daemon();
 
     std::vector<std::string> argv{ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH };
-    int ret = util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
+    int ret = util::run_command(argv[0], argv, {}, {}, {});
     if (ret < 0) {
         LOGE("%s: Failed to execute: %s", BOOT_UI_EXEC_PATH, strerror(errno));
     } else if (WIFEXITED(ret)) {

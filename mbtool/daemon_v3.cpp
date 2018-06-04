@@ -808,15 +808,10 @@ static bool v3_path_get_directory_size(int fd, const v3::Request *msg)
     return v3_send_response(fd, builder);
 }
 
-static void signed_exec_output_cb(const char *line, bool error, void *userdata)
+static void signed_exec_output_cb(int fd, std::string_view line)
 {
-    (void) error;
-
-    int *fd_ptr = static_cast<int *>(userdata);
-    // TODO: Send line
-
     fb::FlatBufferBuilder builder;
-    fb::Offset<fb::String> line_id = builder.CreateString(line);
+    auto line_id = builder.CreateString(line.data(), line.size());
 
     // Create response
     auto response = v3::CreateSignedExecOutputResponse(builder, line_id);
@@ -826,7 +821,7 @@ static void signed_exec_output_cb(const char *line, bool error, void *userdata)
             builder, v3::ResponseType_SignedExecOutputResponse,
             response.Union()));
 
-    if (!v3_send_response(*fd_ptr, builder)) {
+    if (!v3_send_response(fd, builder)) {
         // Can't kill the connection from this callback (yet...)
         LOGE("Failed to send output line: %s", strerror(errno));
     }
@@ -834,6 +829,8 @@ static void signed_exec_output_cb(const char *line, bool error, void *userdata)
 
 static bool v3_signed_exec(int fd, const v3::Request *msg)
 {
+    using namespace std::placeholders;
+
     auto request = static_cast<const v3::SignedExecRequest *>(msg->request());
     if (!request->binary_path() || !request->signature_path()) {
         return v3_send_response_invalid(fd);
@@ -959,7 +956,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     //       Right now, if the connection is broken, the command will continue
     //       executing.
     status = util::run_command(target_binary, argv, {}, {},
-                               &signed_exec_output_cb, &fd);
+                               std::bind(&signed_exec_output_cb, fd, _1));
     if (status >= 0 && WIFEXITED(status)) {
         result = v3::SignedExecResult_PROCESS_EXITED;
         exit_status = WEXITSTATUS(status);

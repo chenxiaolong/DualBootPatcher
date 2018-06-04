@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -115,8 +115,8 @@ bool command_start(CommandCtx &ctx)
     initialize_priv(*ctx._priv);
 
     log_command(ctx.path,
-                ctx.log_argv ? ctx.argv : std::vector<std::string>{},
-                ctx.log_envp ? ctx.envp : std::optional<std::vector<std::string>>{});
+                ctx.log_argv ? ctx.argv : decltype(ctx.argv){},
+                ctx.log_envp ? ctx.envp : decltype(ctx.envp){});
 
     // Create stdout/stderr pipe if output callback is provided
     if (ctx.redirect_stdio) {
@@ -263,13 +263,12 @@ int command_wait(CommandCtx &ctx)
     return status;
 }
 
-bool command_raw_reader(CommandCtx &ctx, CmdRawCb cb, void *userdata)
+bool command_raw_reader(CommandCtx &ctx, const CmdRawCb &cb)
 {
     bool ret = true;
     char buf[8192];
 
-    struct pollfd fds[2];
-    const int fds_size = sizeof(fds) / sizeof(fds[0]);
+    std::array<pollfd, 2> fds;
 
     fds[0].fd = ctx._priv->stdout_pipe[0];
     fds[0].events = POLLIN;
@@ -279,48 +278,45 @@ bool command_raw_reader(CommandCtx &ctx, CmdRawCb cb, void *userdata)
     while (true) {
         bool done = true;
 
-        for (int i = 0; i < fds_size; ++i) {
-            fds[i].revents = 0;
-            done = done && (fds[i].fd < 0);
+        for (auto &pfd : fds) {
+            pfd.revents = 0;
+            done = done && (pfd.fd < 0);
         }
 
         if (done) {
             break;
         }
 
-        if (poll(fds, fds_size, -1) <= 0) {
+        if (poll(fds.data(), fds.size(), -1) <= 0) {
             continue;
         }
 
-        for (int i = 0; i < fds_size; ++i) {
-            bool is_stderr = fds[i].fd == ctx._priv->stderr_pipe[0];
+        for (auto &pfd : fds) {
+            bool is_stderr = pfd.fd == ctx._priv->stderr_pipe[0];
 
-            if (fds[i].revents & POLLHUP) {
+            if (pfd.revents & POLLHUP) {
                 // EOF/pipe closed. The fd will be closed later
-                fds[i].fd = -1;
-                fds[i].events = 0;
+                pfd.fd = -1;
+                pfd.events = 0;
 
                 // Final call for EOF
-                cb(buf, 0, is_stderr, userdata);
-            } else if (fds[i].revents & POLLIN) {
-                ssize_t n = read(fds[i].fd, buf, sizeof(buf) - 1);
+                cb({}, is_stderr);
+            } else if (pfd.revents & POLLIN) {
+                ssize_t n = read(pfd.fd, buf, sizeof(buf));
                 if (n < 0) {
                     if (errno != EAGAIN
                             && errno != EWOULDBLOCK
                             && errno != EINTR) {
                         // Read failed; disable FD
-                        fds[i].fd = -1;
-                        fds[i].events = 0;
+                        pfd.fd = -1;
+                        pfd.events = 0;
                         ret = false;
                     }
                 } else {
-                    // NULL-terminate
-                    buf[n] = '\0';
-
                     // Potential EOF (n == 0) here on some non-Linux systems,
                     // which is fine since it's not possible to reach both the
                     // POLLHUP block and this block
-                    cb(buf, static_cast<size_t>(n), is_stderr, userdata);
+                    cb({buf, static_cast<size_t>(n)}, is_stderr);
                 }
             }
         }
@@ -335,60 +331,43 @@ struct CommandLineReaderCtx
     std::array<char, 4096> stderr_buf;
     size_t stdout_used = 0;
     size_t stderr_used = 0;
-
-    CmdLineCb cb;
-    void *userdata;
 };
 
-static void command_line_reader_cb(const char *data, size_t size, bool error,
-                                   void *userdata)
+static void command_line_reader_cb(CommandLineReaderCtx &ctx,
+                                   std::string_view data, bool error,
+                                   const CmdLineCb &cb)
 {
-    CommandLineReaderCtx *ctx = static_cast<CommandLineReaderCtx *>(userdata);
-
-    size_t cap = (error ? ctx->stderr_buf : ctx->stdout_buf).size() - 1;
-    char *buf = (error ? ctx->stderr_buf : ctx->stdout_buf).data();
-    size_t &used = error ? ctx->stderr_used : ctx->stdout_used;
+    size_t cap = (error ? ctx.stderr_buf : ctx.stdout_buf).size();
+    char *buf = (error ? ctx.stderr_buf : ctx.stdout_buf).data();
+    size_t &used = error ? ctx.stderr_used : ctx.stdout_used;
 
     // Reached EOF
-    if (size == 0 && used > 0) {
-        // NULL-terminate the buffer
-        buf[used] = '\0';
-        ctx->cb(buf, error, ctx->userdata);
+    if (data.size() == 0 && used > 0) {
+        cb({buf, used}, error);
         used = 0;
     }
 
-    while (size > 0) {
-        // Find available space
-        size_t avail = cap - used;
-
+    while (data.size() > 0) {
         // Copy as much as we can into the buffer
-        size_t n = size > avail ? avail : size;
-        memcpy(buf + used, data, n);
+        size_t n = std::min(cap - used, data.size());
+        memcpy(buf + used, data.data(), n);
 
         // Advance pointer
-        data += n;
-        size -= n;
+        data.remove_prefix(n);
         used += n;
-
-        // NULL-terminate the buffer
-        buf[used] = '\0';
 
         // Call cb for each contained line
         char *ptr = buf;
+        size_t remain = used;
         char *newline;
-        while ((newline = strchr(ptr, '\n'))) {
-            // Temporarily NULL-terminate
-            char c = *(newline + 1);
-            *(newline + 1) = '\0';
+        while ((newline = static_cast<char *>(memchr(ptr, '\n', remain)))) {
+            size_t line_size = static_cast<size_t>(newline - ptr) + 1;
 
-            // Yay
-            ctx->cb(ptr, error, ctx->userdata);
-
-            // Restore character
-            *(newline + 1) = c;
+            cb({ptr, line_size}, error);
 
             // Advance pointer for next search
-            ptr = newline + 1;
+            ptr += line_size;
+            remain -= line_size;
         }
 
         // ptr now points to the character after the last newline
@@ -396,7 +375,7 @@ static void command_line_reader_cb(const char *data, size_t size, bool error,
         if (consumed == 0 && used == cap) {
             // If nothing was consumed and the buffer is full, then the line is
             // too long.
-            ctx->cb(buf, error, ctx->userdata);
+            cb({buf, used}, error);
             consumed = used;
         }
 
@@ -408,21 +387,20 @@ static void command_line_reader_cb(const char *data, size_t size, bool error,
     }
 }
 
-bool command_line_reader(CommandCtx &ctx, CmdLineCb cb, void *userdata)
+bool command_line_reader(CommandCtx &ctx, const CmdLineCb &cb)
 {
     CommandLineReaderCtx reader_ctx;
-    reader_ctx.cb = cb;
-    reader_ctx.userdata = userdata;
 
-    return command_raw_reader(ctx, &command_line_reader_cb, &reader_ctx);
+    return command_raw_reader(ctx, [&](std::string_view data, bool error) {
+        command_line_reader_cb(reader_ctx, data, error, cb);
+    });
 }
 
 int run_command(const std::string &path,
                 const std::vector<std::string> &argv,
                 const std::optional<std::vector<std::string>> &envp,
                 const std::string &chroot_dir,
-                CmdLineCb cb,
-                void *userdata)
+                const CmdLineCb &cb)
 {
     CommandCtx ctx;
     ctx.path = path;
@@ -442,7 +420,7 @@ int run_command(const std::string &path,
         return -1;
     }
 
-    command_line_reader(ctx, cb, userdata);
+    command_line_reader(ctx, cb);
 
     return command_wait(ctx);
 }

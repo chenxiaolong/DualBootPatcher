@@ -221,36 +221,39 @@ static bool log_copy_dir(const std::string &source,
  * Helper functions
  */
 
-void Installer::output_cb(const char *line, bool error, void *userdata)
+void Installer::output_cb(std::string_view line, bool error)
 {
     (void) error;
 
-    Installer *installer = static_cast<Installer *>(userdata);
-    installer->command_output(line);
+    command_output(line);
 }
 
 int Installer::run_command(const std::vector<std::string> &argv)
 {
+    using namespace std::placeholders;
+
     return util::run_command(
         argv[0],
         argv,
         {},
         {},
-        _passthrough ? nullptr : &output_cb,
-        this
+        _passthrough ? util::CmdLineCb{}
+            : std::bind(&Installer::output_cb, this, _1, _2)
     );
 }
 
 int Installer::run_command_chroot(const std::string &dir,
                                   const std::vector<std::string> &argv)
 {
+    using namespace std::placeholders;
+
     return util::run_command(
         argv[0],
         argv,
         {},
         dir,
-        _passthrough ? nullptr : &output_cb,
-        this
+        _passthrough ? util::CmdLineCb{}
+            : std::bind(&Installer::output_cb, this, _1, _2)
     );
 }
 
@@ -1184,21 +1187,21 @@ void Installer::display_msg(const char *fmt, ...)
     va_end(ap);
 }
 
-void Installer::display_msg(const std::string &msg)
+void Installer::display_msg(std::string_view msg)
 {
-    printf("%s\n", msg.c_str());
+    printf("%.*s\n", static_cast<int>(msg.size()), msg.data());
 }
 
 // Note: Only called if we're not passing through the output_fd
-void Installer::updater_print(const std::string &msg)
+void Installer::updater_print(std::string_view msg)
 {
-    printf("%s", msg.c_str());
+    printf("%.*s", static_cast<int>(msg.size()), msg.data());
 }
 
 // Note: Only called if we're not passing through the output_fd
-void Installer::command_output(const std::string &line)
+void Installer::command_output(std::string_view line)
 {
-    printf("%s\n", line.c_str());
+    printf("%.*s\n", static_cast<int>(line.size()), line.data());
 }
 
 std::unordered_map<std::string, std::string> Installer::get_properties()

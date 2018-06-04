@@ -948,7 +948,7 @@ int appsync_main(int argc, char *argv[])
     std::vector<std::string> restorecon{
         "restorecon", "-R", "-F", "/data/media/obb"
     };
-    util::run_command(restorecon[0], restorecon, {}, {}, nullptr, nullptr);
+    util::run_command(restorecon[0], restorecon, {}, {}, {});
 
     bool can_appsync = false;
 
