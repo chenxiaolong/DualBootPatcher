@@ -225,21 +225,15 @@ static bool path_matches(const char *path, const char *pattern)
     }
 }
 
-static void dump(const char *line, bool error, void *userdata)
+static void dump(std::string_view line, bool error)
 {
     (void) error;
-    (void) userdata;
 
-    size_t size = strlen(line);
-
-    std::string copy;
-    if (size > 0 && line[size - 1] == '\n') {
-        copy.assign(line, line + size - 1);
-    } else {
-        copy.assign(line, line + size);
+    if (!line.empty() && line.back() == '\n') {
+        line.remove_suffix(1);
     }
 
-    LOGD("Command output: %s", copy.c_str());
+    LOGD("Command output: %.*s", static_cast<int>(line.size()), line.data());
 }
 
 static uid_t get_media_rw_uid()
@@ -284,11 +278,10 @@ static bool mount_exfat_fuse(const char *source, const char *target)
     };
 
     // Run filesystem checks
-    util::run_command(fsck_argv[0], fsck_argv, {}, {}, &dump, nullptr);
+    util::run_command(fsck_argv[0], fsck_argv, {}, {}, &dump);
 
     // Mount exfat, matching vold options as much as possible
-    int ret = util::run_command(mount_argv[0], mount_argv, {}, {}, &dump,
-                                nullptr);
+    int ret = util::run_command(mount_argv[0], mount_argv, {}, {}, &dump);
 
     if (ret >= 0) {
         LOGD("mount.exfat returned: %d", WEXITSTATUS(ret));

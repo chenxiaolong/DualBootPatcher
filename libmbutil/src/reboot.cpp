@@ -45,26 +45,21 @@ namespace mb::util
 
 constexpr char ANDROID_RB_PROPERTY[] = "sys.powerctl";
 
-static void log_output(const char *line, bool error, void *userdata)
+static void log_output(std::string_view line, bool error)
 {
     (void) error;
-    (void) userdata;
 
-    size_t size = strlen(line);
-
-    std::string copy;
-    if (size > 0 && line[size - 1] == '\n') {
-        copy.assign(line, line + size - 1);
-    } else {
-        copy.assign(line, line + size);
+    if (!line.empty() && line.back() == '\n') {
+        line.remove_suffix(1);
     }
 
-    LOGD("Reboot command output: %s", copy.c_str());
+    LOGD("Reboot command output: %.*s",
+         static_cast<int>(line.size()), line.data());
 }
 
 static bool run_command_and_log(const std::vector<std::string> &args)
 {
-    int status = run_command(args[0], args, {}, {}, &log_output, nullptr);
+    int status = run_command(args[0], args, {}, {}, &log_output);
 
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }

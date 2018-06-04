@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 #include "mbcommon/common.h"
@@ -63,9 +64,9 @@ protected:
 
     MB_PRINTF(2, 3)
     void display_msg(const char *fmt, ...);
-    virtual void display_msg(const std::string &msg);
-    virtual void updater_print(const std::string &msg);
-    virtual void command_output(const std::string &line);
+    virtual void display_msg(std::string_view msg);
+    virtual void updater_print(std::string_view msg);
+    virtual void command_output(std::string_view line);
     virtual std::string get_install_type() = 0;
     virtual std::unordered_map<std::string, std::string> get_properties();
     virtual ProceedState on_initialize();
@@ -119,7 +120,7 @@ protected:
 private:
     bool _ran;
 
-    static void output_cb(const char *line, bool error, void *userdata);
+    void output_cb(std::string_view line, bool error);
     int run_command(const std::vector<std::string> &argv);
     int run_command_chroot(const std::string &dir,
                            const std::vector<std::string> &argv);

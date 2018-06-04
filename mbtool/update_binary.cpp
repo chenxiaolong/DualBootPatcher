@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,12 +19,15 @@
 
 #include "update_binary.h"
 
+#include <array>
+
 #include <fcntl.h>
 #include <getopt.h>
 #include <sched.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #include "mbcommon/integer.h"
@@ -55,7 +58,7 @@ class RecoveryInstaller : public Installer
 public:
     RecoveryInstaller(std::string zip_file, int interface, int output_fd);
 
-    virtual void display_msg(const std::string& msg) override;
+    virtual void display_msg(std::string_view msg) override;
     virtual std::string get_install_type() override;
     virtual std::unordered_map<std::string, std::string> get_properties() override;
     virtual ProceedState on_initialize() override;
@@ -69,10 +72,18 @@ RecoveryInstaller::RecoveryInstaller(std::string zip_file, int interface, int ou
 {
 }
 
-void RecoveryInstaller::display_msg(const std::string &msg)
+void RecoveryInstaller::display_msg(std::string_view msg)
 {
-    dprintf(_output_fd, "ui_print [MultiBoot] %s\n", msg.c_str());
-    dprintf(_output_fd, "ui_print\n");
+    static constexpr char prefix[] = "ui_print [MultiBoot] ";
+    static constexpr char suffix[] = "\nui_print\n";
+
+    const std::array<iovec, 3> iovs = {{
+        { const_cast<char *>(prefix), strlen(prefix) },
+        { const_cast<char *>(msg.data()), msg.size() },
+        { const_cast<char *>(suffix), strlen(suffix) },
+    }};
+
+    writev(_output_fd, iovs.data(), iovs.size());
 }
 
 std::string RecoveryInstaller::get_install_type()

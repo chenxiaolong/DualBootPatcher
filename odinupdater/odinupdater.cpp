@@ -148,7 +148,7 @@ static void info(const char *fmt, ...)
 
 static bool run_command(const std::vector<std::string> &argv)
 {
-    int status = mb::util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
+    int status = mb::util::run_command(argv[0], argv, {}, {}, {});
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
         return false;
