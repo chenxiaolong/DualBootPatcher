@@ -92,7 +92,6 @@ using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 static pid_t daemon_pid = -1;
 
 static PropertyService g_property_service;
-static UeventThread g_uevent_thread;
 
 static void init_usage(FILE *stream)
 {
@@ -1176,7 +1175,8 @@ int init_main(int argc, char *argv[])
 
     // Start probing for devices so we have somewhere to write logs for
     // critical_failure()
-    g_uevent_thread.start();
+    UeventThread uevent_thread;
+    uevent_thread.start();
 
     Device device;
     JsonError error;
@@ -1230,7 +1230,7 @@ int init_main(int argc, char *argv[])
             | MountFlag::MountData
             | MountFlag::MountExternalSd;
     if (!mount_fstab(fstab.c_str(), rom, device, flags,
-                     g_uevent_thread.device_handler())) {
+                     uevent_thread.device_handler())) {
         LOGE("Failed to mount fstab");
         critical_failure();
         return EXIT_FAILURE;
@@ -1301,7 +1301,7 @@ int init_main(int argc, char *argv[])
     }
 
     // Kill uevent thread and close uevent socket
-    g_uevent_thread.stop();
+    uevent_thread.stop();
 
     // Kill properties service and clean up
     properties_cleanup();
