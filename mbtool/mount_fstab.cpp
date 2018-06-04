@@ -571,8 +571,20 @@ static bool mount_target(const char *source, const char *target, bool bind,
         // - https://github.com/karelzak/util-linux/issues/637
         // - https://lwn.net/Articles/281157/
 
-        unsigned long flags;
-        std::tie(flags, std::ignore) = util::parse_mount_options("foobar");
+        unsigned long flags = 0;
+
+        if (auto entries = util::get_mount_entries()) {
+            for (auto const &entry : entries.value()) {
+                if (entry.target == target) {
+                    std::tie(flags, std::ignore) =
+                            util::parse_mount_options(entry.vfs_options);
+                    break;
+                }
+            }
+        } else {
+            LOGE("Failed to get mount entries: %s",
+                 entries.error().message().c_str());
+        }
 
         ret = util::mount("", target, "",
                           MS_BIND | MS_REMOUNT | MS_RDONLY | flags, "");
