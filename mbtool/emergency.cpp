@@ -160,11 +160,7 @@ bool emergency_reboot()
 
     auto contents = util::file_read_all(DEVICE_JSON_PATH);
     if (contents) {
-        contents.value().push_back('\0');
-
-        loaded_json = device_from_json(
-                reinterpret_cast<char *>(contents.value().data()),
-                device, error);
+        loaded_json = device_from_json(contents.value(), device, error);
     }
 
     // /data

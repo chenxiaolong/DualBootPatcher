@@ -1351,12 +1351,10 @@ Installer::ProceedState Installer::install_stage_check_device()
         display_msg("Failed to read device.json");
         return ProceedState::Fail;
     }
-    contents.value().push_back('\0');
 
     JsonError error;
 
-    if (!device_from_json(reinterpret_cast<char *>(contents.value().data()),
-                          _device, error)) {
+    if (!device_from_json(contents.value(), _device, error)) {
         display_msg("Error when loading device.json");
         return ProceedState::Fail;
     }

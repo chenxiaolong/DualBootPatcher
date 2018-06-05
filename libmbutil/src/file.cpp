@@ -176,7 +176,7 @@ oc::result<bool> file_find_one_of(const std::string &path,
     return false;
 }
 
-oc::result<std::vector<unsigned char>> file_read_all(const std::string &path)
+oc::result<std::string> file_read_all(const std::string &path)
 {
     ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
     if (!fp) {
@@ -196,7 +196,7 @@ oc::result<std::vector<unsigned char>> file_read_all(const std::string &path)
         return ec_from_errno();
     }
 
-    std::vector<unsigned char> data(static_cast<size_t>(size));
+    std::string data(static_cast<size_t>(size), '\0');
 
     if (fread(data.data(), data.size(), 1, fp.get()) != 1) {
         if (ferror(fp.get())) {

@@ -1171,7 +1171,6 @@ int init_main(int argc, char *argv[])
         critical_failure();
         return EXIT_FAILURE;
     }
-    contents.value().push_back('\0');
 
     // Start probing for devices so we have somewhere to write logs for
     // critical_failure()
@@ -1181,8 +1180,7 @@ int init_main(int argc, char *argv[])
     Device device;
     JsonError error;
 
-    if (!device_from_json(reinterpret_cast<char *>(
-            contents.value().data()), device, error)) {
+    if (!device_from_json(contents.value(), device, error)) {
         LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
         critical_failure();
         return EXIT_FAILURE;
