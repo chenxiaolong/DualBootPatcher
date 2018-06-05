@@ -49,11 +49,11 @@ class AboutFragment : Fragment() {
         val separator = " | "
 
         val creditsText = getString(R.string.credits)
-        val sourceCode = makeHtmlLink(getString(R.string.url_source_code),
+        val sourceCode = makeHtmlLink(getString(R.string.url_source_code, BuildConfig.GIT_SHA),
                 getString(R.string.link_source_code))
         val xdaThread = makeHtmlLink(getString(R.string.url_xda_thread),
                 getString(R.string.link_xda_thread))
-        val licenses = makeHtmlLink(getString(R.string.url_licenses),
+        val licenses = makeHtmlLink(getString(R.string.url_licenses, BuildConfig.GIT_SHA),
                 getString(R.string.link_licenses))
 
         credits.text = fromHtml(creditsText + newline + newline

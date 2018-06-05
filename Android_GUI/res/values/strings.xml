@@ -31,7 +31,7 @@
     <!-- Indicate the version of the app on the about screen -->
     <string name="version">Version %s</string>
     <!-- GitHub source code web page URL -->
-    <string name="url_source_code" translatable="false">https://github.com/chenxiaolong/DualBootPatcher</string>
+    <string name="url_source_code" translatable="false">https://github.com/chenxiaolong/DualBootPatcher/tree/%s</string>
     <!-- GitHub source code link text -->
     <string name="link_source_code">Source Code</string>
     <!-- XDA forum thread web page URL -->
@@ -39,7 +39,7 @@
     <!-- XDA forum thread link text -->
     <string name="link_xda_thread">XDA Thread</string>
     <!-- Licenses URL -->
-    <string name="url_licenses" translatable="false">https://github.com/chenxiaolong/DualBootPatcher/tree/master/licenses</string>
+    <string name="url_licenses" translatable="false">https://github.com/chenxiaolong/DualBootPatcher/tree/%s/licenses</string>
     <!-- Licenses link text -->
     <string name="link_licenses">Licenses</string>
     <!-- Thank you message for contributors and links to relavent URLs -->
