@@ -40,6 +40,7 @@ android {
         targetSdkVersion 27
         versionCode 1
         versionName "@MBP_VERSION@"
+        buildConfigField "String", "GIT_SHA", '"@_GIT_SHA@"'
     }
 
     signingConfigs {
