@@ -176,7 +176,7 @@ struct Flashable
     std::string block_dev;
     std::string expected_hash;
     std::string hash;
-    std::vector<unsigned char> data;
+    std::string data;
 };
 
 /*!
@@ -358,7 +358,8 @@ SwitchRomResult switch_rom(const std::string &id,
 
         // Get actual sha512sum
         std::array<unsigned char, SHA512_DIGEST_LENGTH> digest;
-        SHA512(f.data.data(), f.data.size(), digest.data());
+        SHA512(reinterpret_cast<const unsigned char *>(f.data.data()),
+               f.data.size(), digest.data());
         f.hash = util::hex_string(digest.data(), digest.size());
 
         if (force_update_checksums) {
@@ -459,7 +460,8 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
 
     // Get actual sha512sum
     std::array<unsigned char, SHA512_DIGEST_LENGTH> digest;
-    SHA512(data.value().data(), data.value().size(), digest.data());
+    SHA512(reinterpret_cast<const unsigned char *>(data.value().data()),
+           data.value().size(), digest.data());
     std::string hash = util::hex_string(digest.data(), digest.size());
 
     // Add to checksums.prop

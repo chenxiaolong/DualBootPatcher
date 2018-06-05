@@ -110,12 +110,10 @@ static bool detect_device()
              contents.error().message().c_str());
         return false;
     }
-    contents.value().push_back('\0');
 
     JsonError error;
 
-    if (!device_from_json(reinterpret_cast<char *>(contents.value().data()),
-                          tw_device, error)) {
+    if (!device_from_json(contents.value(), tw_device, error)) {
         LOGE("%s: Failed to load device", DEVICE_JSON_PATH);
         return false;
     }

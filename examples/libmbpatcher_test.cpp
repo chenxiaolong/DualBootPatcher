@@ -42,8 +42,7 @@ public:
     }
 };
 
-static bool file_read_all(const std::string &path,
-                          std::vector<unsigned char> &data_out)
+static bool file_read_all(const std::string &path, std::string &data_out)
 {
     FILE *fp = fopen(path.c_str(), "rbe");
     if (!fp) {
@@ -61,7 +60,7 @@ static bool file_read_all(const std::string &path,
         return false;
     }
 
-    std::vector<unsigned char> data(static_cast<size_t>(size));
+    std::string data(static_cast<size_t>(size), '\0');
     if (fread(data.data(), data.size(), 1, fp) != 1) {
         fclose(fp);
         return false;
@@ -75,7 +74,7 @@ static bool file_read_all(const std::string &path,
 
 static bool get_device(const char *path, mb::device::Device &device)
 {
-    std::vector<unsigned char> contents;
+    std::string contents;
     if (!file_read_all(path, contents)) {
         fprintf(stderr, "%s: Failed to read file: %s\n", path, strerror(errno));
         return false;
@@ -84,8 +83,7 @@ static bool get_device(const char *path, mb::device::Device &device)
 
     mb::device::JsonError error;
 
-    if (!mb::device::device_from_json(
-            reinterpret_cast<const char *>(contents.data()), device, error)) {
+    if (!mb::device::device_from_json(contents, device, error)) {
         fprintf(stderr, "%s: Failed to load devices\n", path);
         return false;
     }

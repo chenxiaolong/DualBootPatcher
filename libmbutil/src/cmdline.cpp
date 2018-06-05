@@ -35,10 +35,9 @@ oc::result<KernelCmdlineArgs> kernel_cmdline()
         data.pop_back();
     }
 
-    std::string_view args(reinterpret_cast<char *>(data.data()), data.size());
     KernelCmdlineArgs result;
 
-    for (auto const &item : split_sv(args, " ")) {
+    for (auto const &item : split_sv(data, " ")) {
         if (item.empty()) {
             continue;
         }
