@@ -565,11 +565,6 @@ int daemon_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!no_unshare && unshare(CLONE_NEWNS) < 0) {
-        fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
-        return EXIT_FAILURE;
-    }
-
     if (patch_sepolicy) {
         patch_loaded_sepolicy(SELinuxPatch::Main);
     }
