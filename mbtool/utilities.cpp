@@ -369,7 +369,7 @@ private:
     {
         mz_zip_file file_info = {};
         file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
-        file_info.filename = const_cast<char *>(name.c_str());
+        file_info.filename = name.c_str();
         file_info.filename_size = static_cast<uint16_t>(name.size());
 
         int ret = mz_zip_entry_write_open(_handle, &file_info,
@@ -421,7 +421,7 @@ private:
 
         mz_zip_file file_info = {};
         file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
-        file_info.filename = const_cast<char *>(name.c_str());
+        file_info.filename = name.c_str();
         file_info.filename_size = static_cast<uint16_t>(name.size());
         file_info.external_fa = (sb.st_mode & 0777) << 16;
 

@@ -323,7 +323,7 @@ bool OdinPatcher::process_file(archive *a, archive_entry *entry, bool sparse)
 
     mz_zip_file file_info = {};
     file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
-    file_info.filename = const_cast<char *>(zip_name.c_str());
+    file_info.filename = zip_name.c_str();
     file_info.filename_size = static_cast<uint16_t>(zip_name.size());
 
     void *handle = MinizipUtils::ctx_get_zip_handle(m_z_output);

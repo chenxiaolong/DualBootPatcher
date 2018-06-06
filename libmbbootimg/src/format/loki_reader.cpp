@@ -629,19 +629,15 @@ LokiFormatReader::read_header_old(Reader &reader, File &file,
     kernel_size_out = kernel_size;
     ramdisk_size_out = ramdisk_size;
 
-    char board_name[sizeof(hdr.name) + 1];
-    char cmdline[sizeof(hdr.cmdline) + 1];
+    auto *name_ptr = reinterpret_cast<const char *>(hdr.name);
+    auto name_size = strnlen(name_ptr, sizeof(hdr.name));
 
-    strncpy(board_name, reinterpret_cast<const char *>(hdr.name),
-            sizeof(hdr.name));
-    strncpy(cmdline, reinterpret_cast<const char *>(hdr.cmdline),
-            sizeof(hdr.cmdline));
-    board_name[sizeof(hdr.name)] = '\0';
-    cmdline[sizeof(hdr.cmdline)] = '\0';
+    auto *cmdline_ptr = reinterpret_cast<const char *>(hdr.cmdline);
+    auto cmdline_size = strnlen(cmdline_ptr, sizeof(hdr.cmdline));
 
     header.set_supported_fields(OLD_SUPPORTED_FIELDS);
-    header.set_board_name({board_name});
-    header.set_kernel_cmdline({cmdline});
+    header.set_board_name({{name_ptr, name_size}});
+    header.set_kernel_cmdline({{cmdline_ptr, cmdline_size}});
     header.set_page_size(hdr.page_size);
     header.set_kernel_address(hdr.kernel_addr);
     header.set_ramdisk_address(ramdisk_addr);
@@ -719,19 +715,15 @@ LokiFormatReader::read_header_new(Reader &reader, File &file,
     kernel_size_out = loki_hdr.orig_kernel_size;
     ramdisk_size_out = loki_hdr.orig_ramdisk_size;
 
-    char board_name[sizeof(hdr.name) + 1];
-    char cmdline[sizeof(hdr.cmdline) + 1];
+    auto *name_ptr = reinterpret_cast<const char *>(hdr.name);
+    auto name_size = strnlen(name_ptr, sizeof(hdr.name));
 
-    strncpy(board_name, reinterpret_cast<const char *>(hdr.name),
-            sizeof(hdr.name));
-    strncpy(cmdline, reinterpret_cast<const char *>(hdr.cmdline),
-            sizeof(hdr.cmdline));
-    board_name[sizeof(hdr.name)] = '\0';
-    cmdline[sizeof(hdr.cmdline)] = '\0';
+    auto *cmdline_ptr = reinterpret_cast<const char *>(hdr.cmdline);
+    auto cmdline_size = strnlen(cmdline_ptr, sizeof(hdr.cmdline));
 
     header.set_supported_fields(NEW_SUPPORTED_FIELDS);
-    header.set_board_name({board_name});
-    header.set_kernel_cmdline({cmdline});
+    header.set_board_name({{name_ptr, name_size}});
+    header.set_kernel_cmdline({{cmdline_ptr, cmdline_size}});
     header.set_page_size(hdr.page_size);
     header.set_kernel_address(hdr.kernel_addr);
     header.set_ramdisk_address(ramdisk_addr);

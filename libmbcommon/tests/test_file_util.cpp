@@ -337,7 +337,7 @@ struct FileSearchTest : testing::Test
 
 TEST_F(FileSearchTest, CheckInvalidBoundariesFail)
 {
-    MemoryFile file("", 0);
+    MemoryFile file(const_cast<char *>(""), 0);
     ASSERT_TRUE(file.is_open());
 
     auto result = file_search(file, 20, 10, 0, "x", 1, {}, &_result_cb, this);
@@ -347,7 +347,7 @@ TEST_F(FileSearchTest, CheckInvalidBoundariesFail)
 
 TEST_F(FileSearchTest, CheckZeroMaxMatches)
 {
-    MemoryFile file("", 0);
+    MemoryFile file(const_cast<char *>(""), 0);
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, 0, &_result_cb, this));
@@ -355,7 +355,7 @@ TEST_F(FileSearchTest, CheckZeroMaxMatches)
 
 TEST_F(FileSearchTest, CheckZeroPatternSize)
 {
-    MemoryFile file("", 0);
+    MemoryFile file(const_cast<char *>(""), 0);
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file_search(file, {}, {}, 0, nullptr, 0, {}, &_result_cb,
@@ -364,7 +364,7 @@ TEST_F(FileSearchTest, CheckZeroPatternSize)
 
 TEST_F(FileSearchTest, CheckBufferSize)
 {
-    MemoryFile file("", 0);
+    MemoryFile file(const_cast<char *>(""), 0);
     ASSERT_TRUE(file.is_open());
 
     // Auto buffer size
@@ -381,7 +381,7 @@ TEST_F(FileSearchTest, CheckBufferSize)
 
 TEST_F(FileSearchTest, FindNormal)
 {
-    MemoryFile file("abc", 3);
+    MemoryFile file(const_cast<char *>("abc"), 3);
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file_search(file, {}, {}, 0, "a", 1, {}, &_result_cb, this));
@@ -391,7 +391,7 @@ TEST(FileMoveTest, DegenerateCasesShouldSucceed)
 {
     constexpr char buf[] = "abcdef";
 
-    MemoryFile file(buf, sizeof(buf) - 1);
+    MemoryFile file(const_cast<char *>(buf), sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
     // src == dest
@@ -405,7 +405,7 @@ TEST(FileMoveTest, NormalForwardsCopyShouldSucceed)
 {
     constexpr char buf[] = "abcdef";
 
-    MemoryFile file(buf, sizeof(buf) - 1);
+    MemoryFile file(const_cast<char *>(buf), sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
     auto n = file_move(file, 2, 0, 3);
@@ -418,7 +418,7 @@ TEST(FileMoveTest, NormalBackwardsCopyShouldSucceed)
 {
     constexpr char buf[] = "abcdef";
 
-    MemoryFile file(buf, sizeof(buf) - 1);
+    MemoryFile file(const_cast<char *>(buf), sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
     auto n = file_move(file, 0, 2, 3);
@@ -431,7 +431,7 @@ TEST(FileMoveTest, OutOfBoundsForwardsCopyShouldCopyPartially)
 {
     constexpr char buf[] = "abcdef";
 
-    MemoryFile file(buf, sizeof(buf) - 1);
+    MemoryFile file(const_cast<char *>(buf), sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
     auto n = file_move(file, 2, 0, 5);
@@ -444,7 +444,7 @@ TEST(FileMoveTest, OutOfBoundsBackwardsCopyShouldCopyPartially)
 {
     constexpr char buf[] = "abcdef";
 
-    MemoryFile file(buf, sizeof(buf) - 1);
+    MemoryFile file(const_cast<char *>(buf), sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
     auto n = file_move(file, 0, 2, 5);
