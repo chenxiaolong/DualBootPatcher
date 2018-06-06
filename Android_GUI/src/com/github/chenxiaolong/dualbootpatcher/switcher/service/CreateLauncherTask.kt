@@ -22,11 +22,12 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.support.v4.content.pm.ShortcutInfoCompat
+import android.support.v4.content.pm.ShortcutManagerCompat
+import android.support.v4.graphics.drawable.IconCompat
 import android.util.Log
-
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation
 import com.github.chenxiaolong.dualbootpatcher.switcher.AutomatedSwitcherActivity
-
 import java.io.File
 
 class CreateLauncherTask(
@@ -45,29 +46,32 @@ class CreateLauncherTask(
     public override fun execute() {
         Log.d(TAG, "Creating launcher for ${romInfo.id}")
 
-        val shortcutIntent = Intent(context, AutomatedSwitcherActivity::class.java)
-        shortcutIntent.action = "com.github.chenxiaolong.dualbootpatcher.SWITCH_ROM"
-        shortcutIntent.putExtra(AutomatedSwitcherActivity.EXTRA_ROM_ID, romInfo.id)
-        shortcutIntent.putExtra(AutomatedSwitcherActivity.EXTRA_REBOOT, reboot)
+        if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
+            val file = File(romInfo.thumbnailPath!!)
+            val icon = if (file.exists() && file.canRead()) {
+                val options = BitmapFactory.Options()
+                options.inPreferredConfig = Bitmap.Config.ARGB_8888
+                val bitmap = BitmapFactory.decodeFile(file.absolutePath, options)
+                IconCompat.createWithBitmap(createScaledIcon(bitmap))
+            } else {
+                IconCompat.createWithResource(context, romInfo.imageResId)
+            }
 
-        val addIntent = Intent("com.android.launcher.action.INSTALL_SHORTCUT")
-        addIntent.putExtra("duplicate", false)
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent)
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, romInfo.name)
+            val shortcutIntent = Intent(context, AutomatedSwitcherActivity::class.java)
+            shortcutIntent.action = "com.github.chenxiaolong.dualbootpatcher.SWITCH_ROM"
+            shortcutIntent.putExtra(AutomatedSwitcherActivity.EXTRA_ROM_ID, romInfo.id)
+            shortcutIntent.putExtra(AutomatedSwitcherActivity.EXTRA_REBOOT, reboot)
 
-        val file = File(romInfo.thumbnailPath!!)
-        if (file.exists() && file.canRead()) {
-            val options = BitmapFactory.Options()
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888
-            val bitmap = BitmapFactory.decodeFile(file.absolutePath, options)
-            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, createScaledIcon(bitmap))
+            val shortcut = ShortcutInfoCompat.Builder(context, romInfo.id!!)
+                    .setIntent(shortcutIntent)
+                    .setShortLabel(romInfo.name!!)
+                    .setIcon(icon)
+                    .build()
+
+            ShortcutManagerCompat.requestPinShortcut(context, shortcut, null)
         } else {
-            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE,
-                    Intent.ShortcutIconResource.fromContext(
-                            context, romInfo.imageResId))
+            Log.w(TAG, "Pinned shortcuts are not supported")
         }
-
-        context.sendBroadcast(addIntent)
 
         synchronized(stateLock) {
             sendOnCreatedLauncher()
