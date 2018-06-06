@@ -235,7 +235,7 @@ bool MinizipUtils::copy_file_raw(void *source_handle,
     });
 
     mz_zip_file target_file_info = *file_info;
-    target_file_info.filename = const_cast<char *>(name.c_str());
+    target_file_info.filename = name.c_str();
     target_file_info.filename_size = static_cast<uint16_t>(name.size());
 
     // Open raw file in output zip
@@ -438,7 +438,7 @@ ErrorCode MinizipUtils::add_file(void *handle,
 {
     mz_zip_file file_info = {};
     file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
-    file_info.filename = const_cast<char *>(name.c_str());
+    file_info.filename = name.c_str();
     file_info.filename_size = static_cast<uint16_t>(name.size());
 
     int ret = mz_zip_entry_write_open(handle, &file_info,
@@ -488,7 +488,7 @@ ErrorCode MinizipUtils::add_file(void *handle,
 
     mz_zip_file file_info = {};
     file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
-    file_info.filename = const_cast<char *>(name.c_str());
+    file_info.filename = name.c_str();
     file_info.filename_size = static_cast<uint16_t>(name.size());
 
     int ret = mz_os_get_file_date(path.c_str(), &file_info.modified_date,
