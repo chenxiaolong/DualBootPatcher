@@ -321,15 +321,20 @@ struct FileSearchTest : testing::Test
 {
     // Callback counters
     int _n_result = 0;
+    FileSearchResultCallback _cb;
 
-    static oc::result<FileSearchAction> _result_cb(File &file, void *userdata,
-                                                   uint64_t offset)
+    FileSearchTest()
+        : _cb(std::bind(&FileSearchTest::_result_cb, this,
+                        std::placeholders::_1, std::placeholders::_2))
+    {
+    }
+
+    oc::result<FileSearchAction> _result_cb(File &file, uint64_t offset)
     {
         (void) file;
         (void) offset;
 
-        FileSearchTest *test = static_cast<FileSearchTest *>(userdata);
-        ++test->_n_result;
+        ++_n_result;
 
         return FileSearchAction::Continue;
     }
@@ -340,7 +345,7 @@ TEST_F(FileSearchTest, CheckInvalidBoundariesFail)
     MemoryFile file(const_cast<char *>(""), 0);
     ASSERT_TRUE(file.is_open());
 
-    auto result = file_search(file, 20, 10, 0, "x", 1, {}, &_result_cb, this);
+    auto result = file_search(file, 20, 10, 0, "x", 1, {}, _cb);
     ASSERT_FALSE(result);
     ASSERT_EQ(result.error(), FileError::ArgumentOutOfRange);
 }
@@ -350,7 +355,7 @@ TEST_F(FileSearchTest, CheckZeroMaxMatches)
     MemoryFile file(const_cast<char *>(""), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, 0, &_result_cb, this));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, 0, _cb));
 }
 
 TEST_F(FileSearchTest, CheckZeroPatternSize)
@@ -358,8 +363,7 @@ TEST_F(FileSearchTest, CheckZeroPatternSize)
     MemoryFile file(const_cast<char *>(""), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, {}, {}, 0, nullptr, 0, {}, &_result_cb,
-                            this));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, nullptr, 0, {}, _cb));
 }
 
 TEST_F(FileSearchTest, CheckBufferSize)
@@ -368,15 +372,15 @@ TEST_F(FileSearchTest, CheckBufferSize)
     ASSERT_TRUE(file.is_open());
 
     // Auto buffer size
-    ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, {}, &_result_cb, this));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, {}, _cb));
 
     // Too small
-    auto result = file_search(file, {}, {}, 1, "xxx", 3, {}, &_result_cb, this);
+    auto result = file_search(file, {}, {}, 1, "xxx", 3, {}, _cb);
     ASSERT_FALSE(result);
     ASSERT_EQ(result.error(), FileError::ArgumentOutOfRange);
 
     // Equal to pattern size
-    ASSERT_TRUE(file_search(file, {}, {}, 1, "x", 1, {}, &_result_cb, this));
+    ASSERT_TRUE(file_search(file, {}, {}, 1, "x", 1, {}, _cb));
 }
 
 TEST_F(FileSearchTest, FindNormal)
@@ -384,7 +388,7 @@ TEST_F(FileSearchTest, FindNormal)
     MemoryFile file(const_cast<char *>("abc"), 3);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, {}, {}, 0, "a", 1, {}, &_result_cb, this));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, "a", 1, {}, _cb));
 }
 
 TEST(FileMoveTest, DegenerateCasesShouldSucceed)

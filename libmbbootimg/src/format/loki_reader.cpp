@@ -275,16 +275,15 @@ LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
     if (loki_hdr.ramdisk_addr != 0) {
         uint64_t offset = 0;
 
-        auto result_cb = [](File &file_, void *userdata, uint64_t offset_)
+        auto result_cb = [&](File &file_, uint64_t offset_)
                 -> oc::result<FileSearchAction> {
             (void) file_;
-            auto offset_ptr = static_cast<uint64_t *>(userdata);
-            *offset_ptr = offset_;
+            offset = offset_;
             return FileSearchAction::Continue;
         };
 
         auto ret = file_search(file, {}, {}, 0, LOKI_SHELLCODE,
-                               LOKI_SHELLCODE_SIZE - 9, 1, result_cb, &offset);
+                               LOKI_SHELLCODE_SIZE - 9, 1, result_cb);
         if (!ret) {
             if (file.is_fatal()) { reader.set_fatal(); }
             return ret.as_failure();
@@ -373,13 +372,12 @@ LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
     SearchResult result = {};
 
     // Find first result with flags == 0x00 and flags == 0x08
-    auto result_cb = [](File &file_, void *userdata, uint64_t offset)
+    auto result_cb = [&](File &file_, uint64_t offset)
             -> oc::result<FileSearchAction> {
-        auto result_ = static_cast<SearchResult *>(userdata);
         unsigned char flags;
 
         // Stop early if possible
-        if (result_->flag0_offset && result_->flag8_offset) {
+        if (result.flag0_offset && result.flag8_offset) {
             return FileSearchAction::Stop;
         }
 
@@ -399,10 +397,10 @@ LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
             }
         }
 
-        if (!result_->flag0_offset && flags == 0x00) {
-            result_->flag0_offset = offset;
-        } else if (!result_->flag8_offset && flags == 0x08) {
-            result_->flag8_offset = offset;
+        if (!result.flag0_offset && flags == 0x00) {
+            result.flag0_offset = offset;
+        } else if (!result.flag8_offset && flags == 0x08) {
+            result.flag8_offset = offset;
         }
 
         // Restore original position as per contract
@@ -412,7 +410,7 @@ LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
     };
 
     auto ret = file_search(file, start_offset, {}, 0, gzip_deflate_magic,
-                           sizeof(gzip_deflate_magic), {}, result_cb, &result);
+                           sizeof(gzip_deflate_magic), {}, result_cb);
     if (!ret) {
         if (file.is_fatal()) { reader.set_fatal(); }
         return ret.as_failure();
