@@ -323,12 +323,11 @@ static bool load_block_devs()
     return true;
 }
 
-static mb::oc::result<size_t> cb_zip_read(mb::File &file, void *userdata,
+static mb::oc::result<size_t> cb_zip_read(archive *a, mb::File &file,
                                           void *buf, size_t size)
 {
     (void) file;
 
-    archive *a = static_cast<archive *>(userdata);
     uint64_t total = 0;
 
     while (size > 0) {
@@ -352,6 +351,8 @@ static mb::oc::result<size_t> cb_zip_read(mb::File &file, void *userdata,
 static ExtractResult extract_sparse_file(const char *zip_filename,
                                          const char *out_filename)
 {
+    using namespace std::placeholders;
+
     ScopedArchive a{archive_read_new(), &archive_read_free};
     mb::CallbackFile file;
     mb::sparse::SparseFile sparse_file;
@@ -372,8 +373,9 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
         return result;
     }
 
-    auto open_ret = file.open(nullptr, nullptr, &cb_zip_read, nullptr, nullptr,
-                              nullptr, a.get());
+    auto open_ret = file.open(nullptr, nullptr,
+                              std::bind(cb_zip_read, a.get(), _1, _2, _3),
+                              nullptr, nullptr, nullptr);
     if (!open_ret) {
         error("Failed to open sparse file in zip: %s",
               open_ret.error().message().c_str());
