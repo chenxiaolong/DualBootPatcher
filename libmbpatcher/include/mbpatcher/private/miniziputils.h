@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -61,13 +62,11 @@ public:
     static bool copy_file_raw(void *source_handle,
                               void *target_handle,
                               const std::string &name,
-                              void (*cb)(uint64_t bytes, void *),
-                              void *userdata);
+                              const std::function<void(uint64_t bytes)> &cb);
 
     static bool read_to_memory(void *handle,
                                std::vector<unsigned char> &output,
-                               void (*cb)(uint64_t bytes, void *),
-                               void *userdata);
+                               const std::function<void(uint64_t bytes)> &cb);
 
     static bool extract_file(void *handle,
                              const std::string &directory);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -35,10 +35,10 @@ MB_EXPORT /* enum ErrorCode */ int mbpatcher_patcher_error(const CPatcher *patch
 MB_EXPORT char * mbpatcher_patcher_id(const CPatcher *patcher);
 MB_EXPORT void mbpatcher_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info);
 MB_EXPORT bool mbpatcher_patcher_patch_file(CPatcher *patcher,
-                                            ProgressUpdatedCallback progressCb,
-                                      FilesUpdatedCallback filesCb,
-                                      DetailsUpdatedCallback detailsCb,
-                                      void *userData);
+                                            ProgressUpdatedCallback progress_cb,
+                                      FilesUpdatedCallback files_cb,
+                                      DetailsUpdatedCallback details_cb,
+                                      void *userdata);
 MB_EXPORT void mbpatcher_patcher_cancel_patching(CPatcher *patcher);
 
 

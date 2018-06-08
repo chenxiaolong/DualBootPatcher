@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -73,7 +73,6 @@ OdinPatcher::OdinPatcher(PatcherConfig &pc)
     , m_added_files()
     , m_progress_cb()
     , m_details_cb()
-    , m_userdata()
     , m_a_input(nullptr)
     , m_z_output(nullptr)
 {
@@ -101,10 +100,9 @@ void OdinPatcher::cancel_patching()
     m_cancelled = true;
 }
 
-bool OdinPatcher::patch_file(ProgressUpdatedCallback progress_cb,
-                             FilesUpdatedCallback files_cb,
-                             DetailsUpdatedCallback details_cb,
-                             void *userdata)
+bool OdinPatcher::patch_file(const ProgressUpdatedCallback &progress_cb,
+                             const FilesUpdatedCallback &files_cb,
+                             const DetailsUpdatedCallback &details_cb)
 {
     (void) files_cb;
 
@@ -112,9 +110,8 @@ bool OdinPatcher::patch_file(ProgressUpdatedCallback progress_cb,
 
     assert(m_info != nullptr);
 
-    m_progress_cb = progress_cb;
-    m_details_cb = details_cb;
-    m_userdata = userdata;
+    m_progress_cb = &progress_cb;
+    m_details_cb = &details_cb;
 
     m_old_bytes = 0;
     m_bytes = 0;
@@ -124,7 +121,6 @@ bool OdinPatcher::patch_file(ProgressUpdatedCallback progress_cb,
 
     m_progress_cb = nullptr;
     m_details_cb = nullptr;
-    m_userdata = nullptr;
 
     if (m_a_input != nullptr) {
         close_input_archive();
@@ -607,7 +603,7 @@ bool OdinPatcher::close_output_archive()
 
 void OdinPatcher::update_progress(uint64_t bytes, uint64_t max_bytes)
 {
-    if (m_progress_cb) {
+    if (m_progress_cb && *m_progress_cb) {
         bool should_call = true;
         if (max_bytes > 0) {
             // Rate limit... call back only if percentage exceeds 0.01%
@@ -620,7 +616,7 @@ void OdinPatcher::update_progress(uint64_t bytes, uint64_t max_bytes)
             }
         }
         if (should_call) {
-            m_progress_cb(bytes, max_bytes, m_userdata);
+            (*m_progress_cb)(bytes, max_bytes);
             m_old_bytes = bytes;
         }
     }
@@ -628,8 +624,8 @@ void OdinPatcher::update_progress(uint64_t bytes, uint64_t max_bytes)
 
 void OdinPatcher::update_details(const std::string &msg)
 {
-    if (m_details_cb) {
-        m_details_cb(msg, m_userdata);
+    if (m_details_cb && *m_details_cb) {
+        (*m_details_cb)(msg);
     }
 }
 

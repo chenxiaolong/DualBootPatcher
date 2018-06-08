@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -62,7 +62,6 @@ ZipPatcher::ZipPatcher(PatcherConfig &pc)
     , m_progress_cb(nullptr)
     , m_files_cb(nullptr)
     , m_details_cb(nullptr)
-    , m_userdata(nullptr)
     , m_z_input(nullptr)
     , m_z_output(nullptr)
 {
@@ -90,19 +89,17 @@ void ZipPatcher::cancel_patching()
     m_cancelled = true;
 }
 
-bool ZipPatcher::patch_file(ProgressUpdatedCallback progress_cb,
-                            FilesUpdatedCallback files_cb,
-                            DetailsUpdatedCallback details_cb,
-                            void *userdata)
+bool ZipPatcher::patch_file(const ProgressUpdatedCallback &progress_cb,
+                            const FilesUpdatedCallback &files_cb,
+                            const DetailsUpdatedCallback &details_cb)
 {
     m_cancelled = false;
 
     assert(m_info != nullptr);
 
-    m_progress_cb = progress_cb;
-    m_files_cb = files_cb;
-    m_details_cb = details_cb;
-    m_userdata = userdata;
+    m_progress_cb = &progress_cb;
+    m_files_cb = &files_cb;
+    m_details_cb = &details_cb;
 
     m_bytes = 0;
     m_max_bytes = 0;
@@ -114,7 +111,6 @@ bool ZipPatcher::patch_file(ProgressUpdatedCallback progress_cb,
     m_progress_cb = nullptr;
     m_files_cb = nullptr;
     m_details_cb = nullptr;
-    m_userdata = nullptr;
 
     for (auto *p : m_auto_patchers) {
         m_pc.destroy_auto_patcher(p);
@@ -313,6 +309,8 @@ bool ZipPatcher::patch_zip()
 bool ZipPatcher::pass1(const std::string &temporary_dir,
                        const std::unordered_set<std::string> &exclude)
 {
+    using namespace std::placeholders;
+
     void *h_in = MinizipUtils::ctx_get_zip_handle(m_z_input);
     void *h_out = MinizipUtils::ctx_get_zip_handle(m_z_output);
 
@@ -353,8 +351,8 @@ bool ZipPatcher::pass1(const std::string &temporary_dir,
                 cur_file = "META-INF/com/google/android/update-binary.orig";
             }
 
-            if (!MinizipUtils::copy_file_raw(
-                    h_in, h_out, cur_file, &la_progress_cb, this)) {
+            if (!MinizipUtils::copy_file_raw(h_in, h_out, cur_file,
+                    std::bind(&ZipPatcher::la_progress_cb, this, _1))) {
                 LOGW("minizip: Failed to copy raw data: %s", cur_file.c_str());
                 m_error = ErrorCode::ArchiveWriteDataError;
                 return false;
@@ -487,29 +485,28 @@ void ZipPatcher::close_output_archive()
 
 void ZipPatcher::update_progress(uint64_t bytes, uint64_t max_bytes)
 {
-    if (m_progress_cb) {
-        m_progress_cb(bytes, max_bytes, m_userdata);
+    if (m_progress_cb && *m_progress_cb) {
+        (*m_progress_cb)(bytes, max_bytes);
     }
 }
 
 void ZipPatcher::update_files(uint64_t files, uint64_t max_files)
 {
-    if (m_files_cb) {
-        m_files_cb(files, max_files, m_userdata);
+    if (m_files_cb && *m_files_cb) {
+        (*m_files_cb)(files, max_files);
     }
 }
 
 void ZipPatcher::update_details(const std::string &msg)
 {
-    if (m_details_cb) {
-        m_details_cb(msg, m_userdata);
+    if (m_details_cb && *m_details_cb) {
+        (*m_details_cb)(msg);
     }
 }
 
-void ZipPatcher::la_progress_cb(uint64_t bytes, void *userdata)
+void ZipPatcher::la_progress_cb(uint64_t bytes)
 {
-    auto *p = static_cast<ZipPatcher *>(userdata);
-    p->update_progress(p->m_bytes + bytes, p->m_max_bytes);
+    update_progress(m_bytes + bytes, m_max_bytes);
 }
 
 std::string ZipPatcher::create_info_prop(const std::string &rom_id)

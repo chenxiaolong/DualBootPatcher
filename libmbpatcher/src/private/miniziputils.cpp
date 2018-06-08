@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -212,8 +212,7 @@ ErrorCode MinizipUtils::archive_stats(const std::string &path,
 bool MinizipUtils::copy_file_raw(void *source_handle,
                                  void *target_handle,
                                  const std::string &name,
-                                 void (*cb)(uint64_t bytes, void *),
-                                 void *userdata)
+                                 const std::function<void(uint64_t bytes)> &cb)
 {
     mz_zip_file *file_info;
 
@@ -264,8 +263,7 @@ bool MinizipUtils::copy_file_raw(void *source_handle,
             ratio = static_cast<double>(bytes)
                     / static_cast<double>(file_info->compressed_size);
             cb(static_cast<uint64_t>(
-                    ratio * static_cast<double>(file_info->uncompressed_size)),
-               userdata);
+                    ratio * static_cast<double>(file_info->uncompressed_size)));
         }
 
         int n_written = mz_zip_entry_write(
@@ -302,8 +300,7 @@ bool MinizipUtils::copy_file_raw(void *source_handle,
 
 bool MinizipUtils::read_to_memory(void *handle,
                                   std::vector<unsigned char> &output,
-                                  void (*cb)(uint64_t bytes, void *),
-                                  void *userdata)
+                                  const std::function<void(uint64_t bytes)> &cb)
 {
     mz_zip_file *file_info;
 
@@ -331,8 +328,7 @@ bool MinizipUtils::read_to_memory(void *handle,
 
     while ((n = mz_zip_entry_read(handle, buf, sizeof(buf))) > 0) {
         if (cb) {
-            cb(static_cast<uint64_t>(data.size()) + static_cast<uint64_t>(n),
-               userdata);
+            cb(static_cast<uint64_t>(data.size()) + static_cast<uint64_t>(n));
         }
 
         data.insert(data.end(), buf, buf + n);

@@ -96,9 +96,8 @@ static bool get_device(const char *path, mb::device::Device &device)
     return true;
 }
 
-static void mbp_progress_cb(uint64_t bytes, uint64_t maxBytes, void *userdata)
+static void mbp_progress_cb(uint64_t bytes, uint64_t maxBytes)
 {
-    (void) userdata;
     printf("Current bytes percentage: %.1f\n",
            100.0 * static_cast<double>(bytes) / static_cast<double>(maxBytes));
 }
@@ -140,7 +139,7 @@ int main(int argc, char *argv[]) {
     }
 
     patcher->set_file_info(&fi);
-    bool ret = patcher->patch_file(&mbp_progress_cb, nullptr, nullptr, nullptr);
+    bool ret = patcher->patch_file(&mbp_progress_cb, nullptr, nullptr);
 
     if (!ret) {
         fprintf(stderr, "Error: %d\n", static_cast<int>(patcher->error()));
