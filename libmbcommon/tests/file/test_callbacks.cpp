@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -35,73 +35,81 @@ struct FileCallbacksTest : testing::Test
     unsigned int _n_seek_cb = 0;
     unsigned int _n_truncate_cb = 0;
 
-    static oc::result<void> _open_cb(File &file, void *userdata)
+    CallbackFile::OpenCb _open;
+    CallbackFile::CloseCb _close;
+    CallbackFile::ReadCb _read;
+    CallbackFile::WriteCb _write;
+    CallbackFile::SeekCb _seek;
+    CallbackFile::TruncateCb _truncate;
+
+    FileCallbacksTest()
+    {
+        using namespace std::placeholders;
+        _open = std::bind(&FileCallbacksTest::_open_cb, this, _1);
+        _close = std::bind(&FileCallbacksTest::_close_cb, this, _1);
+        _read = std::bind(&FileCallbacksTest::_read_cb, this, _1, _2, _3);
+        _write = std::bind(&FileCallbacksTest::_write_cb, this, _1, _2, _3);
+        _seek = std::bind(&FileCallbacksTest::_seek_cb, this, _1, _2, _3);
+        _truncate = std::bind(&FileCallbacksTest::_truncate_cb, this, _1, _2);
+    }
+
+    oc::result<void> _open_cb(File &file)
     {
         (void) file;
 
-        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
-        ++ctx->_n_open_cb;
+        ++_n_open_cb;
 
         return oc::success();
     }
 
-    static oc::result<void> _close_cb(File &file, void *userdata)
+    oc::result<void> _close_cb(File &file)
     {
         (void) file;
 
-        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
-        ++ctx->_n_close_cb;
+        ++_n_close_cb;
 
         return oc::success();
     }
 
-    static oc::result<size_t> _read_cb(File &file, void *userdata,
-                                       void *buf, size_t size)
+    oc::result<size_t> _read_cb(File &file, void *buf, size_t size)
     {
         (void) file;
         (void) buf;
         (void) size;
 
-        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
-        ++ctx->_n_read_cb;
+        ++_n_read_cb;
 
         return std::error_code{};
     }
 
-    static oc::result<size_t> _write_cb(File &file, void *userdata,
-                                        const void *buf, size_t size)
+    oc::result<size_t> _write_cb(File &file, const void *buf, size_t size)
     {
         (void) file;
         (void) buf;
         (void) size;
 
-        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
-        ++ctx->_n_write_cb;
+        ++_n_write_cb;
 
         return std::error_code{};
     }
 
-    static oc::result<uint64_t> _seek_cb(File &file, void *userdata,
-                                         int64_t offset, int whence)
+    oc::result<uint64_t> _seek_cb(File &file, int64_t offset, int whence)
     {
         (void) file;
         (void) offset;
         (void) whence;
 
-        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
-        ++ctx->_n_seek_cb;
+        ++_n_seek_cb;
 
         return std::error_code{};
     }
 
-    static oc::result<void> _truncate_cb(File &file, void *userdata,
-                                         uint64_t size)
+    oc::result<void> _truncate_cb(File &file, uint64_t size)
     {
         (void) file;
         (void) size;
 
-        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
-        ++ctx->_n_truncate_cb;
+        ++_n_truncate_cb;
 
         return std::error_code{};
     }
@@ -109,8 +117,7 @@ struct FileCallbacksTest : testing::Test
 
 TEST_F(FileCallbacksTest, CheckCallbackConstructorWorks)
 {
-    CallbackFile file(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                      _truncate_cb, this);
+    CallbackFile file(_open, _close, _read, _write, _seek, _truncate);
 
     ASSERT_TRUE(file.is_open());
     ASSERT_FALSE(file.read(nullptr, 0));
@@ -131,8 +138,7 @@ TEST_F(FileCallbacksTest, CheckOpenFunctionWorks)
 {
     CallbackFile file;
 
-    ASSERT_TRUE(file.open(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                          _truncate_cb, this));
+    ASSERT_TRUE(file.open(_open, _close, _read, _write, _seek, _truncate));
     ASSERT_FALSE(file.read(nullptr, 0));
     ASSERT_FALSE(file.write(nullptr, 0));
     ASSERT_FALSE(file.seek(0, SEEK_SET));
@@ -151,19 +157,15 @@ TEST_F(FileCallbacksTest, CheckReopenWorks)
 {
     CallbackFile file;
 
-    ASSERT_TRUE(file.open(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                          _truncate_cb, this));
+    ASSERT_TRUE(file.open(_open, _close, _read, _write, _seek, _truncate));
     ASSERT_TRUE(file.close());
-    ASSERT_TRUE(file.open(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                          _truncate_cb, this));
+    ASSERT_TRUE(file.open(_open, _close, _read, _write, _seek, _truncate));
 }
 
 TEST_F(FileCallbacksTest, CheckMoveOpensAndClosesProperly)
 {
-    CallbackFile file1(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                       _truncate_cb, this);
-    CallbackFile file2(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                       _truncate_cb, this);
+    CallbackFile file1(_open, _close, _read, _write, _seek, _truncate);
+    CallbackFile file2(_open, _close, _read, _write, _seek, _truncate);
 
     ASSERT_TRUE(file1.is_open());
     ASSERT_TRUE(file2.is_open());
@@ -177,8 +179,7 @@ TEST_F(FileCallbacksTest, CheckMoveOpensAndClosesProperly)
 
 TEST_F(FileCallbacksTest, CheckMoveConstructor)
 {
-    CallbackFile file1(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                       _truncate_cb, this);
+    CallbackFile file1(_open, _close, _read, _write, _seek, _truncate);
     ASSERT_TRUE(file1.is_open());
     ASSERT_EQ(_n_open_cb, 1u);
 
@@ -192,8 +193,7 @@ TEST_F(FileCallbacksTest, CheckMoveConstructor)
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), FileError::InvalidState);
 
-    file1 = CallbackFile(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                         _truncate_cb, this);
+    file1 = CallbackFile(_open, _close, _read, _write, _seek, _truncate);
     ASSERT_TRUE(file1.is_open());
     ASSERT_EQ(_n_open_cb, 2u);
     ASSERT_EQ(_n_close_cb, 0u);
@@ -201,10 +201,8 @@ TEST_F(FileCallbacksTest, CheckMoveConstructor)
 
 TEST_F(FileCallbacksTest, CheckMoveAssignment)
 {
-    CallbackFile file1(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                       _truncate_cb, this);
-    CallbackFile file2(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                       _truncate_cb, this);
+    CallbackFile file1(_open, _close, _read, _write, _seek, _truncate);
+    CallbackFile file2(_open, _close, _read, _write, _seek, _truncate);
     ASSERT_TRUE(file1.is_open());
     ASSERT_TRUE(file2.is_open());
     ASSERT_EQ(_n_open_cb, 2u);
@@ -221,8 +219,7 @@ TEST_F(FileCallbacksTest, CheckMoveAssignment)
     ASSERT_EQ(ret.error(), FileError::InvalidState);
 
     // Bring File1 back to life
-    file1 = CallbackFile(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
-                         _truncate_cb, this);
+    file1 = CallbackFile(_open, _close, _read, _write, _seek, _truncate);
     ASSERT_EQ(_n_open_cb, 3u);
     ASSERT_EQ(_n_close_cb, 1u);
 }
