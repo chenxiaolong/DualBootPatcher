@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -34,11 +34,67 @@
 namespace mb
 {
 
+static void print_prop(std::string_view key, std::string_view value)
+{
+    if (!key.empty()) {
+        fwrite(key.data(), 1, key.size(), stdout);
+        fputc('=', stdout);
+    }
+    fwrite(value.data(), 1, value.size(), stdout);
+    fputc('\n', stdout);
+}
+
+static bool set_if_possible(const std::string &key, const std::string &value,
+                            bool force)
+{
+    bool ret;
+
+    if (force) {
+        ret = util::property_set_direct(key, value);
+    } else {
+        if (auto r = util::property_get(key); r && starts_with(key, "ro.")) {
+            fprintf(stderr, "Cannot overwrite read-only property '%s'"
+                    " without -f/--force\n", key.c_str());
+            return false;
+        }
+
+        ret = util::property_set(key, value);
+    }
+
+    if (!ret) {
+        fprintf(stderr, "Failed to set property '%s'='%s'\n",
+                key.c_str(), value.c_str());
+        return false;
+    }
+
+    return true;
+}
+
+static bool load_prop_file(const char *path, bool force)
+{
+    bool ret = true;
+
+    if (!util::property_file_iter(path, {}, [&](std::string_view key,
+                                                std::string_view value) {
+        if (!set_if_possible(std::string(key), std::string(value), force)) {
+            ret = false;
+        }
+
+        return util::PropertyIterAction::Continue;
+    })) {
+        fprintf(stderr, "%s: Failed to load properties file\n", path);
+        return false;
+    }
+
+    return ret;
+}
+
 static void properties_usage(FILE *stream)
 {
     fprintf(stream,
             "Usage: properties get <property>\n"
             "   OR: properties set <property> <value> [--force]\n"
+            "   OR: properties set-file <file> [--force]\n"
             "\n"
             "Options:\n"
             "  -f, --force     Allow overwriting read-only properties\n");
@@ -89,17 +145,11 @@ int properties_main(int argc, char *argv[])
         if (argc - optind == 0) {
             util::property_iter([](std::string_view key,
                                    std::string_view value) {
-                fwrite(key.data(), 1, key.size(), stdout);
-                fputc('=', stdout);
-                fwrite(value.data(), 1, value.size(), stdout);
-                fputc('\n', stdout);
+                print_prop(key, value);
                 return util::PropertyIterAction::Continue;
             });
         } else if (argc - optind == 1) {
-            std::string value = util::property_get_string(argv[optind], {});
-
-            fputs(value.c_str(), stdout);
-            fputc('\n', stdout);
+            print_prop({}, util::property_get_string(argv[optind], {}));
         } else {
             properties_usage(stderr);
             return EXIT_FAILURE;
@@ -112,23 +162,19 @@ int properties_main(int argc, char *argv[])
 
         const char *key = argv[optind];
         const char *value = argv[optind + 1];
-        bool ret;
 
-        if (force) {
-            ret = util::property_set_direct(key, value);
-        } else {
-            if (auto r = util::property_get(key);
-                    r && starts_with(key, "ro.")) {
-                fprintf(stderr, "Cannot overwrite read-only property '%s'"
-                        " without -f/--force\n", key);
-                return EXIT_FAILURE;
-            }
-
-            ret = util::property_set(key, value);
+        if (!set_if_possible(key, value, force)) {
+            return EXIT_FAILURE;
+        }
+    } else if (strcmp(action, "set-file") == 0) {
+        if (argc - optind != 1) {
+            properties_usage(stderr);
+            return EXIT_FAILURE;
         }
 
-        if (!ret) {
-            fprintf(stderr, "Failed to set property '%s'='%s'\n", key, value);
+        const char *path = argv[optind];
+
+        if (!load_prop_file(path, force)) {
             return EXIT_FAILURE;
         }
     } else {
