@@ -32,7 +32,6 @@
 
   boot_ui:
     supported: true
-    flags:
     graphics_backends:
       - fbdev
     pixel_format: RGBA_8888
