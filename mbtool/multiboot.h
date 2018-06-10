@@ -34,6 +34,7 @@
 #define PACKAGES_XML                    "/data/system/packages.xml"
 
 #define DEFAULT_PROP_PATH               "/default.prop"
+#define DBP_PROP_PATH                   "/dbp.prop"
 
 #define DEVICE_JSON_PATH                "/device.json"
 

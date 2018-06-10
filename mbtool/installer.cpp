@@ -1874,7 +1874,8 @@ Installer::ProceedState Installer::install_stage_finish()
 
     std::vector<std::function<RamdiskPatcherFn>> rps{
         rp_write_rom_id(_rom->id),
-        rp_patch_default_prop(_detected_device, _use_fuse_exfat),
+        rp_restore_default_prop(),
+        rp_add_dbp_prop(_detected_device, _use_fuse_exfat),
         rp_add_binaries(_temp + "/binaries"),
         rp_symlink_fuse_exfat(),
         rp_symlink_init(),
