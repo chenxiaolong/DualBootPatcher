@@ -339,13 +339,6 @@ std::shared_ptr<Rom> Roms::get_current_rom()
 
     // This is set if mbtool is handling the boot process
     std::string prop_id = util::property_get_string(PROP_MULTIBOOT_ROM_ID, {});
-    // This is necessary for the daemon to get a correct result before Android
-    // boots (eg. for the boot UI)
-    if (prop_id.empty()) {
-        prop_id = util::property_file_get_string(
-                DEFAULT_PROP_PATH, PROP_MULTIBOOT_ROM_ID, {});
-    }
-
     if (!prop_id.empty()) {
         auto rom = roms.find_by_id(prop_id);
         if (rom) {
@@ -355,10 +348,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
 
     // If /raw/ or /raw-system/ does not exist, then this is an unpatched
     // primary ROM
-    struct stat sb;
-    bool has_raw = stat("/raw", &sb) == 0;
-    bool has_raw_system = stat("/raw-system", &sb) == 0;
-    if (!has_raw && !has_raw_system) {
+    if (struct stat sb; stat("/raw", &sb) < 0) {
         // Cache the result
         util::property_set(PROP_MULTIBOOT_ROM_ID, "primary");
 
@@ -366,8 +356,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
     }
 
     // Otherwise, iterate through the installed ROMs
-
-    if (stat("/system/build.prop", &sb) == 0) {
+    if (struct stat sb; stat("/system/build.prop", &sb) == 0) {
         for (auto rom : roms.roms) {
             // We can't check roms that use images since they aren't mounted
             if (rom->system_is_image) {
@@ -381,8 +370,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
 
             path += "/build.prop";
 
-            struct stat sb2;
-            if (stat(path.c_str(), &sb2) == 0
+            if (struct stat sb2; stat(path.c_str(), &sb2) == 0
                     && sb.st_dev == sb2.st_dev
                     && sb.st_ino == sb2.st_ino) {
                 // Cache the result

@@ -46,6 +46,8 @@ public:
     void load_boot_props();
     void load_system_props();
 
+    bool load_properties_file(const std::string &path, std::string_view filter);
+
 private:
     bool m_initialized;
     int m_setter_fd;
@@ -61,6 +63,4 @@ private:
     void socket_handle_set_property_impl(SocketConnection &socket,
                                          const std::string &name,
                                          std::string_view value, bool legacy);
-
-    bool load_properties_file(const std::string &path, std::string_view filter);
 };
