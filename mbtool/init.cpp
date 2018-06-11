@@ -241,6 +241,9 @@ static bool properties_setup()
     // Load /default.prop
     g_property_service.load_boot_props();
 
+    // Load DBP props
+    g_property_service.load_properties_file(DBP_PROP_PATH, {});
+
     // Start properties service (to allow other processes to set properties)
     if (!g_property_service.start_thread()) {
         LOGW("Failed to start properties service");
@@ -507,6 +510,12 @@ static bool add_mbtool_services(bool enable_appsync)
             "    user root\n"
             "    oneshot\n"
             "    seclabel " MB_EXEC_CONTEXT "\n"
+            "\n"
+            "service mbtoolprops /mbtool properties set-file " DBP_PROP_PATH "\n"
+            "    class core\n"
+            "    user root\n"
+            "    oneshot\n"
+            "    seclabel " MB_EXEC_CONTEXT "\n"
             "\n";
     static const char *appsync_service =
             "service appsync /mbtool appsync\n"
@@ -634,28 +643,12 @@ static bool strip_manual_mounts()
     return true;
 }
 
-static bool add_props_to_default_prop()
+static bool add_props_to_dbp_prop()
 {
-    ScopedFILE fp(fopen(DEFAULT_PROP_PATH, "r+be"), fclose);
+    ScopedFILE fp(fopen(DBP_PROP_PATH, "abe"), fclose);
     if (!fp) {
-        if (errno == ENOENT) {
-            return true;
-        } else {
-            LOGE("%s: Failed to open file: %s",
-                 DEFAULT_PROP_PATH, strerror(errno));
-            return false;
-        }
-    }
-
-    // Add newline if the last character isn't already one
-    if (std::fseek(fp.get(), -1, SEEK_END) == 0) {
-        char lastchar;
-        if (std::fread(&lastchar, 1, 1, fp.get()) == 1 && lastchar != '\n') {
-            fputs("\n", fp.get());
-        }
-    } else if (std::fseek(fp.get(), 0, SEEK_END) < 0) {
-        LOGE("%s: Failed to seek to end of file: %s",
-             DEFAULT_PROP_PATH, strerror(errno));
+        LOGE("%s: Failed to open file: %s",
+             DBP_PROP_PATH, strerror(errno));
         return false;
     }
 
@@ -1193,7 +1186,7 @@ int init_main(int argc, char *argv[])
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
     symlink_base_dir(device);
 
-    add_props_to_default_prop();
+    add_props_to_dbp_prop();
 
     // initialize properties
     properties_setup();

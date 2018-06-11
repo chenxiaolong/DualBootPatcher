@@ -377,8 +377,7 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
         use_fuse_exfat = true;
     }
 
-    std::string value = util::property_file_get_string(
-            DEFAULT_PROP_PATH, PROP_USE_FUSE_EXFAT, "");
+    std::string value = util::property_get_string(PROP_USE_FUSE_EXFAT, "");
     if (!value.empty()) {
         LOGD("fuse-exfat override: %s", value.c_str());
         if (value == "true") {

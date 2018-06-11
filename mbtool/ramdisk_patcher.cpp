@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,6 +20,7 @@
 #include "ramdisk_patcher.h"
 
 #include <algorithm>
+#include <memory>
 
 #include <cerrno>
 #include <cstdio>
@@ -43,33 +44,33 @@
 namespace mb
 {
 
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+
 static bool _rp_write_rom_id(const std::string &dir, const std::string &rom_id)
 {
     std::string path(dir);
     path += "/romid";
 
-    FILE *fp = fopen(path.c_str(), "wbe");
+    ScopedFILE fp(fopen(path.c_str(), "wbe"), fclose);
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), strerror(errno));
         return false;
     }
 
-    if (fputs(rom_id.c_str(), fp) == EOF) {
+    if (fputs(rom_id.c_str(), fp.get()) == EOF) {
         LOGE("%s: Failed to write ROM ID: %s",
              path.c_str(), strerror(errno));
-        fclose(fp);
         return false;
     }
 
-    if (fchmod(fileno(fp), 0664) < 0) {
+    if (fchmod(fileno(fp.get()), 0664) < 0) {
         LOGE("%s: Failed to chmod: %s",
              path.c_str(), strerror(errno));
-        fclose(fp);
         return false;
     }
 
-    if (fclose(fp) < 0) {
+    if (fclose(fp.release()) < 0) {
         LOGE("%s: Failed to close file: %s",
              path.c_str(), strerror(errno));
         return false;
@@ -86,12 +87,22 @@ rp_write_rom_id(const std::string &rom_id)
     return std::bind(_rp_write_rom_id, _1, rom_id);
 }
 
-static bool _rp_patch_default_prop(const std::string &dir,
-                                   const std::string &device_id,
-                                   bool use_fuse_exfat)
+static bool _rp_restore_default_prop(const std::string &dir)
 {
     std::string path(dir);
-    path += "/default.prop";
+    path += DEFAULT_PROP_PATH;
+
+    ScopedFILE fp_in(fopen(path.c_str(), "rbe"), fclose);
+    if (!fp_in) {
+        if (errno == ENOENT) {
+            LOGV("%s: Ignoring non-existent file", path.c_str());
+            return true;
+        } else {
+            LOGE("%s: Failed to open for reading: %s",
+                 path.c_str(), strerror(errno));
+            return false;
+        }
+    }
 
     std::string tmp_path = format("%s.XXXXXX", path.c_str());
 
@@ -110,18 +121,7 @@ static bool _rp_patch_default_prop(const std::string &dir,
         close(tmp_fd);
     });
 
-    FILE *fp_in = fopen(path.c_str(), "rbe");
-    if (!fp_in) {
-        LOGE("%s: Failed to open for reading: %s",
-             path.c_str(), strerror(errno));
-        return false;
-    }
-
-    auto close_fp_in = finally([&fp_in] {
-        fclose(fp_in);
-    });
-
-    FILE *fp_out = fdopen(tmp_fd, "wb");
+    ScopedFILE fp_out(fdopen(tmp_fd, "wb"), fclose);
     if (!fp_out) {
         LOGE("%s: Failed to open for writing: %s",
              tmp_path.c_str(), strerror(errno));
@@ -131,10 +131,6 @@ static bool _rp_patch_default_prop(const std::string &dir,
     // fp_out will automatically close the fd
     close_tmp_fd.dismiss();
 
-    auto close_fp_out = finally([&fp_out] {
-        fclose(fp_out);
-    });
-
     char *buf = nullptr;
     size_t buf_size = 0;
     ssize_t n;
@@ -143,13 +139,13 @@ static bool _rp_patch_default_prop(const std::string &dir,
         free(buf);
     });
 
-    while ((n = getline(&buf, &buf_size, fp_in)) >= 0) {
+    while ((n = getline(&buf, &buf_size, fp_in.get())) >= 0) {
         // Remove old multiboot properties
         if (starts_with(buf, "ro.patcher.")) {
             continue;
         }
 
-        if (fwrite(buf, 1, static_cast<size_t>(n), fp_out)
+        if (fwrite(buf, 1, static_cast<size_t>(n), fp_out.get())
                 != static_cast<size_t>(n)) {
             LOGE("%s: Failed to write file: %s",
                  tmp_path.c_str(), strerror(errno));
@@ -157,20 +153,8 @@ static bool _rp_patch_default_prop(const std::string &dir,
         }
     }
 
-    // Write new properties
-    if (fputc('\n', fp_out) == EOF
-            || fprintf(fp_out, PROP_DEVICE "=%s\n", device_id.c_str()) < 0
-            || fprintf(fp_out, PROP_USE_FUSE_EXFAT "=%s\n",
-                       use_fuse_exfat ? "true" : "false") < 0) {
-        LOGE("%s: Failed to write properties: %s",
-             tmp_path.c_str(), strerror(errno));
-        return false;
-    }
-
     // Manually close file to ensure we catch write errors
-    close_fp_out.dismiss();
-
-    if (fclose(fp_out) < 0) {
+    if (fclose(fp_out.release()) < 0) {
         LOGE("%s: Failed to close file: %s",
              tmp_path.c_str(), strerror(errno));
         return false;
@@ -184,11 +168,49 @@ static bool _rp_patch_default_prop(const std::string &dir,
 }
 
 std::function<RamdiskPatcherFn>
-rp_patch_default_prop(const std::string &device_id, bool use_fuse_exfat)
+rp_restore_default_prop()
+{
+    return _rp_restore_default_prop;
+}
+
+static bool _rp_add_dbp_prop(const std::string &dir,
+                             const std::string &device_id, bool use_fuse_exfat)
+{
+    std::string path(dir);
+    path += DBP_PROP_PATH;
+
+    ScopedFILE fp(fopen(path.c_str(), "wbe"), fclose);
+    if (!fp) {
+        LOGE("%s: Failed to open for writing: %s",
+             path.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Write new properties
+    if (fprintf(fp.get(), PROP_DEVICE "=%s\n", device_id.c_str()) < 0
+            || fprintf(fp.get(), PROP_USE_FUSE_EXFAT "=%s\n",
+                    use_fuse_exfat ? "true" : "false") < 0) {
+        LOGE("%s: Failed to write properties: %s",
+             path.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Manually close file to ensure we catch write errors
+    if (fclose(fp.release()) < 0) {
+        LOGE("%s: Failed to close file: %s",
+             path.c_str(), strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+std::function<RamdiskPatcherFn>
+rp_add_dbp_prop(const std::string &device_id, bool use_fuse_exfat)
 {
     using namespace std::placeholders;
 
-    return std::bind(_rp_patch_default_prop, _1, device_id, use_fuse_exfat);
+    return std::bind(_rp_add_dbp_prop, _1, device_id, use_fuse_exfat);
 }
 
 static bool _rp_add_binaries(const std::string &dir,
