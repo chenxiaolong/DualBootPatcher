@@ -183,26 +183,36 @@ oc::result<std::string> file_read_all(const std::string &path)
         return ec_from_errno();
     }
 
-    if (fseeko(fp.get(), 0, SEEK_END) < 0) {
-        return ec_from_errno();
-    }
-    auto size = ftello(fp.get());
-    if (size < 0) {
-        return ec_from_errno();
-    } else if (std::make_unsigned_t<decltype(size)>(size) > SIZE_MAX) {
-        return std::errc::result_out_of_range;
+    std::string data;
+
+    // Reduce allocations if possible
+    if (fseeko(fp.get(), 0, SEEK_END) == 0) {
+        auto size = ftello(fp.get());
+        if (size < 0) {
+            return ec_from_errno();
+        } else if (std::make_unsigned_t<decltype(size)>(size) > SIZE_MAX) {
+            return std::errc::result_out_of_range;
+        }
+
+        data.reserve(size);
     }
     if (fseeko(fp.get(), 0, SEEK_SET) < 0) {
         return ec_from_errno();
     }
 
-    std::string data(static_cast<size_t>(size), '\0');
+    char buf[8192];
 
-    if (fread(data.data(), data.size(), 1, fp.get()) != 1) {
-        if (ferror(fp.get())) {
-            return ec_from_errno();
-        } else {
-            return FileError::UnexpectedEof;
+    while (true) {
+        auto n = fread(buf, 1, sizeof(buf), fp.get());
+
+        data.insert(data.end(), buf, buf + n);
+
+        if (n < sizeof(buf)) {
+            if (ferror(fp.get())) {
+                return ec_from_errno();
+            } else {
+                break;
+            }
         }
     }
 
