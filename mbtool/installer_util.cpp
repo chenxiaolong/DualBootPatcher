@@ -130,7 +130,7 @@ bool InstallerUtil::unpack_ramdisk(const std::string &input_file,
         // Extract file
         ret = archive_read_extract2(ain.get(), entry, aout.get());
         if (ret != ARCHIVE_OK) {
-            LOGE("%s: %s", archive_entry_pathname(entry),
+            LOGE("%s: Failed to extract file: %s", path,
                  archive_error_string(ain.get()));
             return false;
         }
@@ -476,7 +476,8 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
         return true;
     }
 
-    std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
+    // Must not be a symlink or ARCHIVE_EXTRACT_SECURE_SYMLINKS will not work
+    std::string tmpdir("/tmp/mbtool.XXXXXX");
 
     if (!mkdtemp(tmpdir.data())) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
