@@ -338,10 +338,10 @@ public:
             generate_aroma_config(data.value());
 
             name = "META-INF/com/google/android/aroma-config";
-            bool ret = add_file(name, data.value());
+            bool ret = add_file_from_data(name, data.value());
             return ret ? Action::Ok : Action::Fail;
         } else {
-            bool ret = add_file(name, _curr->fts_accpath);
+            bool ret = add_file_from_path(name, _curr->fts_accpath);
             return ret ? Action::Ok : Action::Fail;
         }
     }
@@ -364,8 +364,7 @@ private:
     void *_handle;
     std::string _zippath;
 
-    bool add_file(const std::string &name,
-                  const std::vector<unsigned char> &contents)
+    bool add_file_from_data(const std::string &name, const std::string &data)
     {
         mz_zip_file file_info = {};
         file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
@@ -384,9 +383,9 @@ private:
         });
 
         // Write data to file
-        int n = mz_zip_entry_write(_handle, contents.data(),
-                                   static_cast<uint32_t>(contents.size()));
-        if (n < 0 || static_cast<size_t>(n) != contents.size()) {
+        int n = mz_zip_entry_write(_handle, data.data(),
+                                   static_cast<uint32_t>(data.size()));
+        if (n < 0 || static_cast<size_t>(n) != data.size()) {
             LOGW("minizip: Failed to write data (error code: %d): [memory]", ret);
             return false;
         }
@@ -402,7 +401,7 @@ private:
         return true;
     }
 
-    bool add_file(const std::string &name, const std::string &path)
+    bool add_file_from_path(const std::string &name, const std::string &path)
     {
         // Copy file into archive
         int fd = open64(path.c_str(), O_RDONLY);
