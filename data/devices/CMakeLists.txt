@@ -38,6 +38,7 @@ set(files
     meizu.yml
     motorola.yml
     nokia.yml
+    nextbit.yml
     nexus.yml
     nubia.yml
     oneplus.yml
