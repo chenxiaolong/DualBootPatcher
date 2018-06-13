@@ -64,20 +64,19 @@ public:
                               const std::string &name,
                               const std::function<void(uint64_t bytes)> &cb);
 
-    static bool read_to_memory(void *handle,
-                               std::vector<unsigned char> &output,
+    static bool read_to_memory(void *handle, std::string &output,
                                const std::function<void(uint64_t bytes)> &cb);
 
     static bool extract_file(void *handle,
                              const std::string &directory);
 
-    static ErrorCode add_file(void *handle,
-                              const std::string &name,
-                              const std::vector<unsigned char> &contents);
+    static ErrorCode add_file_from_data(void *handle,
+                                        const std::string &name,
+                                        const std::string &data);
 
-    static ErrorCode add_file(void *handle,
-                              const std::string &name,
-                              const std::string &path);
+    static ErrorCode add_file_from_path(void *handle,
+                                        const std::string &name,
+                                        const std::string &path);
 };
 
 }

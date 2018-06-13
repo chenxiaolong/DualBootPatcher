@@ -261,7 +261,8 @@ bool OdinPatcher::patch_tar()
 
         update_details(spec.target);
 
-        result = MinizipUtils::add_file(handle, spec.target, spec.source);
+        result = MinizipUtils::add_file_from_path(
+                handle, spec.target, spec.source);
         if (result != ErrorCode::NoError) {
             m_error = result;
             return false;
@@ -272,11 +273,9 @@ bool OdinPatcher::patch_tar()
 
     update_details("multiboot/info.prop");
 
-    const std::string info_prop =
-            ZipPatcher::create_info_prop(m_info->rom_id());
-    result = MinizipUtils::add_file(
+    result = MinizipUtils::add_file_from_data(
             handle, "multiboot/info.prop",
-            std::vector<unsigned char>(info_prop.begin(), info_prop.end()));
+            ZipPatcher::create_info_prop(m_info->rom_id()));
     if (result != ErrorCode::NoError) {
         m_error = result;
         return false;
@@ -292,9 +291,8 @@ bool OdinPatcher::patch_tar()
         return false;
     }
 
-    result = MinizipUtils::add_file(
-            handle, "multiboot/device.json",
-            std::vector<unsigned char>(json.begin(), json.end()));
+    result = MinizipUtils::add_file_from_data(
+            handle, "multiboot/device.json", json);
     if (result != ErrorCode::NoError) {
         m_error = result;
         return false;

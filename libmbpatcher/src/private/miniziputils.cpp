@@ -298,8 +298,7 @@ bool MinizipUtils::copy_file_raw(void *source_handle,
     return true;
 }
 
-bool MinizipUtils::read_to_memory(void *handle,
-                                  std::vector<unsigned char> &output,
+bool MinizipUtils::read_to_memory(void *handle, std::string &output,
                                   const std::function<void(uint64_t bytes)> &cb)
 {
     mz_zip_file *file_info;
@@ -310,7 +309,7 @@ bool MinizipUtils::read_to_memory(void *handle,
         return false;
     }
 
-    std::vector<unsigned char> data;
+    std::string data;
     data.reserve(static_cast<size_t>(file_info->uncompressed_size));
 
     ret = mz_zip_entry_read_open(handle, 0, nullptr);
@@ -428,9 +427,9 @@ bool MinizipUtils::extract_file(void *handle, const std::string &directory)
     return n == 0;
 }
 
-ErrorCode MinizipUtils::add_file(void *handle,
-                                 const std::string &name,
-                                 const std::vector<unsigned char> &contents)
+ErrorCode MinizipUtils::add_file_from_data(void *handle,
+                                           const std::string &name,
+                                           const std::string &data)
 {
     mz_zip_file file_info = {};
     file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
@@ -449,9 +448,9 @@ ErrorCode MinizipUtils::add_file(void *handle,
     });
 
     // Write data to file
-    int n = mz_zip_entry_write(handle, contents.data(),
-                               static_cast<uint32_t>(contents.size()));
-    if (n < 0 || static_cast<size_t>(n) != contents.size()) {
+    int n = mz_zip_entry_write(handle, data.data(),
+                               static_cast<uint32_t>(data.size()));
+    if (n < 0 || static_cast<size_t>(n) != data.size()) {
         LOGE("minizip: Failed to write inner file data");
         return ErrorCode::ArchiveWriteDataError;
     }
@@ -467,9 +466,9 @@ ErrorCode MinizipUtils::add_file(void *handle,
     return ErrorCode::NoError;
 }
 
-ErrorCode MinizipUtils::add_file(void *handle,
-                                 const std::string &name,
-                                 const std::string &path)
+ErrorCode MinizipUtils::add_file_from_path(void *handle,
+                                           const std::string &name,
+                                           const std::string &path)
 {
     // Copy file into archive
     StandardFile file;
