@@ -198,12 +198,18 @@ static bool set_kernel_properties()
 {
     if (auto cmdline = util::kernel_cmdline()) {
         for (auto const &[k, v] : cmdline.value()) {
+            LOGV("Kernel cmdline option %s=%s",
+                 k.c_str(), v ? v->c_str() : "(no value)");
+
             if (starts_with(k, "androidboot.") && k.size() > 12 && v) {
                 std::string key("ro.boot.");
                 key += std::string_view(k).substr(12);
                 g_property_service.set(key, *v);
             }
         }
+    } else {
+        LOGW("Failed get kernel cmdline: %s",
+             cmdline.error().message().c_str());
     }
 
     struct {
