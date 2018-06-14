@@ -477,7 +477,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
     }
 
     // Must not be a symlink or ARCHIVE_EXTRACT_SECURE_SYMLINKS will not work
-    std::string tmpdir("/tmp/mbtool.XXXXXX");
+    std::string tmpdir("/multiboot/mbtool.XXXXXX");
 
     if (!mkdtemp(tmpdir.data())) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
