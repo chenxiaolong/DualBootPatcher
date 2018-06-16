@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <fcntl.h>
 #include <sys/stat.h>
 
 #include <archive.h>
@@ -69,9 +70,6 @@ bool InstallerUtil::unpack_ramdisk(const std::string &input_file,
 {
     ScopedArchive ain(archive_read_new(), archive_read_free);
     ScopedArchive aout(archive_write_disk_new(), archive_write_free);
-    archive_entry *entry;
-    std::string target_path;
-    int ret;
 
     if (!ain || !aout) {
         LOGE("Failed to allocate archive reader or writer instance");
@@ -100,8 +98,32 @@ bool InstallerUtil::unpack_ramdisk(const std::string &input_file,
         return false;
     }
 
+    // Can't use O_PATH because we support devices running kernel <3.5
+    int cwd_fd = open(".", O_DIRECTORY | O_CLOEXEC);
+    if (cwd_fd < 0) {
+        LOGE("Failed to open current directory: %s", strerror(errno));
+        return false;
+    }
+
+    auto close_cwd_fd = finally([&] {
+        if (fchdir(cwd_fd) < 0) {
+            LOGW("Failed to change back to previous directory: %s",
+                 strerror(errno));
+        }
+
+        close(cwd_fd);
+    });
+
+    if (chdir(output_dir.c_str()) < 0) {
+        LOGE("%s: Failed to change directory: %s",
+             output_dir.c_str(), strerror(errno));
+        return false;
+    }
+
     while (true) {
-        ret = archive_read_next_header(ain.get(), &entry);
+        archive_entry *entry;
+
+        int ret = archive_read_next_header(ain.get(), &entry);
         if (ret == ARCHIVE_EOF) {
             break;
         } else if (ret == ARCHIVE_RETRY) {
@@ -118,14 +140,12 @@ bool InstallerUtil::unpack_ramdisk(const std::string &input_file,
             return false;
         }
 
-        // Build path
-        target_path = output_dir;
-        if (!target_path.empty() && target_path.back() != '/' && *path != '/') {
-            target_path += '/';
+        // Don't allow absolute paths (libarchive will reject '..'s)
+        while (*path && *path == '/') {
+            ++path;
         }
-        target_path += path;
 
-        archive_entry_set_pathname(entry, target_path.c_str());
+        archive_entry_set_pathname(entry, path);
 
         // Extract file
         ret = archive_read_extract2(ain.get(), entry, aout.get());
@@ -476,8 +496,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
         return true;
     }
 
-    // Must not be a symlink or ARCHIVE_EXTRACT_SECURE_SYMLINKS will not work
-    std::string tmpdir("/multiboot/mbtool.XXXXXX");
+    std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
     if (!mkdtemp(tmpdir.data())) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
