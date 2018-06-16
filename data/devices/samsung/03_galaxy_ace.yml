@@ -46,9 +46,9 @@
       - /dev/block/mmcblk0p11
     recovery:
       - /dev/block/mmcblk0p12
-      
-      
-name: Samsung Galaxy Ace 4 Neo
+
+
+- name: Samsung Galaxy Ace 4 Neo
   id: vivalto3mve
   codenames:
     - vivalto3mve
@@ -74,7 +74,8 @@ name: Samsung Galaxy Ace 4 Neo
       - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
       - /dev/block/mmcblk0p21
 
- name: Samsung Galaxy ACE 4 (SM-G316HU)
+
+- name: Samsung Galaxy ACE 4 (SM-G316HU)
   id: vivalto5mve3g
   codenames:
     - vivalto5mve3g
@@ -99,14 +100,3 @@ name: Samsung Galaxy Ace 4 Neo
     recovery:
       - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
       - /dev/block/mmcblk0p21
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    pixel_format: RGBX_8888
-    brightness_path: /sys/class/backlight/panel/brightness
-    default_brightness: 255
-    theme: portrait_hdpi
