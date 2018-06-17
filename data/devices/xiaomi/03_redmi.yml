@@ -1,4 +1,29 @@
 ---
+- name: Xiaomi Redmi 5
+id: rosy
+codenames:
+- rosy
+architecture: arm64-v8a
+block_devs:
+base_dirs:
+- /dev/block/platform/soc/7824900.sdhci/by-name/
+system:
+- /dev/block/platform/soc/7824900.sdhci/by-name/system
+- /dev/block/mmcblk0p24
+cache:
+- /dev/block/platform/soc/7824900.sdhci/by-name/cache
+- /dev/block/mmcblk0p25
+data:
+- /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+- /dev/block/mmcblk0p49
+boot:
+- /dev/block/platform/soc/7824900.sdhci/by-name/boot
+- /dev/block/mmcblk0p21
+recovery:
+- /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+- /dev/block/mmcblk0p22
+extra:
+- /dev/block/platform/soc/7824900.sdhci/by-name/aboot
 - name: Xiaomi Redmi 1S
   id: armani
   codenames:
