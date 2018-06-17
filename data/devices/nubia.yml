@@ -364,8 +364,8 @@
 - name: Nubia M2 (NX551J)
   id: NX551J
   codenames:
-      - NX551
-      - NX551J
+    - NX551
+    - NX551J
   architecture: arm64-v8a
   block_devs:
     base_dirs:
@@ -375,7 +375,6 @@
       - /dev/block/bootdevice/by-name/system
       - /dev/block/mmcblk0p26
       - /dev/block/platform/soc/7824900.sdhci/by-name/system
-      - filesystem
     cache:
       - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p25
