@@ -71,6 +71,44 @@
     battery_path: /sys/devices/platform/bq_bci_battery.1/power_supply/Battery
     theme: portrait_hdpi
 
+- name: Huawei P8
+  id: GRACE
+  codenames:
+    - GRA
+    - GRA-L09
+    - GRA-UL00
+    - GRA-UL10
+    - GRACE
+    - HWGRA
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p38
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p34
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p40
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p27
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p28
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/hisi_fb.1048577/leds/lcd_backlight0/brightness
+    battery_path: /sys/devices/fff34000.pmic/battery.94/power_supply/Battery
+    theme: portrait_hdpi
+
 - name: Huawei Ascend Mate 2
   id: mt2l03
   codenames:
