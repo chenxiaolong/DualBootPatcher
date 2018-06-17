@@ -20,7 +20,6 @@ package com.github.chenxiaolong.dualbootpatcher.appsharing
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.v13.app.FragmentCompat
 import android.support.v4.app.LoaderManager
 import android.support.v4.content.AsyncTaskLoader
 import android.support.v4.content.Loader
@@ -46,8 +45,7 @@ import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature
 
 class AppSharingSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChangeListener,
         OnPreferenceClickListener, LoaderManager.LoaderCallbacks<NeededInfo>,
-        FragmentCompat.OnRequestPermissionsResultCallback, GenericYesNoDialogListener,
-        GenericConfirmDialogListener {
+        GenericYesNoDialogListener, GenericConfirmDialogListener {
     private var config: RomConfig? = null
 
     private lateinit var shareIndivApps: CheckBoxPreference

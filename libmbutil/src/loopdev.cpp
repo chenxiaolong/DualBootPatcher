@@ -59,7 +59,7 @@ static oc::result<int> find_loopdev_by_loop_control()
 {
     int fd = -1;
 
-    if ((fd = open(LOOP_CONTROL, O_RDWR)) < 0) {
+    if ((fd = open(LOOP_CONTROL, O_RDWR | O_CLOEXEC)) < 0) {
         return ec_from_errno();
     }
 
@@ -168,7 +168,7 @@ oc::result<void> loopdev_set_up_device(const std::string &loopdev,
                                        const std::string &file,
                                        uint64_t offset, bool ro)
 {
-    int ffd = open(file.c_str(), ro ? O_RDONLY : O_RDWR);
+    int ffd = open(file.c_str(), (ro ? O_RDONLY : O_RDWR) | O_CLOEXEC);
     if (ffd < 0) {
         return ec_from_errno();
     }
@@ -177,7 +177,7 @@ oc::result<void> loopdev_set_up_device(const std::string &loopdev,
         close(ffd);
     });
 
-    int lfd = open(loopdev.c_str(), ro ? O_RDONLY : O_RDWR);
+    int lfd = open(loopdev.c_str(), (ro ? O_RDONLY : O_RDWR) | O_CLOEXEC);
     if (lfd < 0) {
         return ec_from_errno();
     }
@@ -207,7 +207,7 @@ oc::result<void> loopdev_set_up_device(const std::string &loopdev,
 
 oc::result<void> loopdev_remove_device(const std::string &loopdev)
 {
-    int lfd = open(loopdev.c_str(), O_RDONLY);
+    int lfd = open(loopdev.c_str(), O_RDONLY | O_CLOEXEC);
     if (lfd < 0) {
         return ec_from_errno();
     }

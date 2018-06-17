@@ -7,6 +7,9 @@ if(${MBP_BUILD_TARGET} STREQUAL android)
         set(_CI_SIGN_CONFIG_PATH "${MBP_SIGN_CONFIG_PATH}")
     endif()
 
+    include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
+    get_git_head_revision(refspec _GIT_SHA)
+
     configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/build.gradle.in
         ${CMAKE_CURRENT_SOURCE_DIR}/build.gradle

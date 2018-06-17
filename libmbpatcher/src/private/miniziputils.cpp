@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -38,7 +38,6 @@
 #include "mblog/logging.h"
 
 #include "mbpio/directory.h"
-#include "mbpio/error.h"
 #include "mbpio/path.h"
 
 #include "mz_os.h"
@@ -213,8 +212,7 @@ ErrorCode MinizipUtils::archive_stats(const std::string &path,
 bool MinizipUtils::copy_file_raw(void *source_handle,
                                  void *target_handle,
                                  const std::string &name,
-                                 void (*cb)(uint64_t bytes, void *),
-                                 void *userdata)
+                                 const std::function<void(uint64_t bytes)> &cb)
 {
     mz_zip_file *file_info;
 
@@ -236,7 +234,7 @@ bool MinizipUtils::copy_file_raw(void *source_handle,
     });
 
     mz_zip_file target_file_info = *file_info;
-    target_file_info.filename = const_cast<char *>(name.c_str());
+    target_file_info.filename = name.c_str();
     target_file_info.filename_size = static_cast<uint16_t>(name.size());
 
     // Open raw file in output zip
@@ -265,8 +263,7 @@ bool MinizipUtils::copy_file_raw(void *source_handle,
             ratio = static_cast<double>(bytes)
                     / static_cast<double>(file_info->compressed_size);
             cb(static_cast<uint64_t>(
-                    ratio * static_cast<double>(file_info->uncompressed_size)),
-               userdata);
+                    ratio * static_cast<double>(file_info->uncompressed_size)));
         }
 
         int n_written = mz_zip_entry_write(
@@ -301,10 +298,8 @@ bool MinizipUtils::copy_file_raw(void *source_handle,
     return true;
 }
 
-bool MinizipUtils::read_to_memory(void *handle,
-                                  std::vector<unsigned char> &output,
-                                  void (*cb)(uint64_t bytes, void *),
-                                  void *userdata)
+bool MinizipUtils::read_to_memory(void *handle, std::string &output,
+                                  const std::function<void(uint64_t bytes)> &cb)
 {
     mz_zip_file *file_info;
 
@@ -314,7 +309,7 @@ bool MinizipUtils::read_to_memory(void *handle,
         return false;
     }
 
-    std::vector<unsigned char> data;
+    std::string data;
     data.reserve(static_cast<size_t>(file_info->uncompressed_size));
 
     ret = mz_zip_entry_read_open(handle, 0, nullptr);
@@ -332,8 +327,7 @@ bool MinizipUtils::read_to_memory(void *handle,
 
     while ((n = mz_zip_entry_read(handle, buf, sizeof(buf))) > 0) {
         if (cb) {
-            cb(static_cast<uint64_t>(data.size()) + static_cast<uint64_t>(n),
-               userdata);
+            cb(static_cast<uint64_t>(data.size()) + static_cast<uint64_t>(n));
         }
 
         data.insert(data.end(), buf, buf + n);
@@ -374,9 +368,9 @@ bool MinizipUtils::extract_file(void *handle, const std::string &directory)
     full_path += std::string{file_info->filename, file_info->filename_size};
 
     std::string parent_path = io::dir_name(full_path);
-    if (!io::create_directories(parent_path)) {
+    if (auto r = io::create_directories(parent_path); !r) {
         LOGW("%s: Failed to create directory: %s",
-             parent_path.c_str(), io::last_error_string().c_str());
+             parent_path.c_str(), r.error().message().c_str());
     }
 
     StandardFile file;
@@ -433,13 +427,13 @@ bool MinizipUtils::extract_file(void *handle, const std::string &directory)
     return n == 0;
 }
 
-ErrorCode MinizipUtils::add_file(void *handle,
-                                 const std::string &name,
-                                 const std::vector<unsigned char> &contents)
+ErrorCode MinizipUtils::add_file_from_data(void *handle,
+                                           const std::string &name,
+                                           const std::string &data)
 {
     mz_zip_file file_info = {};
     file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
-    file_info.filename = const_cast<char *>(name.c_str());
+    file_info.filename = name.c_str();
     file_info.filename_size = static_cast<uint16_t>(name.size());
 
     int ret = mz_zip_entry_write_open(handle, &file_info,
@@ -454,9 +448,9 @@ ErrorCode MinizipUtils::add_file(void *handle,
     });
 
     // Write data to file
-    int n = mz_zip_entry_write(handle, contents.data(),
-                               static_cast<uint32_t>(contents.size()));
-    if (n < 0 || static_cast<size_t>(n) != contents.size()) {
+    int n = mz_zip_entry_write(handle, data.data(),
+                               static_cast<uint32_t>(data.size()));
+    if (n < 0 || static_cast<size_t>(n) != data.size()) {
         LOGE("minizip: Failed to write inner file data");
         return ErrorCode::ArchiveWriteDataError;
     }
@@ -472,9 +466,9 @@ ErrorCode MinizipUtils::add_file(void *handle,
     return ErrorCode::NoError;
 }
 
-ErrorCode MinizipUtils::add_file(void *handle,
-                                 const std::string &name,
-                                 const std::string &path)
+ErrorCode MinizipUtils::add_file_from_path(void *handle,
+                                           const std::string &name,
+                                           const std::string &path)
 {
     // Copy file into archive
     StandardFile file;
@@ -489,7 +483,7 @@ ErrorCode MinizipUtils::add_file(void *handle,
 
     mz_zip_file file_info = {};
     file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
-    file_info.filename = const_cast<char *>(name.c_str());
+    file_info.filename = name.c_str();
     file_info.filename_size = static_cast<uint16_t>(name.size());
 
     int ret = mz_os_get_file_date(path.c_str(), &file_info.modified_date,

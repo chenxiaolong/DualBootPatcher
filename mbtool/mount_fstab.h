@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,6 +23,11 @@
 #include "mbdevice/device.h"
 
 #include "roms.h"
+
+namespace android::init
+{
+    class DeviceHandler;
+}
 
 namespace mb
 {
@@ -52,7 +57,8 @@ MB_DECLARE_FLAGS(MountFlags, MountFlag)
 MB_DECLARE_OPERATORS_FOR_FLAGS(MountFlags)
 
 bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                 const device::Device &device, MountFlags flags);
+                 const device::Device &device, MountFlags flags,
+                 const android::init::DeviceHandler &handler);
 bool mount_rom(const std::shared_ptr<Rom> &rom);
 
 }

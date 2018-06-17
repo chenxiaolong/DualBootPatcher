@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <thread>
 
 #include <cassert>
 #include <cstdio>
@@ -388,7 +389,7 @@ static int connect_to_installd()
     snprintf(addr.sun_path, sizeof(addr.sun_path), "%s",
              INSTALLD_SOCKET_PATH);
 
-    int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    int fd = socket(AF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if (fd < 0) {
         LOGE("Failed to create socket: %s", strerror(errno));
         return -1;
@@ -399,7 +400,7 @@ static int connect_to_installd()
         LOGV("Connecting to installd [Attempt %d/%d]", attempt + 1, 5);
         if (connect(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
             LOGW("Failed: %s", strerror(errno));
-            sleep(1);
+            std::this_thread::sleep_for(1s);
         } else {
             break;
         }
@@ -727,7 +728,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
 static bool proxy_process(int fd, bool can_appsync)
 {
     while (true) {
-        int client_fd = accept(fd, nullptr, nullptr);
+        int client_fd = accept4(fd, nullptr, nullptr, SOCK_CLOEXEC);
         if (client_fd < 0) {
             LOGE("Failed to accept client connection: %s", strerror(errno));
             return false;
@@ -947,7 +948,7 @@ int appsync_main(int argc, char *argv[])
     std::vector<std::string> restorecon{
         "restorecon", "-R", "-F", "/data/media/obb"
     };
-    util::run_command(restorecon[0], restorecon, {}, {}, nullptr, nullptr);
+    util::run_command(restorecon[0], restorecon, {}, {}, {});
 
     bool can_appsync = false;
 

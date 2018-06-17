@@ -21,7 +21,6 @@ set_source_files_properties(
 
 set_source_files_properties(
     auditd.cpp
-    miniadbd.cpp
     PROPERTIES
     COMPILE_FLAGS
     "-Wno-gnu-statement-expression -Wno-zero-length-array"
@@ -35,31 +34,17 @@ set_source_files_properties(
 )
 
 set_source_files_properties(
-    external/legacy_property_service.cpp
+    src/util/legacy_property_service.cpp
     PROPERTIES
     COMPILE_FLAGS
-    "-Wno-cast-align -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-sign-conversion"
+    "-Wno-shorten-64-to-32 -Wno-sign-conversion"
 )
 
 set_source_files_properties(
-    external/property_service.cpp
+    src/util/property_service.cpp
     PROPERTIES
     COMPILE_FLAGS
-    "-Wno-gnu-statement-expression -Wno-missing-prototypes -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-sign-conversion"
-)
-
-set_source_files_properties(
-    initwrapper/cutils/uevent.cpp
-    PROPERTIES
-    COMPILE_FLAGS
-    "-Wno-cast-align -Wno-old-style-cast -Wno-sign-conversion"
-)
-
-set_source_files_properties(
-    initwrapper/devices.cpp
-    PROPERTIES
-    COMPILE_FLAGS
-    "-Wno-missing-prototypes -Wno-shorten-64-to-32 -Wno-sign-conversion"
+    "-Wno-gnu-statement-expression -Wno-shorten-64-to-32 -Wno-sign-conversion"
 )
 
 set_source_files_properties(
@@ -76,21 +61,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
     )
 
-    add_library(
-        miniadbd-static
-        STATIC
-        miniadbd/adb.cpp
-        miniadbd/adb_io.cpp
-        miniadbd/adb_log.cpp
-        miniadbd/adb_utils.cpp
-        miniadbd/fdevent.cpp
-        miniadbd/file_sync_service.cpp
-        miniadbd/services.cpp
-        miniadbd/sockets.cpp
-        miniadbd/transport.cpp
-        miniadbd/transport_usb.cpp
-        miniadbd/usb_linux_client.cpp
-    )
     add_executable(
         mbtool
         appsync.cpp
@@ -101,7 +71,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         emergency.cpp
         init.cpp
         main.cpp
-        miniadbd.cpp
         mount_fstab.cpp
         multiboot.cpp
         packages.cpp
@@ -114,12 +83,13 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         switcher.cpp
         uevent_dump.cpp
         wipe.cpp
-        external/legacy_property_service.cpp
         external/audit/libaudit.cpp
-        external/property_service.cpp
-        initwrapper/cutils/uevent.cpp
-        initwrapper/devices.cpp
-        initwrapper/util.cpp
+        src/initwrapper/cutils/uevent.cpp
+        src/initwrapper/devices.cpp
+        src/initwrapper/uevent_listener.cpp
+        src/util/legacy_property_service.cpp
+        src/util/property_service.cpp
+        src/util/uevent_thread.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
         ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
     )
@@ -144,7 +114,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         update_binary_tool.cpp
         utilities.cpp
         wipe.cpp
-        external/legacy_property_service.cpp
+        src/util/legacy_property_service.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
     )
 
@@ -154,10 +124,10 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             ${target}
             PRIVATE
             .
+            include
             ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
-            ${CMAKE_SOURCE_DIR}/external/minizip/src
+            ${CMAKE_SOURCE_DIR}/external/minizip
             ${CMAKE_SOURCE_DIR}/external/pugixml/src
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers
         )
 
         # Disable some pugixml features
@@ -176,33 +146,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         -DRECOVERY
     )
 
-    # miniadbd includes
-    target_include_directories(
-        miniadbd-static
-        PRIVATE
-        .
-    )
-
-    # Ugly, but I don't want to deviate too much from upstream to fix it
-    target_compile_options(
-        miniadbd-static
-        PRIVATE
-        -Wno-conditional-uninitialized
-        -Wno-conversion
-        -Wno-gnu-statement-expression
-        -Wno-missing-field-initializers
-        -Wno-missing-noreturn
-        -Wno-missing-prototypes
-        -Wno-missing-variable-declarations
-        -Wno-old-style-cast
-        -Wno-pedantic
-        -Wno-shadow
-        -Wno-shorten-64-to-32
-        -Wno-sign-conversion
-        -Wno-unreachable-code-return
-        -Wno-unused-parameter
-    )
-
     set_target_properties(
         mbtool mbtool_recovery
         PROPERTIES
@@ -213,17 +156,9 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     android_link_allow_multiple_definitions(mbtool mbtool_recovery)
 
     target_link_libraries(
-        miniadbd-static
-        PRIVATE
-        interface.global.CXXVersion
-        mblog-static
-        mbutil-static
-    )
-    target_link_libraries(
         mbtool
         PRIVATE
         interface.global.CXXVersion
-        miniadbd-static
         mbutil-static
         mbsign-static
         mbdevice-static
@@ -238,7 +173,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbtool_recovery
         PRIVATE
         interface.global.CXXVersion
-        miniadbd-static
         mbutil-static
         mbsign-static
         mblog-static

@@ -348,7 +348,7 @@ bool MbtoolConnection::connect()
     int fd;
     sockaddr_un addr = {};
 
-    fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    fd = socket(AF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if (fd < 0) {
         LOGE("Failed to create socket: %s", strerror(errno));
         return false;

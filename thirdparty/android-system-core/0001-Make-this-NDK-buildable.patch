@@ -1,25 +1,21 @@
-From 861e11a69e0e37666dcb02efd2db4459557fc8eb Mon Sep 17 00:00:00 2001
+From 10135cf2a9d69eda9f516e6db5c768849a68743c Mon Sep 17 00:00:00 2001
 From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
 Date: Sun, 24 Dec 2017 17:28:48 -0500
-Subject: [PATCH 1/5] Make this NDK buildable
+Subject: [PATCH] Make this NDK buildable
 
 ---
  bionic_dlmalloc/README.txt                |   10 +
- bionic_dlmalloc/malloc.c                  | 6323 +++++++++++++++++++++++++++++
- bionic_dlmalloc/malloc.h                  |  620 +++
- bionic_include/_system_properties.h       |  137 +
- bionic_include/set_abort_message.h        |   40 +
- libcutils/Android.mk                      |   66 +
- liblog/Android.mk                         |   37 +-
+ bionic_dlmalloc/malloc.c                  | 6323 +++++++++++++++++++++
+ bionic_dlmalloc/malloc.h                  |  620 ++
+ libcutils/Android.mk                      |   65 +
+ liblog/Android.mk                         |   36 +-
  libpixelflinger/Android.mk                |   54 +-
  libpixelflinger/codeflinger/CodeCache.cpp |    2 +-
  libutils/Android.mk                       |   45 +
- 10 files changed, 7310 insertions(+), 24 deletions(-)
+ 8 files changed, 7131 insertions(+), 24 deletions(-)
  create mode 100644 bionic_dlmalloc/README.txt
  create mode 100644 bionic_dlmalloc/malloc.c
  create mode 100644 bionic_dlmalloc/malloc.h
- create mode 100644 bionic_include/_system_properties.h
- create mode 100644 bionic_include/set_abort_message.h
  create mode 100644 libcutils/Android.mk
  create mode 100644 libutils/Android.mk
 
@@ -6994,201 +6990,12 @@ index 000000000..e52c9e5a4
 +#endif
 +
 +#endif /* MALLOC_280_H */
-diff --git a/bionic_include/_system_properties.h b/bionic_include/_system_properties.h
-new file mode 100644
-index 000000000..f8dbd3305
---- /dev/null
-+++ b/bionic_include/_system_properties.h
-@@ -0,0 +1,137 @@
-+/*
-+ * Copyright (C) 2008 The Android Open Source Project
-+ * All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions
-+ * are met:
-+ *  * Redistributions of source code must retain the above copyright
-+ *    notice, this list of conditions and the following disclaimer.
-+ *  * Redistributions in binary form must reproduce the above copyright
-+ *    notice, this list of conditions and the following disclaimer in
-+ *    the documentation and/or other materials provided with the
-+ *    distribution.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-+ * SUCH DAMAGE.
-+ */
-+
-+#ifndef _INCLUDE_SYS__SYSTEM_PROPERTIES_H
-+#define _INCLUDE_SYS__SYSTEM_PROPERTIES_H
-+
-+#include <sys/cdefs.h>
-+#include <stdint.h>
-+
-+#ifndef _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
-+#error you should #include <sys/system_properties.h> instead
-+#endif
-+
-+#include <sys/system_properties.h>
-+
-+__BEGIN_DECLS
-+
-+#define PROP_SERVICE_NAME "property_service"
-+#define PROP_FILENAME "/dev/__properties__"
-+
-+#define PROP_MSG_SETPROP 1
-+#define PROP_MSG_SETPROP2 0x00020001
-+
-+#define PROP_SUCCESS 0
-+#define PROP_ERROR_READ_CMD 0x0004
-+#define PROP_ERROR_READ_DATA 0x0008
-+#define PROP_ERROR_READ_ONLY_PROPERTY 0x000B
-+#define PROP_ERROR_INVALID_NAME 0x0010
-+#define PROP_ERROR_INVALID_VALUE 0x0014
-+#define PROP_ERROR_PERMISSION_DENIED 0x0018
-+#define PROP_ERROR_INVALID_CMD 0x001B
-+#define PROP_ERROR_HANDLE_CONTROL_MESSAGE 0x0020
-+#define PROP_ERROR_SET_FAILED 0x0024
-+
-+/*
-+** Map the property area from the specified filename.  This
-+** method is for testing only.
-+*/
-+int __system_property_set_filename(const char *filename);
-+
-+/*
-+** Initialize the area to be used to store properties.  Can
-+** only be done by a single process that has write access to
-+** the property area.
-+*/
-+int __system_property_area_init();
-+
-+/* Read the global serial number of the system properties
-+**
-+** Called to predict if a series of cached __system_property_find
-+** objects will have seen __system_property_serial values change.
-+** But also aids the converse, as changes in the global serial can
-+** also be used to predict if a failed __system_property_find
-+** could in-turn now find a new object; thus preventing the
-+** cycles of effort to poll __system_property_find.
-+**
-+** Typically called at beginning of a cache cycle to signal if _any_ possible
-+** changes have occurred since last. If there is, one may check each individual
-+** __system_property_serial to confirm dirty, or __system_property_find
-+** to check if the property now exists. If a call to __system_property_add
-+** or __system_property_update has completed between two calls to
-+** __system_property_area_serial then the second call will return a larger
-+** value than the first call. Beware of race conditions as changes to the
-+** properties are not atomic, the main value of this call is to determine
-+** whether the expensive __system_property_find is worth retrying to see if
-+** a property now exists.
-+**
-+** Returns the serial number on success, -1 on error.
-+*/
-+uint32_t __system_property_area_serial();
-+
-+/* Add a new system property.  Can only be done by a single
-+** process that has write access to the property area, and
-+** that process must handle sequencing to ensure the property
-+** does not already exist and that only one property is added
-+** or updated at a time.
-+**
-+** Returns 0 on success, -1 if the property area is full.
-+*/
-+int __system_property_add(const char *name, unsigned int namelen, const char *value, unsigned int valuelen);
-+
-+/* Update the value of a system property returned by
-+** __system_property_find.  Can only be done by a single process
-+** that has write access to the property area, and that process
-+** must handle sequencing to ensure that only one property is
-+** updated at a time.
-+**
-+** Returns 0 on success, -1 if the parameters are incorrect.
-+*/
-+int __system_property_update(prop_info *pi, const char *value, unsigned int len);
-+
-+/* Read the serial number of a system property returned by
-+** __system_property_find.
-+**
-+** Returns the serial number on success, -1 on error.
-+*/
-+uint32_t __system_property_serial(const prop_info* pi);
-+
-+/* Initialize the system properties area in read only mode.
-+ * Should be done by all processes that need to read system
-+ * properties.
-+ *
-+ * Returns 0 on success, -1 otherwise.
-+ */
-+int __system_properties_init();
-+
-+/* Deprecated: use __system_property_wait instead. */
-+uint32_t __system_property_wait_any(uint32_t old_serial);
-+
-+__END_DECLS
-+
-+#endif
-diff --git a/bionic_include/set_abort_message.h b/bionic_include/set_abort_message.h
-new file mode 100644
-index 000000000..18881a3a3
---- /dev/null
-+++ b/bionic_include/set_abort_message.h
-@@ -0,0 +1,40 @@
-+/*
-+ * Copyright (C) 2014 The Android Open Source Project
-+ * All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions
-+ * are met:
-+ *  * Redistributions of source code must retain the above copyright
-+ *    notice, this list of conditions and the following disclaimer.
-+ *  * Redistributions in binary form must reproduce the above copyright
-+ *    notice, this list of conditions and the following disclaimer in
-+ *    the documentation and/or other materials provided with the
-+ *    distribution.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-+ * SUCH DAMAGE.
-+ */
-+
-+#ifndef _SET_ABORT_MESSAGE_H
-+#define _SET_ABORT_MESSAGE_H
-+
-+#include <sys/cdefs.h>
-+
-+__BEGIN_DECLS
-+
-+void android_set_abort_message(const char* msg) __INTRODUCED_IN(21);
-+
-+__END_DECLS
-+
-+#endif
 diff --git a/libcutils/Android.mk b/libcutils/Android.mk
 new file mode 100644
-index 000000000..f84f6862c
+index 000000000..d3e055037
 --- /dev/null
 +++ b/libcutils/Android.mk
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,65 @@
 +LOCAL_PATH := $(my-dir)
 +
 +include $(CLEAR_VARS)
@@ -7248,18 +7055,17 @@ index 000000000..f84f6862c
 +LOCAL_C_INCLUDES := \
 +	include \
 +	../liblog/include \
-+	../libutils/include \
-+	../bionic_include
++	../libutils/include
 +LOCAL_STATIC_LIBRARIES := liblog
 +LOCAL_CFLAGS := -Werror -Wall -Wextra
 +LOCAL_CONLYFLAGS := -std=gnu90
 +LOCAL_CPPFLAGS := -std=gnu++11
 +include $(BUILD_STATIC_LIBRARY)
 diff --git a/liblog/Android.mk b/liblog/Android.mk
-index 6c4dff595..deb0e9cbb 100644
+index 6c4dff595..7098143aa 100644
 --- a/liblog/Android.mk
 +++ b/liblog/Android.mk
-@@ -1,3 +1,38 @@
+@@ -1,3 +1,37 @@
  LOCAL_PATH := $(my-dir)
  
 -include $(call first-makefiles-under,$(LOCAL_PATH))
@@ -7290,8 +7096,7 @@ index 6c4dff595..deb0e9cbb 100644
 +	include \
 +	../libcutils/include \
 +	../libsystem/include \
-+	../libutils/include \
-+	../bionic_include
++	../libutils/include
 +LOCAL_CFLAGS := \
 +	-Werror \
 +	-fvisibility=hidden \
@@ -7455,5 +7260,5 @@ index 000000000..634bb955b
 +	../common/safe-iop/include
 +include $(BUILD_STATIC_LIBRARY)
 -- 
-2.14.3
+2.17.1
 

@@ -134,13 +134,13 @@ struct StructStatBuilder {
   void add_ctime(uint64_t ctime) {
     fbb_.AddElement<uint64_t>(StructStat::VT_CTIME, ctime, 0);
   }
-  StructStatBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit StructStatBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   StructStatBuilder &operator=(const StructStatBuilder &);
   flatbuffers::Offset<StructStat> Finish() {
-    const auto end = fbb_.EndTable(start_, 13);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<StructStat>(end);
     return o;
   }
@@ -192,7 +192,7 @@ struct FileStatError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -207,13 +207,13 @@ struct FileStatErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(FileStatError::VT_MSG, msg);
   }
-  FileStatErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileStatErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileStatErrorBuilder &operator=(const FileStatErrorBuilder &);
   flatbuffers::Offset<FileStatError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileStatError>(end);
     return o;
   }
@@ -259,13 +259,13 @@ struct FileStatRequestBuilder {
   void add_id(int32_t id) {
     fbb_.AddElement<int32_t>(FileStatRequest::VT_ID, id, 0);
   }
-  FileStatRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileStatRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileStatRequestBuilder &operator=(const FileStatRequestBuilder &);
   flatbuffers::Offset<FileStatRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileStatRequest>(end);
     return o;
   }
@@ -301,11 +301,11 @@ struct FileStatResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_STAT) &&
+           VerifyOffset(verifier, VT_STAT) &&
            verifier.VerifyTable(stat()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -326,13 +326,13 @@ struct FileStatResponseBuilder {
   void add_error(flatbuffers::Offset<FileStatError> error) {
     fbb_.AddOffset(FileStatResponse::VT_ERROR, error);
   }
-  FileStatResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileStatResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileStatResponseBuilder &operator=(const FileStatResponseBuilder &);
   flatbuffers::Offset<FileStatResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 4);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileStatResponse>(end);
     return o;
   }

@@ -108,3 +108,30 @@
       # md3img
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/md3img
       - /dev/block/mmcblk0p16
+
+
+- name: 360 N6
+  id: QK1707
+  codenames:
+    - QK1707-A01
+    - QK1707_A01
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p60
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p59
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p61
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p12
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p53

@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,13 +15,13 @@
 
 _prebuilts='https://dbp.noobdev.io/repo/prebuilts'
 _ver_libiconv=1.15-1
-_ver_liblzma=5.2.3-2
-_ver_lz4=1.8.0-1
+_ver_liblzma=5.2.4-1
+_ver_lz4=1.8.2-2
 
 pkgbase=libarchive
 pkgname=(libarchive libarchive-lowapi)
 pkgver=3.3.2
-pkgrel=1
+pkgrel=3
 pkgdesc="Multi-format archive and compression library"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://www.libarchive.org/"
@@ -74,7 +74,7 @@ build() {
 
     local abi api lowapi
     abi=$(android_get_abi_name)
-    api=android-21
+    api=android-28
 
     case "${abi}" in
     armeabi-v7a)
@@ -141,25 +141,25 @@ sha512sums=('SKIP'
             '4d85c1070be075dc9b3a8162eed188051fa339c54c806efa9d061810bafed9889594bc421bbc131102c8f79a372d372e9a42841524433cd8e905406c50bebb3f')
 sha512sums_armv7=('408d375cdedce1c3545a2b1e29c3d86780f9fe726eee5b23348540ee032230680affcd9c6685fc8227d578819e046e2544b35896a4d4248d1d59b5f46399c286'
                   'SKIP'
-                  '2fd3c5578a6313abc7737d9862c9e2dde35296004439ab7fe41b42a54ee094295a04a83b0a565ac4801c01cbfb050189405163d0ab7a6b6bf48e128e6adb2bb1'
+                  '486f0390e37e873fbafa965f1f6dc4363c0aa7f131f21191c888ef191decf68a077f199748b4208e56e0d7f0b0415aad500cb187577ae717ccc239abeb045db9'
                   'SKIP'
-                  'b3dc0e3eca7f81fb7aa20257f37d2ae873af62981b16554f1d022643fcbfe6e7aaa22864c26be9091acc5449a0bc08039c9e0bd5fed04f10e7060456b807311d'
+                  '2ad7ffc1a1c94c7d304722bb2e5f1c9b668986a849193e36bec8ba2f58ec35fe6c8b750287fa4404284a7099d15578df879bd5b84f78524ac6b5023fe1a78900'
                   'SKIP')
 sha512sums_aarch64=('ce1229780ecd372d014ef8a876eba0ec3942f494cd2532985961c827b92ae9853f99e8bd06566bac218619e384bfe7edcb9eaf4da8efbc159d6b5763cbd56255'
                     'SKIP'
-                    'aacf52a9779c448182f0dcb011bbe0b658019d4b8b6a436070b8c57140787a8638a7696c9cbc5a04c0947b2d309d78a7aa98a85d28a67329a34c0fb01018608b'
+                    'fc84f2fd6288c8b7f793a3d79d39e9dde1a29117da13f70d9955a7787d369346d1f6ac6615da4d7487fe9e9441a990b1bbecee78a120096e9c60e6e30d90c7f1'
                     'SKIP'
-                    '534a6f6c39bc25f89d328dc937ade807a041f863bcac5653e405d23509357ea3f0bd4ea948b878b69a97925c46d40b943ee5fa63f2ccf4f3e42030eb1dd21d2e'
+                    '38e156af25ff155dd7c02318bc47b2290c17fe37e635bf68fd8be2d592c3d53ccf9c79d71e0b322e8c0afb9f92e173da8ae4c2534add53c67d9df1e0b9fd4bc4'
                     'SKIP')
 sha512sums_x86=('6fff503771eab5e021eaf8bbc7952d0d4d1d358f9f7a24ebb2e8e72613d51be04eee0824a10b5271dc32f00f1432b0320758678b4462c7b056ebb543f9ca8556'
                 'SKIP'
-                'c685fe430601bb35609e9159427a98db4d8e9e5b1f414335216366b643b154c978a02815e5c2507cf73f2fcad32956e4dcc243c3fafbe6afd8e4a948e78d9a67'
+                'e37174e6fcdfd26d23f79233a56d3b46455c60d58360b50e0bc4a268bcd43792bc1d964da6c8416129c8b6e0298bae1f4d63e2aad7320c6c6d2322916cbf4ac6'
                 'SKIP'
-                'b8f491d9bd164f4cf3b114117f42b1a6f28381516e517d059e19036d2e86e6e5522a9e63d9ce778553ef8743c7f9a02a7cdf4b5eb7f171b94954b4be9f364c52'
+                '7d43d6e50eaf3840de2252bdc65134ce3b5022104f01087920271ca6e27881e5e91f6404afea2f364bb8f8ced2b62cf11df7f36761534a2673ff70a1b7e59554'
                 'SKIP')
 sha512sums_x86_64=('5da1a7282e9cae8bd9d73efcec61163c740a1d04e513f24445b03b3ef1bab97b4fa2fc5bed245519c0a62ab521484e07eca0ea09696dd7922184380cdb596ec3'
                    'SKIP'
-                   'e48433585641d3caf86d17fd2ecac8fdeacd236705997303a06ba9a45ecdba94f6d9713386e1d5fa1413743cb459222fd37c3334d10e29e88ff90d1915e34092'
+                   '6d4b93ed1ede309df14057165e95b309e34aa4a510d8227fbd8e76a380a2f262f5ebe34d142f3730b88fbb31b7259fc235ef1d7241862dd915e77bbb419c49bd'
                    'SKIP'
-                   'd29bfa4508136cb4fae29216ca1dd6fbc2fc5d09b6472ffc462f2a782602021ed9c12296cf27f6aa7eefa968130eb232b9aab90c9c6afebe9efe77e321667cdc'
+                   'aaf77816d72c50553e1f7092e545e4fc7b8d133f847b8d57eaf3c50a2283c473904f64fc79c0de7225c29c21d77a5040e11b00b1a0645b35c3a4a9f1e1d43810'
                    'SKIP')

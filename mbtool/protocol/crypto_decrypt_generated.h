@@ -27,13 +27,13 @@ struct CryptoDecryptRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table
 struct CryptoDecryptRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  CryptoDecryptRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit CryptoDecryptRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   CryptoDecryptRequestBuilder &operator=(const CryptoDecryptRequestBuilder &);
   flatbuffers::Offset<CryptoDecryptRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<CryptoDecryptRequest>(end);
     return o;
   }
@@ -58,13 +58,13 @@ struct CryptoDecryptResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tabl
 struct CryptoDecryptResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  CryptoDecryptResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit CryptoDecryptResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   CryptoDecryptResponseBuilder &operator=(const CryptoDecryptResponseBuilder &);
   flatbuffers::Offset<CryptoDecryptResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<CryptoDecryptResponse>(end);
     return o;
   }

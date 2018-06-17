@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
 pkgname=valgrind
 pkgver=3.13.0
-pkgrel=1
+pkgrel=2
 pkgdesc="A tool to help find memory-management problems in programs"
 arch=(armv7 aarch64 x86) # x86_64 not supported on Android
 url="http://valgrind.org/"
@@ -75,7 +75,7 @@ build() {
 
     CFLAGS="${cflags}" \
     ../configure \
-        --prefix=/data/local/Inst \
+        --prefix=/cache/valgrind \
         --with-tmpdir=/sdcard \
         "${args[@]}"
 

@@ -45,17 +45,17 @@ struct MbRom FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ID) &&
+           VerifyOffset(verifier, VT_ID) &&
            verifier.Verify(id()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_SYSTEM_PATH) &&
+           VerifyOffset(verifier, VT_SYSTEM_PATH) &&
            verifier.Verify(system_path()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_CACHE_PATH) &&
+           VerifyOffset(verifier, VT_CACHE_PATH) &&
            verifier.Verify(cache_path()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_DATA_PATH) &&
+           VerifyOffset(verifier, VT_DATA_PATH) &&
            verifier.Verify(data_path()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_VERSION) &&
+           VerifyOffset(verifier, VT_VERSION) &&
            verifier.Verify(version()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_BUILD) &&
+           VerifyOffset(verifier, VT_BUILD) &&
            verifier.Verify(build()) &&
            verifier.EndTable();
   }
@@ -82,13 +82,13 @@ struct MbRomBuilder {
   void add_build(flatbuffers::Offset<flatbuffers::String> build) {
     fbb_.AddOffset(MbRom::VT_BUILD, build);
   }
-  MbRomBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbRomBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbRomBuilder &operator=(const MbRomBuilder &);
   flatbuffers::Offset<MbRom> Finish() {
-    const auto end = fbb_.EndTable(start_, 6);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbRom>(end);
     return o;
   }
@@ -140,13 +140,13 @@ struct MbGetInstalledRomsRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::
 struct MbGetInstalledRomsRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  MbGetInstalledRomsRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbGetInstalledRomsRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbGetInstalledRomsRequestBuilder &operator=(const MbGetInstalledRomsRequestBuilder &);
   flatbuffers::Offset<MbGetInstalledRomsRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 0);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbGetInstalledRomsRequest>(end);
     return o;
   }
@@ -167,7 +167,7 @@ struct MbGetInstalledRomsResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers:
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ROMS) &&
+           VerifyOffset(verifier, VT_ROMS) &&
            verifier.Verify(roms()) &&
            verifier.VerifyVectorOfTables(roms()) &&
            verifier.EndTable();
@@ -180,13 +180,13 @@ struct MbGetInstalledRomsResponseBuilder {
   void add_roms(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<MbRom>>> roms) {
     fbb_.AddOffset(MbGetInstalledRomsResponse::VT_ROMS, roms);
   }
-  MbGetInstalledRomsResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbGetInstalledRomsResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbGetInstalledRomsResponseBuilder &operator=(const MbGetInstalledRomsResponseBuilder &);
   flatbuffers::Offset<MbGetInstalledRomsResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbGetInstalledRomsResponse>(end);
     return o;
   }

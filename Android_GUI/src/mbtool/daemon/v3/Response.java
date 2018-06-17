@@ -34,5 +34,6 @@ public final class Response extends Table {
     return o;
   }
   public static void finishResponseBuffer(FlatBufferBuilder builder, int offset) { builder.finish(offset); }
+  public static void finishSizePrefixedResponseBuffer(FlatBufferBuilder builder, int offset) { builder.finishSizePrefixed(offset); }
 }
 

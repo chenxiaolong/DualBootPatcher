@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -33,6 +33,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+#include "mbcommon/integer.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/archive.h"
@@ -44,7 +45,6 @@
 #include "mbutil/path.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
-#include "mbutil/time.h"
 
 #include "installer_util.h"
 #include "image.h"
@@ -78,6 +78,9 @@ constexpr char BACKUP_NAME_PREFIX_DATA[]   = "data";
 constexpr char BACKUP_NAME_BOOT_IMAGE[]    = "boot.img";
 constexpr char BACKUP_NAME_CONFIG[]        = "config.json";
 constexpr char BACKUP_NAME_THUMBNAIL[]     = "thumbnail.webp";
+
+// Max file size for FAT32
+constexpr uint64_t DEFAULT_ARCHIVE_SPLIT_SIZE = UINT32_MAX - 1;
 
 using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
 
@@ -153,17 +156,28 @@ static std::string get_compressed_backup_name(const std::string &name,
 
 static std::string find_compressed_backup(const std::string &backup_dir,
                                           const std::string &name,
-                                          util::CompressionType &compression)
+                                          util::CompressionType &compression,
+                                          bool &is_split)
 {
-    std::string full_path;
-    for (auto i = g_compression_map; i->name; ++i) {
-        full_path = backup_dir;
-        full_path += "/";
-        full_path += name;
-        full_path += i->extension;
+    std::string unsplit_path;
+    std::string split_path;
 
-        if (access(full_path.c_str(), R_OK) == 0) {
+    for (auto i = g_compression_map; i->name; ++i) {
+        unsplit_path = backup_dir;
+        unsplit_path += "/";
+        unsplit_path += name;
+        unsplit_path += i->extension;
+
+        split_path = unsplit_path;
+        split_path += ".0";
+
+        if (access(unsplit_path.c_str(), R_OK) == 0) {
             compression = i->type;
+            is_split = false;
+            return name + i->extension;
+        } else if (access(split_path.c_str(), R_OK) == 0) {
+            compression = i->type;
+            is_split = true;
             return name + i->extension;
         }
     }
@@ -173,7 +187,8 @@ static std::string find_compressed_backup(const std::string &backup_dir,
 static bool backup_directory(const std::string &output_file,
                              const std::string &directory,
                              const std::vector<std::string> &exclusions,
-                             util::CompressionType compression)
+                             util::CompressionType compression,
+                             uint64_t split_archive_size)
 {
     ScopedDIR dp(opendir(directory.c_str()), closedir);
     if (!dp) {
@@ -203,25 +218,28 @@ static bool backup_directory(const std::string &output_file,
     }
 
     return util::libarchive_tar_create(output_file, directory, contents,
-                                       compression);
+                                       compression, split_archive_size);
 }
 
 static bool restore_directory(const std::string &input_file,
                               const std::string &directory,
                               const std::vector<std::string> &exclusions,
-                              util::CompressionType compression)
+                              util::CompressionType compression,
+                              bool is_split)
 {
     if (!wipe_directory(directory, exclusions)) {
         return false;
     }
 
-    return util::libarchive_tar_extract(input_file, directory, {}, compression);
+    return util::libarchive_tar_extract(input_file, directory, {}, compression,
+                                        is_split);
 }
 
 static bool backup_image(const std::string &output_file,
                          const std::string &image,
                          const std::vector<std::string> &exclusions,
-                         util::CompressionType compression)
+                         util::CompressionType compression,
+                         uint64_t split_archive_size)
 {
     if (auto r = util::mkdir_recursive(BACKUP_MNT_DIR, 0755);
             !r && r.error() != std::errc::file_exists) {
@@ -240,7 +258,7 @@ static bool backup_image(const std::string &output_file,
     }
 
     bool ret = backup_directory(output_file, BACKUP_MNT_DIR, exclusions,
-                                compression);
+                                compression, split_archive_size);
 
     if (auto umount_ret = util::umount(BACKUP_MNT_DIR); !umount_ret) {
         LOGE("Failed to unmount %s: %s", BACKUP_MNT_DIR,
@@ -257,7 +275,8 @@ static bool restore_image(const std::string &input_file,
                           const std::string &image,
                           uint64_t size,
                           const std::vector<std::string> &exclusions,
-                          util::CompressionType compression)
+                          util::CompressionType compression,
+                          bool is_split)
 {
     if (auto r = util::mkdir_parent(image, S_IRWXU); !r) {
         LOGE("%s: Failed to create parent directory: %s",
@@ -294,7 +313,7 @@ static bool restore_image(const std::string &input_file,
     }
 
     bool ret = restore_directory(input_file, BACKUP_MNT_DIR, exclusions,
-                                 compression);
+                                 compression, is_split);
 
     if (auto umount_ret = util::umount(BACKUP_MNT_DIR); !umount_ret) {
         LOGE("Failed to unmount %s: %s", BACKUP_MNT_DIR,
@@ -490,6 +509,8 @@ static Result restore_configs(const std::shared_ptr<Rom> &rom,
  * \param archive_name Backup archive name
  * \param is_image Whether \a path is an ext4 image
  * \param exclusions List of top-level directories to exclude from the backup
+ * \param compression Compression type
+ * \param split_archive_size Max size for each split file
  *
  * \return Result::Succeeded if the directory/image was successfully backed up
  *         Result::Failed if an error occured
@@ -500,7 +521,8 @@ static Result backup_partition(const std::string &path,
                                const std::string &archive_name,
                                bool is_image,
                                const std::vector<std::string> &exclusions,
-                               util::CompressionType compression)
+                               util::CompressionType compression,
+                               uint64_t split_archive_size)
 {
     std::string archive(backup_dir);
     archive += '/';
@@ -512,9 +534,11 @@ static Result backup_partition(const std::string &path,
     if (stat(path.c_str(), &sb) == 0) {
         LOGI("=== Backing up %s ===", path.c_str());
         if (is_image) {
-            ret = backup_image(archive, path, exclusions, compression);
+            ret = backup_image(archive, path, exclusions, compression,
+                               split_archive_size);
         } else {
-            ret = backup_directory(archive, path, exclusions, compression);
+            ret = backup_directory(archive, path, exclusions, compression,
+                                   split_archive_size);
         }
     } else {
         LOGW("=== %s does not exist ===", path.c_str());
@@ -533,6 +557,8 @@ static Result backup_partition(const std::string &path,
  * \param is_image Whether \a path is an ext4 image
  * \param exclusions List of top-level directories to exclude from the wipe
  *                   process before restoring
+ * \param compression Compression type
+ * \param is_split Whether the archive is split into multiple chunks
  *
  * \return Result::Succeeded if the directory/image was successfully restored
  *         Result::Failed if an error occured
@@ -545,22 +571,27 @@ static Result restore_partition(const std::string &path,
                                 bool is_image,
                                 uint64_t image_size,
                                 const std::vector<std::string> &exclusions,
-                                util::CompressionType compression)
+                                util::CompressionType compression,
+                                bool is_split)
 {
     std::string archive(backup_dir);
     archive += '/';
     archive += archive_name;
 
+    std::string split_archive(archive);
+    split_archive += ".0";
+
     bool ret = false;
 
     struct stat sb;
-    if (stat(archive.c_str(), &sb) == 0) {
+    if (stat(is_split ? split_archive.c_str() : archive.c_str(), &sb) == 0) {
         LOGI("=== Restoring to %s ===", path.c_str());
         if (is_image) {
             ret = restore_image(archive, path, image_size, exclusions,
-                                compression);
+                                compression, is_split);
         } else {
-            ret = restore_directory(archive, path, exclusions, compression);
+            ret = restore_directory(archive, path, exclusions, compression,
+                                    is_split);
         }
     } else {
         LOGW("=== %s does not exist ===", archive.c_str());
@@ -572,7 +603,8 @@ static Result restore_partition(const std::string &path,
 
 static bool backup_rom(const std::shared_ptr<Rom> &rom,
                        const std::string &output_dir, BackupTargets targets,
-                       util::CompressionType compression)
+                       util::CompressionType compression,
+                       uint64_t split_archive_size)
 {
     if (!targets) {
         LOGE("No backup targets specified");
@@ -630,7 +662,8 @@ static bool backup_rom(const std::shared_ptr<Rom> &rom,
     if (targets & BackupTarget::System) {
         Result ret = backup_partition(
                 system_path, output_dir, output_system,
-                rom->system_is_image, { "multiboot" }, compression);
+                rom->system_is_image, { "multiboot" }, compression,
+                split_archive_size);
         if (ret == Result::Failed) {
             return false;
         }
@@ -640,7 +673,8 @@ static bool backup_rom(const std::shared_ptr<Rom> &rom,
     if (targets & BackupTarget::Cache) {
         Result ret = backup_partition(
                 cache_path, output_dir, output_cache,
-                rom->cache_is_image, { "multiboot" }, compression);
+                rom->cache_is_image, { "multiboot" }, compression,
+                split_archive_size);
         if (ret == Result::Failed) {
             return false;
         }
@@ -650,7 +684,8 @@ static bool backup_rom(const std::shared_ptr<Rom> &rom,
     if (targets & BackupTarget::Data) {
         Result ret = backup_partition(
                 data_path, output_dir, output_data,
-                rom->data_is_image, { "media", "multiboot" }, compression);
+                rom->data_is_image, { "media", "multiboot" }, compression,
+                split_archive_size);
         if (ret == Result::Failed) {
             return false;
         }
@@ -728,16 +763,18 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
         }
 
         util::CompressionType compression;
+        bool is_split;
+
         std::string path = find_compressed_backup(
-                input_dir, BACKUP_NAME_PREFIX_SYSTEM, compression);
+                input_dir, BACKUP_NAME_PREFIX_SYSTEM, compression, is_split);
         if (path.empty()) {
             LOGE("Backup of /system not found");
             return false;
         }
 
         Result ret = restore_partition(
-                system_path, input_dir, path,
-                rom->system_is_image, image_size.value(), {}, compression);
+                system_path, input_dir, path, rom->system_is_image,
+                image_size.value(), {}, compression, is_split);
         if (ret == Result::Failed) {
             return false;
         }
@@ -746,16 +783,18 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
     // Restore cache
     if (targets & BackupTarget::Cache) {
         util::CompressionType compression;
+        bool is_split;
+
         std::string path = find_compressed_backup(
-                input_dir, BACKUP_NAME_PREFIX_CACHE, compression);
+                input_dir, BACKUP_NAME_PREFIX_CACHE, compression, is_split);
         if (path.empty()) {
             LOGE("Backup of /cache not found");
             return false;
         }
 
         Result ret = restore_partition(
-                cache_path, input_dir, path,
-                rom->cache_is_image, DEFAULT_IMAGE_SIZE, {}, compression);
+                cache_path, input_dir, path, rom->cache_is_image,
+                DEFAULT_IMAGE_SIZE, {}, compression, is_split);
         if (ret == Result::Failed) {
             return false;
         }
@@ -764,19 +803,43 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
     // Restore data
     if (targets & BackupTarget::Data) {
         util::CompressionType compression;
+        bool is_split;
+
         std::string path = find_compressed_backup(
-                input_dir, BACKUP_NAME_PREFIX_DATA, compression);
+                input_dir, BACKUP_NAME_PREFIX_DATA, compression, is_split);
         if (path.empty()) {
             LOGE("Backup of /data not found");
             return false;
         }
 
         Result ret = restore_partition(
-                data_path, input_dir, path,
-                rom->data_is_image, DEFAULT_IMAGE_SIZE, { "media" }, compression);
+                data_path, input_dir, path, rom->data_is_image,
+                DEFAULT_IMAGE_SIZE, { "media" }, compression, is_split);
         if (ret == Result::Failed) {
             return false;
         }
+    }
+
+    return true;
+}
+
+static bool unshare_mount_namespace()
+{
+    if (unshare(CLONE_NEWNS) < 0) {
+        fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
+        return false;
+    }
+
+    if (mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
+        fprintf(stderr, "Failed to set private mount propagation: %s\n",
+                strerror(errno));
+        return false;
+    }
+
+    if (mount("", "/", "", MS_REMOUNT, "") < 0) {
+        fprintf(stderr, "Failed to remount rootfs as writable: %s\n",
+                strerror(errno));
+        return false;
     }
 
     return true;
@@ -815,13 +878,20 @@ static bool remount_partitions_writable()
             && mount("", data_partition.c_str(), "", MS_REMOUNT, "") == 0;
 }
 
-static bool is_valid_backup_name(const std::string &name)
+static bool is_non_empty_dir(const std::string &path)
 {
-    // No empty strings, hidden paths, '..', or directory separators
-    return !name.empty()                            // Must be non-empty
-            && name.find('/') == std::string::npos  // and contain no slashes
-            && name != "."                          // and not current directory
-            && name != "..";                        // and not parent directory
+    ScopedDIR dp(opendir(path.c_str()), closedir);
+    if (dp) {
+        dirent *ent;
+        while ((ent = readdir(dp.get()))) {
+            if (strcmp(ent->d_name, ".") != 0
+                    && strcmp(ent->d_name, "..") != 0) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 static void warn_selinux_context()
@@ -841,22 +911,21 @@ static void warn_selinux_context()
 static void backup_usage(FILE *stream)
 {
     fprintf(stream,
-            "Usage: backup -r <romid> -t <targets> [-n <name>] [OPTION...]\n\n"
+            "Usage: backup -r <romid> -t <targets> [OPTION...]\n\n"
             "Options:\n"
             "  -r, --romid <ROM ID>"
             "                   ROM ID to backup\n"
             "  -t, --targets <targets>\n"
             "                   Comma-separated list of targets to backup\n"
             "                   (Default: 'all')\n"
-            "  -n, --name <name>\n"
-            "                   Name of backup\n"
-            "                   (Default: YYYY.MM.DD-HH.MM.SS)\n"
             "  -c, --compression <compression type>\n"
             "                   Compression type (none, lz4, gzip, xz)\n"
             "                   (Default: lz4)\n"
+            "  -s, --split-size <size>\n"
+            "                   Split archive maximum size in bytes (0 to disable)\n"
+            "                   (Default: %" PRIu64 " bytes)\n"
             "  -d, --backupdir <directory>\n"
-            "                   Directory to store backups\n"
-            "                   (Default: " MULTIBOOT_BACKUP_DIR ")\n"
+            "                   Directory to store backup\n"
             "  -f, --force      Allow overwriting old backup with the same name\n"
             "  -h, --help       Display this help message\n"
             "\n"
@@ -864,24 +933,22 @@ static void backup_usage(FILE *stream)
             "  system,cache,data,boot,config\n"
             "\n"
             "NOTE: This tool is still in development and the arguments above\n"
-            "have not yet been finalized.\n");
+            "have not yet been finalized.\n",
+            DEFAULT_ARCHIVE_SPLIT_SIZE);
 }
 
 static void restore_usage(FILE *stream)
 {
     fprintf(stream,
-            "Usage: restore -r <romid> -t <targets> -n <name> [OPTION...]\n\n"
+            "Usage: restore -r <romid> -t <targets> -d <directory> [OPTION...]\n\n"
             "Options:\n"
             "  -r, --romid <ROM ID>\n"
             "                   ROM ID to restore to\n"
             "  -t, --targets <targets>\n"
             "                   Comma-separated list of targets to restore\n"
             "                   (Default: 'all')\n"
-            "  -n, --name <name>\n"
-            "                   Name of backup to restore\n"
             "  -d, --backupdir <directory>\n"
-            "                   Directory containing backups\n"
-            "                   (Default: " MULTIBOOT_BACKUP_DIR ")\n"
+            "                   Backup directory to restore from\n"
             "  -h, --help       Display this help message\n"
             "\n"
             "Valid backup targets: 'all' or some combination of the following:\n"
@@ -895,13 +962,13 @@ int backup_main(int argc, char *argv[])
 {
     int opt;
 
-    static const char *short_options = "r:t:n:c:d:fh";
+    static const char *short_options = "r:t:c:d:s:fh";
     static struct option long_options[] = {
         {"romid",       required_argument, 0, 'r'},
         {"targets",     required_argument, 0, 't'},
-        {"name",        required_argument, 0, 'n'},
         {"compression", required_argument, 0, 'c'},
         {"backupdir",   required_argument, 0, 'd'},
+        {"split-size",  required_argument, 0, 's'},
         {"force",       no_argument,       0, 'f'},
         {"help",        no_argument,       0, 'h'},
         {0, 0, 0, 0}
@@ -911,18 +978,10 @@ int backup_main(int argc, char *argv[])
 
     std::string romid;
     std::string targets_str("all");
-    std::string name;
-    std::string backupdir(MULTIBOOT_BACKUP_DIR);
+    std::string backupdir;
     util::CompressionType compression = util::CompressionType::Lz4;
+    uint64_t split_archive_size = DEFAULT_ARCHIVE_SPLIT_SIZE;
     bool force = false;
-
-    if (auto n = util::format_time("%Y.%m.%d-%H.%M.%S",
-                                   std::chrono::system_clock::now())) {
-        n.value().swap(name);
-    } else {
-        fprintf(stderr, "Failed to format current time\n");
-        return EXIT_FAILURE;
-    }
 
     while ((opt = getopt_long(argc, argv, short_options,
             long_options, &long_index)) != -1) {
@@ -933,9 +992,6 @@ int backup_main(int argc, char *argv[])
         case 't':
             targets_str = optarg;
             break;
-        case 'n':
-            name = optarg;
-            break;
         case 'c':
             if (!parse_compression_type(optarg, compression)) {
                 fprintf(stderr, "Invalid compression type: %s\n", optarg);
@@ -944,6 +1000,12 @@ int backup_main(int argc, char *argv[])
             break;
         case 'd':
             backupdir = optarg;
+            break;
+        case 's':
+            if (!str_to_num(optarg, 10, split_archive_size)) {
+                fprintf(stderr, "Invalid split size: %s\n", optarg);
+                return EXIT_FAILURE;
+            }
             break;
         case 'f':
             force = true;
@@ -968,18 +1030,22 @@ int backup_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    if (backupdir.empty()) {
+        fprintf(stderr, "No backup directory specified\n");
+        return EXIT_FAILURE;
+    }
+
     BackupTargets targets = parse_targets_string(targets_str);
     if (!targets) {
         fprintf(stderr, "Invalid targets: %s\n", targets_str.c_str());
         return EXIT_FAILURE;
     }
 
-    if (!is_valid_backup_name(name)) {
-        fprintf(stderr, "Invalid backup name: %s\n", name.c_str());
+    warn_selinux_context();
+
+    if (!unshare_mount_namespace()) {
         return EXIT_FAILURE;
     }
-
-    warn_selinux_context();
 
     if (!ensure_partitions_mounted()) {
         return EXIT_FAILURE;
@@ -994,24 +1060,21 @@ int backup_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    std::string output_dir(backupdir);
-    output_dir += "/";
-    output_dir += name;
-
-    struct stat sb;
-    if (!force && stat(output_dir.c_str(), &sb) == 0) {
-        fprintf(stderr, "Backup '%s' already exists. Choose another name or "
-                "pass -f/--force to use this name anyway.\n", name.c_str());
+    if (!force && is_non_empty_dir(backupdir)) {
+        fprintf(stderr, "'%s' already exists and is not empty. Choose another "
+                "directory or pass -f/--force to use this directory anyway.\n",
+                backupdir.c_str());
         return EXIT_FAILURE;
     }
 
-    if (auto r = util::mkdir_recursive(output_dir, 0755); !r) {
+    if (auto r = util::mkdir_recursive(backupdir, 0755); !r) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
-                output_dir.c_str(), r.error().message().c_str());
+                backupdir.c_str(), r.error().message().c_str());
         return EXIT_FAILURE;
     }
 
-    bool ret = backup_rom(rom, output_dir, targets, compression);
+    bool ret = backup_rom(rom, backupdir, targets, compression,
+                          split_archive_size);
     if (ret) {
         LOGI("=== Finished ===");
         return EXIT_SUCCESS;
@@ -1025,11 +1088,10 @@ int restore_main(int argc, char *argv[])
 {
     int opt;
 
-    static const char *short_options = "r:t:n:d:h";
+    static const char *short_options = "r:t:d:h";
     static struct option long_options[] = {
         {"romid",     required_argument, 0, 'r'},
         {"targets",   required_argument, 0, 't'},
-        {"name",      required_argument, 0, 'n'},
         {"backupdir", required_argument, 0, 'd'},
         {"help",      no_argument,       0, 'h'},
         {0, 0, 0, 0}
@@ -1039,8 +1101,7 @@ int restore_main(int argc, char *argv[])
 
     std::string romid;
     std::string targets_str("all");
-    std::string name;
-    std::string backupdir(MULTIBOOT_BACKUP_DIR);
+    std::string backupdir;
 
     while ((opt = getopt_long(argc, argv, short_options,
             long_options, &long_index)) != -1) {
@@ -1050,9 +1111,6 @@ int restore_main(int argc, char *argv[])
             break;
         case 't':
             targets_str = optarg;
-            break;
-        case 'n':
-            name = optarg;
             break;
         case 'd':
             backupdir = optarg;
@@ -1077,8 +1135,8 @@ int restore_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (name.empty()) {
-        fprintf(stderr, "No backup name specified\n");
+    if (backupdir.empty()) {
+        fprintf(stderr, "No backup directory specified\n");
         return EXIT_FAILURE;
     }
 
@@ -1088,12 +1146,11 @@ int restore_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!is_valid_backup_name(name)) {
-        fprintf(stderr, "Invalid backup name: %s\n", name.c_str());
+    warn_selinux_context();
+
+    if (!unshare_mount_namespace()) {
         return EXIT_FAILURE;
     }
-
-    warn_selinux_context();
 
     if (!ensure_partitions_mounted()) {
         return EXIT_FAILURE;
@@ -1111,17 +1168,13 @@ int restore_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    std::string input_dir(backupdir);
-    input_dir += "/";
-    input_dir += name;
-
     struct stat sb;
-    if (stat(input_dir.c_str(), &sb) < 0) {
-        fprintf(stderr, "Backup '%s' does not exist\n", name.c_str());
+    if (stat(backupdir.c_str(), &sb) < 0) {
+        fprintf(stderr, "'%s' does not exist\n", backupdir.c_str());
         return EXIT_FAILURE;
     }
 
-    bool ret = restore_rom(rom, input_dir, targets);
+    bool ret = restore_rom(rom, backupdir, targets);
     if (ret) {
         LOGI("=== Finished ===");
         return EXIT_SUCCESS;

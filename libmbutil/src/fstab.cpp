@@ -172,43 +172,46 @@ static struct MountFlag g_fs_mgr_flags[] =
     { nullptr,              0 },
 };
 
-static std::pair<unsigned long, std::string>
-options_to_flags(const MountFlag *flags_map, std::string options)
+static std::pair<unsigned long, std::vector<std::string>>
+parse_options(const MountFlag *flags_map, std::string_view options)
 {
     unsigned long flags = 0;
-    std::string new_options;
-    char *save_ptr;
+    std::vector<std::string> remaining;
 
-    char *temp = strtok_r(options.data(), ",", &save_ptr);
-    while (temp) {
+    for (auto const &option : split_sv(options, ',')) {
         const MountFlag *it;
 
         for (it = flags_map; it->name; ++it) {
-            if (starts_with(temp, it->name)) {
+            if (starts_with(option, it->name)) {
                 flags |= it->flag;
                 break;
             }
         }
 
         if (!it->name) {
-            new_options += temp;
-            new_options += ',';
+            remaining.emplace_back(option);
         }
-
-        temp = strtok_r(nullptr, ",", &save_ptr);
     }
 
-    if (!new_options.empty()) {
-        new_options.pop_back();
-    }
+    return {flags, std::move(remaining)};
+}
 
-    return {flags, std::move(new_options)};
+std::pair<unsigned long, std::vector<std::string>>
+parse_mount_options(std::string_view options)
+{
+    return parse_options(g_mount_flags, options);
+}
+
+std::pair<unsigned long, std::vector<std::string>>
+parse_fs_mgr_options(std::string_view options)
+{
+    return parse_options(g_fs_mgr_flags, options);
 }
 
 // Much simplified version of fs_mgr's fstab parsing code
 FstabResult<FstabRecs> read_fstab(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
     if (!fp) {
         return FstabErrorInfo{{}, ec_from_errno()};
     }
@@ -264,15 +267,15 @@ FstabResult<FstabRecs> read_fstab(const std::string &path)
             return FstabErrorInfo{line, FstabError::MissingMountOptions};
         }
         rec.mount_args = temp;
-        std::tie(rec.flags, rec.fs_options) =
-                options_to_flags(g_mount_flags, temp);
+        auto [flags, fs_options] = parse_mount_options(temp);
+        rec.flags = flags;
+        rec.fs_options = join(fs_options, ',');
 
         if (!(temp = strtok_r(nullptr, delim, &save_ptr))) {
             return FstabErrorInfo{line, FstabError::MissingVoldOptions};
         }
         rec.vold_args = temp;
-        std::tie(rec.fs_mgr_flags, std::ignore) =
-                options_to_flags(g_fs_mgr_flags, temp);
+        std::tie(rec.fs_mgr_flags, std::ignore) = parse_fs_mgr_options(temp);
 
         fstab.push_back(std::move(rec));
     }
@@ -286,7 +289,7 @@ FstabResult<FstabRecs> read_fstab(const std::string &path)
 
 FstabResult<TwrpFstabRecs> read_twrp_fstab(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
     if (!fp) {
         return FstabErrorInfo{{}, ec_from_errno()};
     }

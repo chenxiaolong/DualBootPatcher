@@ -407,7 +407,7 @@ static GRSurface* drm_init(minui_backend* backend __unused)
             continue;
         }
 
-        drm_fd = open(dev_name, O_RDWR, 0);
+        drm_fd = open(dev_name, O_RDWR | O_CLOEXEC, 0);
         free(dev_name);
         if (drm_fd < 0) {
             continue;
