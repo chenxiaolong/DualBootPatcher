@@ -1168,10 +1168,6 @@
     recovery:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/mmcblk0p8
-    external_sd:
-      - /dev/block/mmcblk1p1
-      - /dev/block/mmcblk1
-      - /dev/block/dm-0	
 
   boot_ui:
     supported: true
