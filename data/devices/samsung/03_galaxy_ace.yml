@@ -172,7 +172,7 @@
     recovery:
       - /dev/block/mmcblk0p21
 
-   boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
