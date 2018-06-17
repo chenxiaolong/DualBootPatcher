@@ -1,0 +1,79 @@
+---
+- name: Smartfren Andromax A16C3H
+  id: A16C3H
+  codenames:
+      - A16C3H
+      - Andromax
+      - msm8909_x20_g151
+  architecture: 
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/7824900.sdhci/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p23
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p33
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/mmcblk0p1
+      - /dev/block/mmcblk0p20
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p24
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+    extra:
+      - /dev/block/mmcblk1p1
+      - /dev/block/platform/7824900.sdhci/by-name/DDR
+      - /dev/block/platform/7824900.sdhci/by-name/aboot
+      - /dev/block/platform/7824900.sdhci/by-name/abootbak
+      - /dev/block/platform/7824900.sdhci/by-name/config
+      - /dev/block/platform/7824900.sdhci/by-name/devinfo
+      - /dev/block/platform/7824900.sdhci/by-name/fsc
+      - /dev/block/platform/7824900.sdhci/by-name/fsg
+      - /dev/block/platform/7824900.sdhci/by-name/fwinfo
+      - /dev/block/platform/7824900.sdhci/by-name/keystore
+      - /dev/block/platform/7824900.sdhci/by-name/misc
+      - /dev/block/platform/7824900.sdhci/by-name/modem
+      - /dev/block/platform/7824900.sdhci/by-name/modemst1
+      - /dev/block/platform/7824900.sdhci/by-name/modemst2
+      - /dev/block/platform/7824900.sdhci/by-name/oem
+      - /dev/block/platform/7824900.sdhci/by-name/pad
+      - /dev/block/platform/7824900.sdhci/by-name/persist
+      - /dev/block/platform/7824900.sdhci/by-name/rootm
+      - /dev/block/platform/7824900.sdhci/by-name/rpm
+      - /dev/block/platform/7824900.sdhci/by-name/rpmbak
+      - /dev/block/platform/7824900.sdhci/by-name/sbl1
+      - /dev/block/platform/7824900.sdhci/by-name/sbl1bak
+      - /dev/block/platform/7824900.sdhci/by-name/sec
+      - /dev/block/platform/7824900.sdhci/by-name/smartfren
+      - /dev/block/platform/7824900.sdhci/by-name/splash
+      - /dev/block/platform/7824900.sdhci/by-name/ssd
+      - /dev/block/platform/7824900.sdhci/by-name/sysinfo
+      - /dev/block/platform/7824900.sdhci/by-name/tz
+      - /dev/block/platform/7824900.sdhci/by-name/tzbak
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
