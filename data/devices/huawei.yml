@@ -1,7 +1,6 @@
 ---
-
-- name: HUAWEI MT7-CL00
-  id: MT7-CL00
+- name: Huawei Ascend Mate 7 Monarch
+  id: hwmt7
   codenames:
     - hwmt7
   architecture: armeabi-v7a
