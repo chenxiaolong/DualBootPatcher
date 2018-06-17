@@ -74,7 +74,7 @@ static void fbdev_blank(minui_backend* backend __unused, bool blank)
         char brightness[4];
         snprintf(brightness, 4, "%03d", tw_device.tw_max_brightness() / 2);
 
-        fd = open(brightness_path.c_str(), O_RDWR);
+        fd = open(brightness_path.c_str(), O_RDWR | O_CLOEXEC);
         if (fd < 0) {
             perror("cannot open LCD backlight");
             return;
@@ -85,7 +85,7 @@ static void fbdev_blank(minui_backend* backend __unused, bool blank)
         auto const &secondary_brightness_path =
                 tw_device.tw_secondary_brightness_path();
         if (!secondary_brightness_path.empty()) {
-            fd = open(secondary_brightness_path.c_str(), O_RDWR);
+            fd = open(secondary_brightness_path.c_str(), O_RDWR | O_CLOEXEC);
             if (fd < 0) {
                 perror("cannot open LCD backlight 2");
                 return;
@@ -123,7 +123,7 @@ static GRSurface* fbdev_init(minui_backend* backend)
     int retry = 20;
     int fd = -1;
     while (fd == -1) {
-        fd = open("/dev/graphics/fb0", O_RDWR);
+        fd = open("/dev/graphics/fb0", O_RDWR | O_CLOEXEC);
         if (fd == -1) {
             if (--retry) {
                 // wait for init to create the device node

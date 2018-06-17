@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -28,7 +28,7 @@
 namespace mb::io
 {
 
-bool delete_recursively(const std::string &path)
+oc::result<void> delete_recursively(const std::string &path)
 {
 #ifdef _WIN32
     return win32::delete_recursively(path);

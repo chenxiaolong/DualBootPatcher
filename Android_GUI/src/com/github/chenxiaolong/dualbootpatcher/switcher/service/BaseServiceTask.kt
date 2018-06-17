@@ -115,7 +115,7 @@ abstract class BaseServiceTask(val taskId: Int, context: Context) : Runnable {
         // Override to send events upon adding a listener
     }
 
-    protected fun onListenerRemoved(listener: BaseServiceTaskListener) {
+    protected open fun onListenerRemoved(listener: BaseServiceTaskListener) {
         // Override to send events upon removing a listener
     }
 

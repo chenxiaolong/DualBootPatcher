@@ -18,7 +18,7 @@ Downloads can be found [here](https://dbp.noobdev.io/downloads/).
 Compiling from Source
 ---------------------
 
-See the `docs/` directory for instructions on building for Linux, Windows, and Android.
+See the [`docs/build/`](docs/build) directory for instructions on building for Linux, Windows, and Android.
 
 
 License

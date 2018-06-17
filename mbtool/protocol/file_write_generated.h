@@ -30,7 +30,7 @@ struct FileWriteError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -45,13 +45,13 @@ struct FileWriteErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(FileWriteError::VT_MSG, msg);
   }
-  FileWriteErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileWriteErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileWriteErrorBuilder &operator=(const FileWriteErrorBuilder &);
   flatbuffers::Offset<FileWriteError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileWriteError>(end);
     return o;
   }
@@ -91,7 +91,7 @@ struct FileWriteRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ID) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_DATA) &&
+           VerifyOffset(verifier, VT_DATA) &&
            verifier.Verify(data()) &&
            verifier.EndTable();
   }
@@ -106,13 +106,13 @@ struct FileWriteRequestBuilder {
   void add_data(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data) {
     fbb_.AddOffset(FileWriteRequest::VT_DATA, data);
   }
-  FileWriteRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileWriteRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileWriteRequestBuilder &operator=(const FileWriteRequestBuilder &);
   flatbuffers::Offset<FileWriteRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileWriteRequest>(end);
     return o;
   }
@@ -160,10 +160,10 @@ struct FileWriteResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
            VerifyField<uint64_t>(verifier, VT_BYTES_WRITTEN) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -184,13 +184,13 @@ struct FileWriteResponseBuilder {
   void add_error(flatbuffers::Offset<FileWriteError> error) {
     fbb_.AddOffset(FileWriteResponse::VT_ERROR, error);
   }
-  FileWriteResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileWriteResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileWriteResponseBuilder &operator=(const FileWriteResponseBuilder &);
   flatbuffers::Offset<FileWriteResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 4);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileWriteResponse>(end);
     return o;
   }

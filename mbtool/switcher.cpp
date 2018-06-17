@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -54,100 +54,29 @@ namespace mb
 {
 
 /*!
- * \brief Check a checksum property
- *
- * \param props Pointer to properties map
- * \param rom_id ROM ID
- * \param image Image filename (without directory)
- * \param sha512_out SHA512 hex digest output
- *
- * \return ChecksumsGetResult::Found if the hash was successfully retrieved,
- *         ChecksumsGetResult::NotFound if the hash does not exist in the map,
- *         ChecksumsGetResult::Malformed if the property has an invalid format
- */
-ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *props,
-                                 const std::string &rom_id,
-                                 const std::string &image,
-                                 std::string *sha512_out)
-{
-    std::string checksums_path = get_raw_path(CHECKSUMS_PATH);
-
-    std::string key(rom_id);
-    key += "/";
-    key += image;
-
-    if (props->find(key) == props->end()) {
-        return ChecksumsGetResult::NotFound;
-    }
-
-    const std::string &value = (*props)[key];
-
-    std::size_t pos = value.find(":");
-    if (pos != std::string::npos) {
-        std::string algo = value.substr(0, pos);
-        std::string hash = value.substr(pos + 1);
-        if (algo != "sha512") {
-            LOGE("%s: Invalid hash algorithm: %s",
-                 checksums_path.c_str(), algo.c_str());
-            return ChecksumsGetResult::Malformed;
-        }
-
-        *sha512_out = hash;
-        return ChecksumsGetResult::Found;
-    } else {
-        LOGE("%s: Invalid checksum property: %s=%s",
-             checksums_path.c_str(), key.c_str(), value.c_str());
-        return ChecksumsGetResult::Malformed;
-    }
-}
-
-/*!
- * \brief Update a checksum property
- *
- * \param props Pointer to properties map
- * \param rom_id ROM ID
- * \param image Image filename (without directory)
- * \param sha512 SHA512 hex digest
- */
-void checksums_update(std::unordered_map<std::string, std::string> *props,
-                      const std::string &rom_id,
-                      const std::string &image,
-                      const std::string &sha512)
-{
-    std::string key(rom_id);
-    key += "/";
-    key += image;
-
-    (*props)[key] = "sha512:";
-    (*props)[key] += sha512;
-}
-
-/*!
  * \brief Read checksums properties from \a /data/multiboot/checksums.prop
- *
- * \param props Pointer to properties map
  *
  * \return True if the file was successfully read. Otherwise, false.
  */
-bool checksums_read(std::unordered_map<std::string, std::string> *props)
+bool ChecksumProps::load_file()
 {
     std::string checksums_path = get_raw_path(CHECKSUMS_PATH);
 
-    if (!util::property_file_get_all(checksums_path, *props)) {
+    if (auto p = util::property_file_get_all(checksums_path)) {
+        p->swap(m_props);
+        return true;
+    } else {
         LOGE("%s: Failed to load properties", checksums_path.c_str());
         return false;
     }
-    return true;
 }
 
 /*!
  * \brief Write checksums properties to \a /data/multiboot/checksums.prop
  *
- * \param props Properties map
- *
  * \return True if successfully written. Otherwise, false.
  */
-bool checksums_write(const std::unordered_map<std::string, std::string> &props)
+bool ChecksumProps::save_file()
 {
     std::string checksums_path = get_raw_path(CHECKSUMS_PATH);
 
@@ -168,7 +97,7 @@ bool checksums_write(const std::unordered_map<std::string, std::string> &props)
              checksums_path.c_str(), strerror(errno));
     }
 
-    if (!util::property_file_write_all(checksums_path, props)) {
+    if (!util::property_file_write_all(checksums_path, m_props)) {
         LOGW("%s: Failed to write new properties: %s",
              checksums_path.c_str(), strerror(errno));
         return false;
@@ -177,13 +106,77 @@ bool checksums_write(const std::unordered_map<std::string, std::string> &props)
     return true;
 }
 
+/*!
+ * \brief Get a checksum property
+ *
+ * \param[in] rom_id ROM ID
+ * \param[in] image Image filename (without directory)
+ * \param[out] sha512_out SHA512 hex digest output
+ *
+ * \return ChecksumsGetResult::Found if the hash was successfully retrieved,
+ *         ChecksumsGetResult::NotFound if the hash does not exist in the map,
+ *         ChecksumsGetResult::Malformed if the property has an invalid format
+ */
+ChecksumsGetResult ChecksumProps::get(const std::string &rom_id,
+                                      const std::string &image,
+                                      std::string &sha512_out)
+{
+    std::string checksums_path = get_raw_path(CHECKSUMS_PATH);
+
+    std::string key(rom_id);
+    key += "/";
+    key += image;
+
+    auto it = m_props.find(key);
+    if (it == m_props.end()) {
+        return ChecksumsGetResult::NotFound;
+    }
+
+    const std::string &value = it->second;
+
+    if (auto pos = value.find(":"); pos != std::string::npos) {
+        std::string algo = value.substr(0, pos);
+        std::string hash = value.substr(pos + 1);
+        if (algo != "sha512") {
+            LOGE("%s: Invalid hash algorithm: %s",
+                 checksums_path.c_str(), algo.c_str());
+            return ChecksumsGetResult::Malformed;
+        }
+
+        sha512_out = hash;
+        return ChecksumsGetResult::Found;
+    } else {
+        LOGE("%s: Invalid checksum property: %s=%s",
+             checksums_path.c_str(), key.c_str(), value.c_str());
+        return ChecksumsGetResult::Malformed;
+    }
+}
+
+/*!
+ * \brief Update a checksum property
+ *
+ * \param rom_id ROM ID
+ * \param image Image filename (without directory)
+ * \param sha512 SHA512 hex digest
+ */
+void ChecksumProps::set(const std::string &rom_id, const std::string &image,
+                        const std::string &sha512)
+{
+    std::string key(rom_id);
+    key += "/";
+    key += image;
+
+    m_props[key] = "sha512:";
+    m_props[key] += sha512;
+}
+
 struct Flashable
 {
     std::string image;
     std::string block_dev;
     std::string expected_hash;
     std::string hash;
-    std::vector<unsigned char> data;
+    std::string data;
 };
 
 /*!
@@ -348,8 +341,8 @@ SwitchRomResult switch_rom(const std::string &id,
         LOGW("Failed to find extra images");
     }
 
-    std::unordered_map<std::string, std::string> props;
-    checksums_read(&props);
+    ChecksumProps props;
+    props.load_file();
 
     for (Flashable &f : flashables) {
         // If memory becomes an issue, an alternative method is to create a
@@ -365,16 +358,17 @@ SwitchRomResult switch_rom(const std::string &id,
 
         // Get actual sha512sum
         std::array<unsigned char, SHA512_DIGEST_LENGTH> digest;
-        SHA512(f.data.data(), f.data.size(), digest.data());
+        SHA512(reinterpret_cast<const unsigned char *>(f.data.data()),
+               f.data.size(), digest.data());
         f.hash = util::hex_string(digest.data(), digest.size());
 
         if (force_update_checksums) {
-            checksums_update(&props, id, util::base_name(f.image), f.hash);
+            props.set(id, util::base_name(f.image), f.hash);
         }
 
         // Get expected sha512sum
-        ChecksumsGetResult ret = checksums_get(
-                &props, id, util::base_name(f.image), &f.expected_hash);
+        ChecksumsGetResult ret = props.get(id, util::base_name(f.image),
+                                           f.expected_hash);
         if (ret == ChecksumsGetResult::Malformed) {
             return SwitchRomResult::ChecksumInvalid;
         }
@@ -409,7 +403,7 @@ SwitchRomResult switch_rom(const std::string &id,
 
     if (force_update_checksums) {
         LOGD("Updating checksums file");
-        checksums_write(props);
+        props.save_file();
     }
 
     if (!fix_multiboot_permissions()) {
@@ -466,13 +460,14 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
 
     // Get actual sha512sum
     std::array<unsigned char, SHA512_DIGEST_LENGTH> digest;
-    SHA512(data.value().data(), data.value().size(), digest.data());
+    SHA512(reinterpret_cast<const unsigned char *>(data.value().data()),
+           data.value().size(), digest.data());
     std::string hash = util::hex_string(digest.data(), digest.size());
 
     // Add to checksums.prop
-    std::unordered_map<std::string, std::string> props;
-    checksums_read(&props);
-    checksums_update(&props, id, "boot.img", hash);
+    ChecksumProps props;
+    props.load_file();
+    props.set(id, "boot.img", hash);
 
     // NOTE: This function isn't responsible for updating the checksums for
     //       any extra images. We don't want to mask any malicious changes.
@@ -487,7 +482,7 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
     }
 
     LOGD("Updating checksums file");
-    checksums_write(props);
+    props.save_file();
 
     if (!fix_multiboot_permissions()) {
         //return false;

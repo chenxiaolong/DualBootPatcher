@@ -19,6 +19,7 @@
 
 #include "mbutil/mount.h"
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -39,17 +40,20 @@
 #include "mblog/logging.h"
 #include "mbutil/blkid.h"
 #include "mbutil/directory.h"
+#include "mbutil/fstab.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/string.h"
 
 #define LOG_TAG "mbutil/mount"
 
-#define MAX_UNMOUNT_TRIES 5
-
-#define DELETED_SUFFIX " (deleted)"
-
 namespace mb::util
 {
+
+static constexpr int MAX_UNMOUNT_TRIES = 5;
+
+static constexpr char PROC_MOUNTS[] = "/proc/mounts";
+static constexpr char PROC_MOUNTINFO[] = "/proc/self/mountinfo";
+static constexpr std::string_view DELETED_SUFFIX = " (deleted)";
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
@@ -79,8 +83,6 @@ const char * MountErrorCategory::name() const noexcept
 std::string MountErrorCategory::message(int ev) const
 {
     switch (static_cast<MountError>(ev)) {
-    case MountError::EndOfFile:
-        return "end of file";
     case MountError::PathNotMounted:
         return "path not mounted";
     default:
@@ -111,74 +113,207 @@ static std::string unescape_octals(std::string_view in)
     return result;
 }
 
-oc::result<MountEntry> get_mount_entry(std::FILE *fp)
+static void strip_deleted_suffix(std::string &path)
 {
-    MountEntry entry;
+    struct stat sb;
+    if (lstat(path.c_str(), &sb) < 0 && errno == ENOENT
+            && ends_with(path, DELETED_SUFFIX)) {
+        path.erase(path.size() - DELETED_SUFFIX.size());
+    }
+}
+
+static void remove_duplicate_options(const std::string &vfs_options,
+                                     std::string &fs_options)
+{
+    auto vfs_list = split_sv(vfs_options, ',');
+    std::vector<std::string_view> fs_list;
+
+    // Slow linear search is good enough
+    for (auto const &o : split_sv(fs_options, ',')) {
+        if (std::find(vfs_list.begin(), vfs_list.end(), o) == vfs_list.end()) {
+            fs_list.emplace_back(o);
+        }
+    }
+
+    fs_options = join(fs_list, ',');
+}
+
+static std::pair<std::string, std::string>
+split_options(std::string_view options)
+{
+    std::vector<std::string_view> vfs_list;
+    std::vector<std::string> fs_list;
+
+    std::tie(std::ignore, fs_list) = parse_mount_options(options);
+
+    // Slow linear search is good enough
+    for (auto const &o : split_sv(options, ',')) {
+        if (std::find(fs_list.begin(), fs_list.end(), o) == fs_list.end()) {
+            vfs_list.emplace_back(o);
+        }
+    }
+
+    return {join(vfs_list, ','), join(fs_list, ',')};
+}
+
+oc::result<std::vector<MountEntry>> get_mount_entries()
+{
+    std::vector<MountEntry> entries;
+
     char *line = nullptr;
-    size_t size = 0;
+    size_t len = 0;
 
     auto free_line = finally([&] {
         free(line);
     });
 
-    ssize_t n = getline(&line, &size, fp);
-    if (n < 0) {
-        if (ferror(fp)) {
-            return ec_from_errno();
-        } else {
-            return MountError::EndOfFile;
+    {
+        ScopedFILE fp(fopen(PROC_MOUNTINFO, "re"), fclose);
+        if (fp) {
+            while (getline(&line, &len, fp.get()) != -1) {
+                MountEntry &entry = entries.emplace_back();
+
+                unsigned int id;
+                unsigned int parent;
+                unsigned int dev_maj, dev_min;
+                int root_begin, root_end;
+                int target_begin, target_end;
+                int vfs_opts_begin, vfs_opts_end;
+                int type_begin, type_end;
+                int source_begin, source_end;
+                int fs_opts_begin, fs_opts_end;
+                int count;
+
+                count = std::sscanf(line,
+                                    "%u "      // [1] ID
+                                    "%u "      // [2] Parent
+                                    "%u:%u "   // [3] Device major:minor
+                                    "%n%*s%n " // [4] Bind mount root
+                                    "%n%*s%n " // [5] Mount point
+                                    "%n%*s%n", // [6] VFS options
+                                    &id,
+                                    &parent,
+                                    &dev_maj, &dev_min,
+                                    &root_begin, &root_end,
+                                    &target_begin, &target_end,
+                                    &vfs_opts_begin, &vfs_opts_end);
+                if (count != 4) {
+                    return std::errc::invalid_argument;
+                }
+
+                // [7] Skip over optional fields
+                char *dash = strstr(line + target_end, " - ");
+                if (!dash) {
+                    return std::errc::invalid_argument;
+                }
+
+                count = sscanf(dash, " - "
+                                     "%n%*s%n " // [8] FS type
+                                     "%n%*s%n " // [9] Source device
+                                     "%n%*s%n", // [10] FS options
+                                     &type_begin, &type_end,
+                                     &source_begin, &source_end,
+                                     &fs_opts_begin, &fs_opts_end);
+                if (count != 0) {
+                    return std::errc::invalid_argument;
+                }
+
+                // NULL terminate entries
+                line[root_end] = '\0';
+                line[target_end] = '\0';
+                line[vfs_opts_end] = '\0';
+                dash[type_end] = '\0';
+                dash[source_end] = '\0';
+                dash[fs_opts_end] = '\0';
+
+                entry.id = id;
+                entry.parent = parent;
+                entry.dev = makedev(dev_maj, dev_min);
+                entry.root = unescape_octals(line + root_begin);
+                entry.target = unescape_octals(line + target_begin);
+                entry.vfs_options = unescape_octals(line + vfs_opts_begin);
+                entry.type = unescape_octals(dash + type_begin);
+                entry.source = unescape_octals(dash + source_begin);
+                entry.fs_options = unescape_octals(dash + fs_opts_begin);
+
+                strip_deleted_suffix(entry.target);
+                remove_duplicate_options(entry.vfs_options, entry.fs_options);
+            }
+
+            if (ferror(fp.get())) {
+                return ec_from_errno();
+            }
+
+            return std::move(entries);
         }
     }
 
-    int pos[8];
-    int count = std::sscanf(line, " %n%*s%n %n%*s%n %n%*s%n %n%*s%n %d %d",
-            pos, pos + 1,       // fsname
-            pos + 2, pos + 3,   // dir
-            pos + 4, pos + 5,   // type
-            pos + 6, pos + 7,   // opts
-            &entry.freq,        // freq
-            &entry.passno);     // passno
+    {
+        ScopedFILE fp(fopen(PROC_MOUNTS, "re"), fclose);
+        if (fp) {
+            while (getline(&line, &len, fp.get()) != -1) {
+                MountEntry &entry = entries.emplace_back();
 
-    if (count != 2) {
-        return std::errc::invalid_argument;
+                int source_begin, source_end;
+                int target_begin, target_end;
+                int type_begin, type_end;
+                int opts_begin, opts_end;
+                int freq;
+                int passno;
+                int count;
+
+                count = std::sscanf(line,
+                                    "%n%*s%n " // [1] Source device
+                                    "%n%*s%n " // [2] Mount point
+                                    "%n%*s%n " // [3] FS type
+                                    "%n%*s%n " // [4] Options
+                                    "%d "      // [5] Dump frequency in days
+                                    "%d",      // [6] Parallel fsck pass number
+                                    &source_begin, &source_end,
+                                    &target_begin, &target_end,
+                                    &type_begin, &type_end,
+                                    &opts_begin, &opts_end,
+                                    &freq,
+                                    &passno);
+                if (count != 2) {
+                    return std::errc::invalid_argument;
+                }
+
+                // NULL terminate entries
+                line[source_end] = '\0';
+                line[target_end] = '\0';
+                line[type_end] = '\0';
+                line[opts_end] = '\0';
+
+                entry.source = unescape_octals(line + source_begin);
+                entry.target = unescape_octals(line + target_begin);
+                entry.type = unescape_octals(line + type_begin);
+                std::tie(entry.vfs_options, entry.fs_options) =
+                        split_options(unescape_octals(line + opts_begin));
+                entry.freq = freq;
+                entry.passno = passno;
+
+                strip_deleted_suffix(entry.target);
+            }
+
+            if (ferror(fp.get())) {
+                return ec_from_errno();
+            }
+
+            return std::move(entries);
+        }
     }
 
-    // NULL terminate entries
-    line[pos[1]] = '\0';
-    line[pos[3]] = '\0';
-    line[pos[5]] = '\0';
-    line[pos[7]] = '\0';
-
-    entry.fsname = unescape_octals(line + pos[0]);
-    entry.dir = unescape_octals(line + pos[2]);
-    entry.type = unescape_octals(line + pos[4]);
-    entry.opts = unescape_octals(line + pos[6]);
-
-    struct stat sb;
-    if (lstat(entry.dir.c_str(), &sb) < 0 && errno == ENOENT
-            && ends_with(entry.dir, DELETED_SUFFIX)) {
-        entry.dir.erase(entry.dir.size() - strlen(DELETED_SUFFIX));
-    }
-
-    return std::move(entry);
+    // fopen failed
+    return ec_from_errno();
 }
 
 oc::result<void> is_mounted(const std::string &mountpoint)
 {
-    ScopedFILE fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
-    if (!fp) {
-        return ec_from_errno();
-    }
+    OUTCOME_TRY(entries, get_mount_entries());
 
-    while (true) {
-        auto entry = get_mount_entry(fp.get());
-        if (!entry) {
-            if (entry.error() == MountError::EndOfFile) {
-                break;
-            } else {
-                return entry.as_failure();
-            }
-        } else if (entry.value().dir == mountpoint) {
+    for (auto const &entry : entries) {
+        if (entry.target == mountpoint) {
             return oc::success();
         }
     }
@@ -197,15 +332,12 @@ oc::result<void> unmount_all(const std::string &dir)
         to_unmount.clear();
         ec.clear();
 
-        ScopedFILE fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
-        if (!fp) {
-            return ec_from_errno();
-        }
+        OUTCOME_TRY(entries, get_mount_entries());
 
-        while (auto entry = get_mount_entry(fp.get())) {
+        for (auto const &entry : entries) {
             // TODO: Use path_compare() instead of dumb string prefix matching
-            if (starts_with(entry.value().dir, dir)) {
-                to_unmount.push_back(std::move(entry.value().dir));
+            if (starts_with(entry.target, dir)) {
+                to_unmount.push_back(std::move(entry.target));
             }
         }
 
@@ -324,15 +456,15 @@ oc::result<void> umount(const std::string &target)
     std::string source;
     std::string mnt_dir;
 
-    ScopedFILE fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
-    if (fp) {
-        while (auto entry = get_mount_entry(fp.get())) {
-            if (entry.value().dir == target) {
-                source = entry.value().fsname;
+    if (auto entries = get_mount_entries()) {
+        for (auto const &entry : entries.value()) {
+            if (entry.target == target) {
+                source = entry.source;
             }
         }
     } else {
-        LOGW("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
+        LOGW("Failed to get mount entries: %s",
+             entries.error().message().c_str());
     }
 
     oc::result<void> ret = oc::success();

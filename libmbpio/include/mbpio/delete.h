@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,10 +22,11 @@
 #include <string>
 
 #include "mbcommon/common.h"
+#include "mbcommon/outcome.h"
 
 namespace mb::io
 {
 
-MB_EXPORT bool delete_recursively(const std::string &path);
+MB_EXPORT oc::result<void> delete_recursively(const std::string &path);
 
 }

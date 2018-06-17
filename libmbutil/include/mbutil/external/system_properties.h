@@ -47,7 +47,7 @@ int mb__system_property_set(const char* key, const char* value) /* __INTRODUCED_
 
 /*
  * Returns a `prop_info` corresponding system property `name`, or nullptr if it doesn't exist.
- * Use __system_property_read_callback to query the current value.
+ * Use mb__system_property_read_callback to query the current value.
  *
  * Property lookup is expensive, so it can be useful to cache the result of this function.
  */
@@ -58,11 +58,11 @@ const prop_info* mb__system_property_find(const char* name);
  */
 void mb__system_property_read_callback(const prop_info *pi,
     void (*callback)(void* cookie, const char *name, const char *value, uint32_t serial),
-    void* cookie) /* __INTRODUCED_IN_FUTURE */;
+    void* cookie) /* __INTRODUCED_IN(26) */;
 
 /*
  * Passes a `prop_info` for each system property to the provided
- * callback.  Use __system_property_read_callback() to read the value.
+ * callback.  Use mb__system_property_read_callback() to read the value.
  *
  * This method is for inspecting and debugging the property system, and not generally useful.
  */
@@ -86,16 +86,16 @@ bool mb__system_property_wait(const prop_info* pi,
                               uint32_t old_serial,
                               uint32_t* new_serial_ptr,
                               const struct timespec* relative_timeout)
-    /* __INTRODUCED_IN_FUTURE */;
+    /* __INTRODUCED_IN(26) */;
 
 /* Deprecated. In Android O and above, there's no limit on property name length. */
 #define PROP_NAME_MAX   32
-/* Deprecated. Use __system_property_read_callback instead. */
-int mb__system_property_read(const prop_info *pi, char *name, char *value);
-/* Deprecated. Use __system_property_read_callback instead. */
-int mb__system_property_get(const char *name, char *value);
-/* Deprecated. Use __system_property_foreach instead. Aborts in Android O and above. */
-const prop_info *mb__system_property_find_nth(unsigned n) /* __REMOVED_IN(26) */;
+/* Deprecated. Use mb__system_property_read_callback instead. */
+int mb__system_property_read(const prop_info* pi, char* name, char* value);
+/* Deprecated. Use mb__system_property_read_callback instead. */
+int mb__system_property_get(const char* name, char* value);
+/* Deprecated. Use mb__system_property_foreach instead. */
+const prop_info* mb__system_property_find_nth(unsigned n);
 
 __END_DECLS
 

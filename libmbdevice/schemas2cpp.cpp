@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
     std::vector<std::pair<std::string, std::string>> results;
 
     for (int i = optind; i < argc; ++i) {
-        ScopedFILE fp(fopen(argv[i], "r"), &fclose);
+        ScopedFILE fp(fopen(argv[i], "re"), &fclose);
         if (!fp) {
             fprintf(stderr, "%s: Failed to open for reading: %s\n",
                     argv[i], strerror(errno));
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 
     // Write cpp file
     {
-        ScopedFILE fp(fopen(output_path, "w"), &fclose);
+        ScopedFILE fp(fopen(output_path, "we"), &fclose);
         if (!fp) {
             fprintf(stderr, "%s: Failed to open for writing: %s\n",
                     output_path, strerror(errno));
@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
         }
         hpp_path += ".h";
 
-        ScopedFILE fp(fopen(hpp_path.c_str(), "w"), &fclose);
+        ScopedFILE fp(fopen(hpp_path.c_str(), "we"), &fclose);
         if (!fp) {
             fprintf(stderr, "%s: Failed to open for writing: %s\n",
                     hpp_path.c_str(), strerror(errno));

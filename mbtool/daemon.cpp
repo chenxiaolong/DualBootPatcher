@@ -20,6 +20,8 @@
 #include "daemon.h"
 
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 #include <fcntl.h>
 #include <getopt.h>
@@ -196,7 +198,7 @@ static bool client_connection(int fd)
 
 static bool run_daemon()
 {
-    int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    int fd = socket(AF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if (fd < 0) {
         LOGE("Failed to create socket: %s", strerror(errno));
         return false;
@@ -257,7 +259,7 @@ static bool run_daemon()
     LOGD("Socket ready, waiting for connections");
 
     int client_fd;
-    while ((client_fd = accept(fd, nullptr, nullptr)) >= 0) {
+    while ((client_fd = accept4(fd, nullptr, nullptr, SOCK_CLOEXEC)) >= 0) {
         pid_t child_pid = fork();
         if (child_pid < 0) {
             LOGE("Failed to fork: %s", strerror(errno));
@@ -317,6 +319,7 @@ static bool redirect_stdio_to_dev_null()
 {
     bool ret = true;
 
+    // O_CLOEXEC should not be set
     int fd = open("/dev/null", O_RDWR);
     if (fd < 0) {
         LOGE("Failed to open /dev/null: %s", strerror(errno));
@@ -367,7 +370,7 @@ static bool daemon_init()
             return false;
         }
 
-        log_fp.reset(fopen(get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w"));
+        log_fp.reset(fopen(get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "we"));
         if (!log_fp) {
             LOGE("Failed to open log file %s: %s",
                  MULTIBOOT_LOG_DAEMON, strerror(errno));
@@ -416,7 +419,7 @@ static void run_daemon_fork()
 
     // Create pipe for the daemon to tell us it is listening for connections
     send_ok_to_pipe = true;
-    if (pipe(pipe_fds) < 0) {
+    if (pipe2(pipe_fds, O_CLOEXEC) < 0) {
         fprintf(stderr, "Failed to create pipe: %s\n", strerror(errno));
         _exit(EXIT_FAILURE);
     }
@@ -481,6 +484,8 @@ static void daemon_usage(bool error)
 
 int daemon_main(int argc, char *argv[])
 {
+    using namespace std::chrono_literals;
+
     int opt;
     bool fork_flag = false;
     bool replace_flag = false;
@@ -560,11 +565,6 @@ int daemon_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!no_unshare && unshare(CLONE_NEWNS) < 0) {
-        fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
-        return EXIT_FAILURE;
-    }
-
     if (patch_sepolicy) {
         patch_loaded_sepolicy(SELinuxPatch::Main);
     }
@@ -610,7 +610,7 @@ int daemon_main(int argc, char *argv[])
         }
 
         // Give processes a chance to exit
-        usleep(500000);
+        std::this_thread::sleep_for(500ms);
     }
 
     if (fork_flag) {

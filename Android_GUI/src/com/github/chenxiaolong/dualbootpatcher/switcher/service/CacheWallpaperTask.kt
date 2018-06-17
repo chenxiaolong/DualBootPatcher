@@ -49,7 +49,7 @@ class CacheWallpaperTask(
         try {
             MbtoolConnection(context).use { conn ->
                 val iface = conn.`interface`
-                result = RomUtils.cacheWallpaper(context, romInfo, iface!!)
+                result = RomUtils.cacheWallpaper(romInfo, iface!!)
             }
         } catch (e: IOException) {
             Log.e(TAG, "mbtool communication error", e)

@@ -339,13 +339,6 @@ std::shared_ptr<Rom> Roms::get_current_rom()
 
     // This is set if mbtool is handling the boot process
     std::string prop_id = util::property_get_string(PROP_MULTIBOOT_ROM_ID, {});
-    // This is necessary for the daemon to get a correct result before Android
-    // boots (eg. for the boot UI)
-    if (prop_id.empty()) {
-        prop_id = util::property_file_get_string(
-                DEFAULT_PROP_PATH, PROP_MULTIBOOT_ROM_ID, {});
-    }
-
     if (!prop_id.empty()) {
         auto rom = roms.find_by_id(prop_id);
         if (rom) {
@@ -355,10 +348,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
 
     // If /raw/ or /raw-system/ does not exist, then this is an unpatched
     // primary ROM
-    struct stat sb;
-    bool has_raw = stat("/raw", &sb) == 0;
-    bool has_raw_system = stat("/raw-system", &sb) == 0;
-    if (!has_raw && !has_raw_system) {
+    if (struct stat sb; stat("/raw", &sb) < 0) {
         // Cache the result
         util::property_set(PROP_MULTIBOOT_ROM_ID, "primary");
 
@@ -366,8 +356,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
     }
 
     // Otherwise, iterate through the installed ROMs
-
-    if (stat("/system/build.prop", &sb) == 0) {
+    if (struct stat sb; stat("/system/build.prop", &sb) == 0) {
         for (auto rom : roms.roms) {
             // We can't check roms that use images since they aren't mounted
             if (rom->system_is_image) {
@@ -381,8 +370,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
 
             path += "/build.prop";
 
-            struct stat sb2;
-            if (stat(path.c_str(), &sb2) == 0
+            if (struct stat sb2; stat(path.c_str(), &sb2) == 0
                     && sb.st_dev == sb2.st_dev
                     && sb.st_ino == sb2.st_ino) {
                 // Cache the result
@@ -485,22 +473,21 @@ std::string Roms::get_extsd_partition()
     static constexpr char prefix_storage[] = "/storage/";
 
     // Look for mounted MMC partitions
-    ScopedFILE fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
-    if (fp) {
-        while (auto entry = util::get_mount_entry(fp.get())) {
+    if (auto entries = util::get_mount_entries()) {
+        for (auto const &entry : entries.value()) {
             // Skip useless mounts
-            if (!starts_with(entry.value().dir.c_str(), prefix_mnt)) {
+            if (!starts_with(entry.target, prefix_mnt)) {
                 continue;
             }
 
-            if (stat(entry.value().fsname.c_str(), &sb) < 0) {
+            if (stat(entry.source.c_str(), &sb) < 0) {
                 LOGW("%s: Failed to stat: %s",
-                     entry.value().fsname.c_str(), strerror(errno));
+                     entry.source.c_str(), strerror(errno));
                 continue;
             }
 
             if (major(sb.st_rdev) == 179) {
-                std::string_view suffix(entry.value().dir);
+                std::string_view suffix(entry.target);
                 suffix.remove_prefix(strlen(prefix_mnt));
 
                 std::string path(prefix_storage);

@@ -40,13 +40,13 @@
 #include "mbutil/fts.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
+#include "mbutil/reboot.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
 #include "mbutil/string.h"
 
 #include "init.h"
 #include "packages.h"
-#include "reboot.h"
 #include "romconfig.h"
 #include "roms.h"
 #include "signature.h"
@@ -204,7 +204,8 @@ static bool v3_file_open(int fd, const v3::Request *msg)
     fb::Offset<v3::FileOpenError> error;
     int id = -1;
 
-    int ffd = open(request->path()->c_str(), flags, request->perms());
+    int ffd = open(request->path()->c_str(), flags,
+                   static_cast<mode_t>(request->perms()));
     int saved_errno = errno;
 
     if (ffd >= 0) {
@@ -807,15 +808,10 @@ static bool v3_path_get_directory_size(int fd, const v3::Request *msg)
     return v3_send_response(fd, builder);
 }
 
-static void signed_exec_output_cb(const char *line, bool error, void *userdata)
+static void signed_exec_output_cb(int fd, std::string_view line)
 {
-    (void) error;
-
-    int *fd_ptr = static_cast<int *>(userdata);
-    // TODO: Send line
-
     fb::FlatBufferBuilder builder;
-    fb::Offset<fb::String> line_id = builder.CreateString(line);
+    auto line_id = builder.CreateString(line.data(), line.size());
 
     // Create response
     auto response = v3::CreateSignedExecOutputResponse(builder, line_id);
@@ -825,7 +821,7 @@ static void signed_exec_output_cb(const char *line, bool error, void *userdata)
             builder, v3::ResponseType_SignedExecOutputResponse,
             response.Union()));
 
-    if (!v3_send_response(*fd_ptr, builder)) {
+    if (!v3_send_response(fd, builder)) {
         // Can't kill the connection from this callback (yet...)
         LOGE("Failed to send output line: %s", strerror(errno));
     }
@@ -833,6 +829,8 @@ static void signed_exec_output_cb(const char *line, bool error, void *userdata)
 
 static bool v3_signed_exec(int fd, const v3::Request *msg)
 {
+    using namespace std::placeholders;
+
     auto request = static_cast<const v3::SignedExecRequest *>(msg->request());
     if (!request->binary_path() || !request->signature_path()) {
         return v3_send_response_invalid(fd);
@@ -958,7 +956,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     //       Right now, if the connection is broken, the command will continue
     //       executing.
     status = util::run_command(target_binary, argv, {}, {},
-                               &signed_exec_output_cb, &fd);
+                               std::bind(&signed_exec_output_cb, fd, _1));
     if (status >= 0 && WIFEXITED(status)) {
         result = v3::SignedExecResult_PROCESS_EXITED;
         exit_status = WEXITSTATUS(status);
@@ -1047,19 +1045,33 @@ static bool v3_mb_get_installed_roms(int fd, const v3::Request *msg)
         }
         build_prop += "/build.prop";
 
-        std::unordered_map<std::string, std::string> props;
+        struct {
+            const char *key;
+            fb::Offset<fb::String> &offset;
+        } needed_props[] = {
+            { "ro.build.version.release", fb_version },
+            { "ro.build.display.id", fb_build },
+        };
 
         RomConfig config;
         config.load_file(r->config_path());
-        props.swap(config.cached_props);
+        auto &props = config.cached_props;
 
-        util::property_file_get_all(build_prop, props);
+        util::property_file_iter(build_prop, {}, [&](std::string_view key,
+                                                     std::string_view value) {
+            for (auto const &item : needed_props) {
+                if (item.key == key) {
+                    props.insert_or_assign(std::string(key), std::string(value));
+                }
+            }
 
-        if (auto it = props.find("ro.build.version.release"); it != props.end()) {
-            fb_version = builder.CreateString(it->second);
-        }
-        if (auto it = props.find("ro.build.display.id"); it != props.end()) {
-            fb_build = builder.CreateString(it->second);
+            return util::PropertyIterAction::Continue;
+        });
+
+        for (auto const &item : needed_props) {
+            if (auto it = props.find(item.key); it != props.end()) {
+                item.offset = builder.CreateString(it->second);
+            }
         }
 
         v3::MbRomBuilder mrb(builder);
@@ -1336,13 +1348,13 @@ static bool v3_reboot(int fd, const v3::Request *msg)
     bool ret = false;
     switch (request->type()) {
     case v3::RebootType_FRAMEWORK:
-        ret = reboot_via_framework(request->confirm());
+        ret = util::reboot_via_framework(request->confirm());
         break;
     case v3::RebootType_INIT:
-        ret = reboot_via_init(reboot_arg);
+        ret = util::reboot_via_init(reboot_arg);
         break;
     case v3::RebootType_DIRECT:
-        ret = reboot_directly(reboot_arg);
+        ret = util::reboot_via_syscall(reboot_arg);
         break;
     default:
         LOGE("Invalid reboot type: %d", request->type());
@@ -1374,11 +1386,14 @@ static bool v3_shutdown(int fd, const v3::Request *msg)
     // we'll still send it for the sake of symmetry
     bool ret = false;
     switch (request->type()) {
+    case v3::ShutdownType_FRAMEWORK:
+        ret = util::shutdown_via_framework(request->confirm());
+        break;
     case v3::ShutdownType_INIT:
-        ret = shutdown_via_init();
+        ret = util::shutdown_via_init();
         break;
     case v3::ShutdownType_DIRECT:
-        ret = shutdown_directly();
+        ret = util::shutdown_via_syscall();
         break;
     default:
         LOGE("Invalid shutdown type: %d", request->type());

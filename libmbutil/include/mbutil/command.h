@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,9 +19,11 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <cstddef>
@@ -32,20 +34,12 @@ namespace mb::util
 /*!
  * \brief Raw command output callback
  *
- * \note \a data is always NULL-terminated. It is safe to pass \a data to
- * functions expecting a C-style string. However, \a size must be used for the
- * handling of binary data. \a data will not always contain a full line of
- * output.
+ * If \a data.empty(), then EOF has been reached.
  *
- * If \a size is 0, then EOF has been reached.
- *
- * \param data Bytes read from the stream
- * \param size Number of bytes read
+ * \param data Data read from the stream
  * \param error stderr if true, else stdout
- * \param userdata User-provided pointer
  */
-typedef void (*CmdRawCb)(const char *data, size_t size, bool error,
-                         void *userdata);
+using CmdRawCb = std::function<void(std::string_view data, bool error)>;
 
 /*!
  * \brief Line command output callback
@@ -59,9 +53,8 @@ typedef void (*CmdRawCb)(const char *data, size_t size, bool error,
  *
  * \param line Line that was read
  * \param error stderr if true, else stdout
- * \param userdata User-provided pointer
  */
-typedef void (*CmdLineCb)(const char *line, bool error, void *userdata);
+using CmdLineCb = std::function<void(std::string_view line, bool error)>;
 
 struct CommandCtxPriv;
 
@@ -91,14 +84,13 @@ struct CommandCtx
 bool command_start(CommandCtx &ctx);
 int command_wait(CommandCtx &ctx);
 
-bool command_raw_reader(CommandCtx &ctx, CmdRawCb cb, void *userdata);
-bool command_line_reader(CommandCtx &ctx, CmdLineCb cb, void *userdata);
+bool command_raw_reader(CommandCtx &ctx, const CmdRawCb &cb);
+bool command_line_reader(CommandCtx &ctx, const CmdLineCb &cb);
 
 int run_command(const std::string &path,
                 const std::vector<std::string> &argv,
                 const std::optional<std::vector<std::string>> &envp,
                 const std::string &chroot_dir,
-                CmdLineCb cb,
-                void *userdata);
+                const CmdLineCb &cb);
 
 }

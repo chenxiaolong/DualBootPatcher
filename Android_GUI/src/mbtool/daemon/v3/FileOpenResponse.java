@@ -17,6 +17,7 @@ public final class FileOpenResponse extends Table {
   public boolean success() { int o = __offset(4); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
   public String errorMsg() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer errorMsgAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public ByteBuffer errorMsgInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 1); }
   public int id() { int o = __offset(8); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public FileOpenError error() { return error(new FileOpenError()); }
   public FileOpenError error(FileOpenError obj) { int o = __offset(10); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }

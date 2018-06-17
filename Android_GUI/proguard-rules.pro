@@ -17,7 +17,7 @@
 # We dynamically set some class variables to match some libc constants, so the
 # fields cannot be renamed
 -keepclassmembers class com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.Constants {
-  public static final <fields>;    
+  public static final <fields>;
 }
 
 ###########
@@ -25,7 +25,8 @@
 ###########
 
 # We don't use OkHttp with Picasso
--dontwarn com.squareup.okhttp.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
 
 #######
 # JNA #

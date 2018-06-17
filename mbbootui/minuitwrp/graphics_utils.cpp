@@ -38,7 +38,7 @@ int gr_save_screenshot(const char *dest)
     png_structp png_ptr = nullptr;
     png_infop info_ptr = nullptr;
 
-    fp = fopen(dest, "wb");
+    fp = fopen(dest, "wbe");
     if (!fp) {
         goto exit;
     }

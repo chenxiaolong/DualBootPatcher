@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -56,11 +56,13 @@ int libarchive_copy_header_and_data(archive *in, archive *out,
 bool libarchive_tar_extract(const std::string &filename,
                             const std::string &target,
                             const std::vector<std::string> &patterns,
-                            CompressionType compression);
+                            CompressionType compression,
+                            bool is_split);
 bool libarchive_tar_create(const std::string &filename,
                            const std::string &base_dir,
                            const std::vector<std::string> &paths,
-                           CompressionType compression);
+                           CompressionType compression,
+                           uint64_t split_archive_size);
 
 bool extract_archive(const std::string &filename, const std::string &target);
 bool extract_files(const std::string &filename, const std::string &target,

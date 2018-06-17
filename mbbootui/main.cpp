@@ -79,6 +79,7 @@ static mb::patcher::PatcherConfig pc;
 
 static bool redirect_output_to_file(const char *path, mode_t mode)
 {
+    // O_CLOEXEC should not be enabled here
     int flags = O_WRONLY | O_CREAT;
 #if APPEND_TO_LOG
     flags |= O_APPEND;
@@ -109,12 +110,10 @@ static bool detect_device()
              contents.error().message().c_str());
         return false;
     }
-    contents.value().push_back('\0');
 
     JsonError error;
 
-    if (!device_from_json(reinterpret_cast<char *>(contents.value().data()),
-                          tw_device, error)) {
+    if (!device_from_json(contents.value(), tw_device, error)) {
         LOGE("%s: Failed to load device", DEVICE_JSON_PATH);
         return false;
     }

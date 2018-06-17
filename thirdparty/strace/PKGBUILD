@@ -1,0 +1,57 @@
+# Copyright (C) 2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=strace
+pkgver=8.1.0_r33
+pkgrel=1
+pkgdesc="A diagnostic, debugging and instructional userspace tracer"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://android.googlesource.com/platform/external/strace"
+license=(BSD)
+source=("git+https://android.googlesource.com/platform/external/strace#tag=android-${pkgver}"
+        '0001-Android.mk-Make-NDK-buildable.patch')
+sha512sums=('SKIP'
+            'bae673c51c2707f86854950996f00bed88d19e6efebf54873385720b318c68c85fa69d9867262b6fddaf64a4eefda5862a3327c7093fd6d5afb039de039e9f85')
+
+prepare() {
+    cd "${pkgname}"
+
+    patch -p1 -i ../0001-Android.mk-Make-NDK-buildable.patch
+}
+
+build() {
+    cd "${pkgname}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=clang \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-28 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    cd "${pkgname}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/bin/
+    install -m755 "libs/${abi}/strace" "${pkgdir}"/bin/
+}

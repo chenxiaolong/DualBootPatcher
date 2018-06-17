@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.8)
 
 # Add our custom module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
@@ -45,32 +45,21 @@ if(NOT ${MBP_SYSTEM_BUILD_TYPE} STREQUAL release
     message(FATAL_ERROR "Invalid system build type: ${MBP_SYSTEM_BUILD_TYPE}")
 endif()
 
-# Require at least Android NDK r15
+# Android NDK
 if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL android-system)
-    # r13 bug: ANDROID_NDK_RELEASE has newline at the end
-    string(REGEX REPLACE "^r(.+)[\r\n]+$" "\\1" ndk_release "${ANDROID_NDK_RELEASE}")
-    set(ndk_min_version 161.0)
-    set(ndk_max_version 162.0)
-
     # FIXME: Due to https://github.com/android-ndk/ndk/issues/222, we need a
     # custom toolchain file. Since we can't guarantee that the custom toolchain
     # file will work with newer versions of the NDK, we'll depend on an exact
     # version.
     set(ndk_version_whitelist
-        161.4479499
+        r17.0.4754217
     )
 
-    if(DEFINED ndk_version_whitelist
-            AND NOT ndk_release IN_LIST ndk_version_whitelist)
+    if(NOT ANDROID_NDK_RELEASE IN_LIST ndk_version_whitelist)
         message(FATAL_ERROR
                 "Requires NDK version in list: ${ndk_version_whitelist}"
-                " (detected: ${ndk_release})")
-    elseif(ndk_release VERSION_LESS ndk_min_version
-            OR NOT ndk_release VERSION_LESS ndk_max_version)
-        message(FATAL_ERROR
-                "Requires ${ndk_min_version} <= NDK version < ${ndk_max_version}"
-                " (detected: ${ndk_release})")
+                " (detected: ${ANDROID_NDK_RELEASE})")
     endif()
 endif()
 

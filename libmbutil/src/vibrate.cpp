@@ -19,6 +19,8 @@
 
 #include "mbutil/vibrate.h"
 
+#include <thread>
+
 #include <cstdio>
 #include <cstring>
 
@@ -48,7 +50,7 @@ static constexpr char VIBRATOR_PATH[] =
  */
 oc::result<void> vibrate(milliseconds timeout, milliseconds wait)
 {
-    int fd = open(VIBRATOR_PATH, O_WRONLY);
+    int fd = open(VIBRATOR_PATH, O_WRONLY | O_CLOEXEC);
     if (fd < 0) {
         return ec_from_errno();
     }
@@ -60,26 +62,11 @@ oc::result<void> vibrate(milliseconds timeout, milliseconds wait)
         timeout = 2s;
     }
 
-    if (dprintf(fd,  "%u", static_cast<unsigned int>(timeout.count())) < 0) {
+    if (dprintf(fd, "%u", static_cast<unsigned int>(timeout.count())) < 0) {
         return ec_from_errno();
     }
 
-    if (wait.count()) {
-        timespec ts, rem;
-        ts.tv_sec = static_cast<time_t>(duration_cast<seconds>(wait).count());
-        ts.tv_nsec = static_cast<long>(duration_cast<nanoseconds>(
-                wait - seconds(ts.tv_sec)).count());
-
-        while (true) {
-            if (nanosleep(&ts, &rem) == 0) {
-                break;
-            } else if (errno == EINTR) {
-                ts = rem;
-            } else {
-                return ec_from_errno();
-            }
-        }
-    }
+    std::this_thread::sleep_for(wait);
 
     return oc::success();
 }

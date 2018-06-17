@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -39,9 +39,6 @@
 
 // Linux
 #include <linux/loop.h>
-
-// Legacy properties
-#include "external/legacy_property_service.h"
 
 // libmbcommon
 #include "mbcommon/finally.h"
@@ -224,36 +221,39 @@ static bool log_copy_dir(const std::string &source,
  * Helper functions
  */
 
-void Installer::output_cb(const char *line, bool error, void *userdata)
+void Installer::output_cb(std::string_view line, bool error)
 {
     (void) error;
 
-    Installer *installer = static_cast<Installer *>(userdata);
-    installer->command_output(line);
+    command_output(line);
 }
 
 int Installer::run_command(const std::vector<std::string> &argv)
 {
+    using namespace std::placeholders;
+
     return util::run_command(
         argv[0],
         argv,
         {},
         {},
-        _passthrough ? nullptr : &output_cb,
-        this
+        _passthrough ? util::CmdLineCb{}
+            : std::bind(&Installer::output_cb, this, _1, _2)
     );
 }
 
 int Installer::run_command_chroot(const std::string &dir,
                                   const std::vector<std::string> &argv)
 {
+    using namespace std::placeholders;
+
     return util::run_command(
         argv[0],
         argv,
         {},
         dir,
-        _passthrough ? nullptr : &output_cb,
-        this
+        _passthrough ? util::CmdLineCb{}
+            : std::bind(&Installer::output_cb, this, _1, _2)
     );
 }
 
@@ -810,24 +810,19 @@ bool Installer::change_root(const std::string &path)
     {
         std::vector<std::string> to_unmount;
 
-        ScopedFILE fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
-        if (!fp) {
-            LOGE("%s: Failed to read file: %s", util::PROC_MOUNTS,
-                 strerror(errno));
+        if (auto entries = util::get_mount_entries()) {
+            for (auto const &entry : entries.value()) {
+                // TODO: Use util::path_compare() instead of dumb string prefix
+                //       matching
+                if (entry.target != "/" && !starts_with(entry.target, path)) {
+                    to_unmount.push_back(std::move(entry.target));
+                }
+            }
+        } else {
+            LOGE("Failed to get mount entries: %s",
+                 entries.error().message().c_str());
             return false;
         }
-
-        while (auto entry = util::get_mount_entry(fp.get())) {
-            // TODO: Use util::path_compare() instead of dumb string prefix
-            //       matching
-            if (entry.value().dir != "/"
-                    && !starts_with(entry.value().dir, path)) {
-                to_unmount.push_back(std::move(entry.value().dir));
-            }
-        }
-
-        // Close procfs fd
-        fp.reset();
 
         // Unmount in reverse order
         for (auto it = to_unmount.rbegin(); it != to_unmount.rend(); ++it) {
@@ -853,18 +848,24 @@ bool Installer::set_up_legacy_properties()
     // We don't need to worry about /dev/__properties__ since that's not present
     // in the chroot. Bionic will automatically fall back to getting the fd from
     // the ANDROID_PROPERTY_WORKSPACE environment variable.
-    char tmp[32];
-    int propfd, propsz;
-    legacy_properties_init();
-    for (auto const &pair : _chroot_prop) {
-        legacy_property_set(pair.first.c_str(), pair.second.c_str());
+
+    if (!_legacy_prop_svc.initialize()) {
+        LOGE("Failed to initialize legacy property service");
+        return false;
     }
-    legacy_get_property_workspace(&propfd, &propsz);
-    snprintf(tmp, sizeof(tmp), "%d,%d", dup(propfd), propsz);
+
+    for (auto const &pair : _chroot_prop) {
+        _legacy_prop_svc.set(pair.first, pair.second);
+    }
+
+    auto [fd, size] = _legacy_prop_svc.workspace();
+    char tmp[32];
+
+    snprintf(tmp, sizeof(tmp), "%d,%zu", dup(fd), size);
 
     char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
     LOGD("Original properties environment: %s",
-         orig_prop_env ? orig_prop_env : "null");
+         orig_prop_env ? orig_prop_env : "(null)");
 
     setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
 
@@ -1056,6 +1057,7 @@ bool Installer::run_real_updater()
             }
 
             // Make sure the updater won't run interactively
+            // O_CLOEXEC should not be set
             int fd_dev_null = open("/dev/null", O_RDONLY);
             if (fd_dev_null < 0) {
                 LOGE("%s: Failed to open: %s", "/dev/null", strerror(errno));
@@ -1185,21 +1187,21 @@ void Installer::display_msg(const char *fmt, ...)
     va_end(ap);
 }
 
-void Installer::display_msg(const std::string &msg)
+void Installer::display_msg(std::string_view msg)
 {
-    printf("%s\n", msg.c_str());
+    printf("%.*s\n", static_cast<int>(msg.size()), msg.data());
 }
 
 // Note: Only called if we're not passing through the output_fd
-void Installer::updater_print(const std::string &msg)
+void Installer::updater_print(std::string_view msg)
 {
-    printf("%s", msg.c_str());
+    printf("%.*s", static_cast<int>(msg.size()), msg.data());
 }
 
 // Note: Only called if we're not passing through the output_fd
-void Installer::command_output(const std::string &line)
+void Installer::command_output(std::string_view line)
 {
-    printf("%s\n", line.c_str());
+    printf("%.*s\n", static_cast<int>(line.size()), line.data());
 }
 
 std::unordered_map<std::string, std::string> Installer::get_properties()
@@ -1330,7 +1332,9 @@ Installer::ProceedState Installer::install_stage_set_up_environment()
     }
 
     // Load info.prop
-    if (!util::property_file_get_all(_temp + "/info.prop", _prop)) {
+    if (auto p = util::property_file_get_all(_temp + "/info.prop")) {
+        p->swap(_prop);
+    } else {
         display_msg("Failed to read multiboot/info.prop");
         return ProceedState::Fail;
     }
@@ -1347,12 +1351,10 @@ Installer::ProceedState Installer::install_stage_check_device()
         display_msg("Failed to read device.json");
         return ProceedState::Fail;
     }
-    contents.value().push_back('\0');
 
     JsonError error;
 
-    if (!device_from_json(reinterpret_cast<char *>(contents.value().data()),
-                          _device, error)) {
+    if (!device_from_json(contents.value(), _device, error)) {
         display_msg("Error when loading device.json");
         return ProceedState::Fail;
     }
@@ -1773,18 +1775,17 @@ Installer::ProceedState Installer::install_stage_installation()
     run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
 
     // Grab version and display ID so that can be cached in config.json later
-    std::string build_prop(in_chroot("/system/build.prop"));
-    std::unordered_map<std::string, std::string> props;
-    util::property_file_get_all(build_prop, props);
+    if (auto props = util::property_file_get_all(
+            in_chroot("/system/build.prop"))) {
+        auto to_cache = {
+            "ro.build.version.release",
+            "ro.build.display.id",
+        };
 
-    auto to_cache = {
-        "ro.build.version.release",
-        "ro.build.display.id",
-    };
-
-    for (auto const &prop : to_cache) {
-        if (auto it = props.find(prop); it != props.end()) {
-            _cached_prop[it->first] = it->second;
+        for (auto const &prop : to_cache) {
+            if (auto it = props->find(prop); it != props->end()) {
+                _cached_prop[it->first] = it->second;
+            }
         }
     }
 
@@ -1873,7 +1874,8 @@ Installer::ProceedState Installer::install_stage_finish()
 
     std::vector<std::function<RamdiskPatcherFn>> rps{
         rp_write_rom_id(_rom->id),
-        rp_patch_default_prop(_detected_device, _use_fuse_exfat),
+        rp_restore_default_prop(),
+        rp_add_dbp_prop(_detected_device, _use_fuse_exfat),
         rp_add_binaries(_temp + "/binaries"),
         rp_symlink_fuse_exfat(),
         rp_symlink_init(),
@@ -1921,10 +1923,10 @@ Installer::ProceedState Installer::install_stage_finish()
     std::string hash = util::hex_string(digest.value().data(),
                                         digest.value().size());
 
-    std::unordered_map<std::string, std::string> props;
-    checksums_read(&props);
-    checksums_update(&props, _rom->id, "boot.img", hash);
-    checksums_write(props);
+    ChecksumProps props;
+    props.load_file();
+    props.set(_rom->id, "boot.img", hash);
+    props.save_file();
 
     // Write cached properties to config
     std::string config_path(_rom->config_path());

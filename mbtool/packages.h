@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -127,6 +127,7 @@ public:
         BACKUP_IN_FOREGROUND                              = 1ULL << 13,
         STATIC_SHARED_LIBRARY                             = 1ULL << 14,
         ISOLATED_SPLIT_LOADING                            = 1ULL << 15,
+        VIRTUAL_PRELOAD                                   = 1ULL << 16,
     };
     MB_DECLARE_FLAGS(PrivateFlags, PrivateFlag)
 

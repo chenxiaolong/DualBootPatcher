@@ -74,7 +74,7 @@ oc::result<void> copy_data_fd(int fd_source, int fd_target)
 static FileOpResult<void> copy_data(const std::string &source,
                                     const std::string &target)
 {
-    int fd_source = open(source.c_str(), O_RDONLY);
+    int fd_source = open(source.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd_source < 0) {
         return FileOpErrorInfo{source, ec_from_errno()};
     }
@@ -83,7 +83,8 @@ static FileOpResult<void> copy_data(const std::string &source,
         close(fd_source);
     });
 
-    int fd_target = open(target.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0666);
+    int fd_target = open(target.c_str(),
+                         O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0666);
     if (fd_target < 0) {
         return FileOpErrorInfo{target, ec_from_errno()};
     }
@@ -184,7 +185,7 @@ FileOpResult<void> copy_stat(const std::string &source,
 FileOpResult<void> copy_contents(const std::string &source,
                                  const std::string &target)
 {
-    int fd_source = open(source.c_str(), O_RDONLY);
+    int fd_source = open(source.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd_source < 0) {
         return FileOpErrorInfo{source, ec_from_errno()};
     }
@@ -193,7 +194,8 @@ FileOpResult<void> copy_contents(const std::string &source,
         close(fd_source);
     });
 
-    int fd_target = open(target.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    int fd_target = open(target.c_str(),
+                         O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666);
     if (fd_target < 0) {
         return FileOpErrorInfo{target, ec_from_errno()};
     }

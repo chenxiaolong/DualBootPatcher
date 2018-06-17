@@ -24,13 +24,13 @@ struct MbGetBootedRomIdRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Ta
 struct MbGetBootedRomIdRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  MbGetBootedRomIdRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbGetBootedRomIdRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbGetBootedRomIdRequestBuilder &operator=(const MbGetBootedRomIdRequestBuilder &);
   flatbuffers::Offset<MbGetBootedRomIdRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 0);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbGetBootedRomIdRequest>(end);
     return o;
   }
@@ -51,7 +51,7 @@ struct MbGetBootedRomIdResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::T
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ROM_ID) &&
+           VerifyOffset(verifier, VT_ROM_ID) &&
            verifier.Verify(rom_id()) &&
            verifier.EndTable();
   }
@@ -63,13 +63,13 @@ struct MbGetBootedRomIdResponseBuilder {
   void add_rom_id(flatbuffers::Offset<flatbuffers::String> rom_id) {
     fbb_.AddOffset(MbGetBootedRomIdResponse::VT_ROM_ID, rom_id);
   }
-  MbGetBootedRomIdResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbGetBootedRomIdResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbGetBootedRomIdResponseBuilder &operator=(const MbGetBootedRomIdResponseBuilder &);
   flatbuffers::Offset<MbGetBootedRomIdResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbGetBootedRomIdResponse>(end);
     return o;
   }

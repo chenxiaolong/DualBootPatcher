@@ -72,7 +72,7 @@ class CacheRomThumbnailTask(
             Log.w(TAG, "Failed to write compressed thumbnail", e)
         }
 
-        Picasso.with(context).invalidate(f)
+        Picasso.get().invalidate(f)
 
         return null
     }

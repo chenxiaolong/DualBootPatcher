@@ -23,7 +23,6 @@
 
 #define INTERNAL_STORAGE                "/data/media/0"
 #define MULTIBOOT_DIR                   INTERNAL_STORAGE "/MultiBoot"
-#define MULTIBOOT_BACKUP_DIR            MULTIBOOT_DIR "/backups"
 #define MULTIBOOT_LOG_INSTALLER         INTERNAL_STORAGE "/MultiBoot.log"
 #define MULTIBOOT_LOG_APPSYNC           MULTIBOOT_DIR "/appsync.log"
 #define MULTIBOOT_LOG_DAEMON            MULTIBOOT_DIR "/daemon.log"
@@ -35,19 +34,13 @@
 #define PACKAGES_XML                    "/data/system/packages.xml"
 
 #define DEFAULT_PROP_PATH               "/default.prop"
+#define DBP_PROP_PATH                   "/dbp.prop"
 
 #define DEVICE_JSON_PATH                "/device.json"
 
 #define FILE_CONTEXTS_BIN               "/file_contexts.bin"
 #define FILE_CONTEXTS                   "/file_contexts"
 
-#define PROP_BLOCK_DEV_BASE_DIRS        "ro.patcher.blockdevs.base"
-#define PROP_BLOCK_DEV_SYSTEM_PATHS     "ro.patcher.blockdevs.system"
-#define PROP_BLOCK_DEV_CACHE_PATHS      "ro.patcher.blockdevs.cache"
-#define PROP_BLOCK_DEV_DATA_PATHS       "ro.patcher.blockdevs.data"
-#define PROP_BLOCK_DEV_BOOT_PATHS       "ro.patcher.blockdevs.boot"
-#define PROP_BLOCK_DEV_RECOVERY_PATHS   "ro.patcher.blockdevs.recovery"
-#define PROP_BLOCK_DEV_EXTRA_PATHS      "ro.patcher.blockdevs.extra"
 #define PROP_USE_FUSE_EXFAT             "ro.patcher.use_fuse_exfat"
 #define PROP_DEVICE                     "ro.patcher.device"
 
