@@ -109,12 +109,11 @@
 - name: Huawei P8
   id: GRACE
   codenames:
+    - grace
     - GRA
-    - GRA-L09
-    - GRA-UL00
-    - GRA-UL10
     - GRACE
     - HWGRA
+    - hi3635
   architecture: arm64-v8a
 
   block_devs:
@@ -135,6 +134,9 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p28
+    cust:
+      - /dev/block/platform/hi_mci.0/by-name/cust
+      - /dev/block/mmcblk0p39
 
   boot_ui:
     supported: true
