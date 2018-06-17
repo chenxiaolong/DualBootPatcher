@@ -396,7 +396,6 @@
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery2
     extra:
-      - /dev/block/mmcblk1p1
       - /dev/block/platform/soc/7824900.sdhci/by-name/DDR
       - /dev/block/platform/soc/7824900.sdhci/by-name/aboot
       - /dev/block/platform/soc/7824900.sdhci/by-name/abootbak
