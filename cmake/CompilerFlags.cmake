@@ -29,6 +29,22 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # a bunch of things like `#define open open64`, which breaks the build
         # process. The header is only needed for building libarchive anyway.
         add_definitions(-DARCHIVE_ANDROID_LF_H_INCLUDED)
+
+        # Enable link time optimization
+        add_compile_options(-flto)
+        foreach(lang C CXX ASM)
+            string(REPLACE "-Wa,--noexecstack" ""
+                   CMAKE_${lang}_FLAGS "${CMAKE_${lang}_FLAGS}")
+
+            # ld.gold does not support -Os
+            if(ANDROID_ABI MATCHES "^armeabi")
+                string(REPLACE "-Os" "-O2"
+                       CMAKE_${lang}_FLAGS_RELEASE
+                       "${CMAKE_${lang}_FLAGS_RELEASE}")
+            endif()
+        endforeach()
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto -fuse-ld=gold")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto -fuse-ld=gold")
     endif()
 
     if(WIN32)
