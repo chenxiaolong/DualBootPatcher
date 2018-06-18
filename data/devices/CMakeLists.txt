@@ -34,6 +34,7 @@ set(files
     lenovo.yml
     lg.yml
     linnex.yml
+    lyf.yml
     micromax.yml
     meizu.yml
     motorola.yml
