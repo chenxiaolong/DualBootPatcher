@@ -31,4 +31,3 @@
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
----
