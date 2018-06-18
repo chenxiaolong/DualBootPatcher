@@ -132,7 +132,7 @@
       - fbdev
     theme: portrait_hdpi
 
- - name: HTC One max
+- name: HTC One max
   id: t6ul
   codenames:
     - t6
@@ -145,23 +145,18 @@
     system:
       - /dev/block/mmcblk0p39
       - /dev/block/platform/msm_sdcc.1/by-name/system
-      - filesystem
     cache:
       - /dev/block/mmcblk0p41
       - /dev/block/platform/msm_sdcc.1/by-name/cache
-      - ext4
     data:
       - /dev/block/mmcblk0p42
       - /dev/block/platform/msm_sdcc.1/by-name/userdata
-      - ext4
     boot:
       - /dev/block/mmcblk0p37
       - /dev/block/platform/msm_sdcc.1/by-name/boot
-      - emmc
     recovery:
       - /dev/block/mmcblk0p38
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
-      - emmc
 
   boot_ui:
     supported: true
