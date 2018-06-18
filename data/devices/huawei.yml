@@ -769,7 +769,7 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
