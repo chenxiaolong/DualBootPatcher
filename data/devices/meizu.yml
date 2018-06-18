@@ -278,5 +278,40 @@
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/mmcblk0p1
 
-      
 
+- name: Meizu M6 Note
+  id: m6note
+  codenames:
+    - m6note
+    - m6 note
+    - M6Note_CN
+    - M6Note
+    - m1721
+    - m1721-6
+    - M1721
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p54
+    cache:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p55
+    boot:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot   
+      - /dev/block/mmcblk0p21
+    recovery:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p22
