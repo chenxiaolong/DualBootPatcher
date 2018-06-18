@@ -2,20 +2,20 @@
 - name: Micromax Canvas Nitro
   id: A311
   codenames:
-      - A311
-      - Micromax
-      - Micromax A311
-      - Nitro A311 
-      - Canvas
-      - Nitro
-      - Canvas Nitro
-      - Micromax Canvas Nitro 
-      - A310 
-      - Micromax A310
-      - Canvas A311
-      - Canvas A310
-      - Nitro A310
-      - Nitro A311
+    - A311
+    - Micromax
+    - Micromax A311
+    - Nitro A311 
+    - Canvas
+    - Nitro
+    - Canvas Nitro
+    - Micromax Canvas Nitro 
+    - A310 
+    - Micromax A310
+    - Canvas A311
+    - Canvas A310
+    - Nitro A310
+    - Nitro A311
   architecture: armeabi-v7a
   block_devs:
     base_dirs:
@@ -36,7 +36,6 @@
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/recovery
     extra:
-      - /dev/block/mmcblk1p1
       - /dev/block/platform/mtk-msdc.0/by-num/p1
       - /dev/block/platform/mtk-msdc.0/by-num/p10
       - /dev/block/platform/mtk-msdc.0/by-num/p2
@@ -68,7 +67,6 @@
       - fbdev
     theme: portrait_hdpi
 
----
 - name: Micromax Q354
   id: Q354
   codenames:
