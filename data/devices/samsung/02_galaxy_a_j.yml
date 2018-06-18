@@ -580,7 +580,6 @@
     supported: true
     flags:
       - TW_GRAPHICS_FORCE_USE_LINELENGTH
-    brightness_path: 
     max_brightness: 255
     default_brightness: 168
     cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
