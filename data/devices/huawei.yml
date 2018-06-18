@@ -1007,5 +1007,5 @@
     brightness_path: /sys/devices/platform/hisi_fb.524289/leds/lcd_backlight0/brightness
     max_brightness: 255
     default_brightness: 162
-    battery_path: /sys/devices/platform/battery/power_supply/Battery/
+    battery_path: /sys/devices/platform/battery/power_supply/Battery
     theme: portrait_hdpi
