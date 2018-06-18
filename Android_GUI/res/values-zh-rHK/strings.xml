@@ -467,6 +467,8 @@
   <string name="path_chooser_save_label">保存</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">新建文件夾</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">搜索</string>
   <!--Word/phrase for None (used in eg. a list)-->
