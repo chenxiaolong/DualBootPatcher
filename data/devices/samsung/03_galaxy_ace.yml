@@ -151,3 +151,36 @@
     pixel_format: BGRA_8888
     battery_path: /sys/class/power_supply/battery/capacity
     theme: portrait_hdpi
+
+- name: Samsung Galaxy 4 (G316HU)
+  id: vivalto5mve3g
+  codenames:
+    - vivalto5mve3g
+    - vivalto5mve3gdd
+    - SM-316HU
+  architecture: armeabi-v7a
+
+  block_devs:
+    system:
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/mmcblk0p21
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
