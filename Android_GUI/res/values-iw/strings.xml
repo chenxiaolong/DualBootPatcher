@@ -332,7 +332,7 @@
   <plurals name="force_update_ramdisk_countdown">
     <item quantity="one">כעת אתה צעד %1$d מכפיית עדכון הramdisk.</item>
     <item quantity="two">כעת אתה %1$d צעדים מכפיית עדכון הramdisk.</item>
-    <item quantity="many"></item>
+    <item quantity="many">כעת אתה %1$d צעדים מכפיית עדכון הramdisk.</item>
     <item quantity="other">כעת אתה %1$d צעדים מכפיית עדכון הramdisk.</item>
   </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
@@ -400,6 +400,8 @@
   <!--Path chooser dialog button to select a directory-->
   <!--Path chooser dialog button to save a file-->
   <!--Path chooser dialog button to create a new folder-->
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">חיפוש</string>
   <!--Word/phrase for None (used in eg. a list)-->
