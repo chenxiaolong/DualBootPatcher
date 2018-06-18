@@ -769,7 +769,7 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
@@ -1007,5 +1007,5 @@ boot_ui:
     brightness_path: /sys/devices/platform/hisi_fb.524289/leds/lcd_backlight0/brightness
     max_brightness: 255
     default_brightness: 162
-    battery_path: /sys/devices/platform/battery/power_supply/Battery/
+    battery_path: /sys/devices/platform/battery/power_supply/Battery
     theme: portrait_hdpi
