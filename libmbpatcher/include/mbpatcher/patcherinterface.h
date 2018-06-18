@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -18,6 +18,8 @@
  */
 
 #pragma once
+
+#include <functional>
 
 #include "mbcommon/common.h"
 
@@ -39,9 +41,9 @@ namespace mb::patcher
 class MB_EXPORT Patcher
 {
 public:
-    typedef void (*ProgressUpdatedCallback) (uint64_t, uint64_t, void *);
-    typedef void (*FilesUpdatedCallback) (uint64_t, uint64_t, void *);
-    typedef void (*DetailsUpdatedCallback) (const std::string &, void *);
+    using ProgressUpdatedCallback = std::function<void(uint64_t, uint64_t)>;
+    using FilesUpdatedCallback = std::function<void(uint64_t, uint64_t)>;
+    using DetailsUpdatedCallback = std::function<void(const std::string &)>;
 
     virtual ~Patcher() {}
 
@@ -73,12 +75,10 @@ public:
      * \param progress_cb Callback for receiving current progress values
      * \param files_cb Callback for receiving current files count
      * \param details_cb Callback for receiving detailed progress text
-     * \param userdata Pointer to pass to callback functions
      */
-    virtual bool patch_file(ProgressUpdatedCallback progress_cb,
-                            FilesUpdatedCallback files_cb,
-                            DetailsUpdatedCallback details_cb,
-                            void *userdata) = 0;
+    virtual bool patch_file(const ProgressUpdatedCallback &progress_cb,
+                            const FilesUpdatedCallback &files_cb,
+                            const DetailsUpdatedCallback &details_cb) = 0;
 
     /*!
      * \brief Cancel the patching of a file

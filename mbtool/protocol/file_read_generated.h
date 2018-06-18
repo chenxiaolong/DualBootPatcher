@@ -30,7 +30,7 @@ struct FileReadError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -45,13 +45,13 @@ struct FileReadErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(FileReadError::VT_MSG, msg);
   }
-  FileReadErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileReadErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileReadErrorBuilder &operator=(const FileReadErrorBuilder &);
   flatbuffers::Offset<FileReadError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileReadError>(end);
     return o;
   }
@@ -105,13 +105,13 @@ struct FileReadRequestBuilder {
   void add_count(uint64_t count) {
     fbb_.AddElement<uint64_t>(FileReadRequest::VT_COUNT, count, 0);
   }
-  FileReadRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileReadRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileReadRequestBuilder &operator=(const FileReadRequestBuilder &);
   flatbuffers::Offset<FileReadRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileReadRequest>(end);
     return o;
   }
@@ -153,12 +153,12 @@ struct FileReadResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
            VerifyField<uint64_t>(verifier, VT_BYTES_READ) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_DATA) &&
+           VerifyOffset(verifier, VT_DATA) &&
            verifier.Verify(data()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -182,13 +182,13 @@ struct FileReadResponseBuilder {
   void add_error(flatbuffers::Offset<FileReadError> error) {
     fbb_.AddOffset(FileReadResponse::VT_ERROR, error);
   }
-  FileReadResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileReadResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileReadResponseBuilder &operator=(const FileReadResponseBuilder &);
   flatbuffers::Offset<FileReadResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 5);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileReadResponse>(end);
     return o;
   }

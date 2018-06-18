@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -33,6 +33,7 @@
 #include <signal.h>
 #include <sys/klog.h>
 #include <sys/mount.h>
+#include <sys/sysmacros.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -60,10 +61,6 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
-#include "external/property_service.h"
-
-#include "initwrapper/devices.h"
-#include "initwrapper/util.h"
 #include "daemon.h"
 #include "emergency.h"
 #include "mount_fstab.h"
@@ -71,13 +68,8 @@
 #include "romconfig.h"
 #include "sepolpatch.h"
 #include "signature.h"
-
-#define RUN_ADB_BEFORE_EXEC_OR_REBOOT 0
-
-#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
-#include "miniadbd.h"
-#include "miniadbd/adb_log.h"
-#endif
+#include "util/property_service.h"
+#include "util/uevent_thread.h"
 
 #if defined(__i386__) || defined(__arm__)
 #define PCRE_PATH               "/system/lib/libpcre.so"
@@ -98,6 +90,8 @@ using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 static pid_t daemon_pid = -1;
+
+static PropertyService g_property_service;
 
 static void init_usage(FILE *stream)
 {
@@ -204,12 +198,18 @@ static bool set_kernel_properties()
 {
     if (auto cmdline = util::kernel_cmdline()) {
         for (auto const &[k, v] : cmdline.value()) {
+            LOGV("Kernel cmdline option %s=%s",
+                 k.c_str(), v ? v->c_str() : "(no value)");
+
             if (starts_with(k, "androidboot.") && k.size() > 12 && v) {
                 std::string key("ro.boot.");
                 key += std::string_view(k).substr(12);
-                property_set(key, *v);
+                g_property_service.set(key, *v);
             }
         }
+    } else {
+        LOGW("Failed get kernel cmdline: %s",
+             cmdline.error().message().c_str());
     }
 
     struct {
@@ -223,12 +223,11 @@ static bool set_kernel_properties()
         { "ro.boot.bootloader", "ro.bootloader", "unknown" },
         { "ro.boot.hardware",   "ro.hardware",   "unknown" },
         { "ro.boot.revision",   "ro.revision",   "0"       },
-        { nullptr,              nullptr,         nullptr   },
     };
 
-    for (auto it = prop_map; it ->src_prop; ++it) {
-        std::string value = ::property_get(it->src_prop);
-        property_set(it->dst_prop, !value.empty() ? value : it->default_value);
+    for (auto const &p : prop_map) {
+        auto value = g_property_service.get(p.src_prop);
+        g_property_service.set(p.dst_prop, value ? *value : p.default_value);
     }
 
     return true;
@@ -236,7 +235,7 @@ static bool set_kernel_properties()
 
 static bool properties_setup()
 {
-    if (!property_init()) {
+    if (!g_property_service.initialize()) {
         LOGW("Failed to initialize properties area");
     }
 
@@ -246,10 +245,13 @@ static bool properties_setup()
     }
 
     // Load /default.prop
-    property_load_boot_defaults();
+    g_property_service.load_boot_props();
+
+    // Load DBP props
+    g_property_service.load_properties_file(DBP_PROP_PATH, {});
 
     // Start properties service (to allow other processes to set properties)
-    if (!start_property_service()) {
+    if (!g_property_service.start_thread()) {
         LOGW("Failed to start properties service");
     }
 
@@ -258,7 +260,7 @@ static bool properties_setup()
 
 static bool properties_cleanup()
 {
-    if (!stop_property_service()) {
+    if (!g_property_service.stop_thread()) {
         LOGW("Failed to stop properties service");
     }
 
@@ -309,7 +311,7 @@ static bool fix_file_contexts(const char *path)
     std::string new_path(path);
     new_path += ".new";
 
-    ScopedFILE fp_old(fopen(path, "rb"), fclose);
+    ScopedFILE fp_old(fopen(path, "rbe"), fclose);
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -320,7 +322,7 @@ static bool fix_file_contexts(const char *path)
         }
     }
 
-    ScopedFILE fp_new(fopen(new_path.c_str(), "wb"), fclose);
+    ScopedFILE fp_new(fopen(new_path.c_str(), "wbe"), fclose);
     if (!fp_new) {
         LOGE("%s: Failed to open for writing: %s",
              new_path.c_str(), strerror(errno));
@@ -387,8 +389,7 @@ static bool fix_binary_file_contexts(const char *path)
     };
 
     // Decompile binary file_contexts to temporary file
-    int ret = util::run_command(decompile_argv[0], decompile_argv,
-                                {}, {}, nullptr, nullptr);
+    int ret = util::run_command(decompile_argv[0], decompile_argv, {}, {}, {});
     if (ret < 0 || !WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
         LOGE("%s: Failed to decompile file_contexts", path);
         return false;
@@ -401,8 +402,7 @@ static bool fix_binary_file_contexts(const char *path)
     }
 
     // Recompile binary file_contexts
-    ret = util::run_command(compile_argv[0], compile_argv,
-                            {}, {}, nullptr, nullptr);
+    ret = util::run_command(compile_argv[0], compile_argv, {}, {}, {});
     if (ret < 0 || !WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
         LOGE("%s: Failed to compile binary file_contexts", tmp_path.c_str());
         unlink(tmp_path.c_str());
@@ -427,7 +427,7 @@ static bool is_completely_whitespace(const char *str)
 
 static bool add_mbtool_services(bool enable_appsync)
 {
-    ScopedFILE fp_old(fopen("/init.rc", "rb"), fclose);
+    ScopedFILE fp_old(fopen("/init.rc", "rbe"), fclose);
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -437,7 +437,7 @@ static bool add_mbtool_services(bool enable_appsync)
         }
     }
 
-    ScopedFILE fp_new(fopen("/init.rc.new", "wb"), fclose);
+    ScopedFILE fp_new(fopen("/init.rc.new", "wbe"), fclose);
     if (!fp_new) {
         LOGE("Failed to open /init.rc.new for writing: %s",
              strerror(errno));
@@ -503,7 +503,7 @@ static bool add_mbtool_services(bool enable_appsync)
     }
 
     // Create /init.multiboot.rc
-    ScopedFILE fp_multiboot(fopen("/init.multiboot.rc", "wb"), fclose);
+    ScopedFILE fp_multiboot(fopen("/init.multiboot.rc", "wbe"), fclose);
     if (!fp_multiboot) {
         LOGE("Failed to open /init.multiboot.rc for writing: %s",
              strerror(errno));
@@ -513,6 +513,12 @@ static bool add_mbtool_services(bool enable_appsync)
     static const char *daemon_service =
             "service mbtooldaemon /mbtool daemon\n"
             "    class main\n"
+            "    user root\n"
+            "    oneshot\n"
+            "    seclabel " MB_EXEC_CONTEXT "\n"
+            "\n"
+            "service mbtoolprops /mbtool properties set-file " DBP_PROP_PATH "\n"
+            "    class core\n"
             "    user root\n"
             "    oneshot\n"
             "    seclabel " MB_EXEC_CONTEXT "\n"
@@ -573,7 +579,7 @@ static bool strip_manual_mounts()
         std::string path("/");
         path += ent->d_name;
 
-        ScopedFILE fp(fopen(path.c_str(), "r"), fclose);
+        ScopedFILE fp(fopen(path.c_str(), "re"), fclose);
         if (!fp) {
             LOGE("Failed to open %s for reading: %s",
                  path.c_str(), strerror(errno));
@@ -620,7 +626,7 @@ static bool strip_manual_mounts()
         std::string new_path(path);
         new_path += ".new";
 
-        ScopedFILE fp_new(fopen(new_path.c_str(), "w"), fclose);
+        ScopedFILE fp_new(fopen(new_path.c_str(), "we"), fclose);
         if (!fp_new) {
             LOGE("Failed to open %s for writing: %s",
                  new_path.c_str(), strerror(errno));
@@ -643,50 +649,12 @@ static bool strip_manual_mounts()
     return true;
 }
 
-static std::string encode_list(const std::vector<std::string> &list)
+static bool add_props_to_dbp_prop()
 {
-    std::string result;
-
-    bool first = true;
-    for (auto const &item : list) {
-        if (!first) {
-            result += ',';
-        } else {
-            first = false;
-        }
-        for (auto c : item) {
-            if (c == ',' || c == '\\') {
-                result += '\\';
-            }
-            result += c;
-        }
-    }
-
-    return result;
-}
-
-static bool add_props_to_default_prop(const Device &device)
-{
-    ScopedFILE fp(fopen(DEFAULT_PROP_PATH, "r+b"), fclose);
+    ScopedFILE fp(fopen(DBP_PROP_PATH, "abe"), fclose);
     if (!fp) {
-        if (errno == ENOENT) {
-            return true;
-        } else {
-            LOGE("%s: Failed to open file: %s",
-                 DEFAULT_PROP_PATH, strerror(errno));
-            return false;
-        }
-    }
-
-    // Add newline if the last character isn't already one
-    if (std::fseek(fp.get(), -1, SEEK_END) == 0) {
-        char lastchar;
-        if (std::fread(&lastchar, 1, 1, fp.get()) == 1 && lastchar != '\n') {
-            fputs("\n", fp.get());
-        }
-    } else if (std::fseek(fp.get(), 0, SEEK_END) < 0) {
-        LOGE("%s: Failed to seek to end of file: %s",
-             DEFAULT_PROP_PATH, strerror(errno));
+        LOGE("%s: Failed to open file: %s",
+             DBP_PROP_PATH, strerror(errno));
         return false;
     }
 
@@ -694,22 +662,6 @@ static bool add_props_to_default_prop(const Device &device)
     fprintf(fp.get(), PROP_MULTIBOOT_VERSION "=%s\n", version());
     // Write ROM ID property
     fprintf(fp.get(), PROP_MULTIBOOT_ROM_ID "=%s\n", get_rom_id().c_str());
-
-    // Block device paths (deprecated)
-    fprintf(fp.get(), "ro.patcher.blockdevs.base=%s\n",
-            encode_list(device.block_dev_base_dirs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.system=%s\n",
-            encode_list(device.system_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.cache=%s\n",
-            encode_list(device.cache_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.data=%s\n",
-            encode_list(device.data_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.boot=%s\n",
-            encode_list(device.boot_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.recovery=%s\n",
-            encode_list(device.recovery_block_devs()).c_str());
-    fprintf(fp.get(), "ro.patcher.blockdevs.extra=%s\n",
-            encode_list(device.extra_block_devs()).c_str());
 
     return true;
 }
@@ -773,7 +725,7 @@ static std::string find_fstab()
         std::string path("/");
         path += ent->d_name;
 
-        ScopedFILE fp(fopen(path.c_str(), "r"), fclose);
+        ScopedFILE fp(fopen(path.c_str(), "re"), fclose);
         if (!fp) {
             continue;
         }
@@ -912,11 +864,10 @@ static bool disable_spota()
 {
     static const char *spota_dir = "/data/security/spota";
 
-    std::unordered_map<std::string, std::string> props;
-    util::property_file_get_all("/system/build.prop", props);
+    auto props = util::property_file_get_all("/system/build.prop");
 
-    if (strcasecmp(props["ro.product.manufacturer"].c_str(), "samsung") != 0
-            && strcasecmp(props["ro.product.brand"].c_str(), "samsung") != 0) {
+    if (props && strcasecmp((*props)["ro.product.brand"].c_str(), "samsung") != 0
+            && strcasecmp((*props)["ro.product.manufacturer"].c_str(), "samsung") != 0) {
         // Not a Samsung device
         LOGV("Not mounting empty tmpfs over: %s", spota_dir);
         return true;
@@ -1006,7 +957,7 @@ static bool extract_zip(const char *source, const char *target)
 
     (void) util::mkdir_recursive(target, 0755);
 
-    FILE *fp = fopen(target_file.c_str(), "wb");
+    FILE *fp = fopen(target_file.c_str(), "wbe");
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              target_file.c_str(), strerror(errno));
@@ -1106,7 +1057,7 @@ static bool launch_boot_menu()
     start_daemon();
 
     std::vector<std::string> argv{ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH };
-    int ret = util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
+    int ret = util::run_command(argv[0], argv, {}, {}, {});
     if (ret < 0) {
         LOGE("%s: Failed to execute: %s", BOOT_UI_EXEC_PATH, strerror(errno));
     } else if (WIFEXITED(ret)) {
@@ -1126,36 +1077,27 @@ static bool launch_boot_menu()
     return true;
 }
 
-#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
-static void run_adb()
+static void redirect_stdio_null()
 {
-    // Mount /system if we can so we can use adb shell
-    if (!util::is_mounted("/system") && util::is_mounted("/raw/system")) {
-        mount("/raw/system", "/system", "", MS_BIND, "");
-    }
+    static constexpr char name[] = "/dev/__null__";
 
-    pid_t pid = fork();
-    if (pid == 0) {
-        // Don't spam the kernel log
-        adb_log_mask = ADB_SERV;
-
-        char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
-        _exit(miniadbd_main(1, adb_argv));
-    } else if (pid >= 0) {
-        LOGV("miniadbd is running as pid %d; kill it to continue", pid);
-        wait_for_pid("miniadbd", pid);
-    } else {
-        LOGW("Failed to fork to run miniadbd: %s", strerror(errno));
+    if (mknod(name, S_IFCHR | 0600, makedev(1, 3)) == 0) {
+        // O_CLOEXEC should not be used
+        int fd = open(name, O_RDWR);
+        unlink(name);
+        if (fd >= 0) {
+            dup2(fd, 0);
+            dup2(fd, 1);
+            dup2(fd, 2);
+            if (fd > 2) {
+                close(fd);
+            }
+        }
     }
 }
-#endif
 
 static bool critical_failure()
 {
-#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
-    run_adb();
-#endif
-
     return emergency_reboot();
 }
 
@@ -1210,7 +1152,7 @@ int init_main(int argc, char *argv[])
     (void) util::chown("/data", "system", "system", 0);
 
     // Redirect std{in,out,err} to /dev/null
-    open_devnull_stdio();
+    redirect_stdio_null();
 
     // Log to kmsg
     log::set_logger(std::make_shared<log::KmsgLogger>(true));
@@ -1228,17 +1170,16 @@ int init_main(int argc, char *argv[])
         critical_failure();
         return EXIT_FAILURE;
     }
-    contents.value().push_back('\0');
 
     // Start probing for devices so we have somewhere to write logs for
     // critical_failure()
-    device_init(false);
+    UeventThread uevent_thread;
+    uevent_thread.start();
 
     Device device;
     JsonError error;
 
-    if (!device_from_json(reinterpret_cast<char *>(
-            contents.value().data()), device, error)) {
+    if (!device_from_json(contents.value(), device, error)) {
         LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
         critical_failure();
         return EXIT_FAILURE;
@@ -1251,7 +1192,7 @@ int init_main(int argc, char *argv[])
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
     symlink_base_dir(device);
 
-    add_props_to_default_prop(device);
+    add_props_to_dbp_prop();
 
     // initialize properties
     properties_setup();
@@ -1285,7 +1226,8 @@ int init_main(int argc, char *argv[])
             | MountFlag::MountCache
             | MountFlag::MountData
             | MountFlag::MountExternalSd;
-    if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
+    if (!mount_fstab(fstab.c_str(), rom, device, flags,
+                     uevent_thread.device_handler())) {
         LOGE("Failed to mount fstab");
         critical_failure();
         return EXIT_FAILURE;
@@ -1356,18 +1298,20 @@ int init_main(int argc, char *argv[])
     }
 
     // Kill uevent thread and close uevent socket
-    device_close();
+    uevent_thread.stop();
 
     // Kill properties service and clean up
     properties_cleanup();
 
+    // Hack to work around issue where Magisk unconditionally unmounts /system
+    // https://github.com/topjohnwu/Magisk/pull/387
+    if (util::file_find_one_of("/init.orig", {"MagiskPolicy v16"})) {
+        mount("/system", "/system", "", MS_BIND, "");
+    }
+
     // Remove mbtool init symlink and restore original binary
     unlink("/init");
     rename("/init.orig", "/init");
-
-#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
-    run_adb();
-#endif
 
     // Unmount partitions
     selinux_unmount();

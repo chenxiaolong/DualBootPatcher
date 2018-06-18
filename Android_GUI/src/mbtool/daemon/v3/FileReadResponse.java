@@ -17,10 +17,12 @@ public final class FileReadResponse extends Table {
   public boolean success() { int o = __offset(4); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
   public String errorMsg() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer errorMsgAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public ByteBuffer errorMsgInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 1); }
   public long bytesRead() { int o = __offset(8); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
   public int data(int j) { int o = __offset(10); return o != 0 ? bb.get(__vector(o) + j * 1) & 0xFF : 0; }
   public int dataLength() { int o = __offset(10); return o != 0 ? __vector_len(o) : 0; }
   public ByteBuffer dataAsByteBuffer() { return __vector_as_bytebuffer(10, 1); }
+  public ByteBuffer dataInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 10, 1); }
   public FileReadError error() { return error(new FileReadError()); }
   public FileReadError error(FileReadError obj) { int o = __offset(12); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }
 

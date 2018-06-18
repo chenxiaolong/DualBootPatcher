@@ -240,7 +240,7 @@ object RomUtils {
     }
 
     @Throws(IOException::class, MbtoolException::class, MbtoolCommandException::class)
-    fun cacheWallpaper(context: Context, info: RomInformation, iface: MbtoolInterface):
+    fun cacheWallpaper(info: RomInformation, iface: MbtoolInterface):
             CacheWallpaperResult {
         if (usesLiveWallpaper(info, iface)) {
             // We can't render a snapshot of a live wallpaper
@@ -298,7 +298,7 @@ object RomUtils {
             //bitmap.recycle()
 
             // Invalidate picasso cache
-            Picasso.with(context).invalidate(wallpaperCacheFile)
+            Picasso.get().invalidate(wallpaperCacheFile)
 
             Log.d(TAG, "Wallpaper for ${info.id} has been cached")
             return CacheWallpaperResult.UPDATED

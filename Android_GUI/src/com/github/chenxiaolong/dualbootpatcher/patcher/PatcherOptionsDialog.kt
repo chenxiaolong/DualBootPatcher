@@ -87,15 +87,7 @@ class PatcherOptionsDialog : DialogFragment() {
                 .positiveText(R.string.proceed)
                 .negativeText(R.string.cancel)
                 .onPositive { _, _ ->
-                    val owner = owner
-                    if (owner != null) {
-                        val device = model.device
-                        if (RickRollDevices.isRickRollDevice(device)) {
-                            activity!!.startActivity(RickRollDevices.youtubeIntent)
-                        } else {
-                            owner.onConfirmedOptions(id, device, model.selectedLocation.value!!.id)
-                        }
-                    }
+                    owner?.onConfirmedOptions(id, model.device, model.selectedLocation.value!!.id)
                 }
                 .build()
 

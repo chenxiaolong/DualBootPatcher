@@ -18,6 +18,7 @@ public final class FileWriteRequest extends Table {
   public int data(int j) { int o = __offset(6); return o != 0 ? bb.get(__vector(o) + j * 1) & 0xFF : 0; }
   public int dataLength() { int o = __offset(6); return o != 0 ? __vector_len(o) : 0; }
   public ByteBuffer dataAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public ByteBuffer dataInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 1); }
 
   public static int createFileWriteRequest(FlatBufferBuilder builder,
       int id,

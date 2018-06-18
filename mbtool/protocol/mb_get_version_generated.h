@@ -24,13 +24,13 @@ struct MbGetVersionRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table 
 struct MbGetVersionRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  MbGetVersionRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbGetVersionRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbGetVersionRequestBuilder &operator=(const MbGetVersionRequestBuilder &);
   flatbuffers::Offset<MbGetVersionRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 0);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbGetVersionRequest>(end);
     return o;
   }
@@ -51,7 +51,7 @@ struct MbGetVersionResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_VERSION) &&
+           VerifyOffset(verifier, VT_VERSION) &&
            verifier.Verify(version()) &&
            verifier.EndTable();
   }
@@ -63,13 +63,13 @@ struct MbGetVersionResponseBuilder {
   void add_version(flatbuffers::Offset<flatbuffers::String> version) {
     fbb_.AddOffset(MbGetVersionResponse::VT_VERSION, version);
   }
-  MbGetVersionResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbGetVersionResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbGetVersionResponseBuilder &operator=(const MbGetVersionResponseBuilder &);
   flatbuffers::Offset<MbGetVersionResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbGetVersionResponse>(end);
     return o;
   }

@@ -33,7 +33,7 @@
 #include <stdint.h>
 
 #ifndef _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
-#error you should #include <mbutil/external/system_properties.h> instead
+#error you should #include "mbutil/external/system_properties.h" instead
 #endif
 
 #include "mbutil/external/system_properties.h"

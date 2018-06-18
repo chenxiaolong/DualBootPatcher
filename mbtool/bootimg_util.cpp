@@ -71,7 +71,7 @@ bool bi_copy_data_to_fd(Reader &reader, int fd)
 
 bool bi_copy_file_to_data(const std::string &path, Writer &writer)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
     if (!fp) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), strerror(errno));
@@ -106,7 +106,7 @@ bool bi_copy_file_to_data(const std::string &path, Writer &writer)
 
 bool bi_copy_data_to_file(Reader &reader, const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "wbe"), fclose);
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), strerror(errno));

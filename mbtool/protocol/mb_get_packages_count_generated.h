@@ -26,13 +26,13 @@ struct MbGetPackagesCountError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Ta
 struct MbGetPackagesCountErrorBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  MbGetPackagesCountErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbGetPackagesCountErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbGetPackagesCountErrorBuilder &operator=(const MbGetPackagesCountErrorBuilder &);
   flatbuffers::Offset<MbGetPackagesCountError> Finish() {
-    const auto end = fbb_.EndTable(start_, 0);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbGetPackagesCountError>(end);
     return o;
   }
@@ -53,7 +53,7 @@ struct MbGetPackagesCountRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ROM_ID) &&
+           VerifyOffset(verifier, VT_ROM_ID) &&
            verifier.Verify(rom_id()) &&
            verifier.EndTable();
   }
@@ -65,13 +65,13 @@ struct MbGetPackagesCountRequestBuilder {
   void add_rom_id(flatbuffers::Offset<flatbuffers::String> rom_id) {
     fbb_.AddOffset(MbGetPackagesCountRequest::VT_ROM_ID, rom_id);
   }
-  MbGetPackagesCountRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbGetPackagesCountRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbGetPackagesCountRequestBuilder &operator=(const MbGetPackagesCountRequestBuilder &);
   flatbuffers::Offset<MbGetPackagesCountRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbGetPackagesCountRequest>(end);
     return o;
   }
@@ -122,7 +122,7 @@ struct MbGetPackagesCountResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers:
            VerifyField<uint32_t>(verifier, VT_SYSTEM_PACKAGES) &&
            VerifyField<uint32_t>(verifier, VT_SYSTEM_UPDATE_PACKAGES) &&
            VerifyField<uint32_t>(verifier, VT_NON_SYSTEM_PACKAGES) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -146,13 +146,13 @@ struct MbGetPackagesCountResponseBuilder {
   void add_error(flatbuffers::Offset<MbGetPackagesCountError> error) {
     fbb_.AddOffset(MbGetPackagesCountResponse::VT_ERROR, error);
   }
-  MbGetPackagesCountResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MbGetPackagesCountResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   MbGetPackagesCountResponseBuilder &operator=(const MbGetPackagesCountResponseBuilder &);
   flatbuffers::Offset<MbGetPackagesCountResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 5);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MbGetPackagesCountResponse>(end);
     return o;
   }

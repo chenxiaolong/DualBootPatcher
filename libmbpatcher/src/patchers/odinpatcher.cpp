@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -73,7 +73,6 @@ OdinPatcher::OdinPatcher(PatcherConfig &pc)
     , m_added_files()
     , m_progress_cb()
     , m_details_cb()
-    , m_userdata()
     , m_a_input(nullptr)
     , m_z_output(nullptr)
 {
@@ -101,10 +100,9 @@ void OdinPatcher::cancel_patching()
     m_cancelled = true;
 }
 
-bool OdinPatcher::patch_file(ProgressUpdatedCallback progress_cb,
-                             FilesUpdatedCallback files_cb,
-                             DetailsUpdatedCallback details_cb,
-                             void *userdata)
+bool OdinPatcher::patch_file(const ProgressUpdatedCallback &progress_cb,
+                             const FilesUpdatedCallback &files_cb,
+                             const DetailsUpdatedCallback &details_cb)
 {
     (void) files_cb;
 
@@ -112,9 +110,8 @@ bool OdinPatcher::patch_file(ProgressUpdatedCallback progress_cb,
 
     assert(m_info != nullptr);
 
-    m_progress_cb = progress_cb;
-    m_details_cb = details_cb;
-    m_userdata = userdata;
+    m_progress_cb = &progress_cb;
+    m_details_cb = &details_cb;
 
     m_old_bytes = 0;
     m_bytes = 0;
@@ -124,7 +121,6 @@ bool OdinPatcher::patch_file(ProgressUpdatedCallback progress_cb,
 
     m_progress_cb = nullptr;
     m_details_cb = nullptr;
-    m_userdata = nullptr;
 
     if (m_a_input != nullptr) {
         close_input_archive();
@@ -204,7 +200,7 @@ bool OdinPatcher::patch_tar()
 
     if (m_cancelled) return false;
 
-    if (!process_contents(m_a_input, 0)) {
+    if (!process_contents(m_a_input, 0, nullptr)) {
         return false;
     }
 
@@ -265,7 +261,8 @@ bool OdinPatcher::patch_tar()
 
         update_details(spec.target);
 
-        result = MinizipUtils::add_file(handle, spec.target, spec.source);
+        result = MinizipUtils::add_file_from_path(
+                handle, spec.target, spec.source);
         if (result != ErrorCode::NoError) {
             m_error = result;
             return false;
@@ -276,11 +273,9 @@ bool OdinPatcher::patch_tar()
 
     update_details("multiboot/info.prop");
 
-    const std::string info_prop =
-            ZipPatcher::create_info_prop(m_info->rom_id());
-    result = MinizipUtils::add_file(
+    result = MinizipUtils::add_file_from_data(
             handle, "multiboot/info.prop",
-            std::vector<unsigned char>(info_prop.begin(), info_prop.end()));
+            ZipPatcher::create_info_prop(m_info->rom_id()));
     if (result != ErrorCode::NoError) {
         m_error = result;
         return false;
@@ -296,9 +291,8 @@ bool OdinPatcher::patch_tar()
         return false;
     }
 
-    result = MinizipUtils::add_file(
-            handle, "multiboot/device.json",
-            std::vector<unsigned char>(json.begin(), json.end()));
+    result = MinizipUtils::add_file_from_data(
+            handle, "multiboot/device.json", json);
     if (result != ErrorCode::NoError) {
         m_error = result;
         return false;
@@ -323,7 +317,7 @@ bool OdinPatcher::process_file(archive *a, archive_entry *entry, bool sparse)
 
     mz_zip_file file_info = {};
     file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
-    file_info.filename = const_cast<char *>(zip_name.c_str());
+    file_info.filename = zip_name.c_str();
     file_info.filename_size = static_cast<uint16_t>(zip_name.size());
 
     void *handle = MinizipUtils::ctx_get_zip_handle(m_z_output);
@@ -403,9 +397,10 @@ struct NestedCtx
     }
 };
 
-bool OdinPatcher::process_contents(archive *a, unsigned int depth)
+bool OdinPatcher::process_contents(archive *a, unsigned int depth,
+                                   const char *raw_entry_name)
 {
-    if (depth > 1) {
+    if (!raw_entry_name && depth > 1) {
         LOGW("Not traversing nested archive: depth > 1");
         return true;
     }
@@ -415,6 +410,10 @@ bool OdinPatcher::process_contents(archive *a, unsigned int depth)
 
     while ((la_ret = archive_read_next_header(a, &entry)) == ARCHIVE_OK) {
         if (m_cancelled) return false;
+
+        if (raw_entry_name) {
+            archive_entry_set_pathname(entry, raw_entry_name);
+        }
 
         const char *name = archive_entry_pathname(entry);
         if (!name) {
@@ -430,22 +429,7 @@ bool OdinPatcher::process_contents(archive *a, unsigned int depth)
             continue;
         }
 
-        if (strcmp(name, "boot.img") == 0) {
-            LOGV("%sHandling boot image: %s", indent(depth), name);
-            m_added_files.insert(name);
-
-            if (!process_file(a, entry, false)) {
-                return false;
-            }
-        } else if (starts_with(name, "cache.img")
-                || starts_with(name, "system.img")) {
-            LOGV("%sHandling sparse image: %s", indent(depth), name);
-            m_added_files.insert(name);
-
-            if (!process_file(a, entry, true)) {
-                return false;
-            }
-        } else if (ends_with(name, ".tar.md5") || ends_with(name, ".tar")) {
+        if (ends_with(name, ".tar.md5") || ends_with(name, ".tar")) {
             LOGV("%sHandling nested tarball: %s", indent(depth), name);
 
             NestedCtx ctx(a);
@@ -465,7 +449,51 @@ bool OdinPatcher::process_contents(archive *a, unsigned int depth)
                 return false;
             }
 
-            if (!process_contents(ctx.nested, depth + 1)) {
+            if (!process_contents(ctx.nested, depth + 1, nullptr)) {
+                return false;
+            }
+        } else if (ends_with(name, ".lz4")) {
+            LOGV("%sHandling nested LZ4-compressed image: %s",
+                 indent(depth), name);
+
+            NestedCtx ctx(a);
+            if (!ctx.nested) {
+                m_error = ErrorCode::MemoryAllocationError;
+                return false;
+            }
+
+            archive_read_support_filter_lz4(ctx.nested);
+            archive_read_support_format_raw(ctx.nested);
+
+            int ret = archive_read_open2(ctx.nested, &ctx, nullptr,
+                                         &la_nested_read_cb, nullptr, nullptr);
+            if (ret != ARCHIVE_OK) {
+                LOGE("libarchive: Failed to open nested archive: %s: %s",
+                     name, archive_error_string(ctx.nested));
+                m_error = ErrorCode::ArchiveReadOpenError;
+                return false;
+            }
+
+            // Strip off ".lz4"
+            std::string new_entry_name(name, name + strlen(name) - 4);
+
+            if (!process_contents(ctx.nested, depth + 1,
+                                  new_entry_name.c_str())) {
+                return false;
+            }
+        } else if (strcmp(name, "boot.img") == 0) {
+            LOGV("%sHandling boot image: %s", indent(depth), name);
+            m_added_files.insert(name);
+
+            if (!process_file(a, entry, false)) {
+                return false;
+            }
+        } else if (starts_with(name, "cache.img")
+                || starts_with(name, "system.img")) {
+            LOGV("%sHandling sparse image: %s", indent(depth), name);
+            m_added_files.insert(name);
+
+            if (!process_file(a, entry, true)) {
                 return false;
             }
         } else {
@@ -573,7 +601,7 @@ bool OdinPatcher::close_output_archive()
 
 void OdinPatcher::update_progress(uint64_t bytes, uint64_t max_bytes)
 {
-    if (m_progress_cb) {
+    if (m_progress_cb && *m_progress_cb) {
         bool should_call = true;
         if (max_bytes > 0) {
             // Rate limit... call back only if percentage exceeds 0.01%
@@ -586,7 +614,7 @@ void OdinPatcher::update_progress(uint64_t bytes, uint64_t max_bytes)
             }
         }
         if (should_call) {
-            m_progress_cb(bytes, max_bytes, m_userdata);
+            (*m_progress_cb)(bytes, max_bytes);
             m_old_bytes = bytes;
         }
     }
@@ -594,8 +622,8 @@ void OdinPatcher::update_progress(uint64_t bytes, uint64_t max_bytes)
 
 void OdinPatcher::update_details(const std::string &msg)
 {
-    if (m_details_cb) {
-        m_details_cb(msg, m_userdata);
+    if (m_details_cb && *m_details_cb) {
+        (*m_details_cb)(msg);
     }
 }
 

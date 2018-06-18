@@ -423,19 +423,15 @@ AndroidFormatReader::find_bump_magic(Reader &reader, File &file,
 bool AndroidFormatReader::convert_header(const AndroidHeader &hdr,
                                          Header &header)
 {
-    char board_name[sizeof(hdr.name) + 1];
-    char cmdline[sizeof(hdr.cmdline) + 1];
+    auto *name_ptr = reinterpret_cast<const char *>(hdr.name);
+    auto name_size = strnlen(name_ptr, sizeof(hdr.name));
 
-    strncpy(board_name, reinterpret_cast<const char *>(hdr.name),
-            sizeof(hdr.name));
-    strncpy(cmdline, reinterpret_cast<const char *>(hdr.cmdline),
-            sizeof(hdr.cmdline));
-    board_name[sizeof(hdr.name)] = '\0';
-    cmdline[sizeof(hdr.cmdline)] = '\0';
+    auto *cmdline_ptr = reinterpret_cast<const char *>(hdr.cmdline);
+    auto cmdline_size = strnlen(cmdline_ptr, sizeof(hdr.cmdline));
 
     header.set_supported_fields(SUPPORTED_FIELDS);
-    header.set_board_name({board_name});
-    header.set_kernel_cmdline({cmdline});
+    header.set_board_name({{name_ptr, name_size}});
+    header.set_kernel_cmdline({{cmdline_ptr, cmdline_size}});
     header.set_page_size(hdr.page_size);
     header.set_kernel_address(hdr.kernel_addr);
     header.set_ramdisk_address(hdr.ramdisk_addr);

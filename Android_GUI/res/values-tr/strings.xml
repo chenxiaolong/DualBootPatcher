@@ -294,10 +294,6 @@ Kerneli şimdi ayarlamak ister misiniz?</string>
   <string name="patcher_card_subtitle_cancelled">İptal olmuş</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Düzeltici seçenekler</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Birincil ROM Yükseltme</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Birincil ROM\'u diğer ROM\'ları etkilemeden güncelleyin</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">%s\'ye ROM yükler</string>
   <!--Text box hint for specifying the data slot ID-->

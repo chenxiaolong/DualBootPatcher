@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-_commit=9770532afa91dd1441ba0d3e9d4bb86d7e501f19
+_commit=982279b366eccd9e4146036c7fcda7f72d2cbdff
 
 pkgname=boringssl
-pkgver=r4885.9770532a
+pkgver=r5241.982279b36
 pkgrel=1
 pkgdesc="BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs."
 arch=(armv7 aarch64 x86 x86_64)
@@ -43,8 +43,8 @@ build() {
     cd "build_${abi}"
 
     local asflags='-fno-integrated-as'
-    local cflags='-ffunction-sections -fdata-sections -DOPENSSL_SMALL'
-    local cxxflags='-ffunction-sections -fdata-sections -DOPENSSL_SMALL'
+    local cflags='-ffunction-sections -fdata-sections'
+    local cxxflags='-ffunction-sections -fdata-sections'
 
     if [[ "${abi}" == 'arm64-v8a' ]]; then
         asflags+=' -Wa,-march=armv8-a+crypto'
@@ -59,6 +59,7 @@ build() {
         -DCMAKE_TOOLCHAIN_FILE=../android.toolchain.cmake
         -DANDROID_ABI="${abi}"
         -DANDROID_PLATFORM="${api}"
+        -DOPENSSL_SMALL=TRUE
     )
 
     cmake .. "${args[@]}"

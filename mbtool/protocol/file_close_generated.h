@@ -30,7 +30,7 @@ struct FileCloseError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -45,13 +45,13 @@ struct FileCloseErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(FileCloseError::VT_MSG, msg);
   }
-  FileCloseErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileCloseErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileCloseErrorBuilder &operator=(const FileCloseErrorBuilder &);
   flatbuffers::Offset<FileCloseError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileCloseError>(end);
     return o;
   }
@@ -97,13 +97,13 @@ struct FileCloseRequestBuilder {
   void add_id(int32_t id) {
     fbb_.AddElement<int32_t>(FileCloseRequest::VT_ID, id, 0);
   }
-  FileCloseRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileCloseRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileCloseRequestBuilder &operator=(const FileCloseRequestBuilder &);
   flatbuffers::Offset<FileCloseRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileCloseRequest>(end);
     return o;
   }
@@ -135,9 +135,9 @@ struct FileCloseResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -155,13 +155,13 @@ struct FileCloseResponseBuilder {
   void add_error(flatbuffers::Offset<FileCloseError> error) {
     fbb_.AddOffset(FileCloseResponse::VT_ERROR, error);
   }
-  FileCloseResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileCloseResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileCloseResponseBuilder &operator=(const FileCloseResponseBuilder &);
   flatbuffers::Offset<FileCloseResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileCloseResponse>(end);
     return o;
   }

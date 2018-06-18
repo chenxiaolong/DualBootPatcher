@@ -24,8 +24,17 @@ enum FileSeekWhence {
   FileSeekWhence_MAX = FileSeekWhence_SEEK_END
 };
 
-inline const char **EnumNamesFileSeekWhence() {
-  static const char *names[] = {
+inline const FileSeekWhence (&EnumValuesFileSeekWhence())[3] {
+  static const FileSeekWhence values[] = {
+    FileSeekWhence_SEEK_SET,
+    FileSeekWhence_SEEK_CUR,
+    FileSeekWhence_SEEK_END
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesFileSeekWhence() {
+  static const char * const names[] = {
     "SEEK_SET",
     "SEEK_CUR",
     "SEEK_END",
@@ -53,7 +62,7 @@ struct FileSeekError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -68,13 +77,13 @@ struct FileSeekErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(FileSeekError::VT_MSG, msg);
   }
-  FileSeekErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileSeekErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileSeekErrorBuilder &operator=(const FileSeekErrorBuilder &);
   flatbuffers::Offset<FileSeekError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileSeekError>(end);
     return o;
   }
@@ -136,13 +145,13 @@ struct FileSeekRequestBuilder {
   void add_whence(FileSeekWhence whence) {
     fbb_.AddElement<int16_t>(FileSeekRequest::VT_WHENCE, static_cast<int16_t>(whence), 0);
   }
-  FileSeekRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileSeekRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileSeekRequestBuilder &operator=(const FileSeekRequestBuilder &);
   flatbuffers::Offset<FileSeekRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileSeekRequest>(end);
     return o;
   }
@@ -182,10 +191,10 @@ struct FileSeekResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
            VerifyField<int64_t>(verifier, VT_OFFSET) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -206,13 +215,13 @@ struct FileSeekResponseBuilder {
   void add_error(flatbuffers::Offset<FileSeekError> error) {
     fbb_.AddOffset(FileSeekResponse::VT_ERROR, error);
   }
-  FileSeekResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit FileSeekResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   FileSeekResponseBuilder &operator=(const FileSeekResponseBuilder &);
   flatbuffers::Offset<FileSeekResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 4);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FileSeekResponse>(end);
     return o;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,6 +20,8 @@
 #include "mount_fstab.h"
 
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 #include <cerrno>
 #include <cstdio>
@@ -223,21 +225,15 @@ static bool path_matches(const char *path, const char *pattern)
     }
 }
 
-static void dump(const char *line, bool error, void *userdata)
+static void dump(std::string_view line, bool error)
 {
     (void) error;
-    (void) userdata;
 
-    size_t size = strlen(line);
-
-    std::string copy;
-    if (size > 0 && line[size - 1] == '\n') {
-        copy.assign(line, line + size - 1);
-    } else {
-        copy.assign(line, line + size);
+    if (!line.empty() && line.back() == '\n') {
+        line.remove_suffix(1);
     }
 
-    LOGD("Command output: %s", copy.c_str());
+    LOGD("Command output: %.*s", static_cast<int>(line.size()), line.data());
 }
 
 static uid_t get_media_rw_uid()
@@ -282,11 +278,10 @@ static bool mount_exfat_fuse(const char *source, const char *target)
     };
 
     // Run filesystem checks
-    util::run_command(fsck_argv[0], fsck_argv, {}, {}, &dump, nullptr);
+    util::run_command(fsck_argv[0], fsck_argv, {}, {}, &dump);
 
     // Mount exfat, matching vold options as much as possible
-    int ret = util::run_command(mount_argv[0], mount_argv, {}, {}, &dump,
-                                nullptr);
+    int ret = util::run_command(mount_argv[0], mount_argv, {}, {}, &dump);
 
     if (ret >= 0) {
         LOGD("mount.exfat returned: %d", WEXITSTATUS(ret));
@@ -382,8 +377,7 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
         use_fuse_exfat = true;
     }
 
-    std::string value = util::property_file_get_string(
-            DEFAULT_PROP_PATH, PROP_USE_FUSE_EXFAT, "");
+    std::string value = util::property_get_string(PROP_USE_FUSE_EXFAT, "");
     if (!value.empty()) {
         LOGD("fuse-exfat override: %s", value.c_str());
         if (value == "true") {
@@ -454,9 +448,12 @@ static std::vector<std::string> split_patterns(const char *patterns)
  * This will *not* do anything if the system wasn't booted using initwrapper.
  * It relies an the sysfs -> block devices map created by initwrapper/devices.cpp
  */
-static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_recs,
+static bool mount_extsd_fstab_entries(const android::init::DeviceHandler &handler,
+                                      const std::vector<util::FstabRec> &extsd_recs,
                                       const char *mount_point, mode_t perms)
 {
+    using namespace std::chrono_literals;
+
     if (extsd_recs.empty()) {
         LOGD("No external SD fstab entries to mount");
         return true;
@@ -479,7 +476,7 @@ static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_r
         LOGV("[Attempt %d/%d] Finding and mounting external SD",
              i + 1, max_attempts);
 
-        auto devices_map = get_block_dev_mappings();
+        auto devices_map = handler.GetBlockDeviceMap();
 
         for (const util::FstabRec &rec : extsd_recs) {
             std::vector<std::string> patterns =
@@ -490,7 +487,7 @@ static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_r
                 LOGD("Matching devices against pattern: %s", pattern.c_str());
 
                 for (auto const &pair : devices_map) {
-                    const BlockDevInfo &info = pair.second;
+                    auto const &info = pair.second;
 
                     if (path_matches(pair.first.c_str(), pattern.c_str())) {
                         LOGV("Matched external SD block dev: "
@@ -515,7 +512,7 @@ static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_r
 
         if (i < max_attempts - 1) {
             LOGW("No external SD patterns were matched; waiting 1 second");
-            sleep(1);
+            std::this_thread::sleep_for(1s);
         }
     }
 
@@ -525,7 +522,8 @@ static bool mount_extsd_fstab_entries(const std::vector<util::FstabRec> &extsd_r
     return false;
 }
 
-static bool mount_target(const char *source, const char *target, bool bind)
+static bool mount_target(const char *source, const char *target, bool bind,
+                         bool read_only)
 {
     struct stat sb;
 
@@ -553,11 +551,46 @@ static bool mount_target(const char *source, const char *target, bool bind)
 
     auto ret = util::mount(source, target,
                            bind ? "" : "auto",
-                           bind ? MS_BIND : 0,
+                           (bind ? MS_BIND : 0) | (read_only ? MS_RDONLY : 0),
                            "");
     if (!ret) {
         LOGE("%s: Failed to mount: %s: %s", target, source, strerror(errno));
         return false;
+    }
+
+    if (bind && read_only) {
+        // The kernel does not support MS_BIND | MS_RDONLY in one step. A
+        // separate MS_BIND | MS_REMOUNT | MS_RDONLY mount call is required to
+        // make the bind mount read-only. This is what util-linux does, but
+        // in addition to that, we have to add the existing mount options.
+        // Otherwise, the MS_REMOUNT will clear flags, such as MS_NOSUID.
+        //
+        // See:
+        // - https://github.com/karelzak/util-linux/blob/475ecbad15943d6831fc508ce72016d581763b2b/libmount/src/context_mount.c#L134
+        // - https://github.com/karelzak/util-linux/issues/637
+        // - https://lwn.net/Articles/281157/
+
+        unsigned long flags = 0;
+
+        if (auto entries = util::get_mount_entries()) {
+            for (auto const &entry : entries.value()) {
+                if (entry.target == target) {
+                    std::tie(flags, std::ignore) =
+                            util::parse_mount_options(entry.vfs_options);
+                    break;
+                }
+            }
+        } else {
+            LOGE("Failed to get mount entries: %s",
+                 entries.error().message().c_str());
+        }
+
+        ret = util::mount("", target, "",
+                          MS_BIND | MS_REMOUNT | MS_RDONLY | flags, "");
+        if (!ret) {
+            LOGE("%s: Failed to remount: %s", target, strerror(errno));
+            return false;
+        }
     }
 
     return true;
@@ -580,7 +613,8 @@ static bool mount_all_system_images()
             mount_point += rom->id;
             std::string system_path(rom->full_system_path());
 
-            if (!mount_target(system_path.c_str(), mount_point.c_str(), false)) {
+            if (!mount_target(system_path.c_str(), mount_point.c_str(),
+                              false, true)) {
                 LOGW("Failed to mount image for %s", rom->id.c_str());
                 failed = true;
             }
@@ -848,7 +882,8 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
  * \return Whether all of the
  */
 bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                 const Device &device, MountFlags flags)
+                 const Device &device, MountFlags flags,
+                 const android::init::DeviceHandler &handler)
 {
     std::vector<std::string> successful;
     FstabRecs recs;
@@ -906,7 +941,8 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     }
 
     if (ret && !recs.extsd.empty() && require_extsd) {
-        if (mount_extsd_fstab_entries(recs.extsd, EXTSD_MOUNT_POINT, 0755)) {
+        if (mount_extsd_fstab_entries(
+                handler, recs.extsd, EXTSD_MOUNT_POINT, 0755)) {
             successful.push_back(EXTSD_MOUNT_POINT);
         } else {
             LOGE("Failed to mount " EXTSD_MOUNT_POINT);
@@ -924,7 +960,7 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
 
     // Rewrite fstab file
     if (ret && (flags & MountFlag::RewriteFstab)) {
-        int fd = open(path, O_RDWR | O_TRUNC);
+        int fd = open(path, O_RDWR | O_TRUNC | O_CLOEXEC);
         if (fd < 0) {
             LOGE("%s: Failed to open file: %s", path, strerror(errno));
             return false;
@@ -954,15 +990,18 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
         return false;
     }
 
-    if (!mount_target(target_system.c_str(), "/system", !rom->system_is_image)) {
+    if (!mount_target(target_system.c_str(), "/system", !rom->system_is_image,
+                      true)) {
         return false;
     }
 
-    if (!mount_target(target_cache.c_str(), "/cache", !rom->cache_is_image)) {
+    if (!mount_target(target_cache.c_str(), "/cache", !rom->cache_is_image,
+                      false)) {
         return false;
     }
 
-    if (!mount_target(target_data.c_str(), "/data", !rom->data_is_image)) {
+    if (!mount_target(target_data.c_str(), "/data", !rom->data_is_image,
+                      false)) {
         return false;
     }
 

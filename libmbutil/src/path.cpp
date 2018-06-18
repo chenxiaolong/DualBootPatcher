@@ -20,9 +20,11 @@
 #include "mbutil/path.h"
 
 #include <chrono>
+#include <thread>
 #include <vector>
 
 #include <cerrno>
+#include <climits>
 #include <cstdlib>
 #include <cstring>
 
@@ -76,6 +78,25 @@ oc::result<std::string> read_link(const std::string &path)
 
     buf[static_cast<size_t>(len)] = '\0';
     return buf.data();
+}
+
+/*!
+ * \brief Wrapper around libc's realpath()
+ *
+ * \param path Path to canonicalize
+ *
+ * \return Canonicalized absolute path. Fails if the result woule be longer than
+ *         PATH_MAX bytes.
+ */
+oc::result<std::string> real_path(const std::string &path)
+{
+    char buf[PATH_MAX];
+
+    if (!realpath(path.c_str(), buf)) {
+        return ec_from_errno();
+    }
+
+    return buf;
 }
 
 /*!
@@ -287,13 +308,14 @@ int path_compare(const std::string &path1, const std::string &path2)
 bool wait_for_path(const std::string &path, std::chrono::milliseconds timeout)
 {
     using namespace std::chrono;
+    using namespace std::chrono_literals;
 
     auto until = steady_clock::now() + timeout;
     struct stat sb;
     int ret;
 
     while ((ret = stat(path.c_str(), &sb)) < 0 && steady_clock::now() < until) {
-        usleep(10000);
+        std::this_thread::sleep_for(10ms);
     }
 
     return ret == 0;

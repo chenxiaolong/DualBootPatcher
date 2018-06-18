@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -240,7 +240,6 @@ oc::result<uint64_t> file_read_discard(File &file, uint64_t size)
  * \sa file_search()
  *
  * \param file File handle
- * \param userdata User callback data
  * \param offset File offset of search result
  *
  * \return
@@ -281,7 +280,6 @@ oc::result<uint64_t> file_read_discard(File &file, uint64_t size)
  * \param pattern_size Size of pattern
  * \param max_matches Maximum number of matches or nothing to find all matches
  * \param result_cb Callback to invoke upon finding a match
- * \param userdata User callback data
  *
  * \return Nothing if the search completes successfully. Otherwise, the error
  *         code.
@@ -292,8 +290,7 @@ oc::result<void> file_search(File &file,
                              size_t bsize, const void *pattern,
                              size_t pattern_size,
                              std::optional<uint64_t> max_matches,
-                             FileSearchResultCallback result_cb,
-                             void *userdata)
+                             const FileSearchResultCallback &result_cb)
 {
     size_t buf_size;
     uint64_t offset;
@@ -401,8 +398,8 @@ oc::result<void> file_search(File &file,
             }
 
             // Invoke callback
-            auto ret = result_cb(file, userdata,
-                                 offset + static_cast<size_t>(match - buf.data()));
+            auto ret = result_cb(
+                    file, offset + static_cast<size_t>(match - buf.data()));
             if (!ret) {
                 return ret.as_failure();
             } else if (ret.value() == FileSearchAction::Stop) {

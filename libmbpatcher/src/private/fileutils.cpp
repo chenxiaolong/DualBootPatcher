@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -61,53 +61,6 @@ oc::result<void> FileUtils::open_file(StandardFile &file,
 }
 
 /*!
- * \brief Read contents of a file into memory
- *
- * \param path Path to file
- * \param contents Output vector (not modified unless reading succeeds)
- *
- * \return Success or not
- */
-ErrorCode FileUtils::read_to_memory(const std::string &path,
-                                    std::vector<unsigned char> *contents)
-{
-    StandardFile file;
-
-    auto ret = open_file(file, path, FileOpenMode::ReadOnly);
-    if (!ret) {
-        LOGE("%s: Failed to open for reading: %s",
-             path.c_str(), ret.error().message().c_str());
-        return ErrorCode::FileOpenError;
-    }
-
-    auto size = file.seek(0, SEEK_END);
-    if (!size) {
-        LOGE("%s: Failed to seek file: %s",
-             path.c_str(), size.error().message().c_str());
-        return ErrorCode::FileSeekError;
-    }
-    auto seek_ret = file.seek(0, SEEK_SET);
-    if (!seek_ret) {
-        LOGE("%s: Failed to seek file: %s",
-             path.c_str(), seek_ret.error().message().c_str());
-        return ErrorCode::FileSeekError;
-    }
-
-    std::vector<unsigned char> data(static_cast<size_t>(size.value()));
-
-    auto bytes_read = file.read(data.data(), data.size());
-    if (!bytes_read || bytes_read.value() != size.value()) {
-        LOGE("%s: Failed to read file: %s",
-             path.c_str(), bytes_read.error().message().c_str());
-        return ErrorCode::FileReadError;
-    }
-
-    data.swap(*contents);
-
-    return ErrorCode::NoError;
-}
-
-/*!
  * \brief Read contents of a file into a string
  *
  * \param path Path to file
@@ -151,28 +104,6 @@ ErrorCode FileUtils::read_to_string(const std::string &path,
     }
 
     data.swap(*contents);
-
-    return ErrorCode::NoError;
-}
-
-ErrorCode FileUtils::write_from_memory(const std::string &path,
-                                       const std::vector<unsigned char> &contents)
-{
-    StandardFile file;
-
-    auto ret = open_file(file, path, FileOpenMode::WriteOnly);
-    if (!ret) {
-        LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), ret.error().message().c_str());
-        return ErrorCode::FileOpenError;
-    }
-
-    auto bytes_written = file.write(contents.data(), contents.size());
-    if (!bytes_written || bytes_written.value() != contents.size()) {
-        LOGE("%s: Failed to write file: %s",
-             path.c_str(), bytes_written.error().message().c_str());
-        return ErrorCode::FileWriteError;
-    }
 
     return ErrorCode::NoError;
 }

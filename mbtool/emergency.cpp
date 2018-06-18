@@ -37,11 +37,11 @@
 #include "mbutil/file.h"
 #include "mbutil/fts.h"
 #include "mbutil/mount.h"
+#include "mbutil/reboot.h"
 #include "mbutil/time.h"
 #include "mbutil/vibrate.h"
 
 #include "multiboot.h"
-#include "reboot.h"
 
 #define LOG_TAG "mbtool/emergency"
 
@@ -108,7 +108,7 @@ static oc::result<void> dump_kernel_log(const char *file)
         return ec_from_errno();
     }
 
-    ScopedFILE fp(fopen(file, "wb"), fclose);
+    ScopedFILE fp(fopen(file, "wbe"), fclose);
     if (!fp) {
         return ec_from_errno();
     }
@@ -160,11 +160,7 @@ bool emergency_reboot()
 
     auto contents = util::file_read_all(DEVICE_JSON_PATH);
     if (contents) {
-        contents.value().push_back('\0');
-
-        loaded_json = device_from_json(
-                reinterpret_cast<char *>(contents.value().data()),
-                device, error);
+        loaded_json = device_from_json(contents.value(), device, error);
     }
 
     // /data
@@ -271,7 +267,7 @@ bool emergency_reboot()
     fix_multiboot_permissions();
 
     // Does not return if successful
-    reboot_directly("recovery");
+    util::reboot_via_syscall("recovery");
 
     return false;
 }

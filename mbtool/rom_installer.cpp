@@ -68,9 +68,9 @@ public:
     RomInstaller(std::string zip_file, std::string rom_id, std::FILE *log_fp,
                  InstallerFlags flags);
 
-    virtual void display_msg(const std::string& msg) override;
-    virtual void updater_print(const std::string &msg) override;
-    virtual void command_output(const std::string &line) override;
+    virtual void display_msg(std::string_view msg) override;
+    virtual void updater_print(std::string_view msg) override;
+    virtual void command_output(std::string_view line) override;
     virtual std::string get_install_type() override;
     virtual std::unordered_map<std::string, std::string> get_properties() override;
     virtual ProceedState on_checked_device() override;
@@ -108,22 +108,24 @@ RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
 {
 }
 
-void RomInstaller::display_msg(const std::string &msg)
+void RomInstaller::display_msg(std::string_view msg)
 {
-    printf("[MultiBoot] %s\n", msg.c_str());
-    LOGV("%s", msg.c_str());
+    fputs("[MultiBoot] ", stdout);
+    fwrite(msg.data(), 1, msg.size(), stdout);
+    fputc('\n', stdout);
+    LOGV("%.*s", static_cast<int>(msg.size()), msg.data());
 }
 
-void RomInstaller::updater_print(const std::string &msg)
+void RomInstaller::updater_print(std::string_view msg)
 {
-    fprintf(_log_fp, "%s", msg.c_str());
+    fwrite(msg.data(), 1, msg.size(), _log_fp);
     fflush(_log_fp);
-    printf("%s", msg.c_str());
+    fwrite(msg.data(), 1, msg.size(), stdout);
 }
 
-void RomInstaller::command_output(const std::string &line)
+void RomInstaller::command_output(std::string_view line)
 {
-    fprintf(_log_fp, "%s", line.c_str());
+    fwrite(line.data(), 1, line.size(), _log_fp);
     fflush(_log_fp);
 }
 
@@ -196,7 +198,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // Create fake /etc/fstab file to please installers that read the file
     std::string etc_fstab(in_chroot("/etc/fstab"));
     if (access(etc_fstab.c_str(), R_OK) < 0 && errno == ENOENT) {
-        ScopedFILE fp(fopen(etc_fstab.c_str(), "w"), fclose);
+        ScopedFILE fp(fopen(etc_fstab.c_str(), "we"), fclose);
         if (fp) {
             auto system_devs = _device.system_block_devs();
             auto cache_devs = _device.cache_block_devs();
@@ -220,8 +222,10 @@ Installer::ProceedState RomInstaller::on_checked_device()
     }
 
     // Load recovery properties
-    util::property_file_get_all(
-            in_chroot("/default.recovery.prop"), _recovery_props);
+    if (auto p = util::property_file_get_all(
+            in_chroot("/default.recovery.prop"))) {
+        p->swap(_recovery_props);
+    }
 
     return ProceedState::Continue;
 }
@@ -474,7 +478,7 @@ int rom_installer_main(int argc, char *argv[])
     if (mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
         fprintf(stderr, "Failed to set private mount propagation: %s\n",
                 strerror(errno));
-        return false;
+        return EXIT_FAILURE;
     }
 
     // Make stdout unbuffered
@@ -589,7 +593,7 @@ int rom_installer_main(int argc, char *argv[])
     }
 
 
-    ScopedFILE fp(fopen(MULTIBOOT_LOG_INSTALLER, "wb"), fclose);
+    ScopedFILE fp(fopen(MULTIBOOT_LOG_INSTALLER, "wbe"), fclose);
     if (!fp) {
         fprintf(stderr, "Failed to open %s: %s\n",
                 MULTIBOOT_LOG_INSTALLER, strerror(errno));
@@ -600,6 +604,7 @@ int rom_installer_main(int argc, char *argv[])
 
     // Close stdin
 #if !DEBUG_LEAVE_STDIN_OPEN
+    // O_CLOEXEC should not be set
     int fd = open("/dev/null", O_RDONLY);
     if (fd >= 0) {
         dup2(fd, STDIN_FILENO);

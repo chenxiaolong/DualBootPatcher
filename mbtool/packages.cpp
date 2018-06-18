@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -280,6 +280,7 @@ void Package::dump()
     DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, BACKUP_IN_FOREGROUND);
     DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, STATIC_SHARED_LIBRARY);
     DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, ISOLATED_SPLIT_LOADING);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, VIRTUAL_PRELOAD);
 
     if (timestamp > 0)
         LOGD(fmt_string, "Timestamp:", time_to_string(timestamp));
