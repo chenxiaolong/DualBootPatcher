@@ -549,14 +549,14 @@
     default_brightness: 16200
     pixel_format: ABGR_8888
     theme: portrait_hdpi
----
+
 
 - name: Samsung Galaxy A7 (2017) (Exynos)
   id: a7y17lte
   codenames:
-      - SM-A720F
-      - a7y17lte
-  architecture: 
+    - SM-A720F
+    - a7y17lte
+  architecture: arm64-v8a
   block_devs:
     base_dirs:
       - /dev/block/platform/13540000.dwmmc0/by-num
@@ -576,7 +576,7 @@
       - /dev/block/mmcblk0p11
       - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
    
-   boot_ui :
+  boot_ui:
     supported: true
     flags:
       - TW_GRAPHICS_FORCE_USE_LINELENGTH
