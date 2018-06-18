@@ -24,6 +24,7 @@ set(files
     google.yml
     gree.yml
     htc.yml
+    homtom.yml
     huawei.yml
     infinix.yml
     infocus.yml
