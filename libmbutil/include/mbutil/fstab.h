@@ -55,7 +55,7 @@ inline const std::error_code & make_error_code(const FstabErrorInfo &ei)
 }
 
 [[noreturn]]
-inline void throw_as_system_error_with_payload(const FstabErrorInfo &ei)
+inline void outcome_throw_as_system_error_with_payload(const FstabErrorInfo &ei)
 {
     (void) ei;
     OUTCOME_THROW_EXCEPTION(std::system_error(make_error_code(ei)));
