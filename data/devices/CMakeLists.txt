@@ -14,6 +14,7 @@ set(files
     bq.yml
     cagabi.yml
     cherrymobile.yml
+    cmcc.yml
     coolpad.yml
     dexp.yml
     doogee.yml
