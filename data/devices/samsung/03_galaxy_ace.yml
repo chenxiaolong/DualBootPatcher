@@ -166,16 +166,16 @@
       - /dev/block/platform/sprd-sdhci.3/by-name/system
       - /dev/block/mmcblk0p23
     cache:
-      - /dev/block/platform/sprd-sdhci.3/by-name/cache
+      - /dev/block/platform/sprd-sdhci.3/by-name/CSC
       - /dev/block/mmcblk0p22
     data:
-      - /dev/block/platform/sprd-sdhci.3/by-name/data
+      - /dev/block/platform/sprd-sdhci.3/by-name/userdata
       - /dev/block/mmcblk0p25
     boot:
-      - /dev/block/platform/sprd-sdhci.3/by-name/boot
+      - /dev/block/platform/sprd-sdhci.3/by-name/KERNEL
       - /dev/block/mmcblk0p20
     recovery:
-      - /dev/block/platform/sprd-sdhci.3/by-name/recovery
+      - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
       - /dev/block/mmcblk0p21
 
   boot_ui:
