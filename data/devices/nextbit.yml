@@ -33,7 +33,7 @@
   boot_ui:
     supported: true
     flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+      TW_QCOM_RTC_FIX
     graphics_backends:
       - fbdev
     pixel_format: RGBA_8888
