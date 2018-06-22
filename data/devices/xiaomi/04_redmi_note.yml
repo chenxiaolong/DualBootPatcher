@@ -1,4 +1,35 @@
 ---
+- name: Xiaomi Redmi note 5
+  id: whyred
+
+  codenames:
+    - whyred
+
+  architecture: arm64-v8a
+
+    base_dirs:
+      -/dev/block/platform/soc/c0c4000.sdhci/by-name
+
+    system:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/system
+      - /dev/block/mmcblk0p61
+
+    cache:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/cache
+      - /dev/block/mmcblk0p60
+
+    data:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p64
+
+    boot:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/boot
+      - /dev/block/mmcblk0p58
+
+    recovery:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p59
+      
 - name: Xiaomi Redmi Note 2
   id: hermes
   codenames:
