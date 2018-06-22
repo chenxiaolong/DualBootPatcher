@@ -1,4 +1,29 @@
----
+---- 
+name: Samsung Galaxy Tab P350
+  id: smp350
+  codenames:
+    - gt5note8wifizc
+    - SM-P350
+    - gt5note8wifichn
+  architecture: armeabi-v7a
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p25
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p26
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p28
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p16
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p17
 - name: Samsung Galaxy Tab A6 10.1 Wifi
   id: gtaxlwifi
   codenames:
