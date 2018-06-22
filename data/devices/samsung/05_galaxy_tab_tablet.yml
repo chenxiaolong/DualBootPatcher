@@ -6,6 +6,7 @@ name: Samsung Galaxy Tab P350
     - SM-P350
     - gt5note8wifichn
   architecture: armeabi-v7a
+  
   block_devs:
     base_dirs:
       - /dev/block/platform/7824900.sdhci/by-name
