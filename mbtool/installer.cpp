@@ -1052,7 +1052,15 @@ bool Installer::run_real_updater()
                 close(stdio_fds[1]);
             }
 
-            if (!set_up_legacy_properties()) {
+            if (auto r = util::file_find_one_of(
+                    "/mb/updater", {"ANDROID_PROPERTY_WORKSPACE"})) {
+                LOGV("updater requires legacy properties: %d", r.value());
+
+                if (r.value() && !set_up_legacy_properties()) {
+                    _exit(EXIT_FAILURE);
+                }
+            } else {
+                LOGE("Failed to read updater: %s", r.error().message().c_str());
                 _exit(EXIT_FAILURE);
             }
 
