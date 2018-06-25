@@ -133,7 +133,7 @@
   <!--Toast message indicating that the wipe process failed to start-->
   <string name="wipe_rom_initiate_fail">无法进行清除操作</string>
   <!--Toast message shown if the user did not select any target to wipe-->
-  <string name="wipe_rom_none_selected">未选则清除对象，所以什么也没做</string>
+  <string name="wipe_rom_none_selected">未选定清除对象，所以什么也没做</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">系统正在运行,不可清除</string>
   <!--Switcher service notification title-->
@@ -145,7 +145,7 @@
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
   <string name="switcher_ask_set_kernel_title">是否设为内核？</string>
   <!--Message for the confirmation dialog box shown when trying to set the kernel-->
-  <string name="switcher_ask_set_kernel_desc">当前系统的内核会被被保存到 %s</string>
+  <string name="switcher_ask_set_kernel_desc">当前系统的内核会被保存到 %s</string>
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">重命名 %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
@@ -297,16 +297,12 @@
   <string name="patcher_card_subtitle_cancelled">已取消</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">补丁处理选项</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">用于升级主系统</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">这个选项仅用于处在分区中的主系统,虽然有所不同,但是本质上打不打补丁是一样的</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">该系统将会安装到 %s</string>
   <!--Text box hint for specifying the data slot ID-->
   <string name="install_location_named_slot_id_hint">输入系统标识</string>
   <!--Description text shown if the data slot ID is empty-->
-  <string name="install_location_named_slot_id_empty">在上发输入一个区分标识以区分不同系统的安装位置</string>
+  <string name="install_location_named_slot_id_empty">在上方输入一个区分标识以区分不同系统的安装位置</string>
   <!--Error tooltip shown if the data slot ID is empty-->
   <string name="install_location_named_slot_id_error_is_empty">位置标识不能为空</string>
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
@@ -472,6 +468,8 @@
   <string name="path_chooser_save_label">保存</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">新建文件夹</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">搜索</string>
   <!--Word/phrase for None (used in eg. a list)-->

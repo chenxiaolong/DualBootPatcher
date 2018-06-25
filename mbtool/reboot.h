@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -24,10 +24,7 @@
 namespace mb
 {
 
-bool reboot_via_framework(bool confirm);
-bool reboot_via_init(const std::string &reboot_arg);
-bool reboot_directly(const std::string &reboot_arg);
-bool shutdown_via_init();
-bool shutdown_directly();
+int reboot_main(int argc, char *argv[]);
+int shutdown_main(int argc, char *argv[]);
 
 }

@@ -9,6 +9,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # Except for "/*" within comment errors (present in doxygen blocks)
     add_compile_options(-Wno-error=comment)
 
+    # outcome.hpp
+    add_compile_options(-Wno-parentheses)
+
     # Enable PIC
     set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 

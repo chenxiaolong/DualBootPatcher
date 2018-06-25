@@ -464,8 +464,8 @@ void MainWindow::populateInstallationLocations()
 
     d->instLocs << InstallLocation{
         QStringLiteral("primary"),
-        tr("Primary ROM Upgrade"),
-        tr("Update primary ROM without affecting other ROMS")
+        tr("Primary"),
+        tr("Installs ROM to /system")
     };
     d->instLocs << InstallLocation{
         QStringLiteral("dual"),
@@ -688,34 +688,16 @@ PatcherTask::PatcherTask(QWidget *parent)
 {
 }
 
-static void progressUpdatedCbWrapper(uint64_t bytes, uint64_t maxBytes,
-                                     void *userData)
-{
-    PatcherTask *task = static_cast<PatcherTask *>(userData);
-    task->progressUpdatedCb(bytes, maxBytes);
-}
-
-static void filesUpdatedCbWrapper(uint64_t files, uint64_t maxFiles,
-                                  void *userData)
-{
-    PatcherTask *task = static_cast<PatcherTask *>(userData);
-    task->filesUpdatedCb(files, maxFiles);
-}
-
-static void detailsUpdatedCbWrapper(const std::string &text, void *userData)
-{
-    PatcherTask *task = static_cast<PatcherTask *>(userData);
-    task->detailsUpdatedCb(text);
-}
-
 void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
 {
+    using namespace std::placeholders;
+
     patcher->set_file_info(info);
 
-    bool ret = patcher->patch_file(&progressUpdatedCbWrapper,
-                                   &filesUpdatedCbWrapper,
-                                   &detailsUpdatedCbWrapper,
-                                   this);
+    bool ret = patcher->patch_file(
+            std::bind(&PatcherTask::progressUpdatedCb, this, _1, _2),
+            std::bind(&PatcherTask::filesUpdatedCb, this, _1, _2),
+            std::bind(&PatcherTask::detailsUpdatedCb, this, _1));
 
     QString newFile(QString::fromStdString(info->output_path()));
 

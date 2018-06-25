@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -33,16 +33,20 @@ enum class ChecksumsGetResult
     Malformed,
 };
 
-ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *props,
-                                 const std::string &rom_id,
-                                 const std::string &image,
-                                 std::string *sha512_out);
-void checksums_update(std::unordered_map<std::string, std::string> *props,
-                      const std::string &rom_id,
-                      const std::string &image,
-                      const std::string &sha512);
-bool checksums_read(std::unordered_map<std::string, std::string> *props);
-bool checksums_write(const std::unordered_map<std::string, std::string> &props);
+class ChecksumProps
+{
+public:
+    bool load_file();
+    bool save_file();
+
+    ChecksumsGetResult get(const std::string &rom_id, const std::string &image,
+                           std::string &sha512_out);
+    void set(const std::string &rom_id, const std::string &image,
+             const std::string &sha512);
+
+private:
+    std::unordered_map<std::string, std::string> m_props;
+};
 
 enum class SwitchRomResult
 {

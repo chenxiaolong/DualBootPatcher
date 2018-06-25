@@ -137,7 +137,7 @@ static int sysMapBlockFile(FILE* mapf, MemMapping* pMap)
     pMap->ranges[range_count-1].addr = reserve;
     pMap->ranges[range_count-1].length = blocks * blksize;
 
-    int fd = open(block_dev, O_RDONLY);
+    int fd = open(block_dev, O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
         LOGW("failed to open block device %s: %s\n", block_dev, strerror(errno));
         return -1;
@@ -180,7 +180,7 @@ int sysMapFile(const char* fn, MemMapping* pMap)
 
     if (fn && fn[0] == '@') {
         // A map of blocks
-        FILE* mapf = fopen(fn+1, "r");
+        FILE* mapf = fopen(fn+1, "re");
         if (mapf == NULL) {
             LOGV("Unable to open '%s': %s\n", fn+1, strerror(errno));
             return -1;
@@ -194,7 +194,7 @@ int sysMapFile(const char* fn, MemMapping* pMap)
         fclose(mapf);
     } else {
         // This is a regular file.
-        int fd = open(fn, O_RDONLY, 0);
+        int fd = open(fn, O_RDONLY | O_CLOEXEC, 0);
         if (fd < 0) {
             LOGE("Unable to open '%s': %s\n", fn, strerror(errno));
             return -1;

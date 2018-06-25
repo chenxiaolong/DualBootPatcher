@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -26,13 +26,16 @@
 namespace mb
 {
 
-typedef bool (RamdiskPatcherFn)(const std::string &dir);
+using RamdiskPatcherFn = bool(const std::string &dir);
 
 std::function<RamdiskPatcherFn>
 rp_write_rom_id(const std::string &rom_id);
 
 std::function<RamdiskPatcherFn>
-rp_patch_default_prop(const std::string &device_id, bool use_fuse_exfat);
+rp_restore_default_prop();
+
+std::function<RamdiskPatcherFn>
+rp_add_dbp_prop(const std::string &device_id, bool use_fuse_exfat);
 
 std::function<RamdiskPatcherFn>
 rp_add_binaries(const std::string &binaries_dir);

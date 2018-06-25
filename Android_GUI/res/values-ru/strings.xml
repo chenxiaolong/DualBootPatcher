@@ -5,7 +5,7 @@
   <!--Name of the app built in debug mode-->
   <string name="app_name_debug">Dual Boot Patcher (Отладка)</string>
   <!--Name of the app built in snapshot mode-->
-  <string name="app_name_snapshot">Dual Boot Patcher (Снэпшот)</string>
+  <string name="app_name_snapshot">Dual Boot Patcher (Снапшот)</string>
   <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
   <string name="wait_until_finished">Подождите до окончания всех работ.</string>
   <!--Indicate the version of the app on the about screen-->
@@ -316,11 +316,6 @@
   <string name="patcher_card_subtitle_cancelled">Отменен</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Настройки патчера</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Обновление основной прошивки</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Обновление основной прошивки,
-        не затрагивая остальные прошивки</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Установит прошивку в %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -523,6 +518,8 @@
   <string name="path_chooser_save_label">Сохранить</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Новая папка</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Поиск</string>
   <!--Word/phrase for None (used in eg. a list)-->

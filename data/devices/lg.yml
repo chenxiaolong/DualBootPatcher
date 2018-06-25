@@ -749,3 +749,46 @@
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
+
+- name: LG-LS998
+  id: spr
+  codenames:
+    - joan
+    - spr
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/1da4000.ufshc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/system
+      - /dev/block/sda22
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cache
+      - /dev/block/sda23
+    data:
+      - /dev/block/bootdevice/by-name/data
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/data
+      - /dev/block/sda24
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/boot
+      - /dev/block/sde1
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
+      - /dev/block/sde2
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBA_8888
+    brightness_path: /sys/devices/soc/c900000.qcom,mdss_mdp/c900000.qcom,mdss_mdp:qcom,mdss_fb_primary/leds/lcd-backlight/brightness
+    default_brightness: 158
+    theme: portrait_hdpi

@@ -130,8 +130,40 @@
     supported: true
     graphics_backends:
       - fbdev
+    theme: portrait_hdpi
+
+- name: HTC One max
+  id: t6ul
+  codenames:
+    - t6
+    - t6ul
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/mmcblk0p39
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+    cache:
+      - /dev/block/mmcblk0p41
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+    data:
+      - /dev/block/mmcblk0p42
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+    boot:
+      - /dev/block/mmcblk0p37
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+    recovery:
+      - /dev/block/mmcblk0p38
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
     theme: portrait_hdpi	
- 
+
 - name: HTC Desire Eye
   id: eyeul
   codenames:

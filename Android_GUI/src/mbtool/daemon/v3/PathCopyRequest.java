@@ -16,8 +16,10 @@ public final class PathCopyRequest extends Table {
 
   public String source() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer sourceAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
+  public ByteBuffer sourceInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 4, 1); }
   public String target() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer targetAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public ByteBuffer targetInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 1); }
 
   public static int createPathCopyRequest(FlatBufferBuilder builder,
       int sourceOffset,

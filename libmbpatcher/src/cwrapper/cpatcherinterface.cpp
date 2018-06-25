@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -53,39 +53,6 @@
 
 extern "C"
 {
-
-struct CallbackWrapper
-{
-    ProgressUpdatedCallback progress_cb;
-    FilesUpdatedCallback files_cb;
-    DetailsUpdatedCallback details_cb;
-    void *userdata;
-};
-
-static void progress_cb_wrapper(uint64_t bytes, uint64_t max_bytes,
-                                void *userdata)
-{
-    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
-    if (wrapper->progress_cb != nullptr) {
-        wrapper->progress_cb(bytes, max_bytes, wrapper->userdata);
-    }
-}
-
-static void files_cb_wrapper(uint64_t files, uint64_t max_files, void *userdata)
-{
-    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
-    if (wrapper->files_cb) {
-        wrapper->files_cb(files, max_files, userdata);
-    }
-}
-
-static void details_cb_wrapper(const std::string &text, void *userdata)
-{
-    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
-    if (wrapper->details_cb) {
-        wrapper->details_cb(text.c_str(), wrapper->userdata);
-    }
-}
 
 /*!
  * \brief Get the error information
@@ -143,30 +110,39 @@ void mbpatcher_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info)
  * \brief Start patching the file
  *
  * \param patcher CPatcher object
- * \param progressCb Callback for receiving current progress value
- * \param detailsCb Callback for receiving detailed progress text
- * \param userData Pointer to pass to callback functions
+ * \param progress_cb Callback for receiving current progress value
+ * \param files_cb Callback for receiving current files count
+ * \param details_cb Callback for receiving detailed progress text
+ * \param userdata Pointer to pass to callback functions
  * \return true on success, otherwise false (and error set appropriately)
  *
  * \sa Patcher::patchFile()
  */
 bool mbpatcher_patcher_patch_file(CPatcher *patcher,
-                                  ProgressUpdatedCallback progressCb,
-                                  FilesUpdatedCallback filesCb,
-                                  DetailsUpdatedCallback detailsCb,
-                                  void *userData)
+                                  ProgressUpdatedCallback progress_cb,
+                                  FilesUpdatedCallback files_cb,
+                                  DetailsUpdatedCallback details_cb,
+                                  void *userdata)
 {
     CASTP(patcher);
 
-    CallbackWrapper wrapper;
-    wrapper.progress_cb = progressCb;
-    wrapper.files_cb = filesCb;
-    wrapper.details_cb = detailsCb;
-    wrapper.userdata = userData;
-
-    return p->patch_file(&progress_cb_wrapper, &files_cb_wrapper,
-                         &details_cb_wrapper,
-                         reinterpret_cast<void *>(&wrapper));
+    return p->patch_file(
+        [&](uint64_t bytes, uint64_t max_bytes) {
+            if (progress_cb) {
+                progress_cb(bytes, max_bytes, userdata);
+            }
+        },
+        [&](uint64_t files, uint64_t max_files) {
+            if (files_cb) {
+                files_cb(files, max_files, userdata);
+            }
+        },
+        [&](const std::string &text) {
+            if (details_cb) {
+                details_cb(text.c_str(), userdata);
+            }
+        }
+    );
 }
 
 /*!

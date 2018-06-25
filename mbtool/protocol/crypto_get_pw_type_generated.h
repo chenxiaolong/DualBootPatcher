@@ -24,8 +24,19 @@ enum CryptoPwType {
   CryptoPwType_MAX = CryptoPwType_UNKNOWN
 };
 
-inline const char **EnumNamesCryptoPwType() {
-  static const char *names[] = {
+inline const CryptoPwType (&EnumValuesCryptoPwType())[5] {
+  static const CryptoPwType values[] = {
+    CryptoPwType_DEFAULT,
+    CryptoPwType_PASSWORD,
+    CryptoPwType_PATTERN,
+    CryptoPwType_PIN,
+    CryptoPwType_UNKNOWN
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesCryptoPwType() {
+  static const char * const names[] = {
     "DEFAULT",
     "PASSWORD",
     "PATTERN",
@@ -51,13 +62,13 @@ struct CryptoGetPwTypeRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tab
 struct CryptoGetPwTypeRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  CryptoGetPwTypeRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit CryptoGetPwTypeRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   CryptoGetPwTypeRequestBuilder &operator=(const CryptoGetPwTypeRequestBuilder &);
   flatbuffers::Offset<CryptoGetPwTypeRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 0);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<CryptoGetPwTypeRequest>(end);
     return o;
   }
@@ -82,13 +93,13 @@ struct CryptoGetPwTypeResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Ta
 struct CryptoGetPwTypeResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  CryptoGetPwTypeResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit CryptoGetPwTypeResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   CryptoGetPwTypeResponseBuilder &operator=(const CryptoGetPwTypeResponseBuilder &);
   flatbuffers::Offset<CryptoGetPwTypeResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<CryptoGetPwTypeResponse>(end);
     return o;
   }

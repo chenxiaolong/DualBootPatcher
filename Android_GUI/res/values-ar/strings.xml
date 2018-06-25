@@ -12,7 +12,7 @@
   <string name="version">الإصدار %s</string>
   <!--GitHub source code web page URL-->
   <!--GitHub source code link text-->
-  <string name="link_source_code">مصدر الشفرة.</string>
+  <string name="link_source_code">الشفرة المصدرية.</string>
   <!--XDA forum thread web page URL-->
   <!--XDA forum thread link text-->
   <string name="link_xda_thread">الموضوع على XDA</string>
@@ -28,9 +28,9 @@
   <string name="mbtool_connect_fail_message">التطبيق لم يكن بإمكانه الإتصال مع mbtool. هذا من الممكن حدوثه اذا تمّ رفض صلاحيّات الروت أو الـramdisk ليس محدثًا.
 اضغط لاعادة المحاولة.</string>
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_roms">Roms(اسم انظمة تشغيل اندرويد)</string>
+  <string name="title_roms">انظمة التشغيل(ROMs)</string>
   <!--Navigation drawer item for patching a zip file-->
-  <string name="title_patch_zip">الصق(صحح) الملف المضغوط</string>
+  <string name="title_patch_zip">عمل باتش للملف المضغوط</string>
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">المساحة الفارغة</string>
   <!--Navigation drawer item for changing the ROM settings-->
@@ -95,7 +95,7 @@
   <!--Version text shown on ROM card if the version could not be detected-->
   <string name="rom_card_unknown_version">اصدار غير معروف</string>
   <!--Build text shown on ROM card if the build could not be detected-->
-  <string name="rom_card_unknown_build">بُنية غير معروفة</string>
+  <string name="rom_card_unknown_build">بناء غير معروف</string>
   <!--ROM menu item for updating the ramdisk-->
   <string name="rom_menu_update_ramdisk">حدث الـramdisk</string>
   <!--ROM menu item for setting kernel-->
@@ -130,7 +130,7 @@
   <!--Title of dialog box asking for which targets to wipe-->
   <string name="wipe_rom_dialog_title">مسح المحدد</string>
   <!--Title of progress dialog shown when wiping targets-->
-  <string name="wiping_targets">المحدد مسحه</string>
+  <string name="wiping_targets">جار مسح المحدد</string>
   <!--Toast message indicating successfully wiped targets-->
   <string name="wipe_rom_successfully_wiped">نجح المسح: %s</string>
   <!--Toast message indicating targets that failed to wipe-->
@@ -276,7 +276,7 @@
   <!--Text shown on blank background when no files have been added for patching yet-->
   <string name="patcher_background_message">اضغط الـ\"FAB\" لاضافة ملفّات لتصحيحها.</string>
   <!--Label for FAB to add a flashable zip-->
-  <string name="patcher_add_flashable_zip">أضف ملف مضغوط من الممكن تثبيته</string>
+  <string name="patcher_add_flashable_zip">أضف ملف مضغوط قابل لتثبيت</string>
   <!--Label for FAB to add an Odin image-->
   <string name="patcher_add_odin_image">أضف Odin image</string>
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
@@ -303,10 +303,6 @@
   <string name="patcher_card_subtitle_cancelled">مَلغي</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">اعدادات المُثبِّت</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">مسار تحديث الـ\"ROM\" الأساسي:</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">حدّث الـ\"ROM\" الأساسي من غير التأثير على بقية الـ\"ROMS\"</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">مُثبّت الى %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -464,9 +460,9 @@
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
   <string name="third_party_intents_not_allowed">منع النوايا من تطبيقات الطرف الثالث. للسماح للتطبيقات الاخرى بارسال النوايا، فعل الخيار في اعدادات DualBootPatcher.</string>
   <!--Progress dialog message shown when starting mbtool (with root)-->
-  <string name="mbtool_dialog_starting_mbtool">بدء mbtool ... (هذا سيحتاج Root)</string>
+  <string name="mbtool_dialog_starting_mbtool">بدء mbtool ... (هذه العملية ستحتاج صلاحية الروت)</string>
   <!--Progress dialog message shown when updating mbtool (with root)-->
-  <string name="mbtool_dialog_updating_mbtool">Updating mbtool... (هذا سيحتاج root)</string>
+  <string name="mbtool_dialog_updating_mbtool">تحديث mbtool... (هذا سيحتاج صلاحية الروت)</string>
   <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
   <string name="mbtool_dialog_signature_check_fail">mbtool رفضت الاتصال من هذا التطبيق. 
 هذا من الممكن ان يحدث اذا تمّ استخدام نُسخة غير رسمية من التطبيق او اذا تمّ تعديل التطبيق بشكل ضار.
@@ -483,6 +479,10 @@
   <string name="path_chooser_save_label">حفظ</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">ملف جديد</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <string name="notification_channel_background_services_name">خدمات الخلفية</string>
+  <!--Android 8.0+ notification channel description for background services-->
+  <string name="notification_channel_background_services_desc">عرض تنبيه عندما يعمل التطبيق في الخلفية.</string>
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">البحث</string>
   <!--Word/phrase for None (used in eg. a list)-->

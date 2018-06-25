@@ -2,7 +2,8 @@ namespace mbtool.daemon.v3;
 
 enum ShutdownType : short {
     INIT,
-    DIRECT
+    DIRECT,
+    FRAMEWORK
 }
 
 table ShutdownError {
@@ -11,7 +12,10 @@ table ShutdownError {
 
 table ShutdownRequest {
     // Shutdown mechanism
-    type : ShutdownType = INIT;
+    type : ShutdownType = FRAMEWORK;
+
+    // Confirm shutdown? (Only valid for ShutdownType::FRAMEWORK)
+    confirm : bool;
 }
 
 table ShutdownResponse {

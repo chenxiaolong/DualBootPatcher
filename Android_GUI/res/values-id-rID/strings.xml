@@ -314,11 +314,6 @@ dapat menyusun file.</string>
   <string name="patcher_card_subtitle_cancelled">Dibatalkan</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Opsi pemasang</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Mengupgrade ROM utama</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Memperbarui ROM utama tanpa memengaruhi
-ROM lain</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Memasang ROM ke %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -514,6 +509,8 @@ berganti ROM tidak akan bekerja.</string>
   <string name="path_chooser_save_label">Simpan</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Folder baru</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Cari</string>
   <!--Word/phrase for None (used in eg. a list)-->

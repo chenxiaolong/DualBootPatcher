@@ -30,7 +30,6 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.support.design.widget.Snackbar
-import android.support.v13.app.FragmentCompat
 import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.LinearLayoutManager
@@ -68,13 +67,10 @@ import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback.
 import com.github.clans.fab.FloatingActionButton
 import com.github.clans.fab.FloatingActionMenu
 import java.io.File
-import java.util.ArrayList
-import java.util.Arrays
-import java.util.Collections
+import java.util.*
 
 class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogListener,
-        OnItemMovedOrDismissedListener, PatchFileItemClickListener,
-        FragmentCompat.OnRequestPermissionsResultCallback, GenericYesNoDialogListener {
+        OnItemMovedOrDismissedListener, PatchFileItemClickListener, GenericYesNoDialogListener {
     /** Whether we should show the progress bar (true by default for obvious reasons)  */
     private var showingProgress = true
 

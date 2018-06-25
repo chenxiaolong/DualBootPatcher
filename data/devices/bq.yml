@@ -36,3 +36,43 @@
     default_brightness: 162
     pixel_format: RGBX_8888
     theme: portrait_hdpi
+    
+- name: BQ Aquaris U Plus
+  id: tenshi
+  codenames:
+    - tenshi
+    - Aquaris_U_Plus
+  architecture: armeabi-v7a
+  
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p46
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p21
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p22    
+    extra:
+      - /dev/block/bootdevice/by-name/aboot
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_BOARD_HAS_FLIPPED_SCREEN
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    default_brightness: 128
+    input_blacklist: 'hbtp_vm'
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi

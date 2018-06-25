@@ -294,10 +294,6 @@ de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</st
   <string name="patcher_card_subtitle_cancelled">Annuler</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Options du patcher</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">MAJ de la ROM primaire</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Mettre à jour la ROM primaire sans affecter les autres ROMs</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Installe la ROM dans %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -421,8 +417,12 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <!--Title for the preference to enable confirmation dialog before rebooting-->
   <string name="rom_settings_show_reboot_confirm_title">Demander la confirmation pour redémarrer</string>
   <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_desc">Afficher la fenètre de redémarrage au lieu de redémarrer directement.
+Cela permet de redémarrer dans le menu recovery pour les ROMs qui permettent le redémarrage avancé.</string>
   <!--Title for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_title">Traitement de patchs en parallèle</string>
   <!--Description for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_desc">Quand de multiples fichiers sont dans la file d\'attente de patch, les traiter à %d à la fois</string>
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Partage d\'application individuelle</string>
   <!--Description for the dialog box explaining individual application sharing-->
@@ -433,6 +433,7 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <!--App sharing dialog checkbox text for using shared app data-->
   <string name="indiv_app_sharing_dialog_share_data">Utilisation de données partagées</string>
   <!--App sharing dialog message shown by default-->
+  <string name="indiv_app_sharing_dialog_default_message">Choisissez l\'application qui devrait accéder au dossier Data partagé.</string>
   <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
   <string name="indiv_app_sharing_other_roms_using_shared_data">Autres ROMs utilisant les données partagées: %s</string>
   <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
@@ -456,6 +457,8 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <string name="path_chooser_save_label">Enregistrer</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Nouveau dossier</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Chercher</string>
   <!--Word/phrase for None (used in eg. a list)-->

@@ -48,7 +48,7 @@ static oc::result<void> chown_internal(const std::string &path,
     }
 
     if (ret < 0) {
-        ec_from_errno();
+        return ec_from_errno();
     }
 
     return oc::success();

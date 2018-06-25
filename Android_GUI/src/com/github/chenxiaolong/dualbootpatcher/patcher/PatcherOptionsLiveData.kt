@@ -21,7 +21,7 @@ import android.annotation.SuppressLint
 import android.arch.lifecycle.LiveData
 import android.content.Context
 import android.os.AsyncTask
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device
+import java.util.*
 
 internal class PatcherOptionsLiveData(
         private val context: Context
@@ -37,15 +37,7 @@ internal class PatcherOptionsLiveData(
     @SuppressLint("StaticFieldLeak")
     private inner class PatcherOptionsLoadTask : AsyncTask<Void, Void, PatcherOptionsData>() {
         override fun doInBackground(vararg params: Void?): PatcherOptionsData {
-            // Build list of built-in and rick roll devices
-            val devices = ArrayList<Device>()
-            val knownDevices = PatcherUtils.getDevices(context)
-            if (knownDevices != null) {
-                devices.addAll(knownDevices)
-            }
-            RickRollDevices.addRickRollDevices(devices)
-
-            // Find current device in our list in case it matches a rick roll device
+            val devices = PatcherUtils.getDevices(context) ?: Collections.emptyList()
             val currentDevice = PatcherUtils.getCurrentDevice(context, devices)
 
             // Build list of fixed install locations

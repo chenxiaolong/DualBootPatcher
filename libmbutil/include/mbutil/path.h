@@ -32,6 +32,7 @@ oc::result<std::string> get_cwd();
 std::string dir_name(std::string path);
 std::string base_name(std::string path);
 oc::result<std::string> read_link(const std::string &path);
+oc::result<std::string> real_path(const std::string &path);
 std::vector<std::string> path_split(std::string path);
 std::string path_join(const std::vector<std::string> &components);
 void normalize_path(std::vector<std::string> &components);

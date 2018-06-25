@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,9 +23,6 @@
 
 #include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
-#include "mbcommon/string.h"
-
-#include "mbpio/error.h"
 
 #ifdef _WIN32
 #  include <windows.h>
@@ -37,7 +34,7 @@
 namespace mb::io
 {
 
-bool create_directories(const std::string &path)
+oc::result<void> create_directories(const std::string &path)
 {
 #ifdef _WIN32
     constexpr char delim[] = "/\\";
@@ -55,8 +52,7 @@ bool create_directories(const std::string &path)
 #endif
 
     if (path.empty()) {
-        set_last_error(Error::InvalidArguments, "Path cannot be empty");
-        return false;
+        return std::errc::invalid_argument;
     }
 
     // Add leading separator if needed
@@ -70,37 +66,25 @@ bool create_directories(const std::string &path)
         temp += pathsep;
 
 #ifdef _WIN32
-        auto w_temp = mb::utf8_to_wcs(temp);
-        if (!w_temp) {
-            set_last_error(Error::PlatformError, mb::format(
-                    "%s: Failed to convert UTF-16 to UTF-8: %s",
-                    temp.c_str(), w_temp.error().message().c_str()));
-            return false;
-        }
+        OUTCOME_TRY(w_temp, mb::utf8_to_wcs(temp));
 
-        DWORD dw_attrib = GetFileAttributesW(w_temp.value().c_str());
+        DWORD dw_attrib = GetFileAttributesW(w_temp.c_str());
         bool exists = (dw_attrib != INVALID_FILE_ATTRIBUTES)
                 && (dw_attrib & FILE_ATTRIBUTE_DIRECTORY);
-        if (!exists && !CreateDirectoryW(w_temp.value().c_str(), nullptr)
+        if (!exists && !CreateDirectoryW(w_temp.c_str(), nullptr)
                 && GetLastError() != ERROR_ALREADY_EXISTS) {
-            set_last_error(Error::PlatformError, mb::format(
-                    "%s: Failed to create directory: %s",
-                    temp.c_str(), mb::ec_from_win32().message().c_str()));
-            return false;
+            return ec_from_win32();
         }
 #else
         if (mkdir(temp.c_str(), 0755) < 0 && errno != EEXIST) {
-            set_last_error(Error::PlatformError, mb::format(
-                    "%s: Failed to create directory: %s",
-                    temp.c_str(), strerror(errno)));
-            return false;
+            return ec_from_errno();
         }
 #endif
 
         p = strtok_r(nullptr, delim, &save_ptr);
     }
 
-    return true;
+    return oc::success();
 }
 
 }

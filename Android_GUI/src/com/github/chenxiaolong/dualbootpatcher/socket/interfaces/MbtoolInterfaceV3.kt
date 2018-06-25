@@ -543,6 +543,27 @@ class MbtoolInterfaceV3(
 
     @Synchronized
     @Throws(IOException::class, MbtoolException::class, MbtoolCommandException::class)
+    override fun shutdownViaFramework(confirm: Boolean) {
+        // Create request
+        val builder = FlatBufferBuilder(FBB_SIZE)
+        ShutdownRequest.startShutdownRequest(builder);
+        ShutdownRequest.addType(builder, ShutdownType.FRAMEWORK);
+        ShutdownRequest.addConfirm(builder, confirm);
+        val fbRequest = ShutdownRequest.endShutdownRequest(builder);
+
+        // Send request
+        val response = sendRequest(builder, fbRequest, RequestType.ShutdownRequest,
+                ResponseType.ShutdownResponse) as ShutdownResponse
+
+        val error = response.error()
+        if (error != null) {
+            throw MbtoolCommandException("Failed to shut down via framework")
+        }
+    }
+
+
+    @Synchronized
+    @Throws(IOException::class, MbtoolException::class, MbtoolCommandException::class)
     override fun shutdownViaInit() {
         // Create request
         val builder = FlatBufferBuilder(FBB_SIZE)

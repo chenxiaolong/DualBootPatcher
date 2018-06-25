@@ -162,7 +162,7 @@ void TWFunc::Fixup_Time_On_Boot()
             return;
         }
 
-        f = fopen(ats_path.c_str(), "r");
+        f = fopen(ats_path.c_str(), "re");
         if (!f) {
             LOGI("TWFunc::Fixup_Time: failed to open file %s", ats_path.c_str());
             return;

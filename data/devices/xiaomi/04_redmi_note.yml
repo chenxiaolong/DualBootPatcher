@@ -419,3 +419,29 @@
     max_brightness: 160
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     theme: portrait_hdpi
+
+- name: Xiaomi Redmi Note 5
+  id: whyred
+  codenames:
+    - whyred
+    - Redmi Note 5
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name
+    system:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/system
+      - /dev/block/mmcblk0p61
+    cache:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/cache
+      - /dev/block/mmcblk0p60
+    data:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p64
+    boot:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/boot
+      - /dev/block/mmcblk0p58
+    recovery:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p59

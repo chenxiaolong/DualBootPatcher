@@ -46,7 +46,7 @@ foreach(variant ${variants})
         include
         PRIVATE
         .
-        ${CMAKE_SOURCE_DIR}/external/minizip/src
+        ${CMAKE_SOURCE_DIR}/external/minizip
     )
 
     # Only build static library if needed

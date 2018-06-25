@@ -56,6 +56,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         fsck-wrapper
         PRIVATE
         -nostdlib
+        $<$<STREQUAL:${ANDROID_ABI},armeabi-v7a>:-fno-integrated-as>
     )
 
     set_target_properties(
