@@ -15,7 +15,7 @@
   <string name="link_source_code">Quellcode</string>
   <!--XDA forum thread web page URL-->
   <!--XDA forum thread link text-->
-  <string name="link_xda_thread">XDA Thema</string>
+  <string name="link_xda_thread">XDA Thread</string>
   <!--Licenses URL-->
   <!--Licenses link text-->
   <string name="link_licenses">Lizenzen</string>
@@ -59,11 +59,11 @@
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Die Betriebssystemversion konnte nicht gefunden werden.</string>
   <!--Title of progress dialog shown when switching ROMs-->
-  <string name="switching_rom">Wechsel das Betriebssystem</string>
+  <string name="switching_rom">Wechsle ROM</string>
   <!--Title of progress dialog shown when setting kernel-->
   <string name="setting_kernel">Setze den Kernel</string>
   <!--Message shown when switching ROMs succeeds-->
-  <string name="choose_rom_success">Erfolgreich das Betriebssystem gewechselt</string>
+  <string name="choose_rom_success">Erfolgreich die ROM gewechselt</string>
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Fehler beim wechseln der ROM</string>
   <!--Message shown when switching ROMs and checksums don't match-->
@@ -294,7 +294,7 @@ Wollen Sie den Kernel jetzt setzen?</string>
   <!--Text box hint for specifying the data slot ID-->
   <string name="install_location_named_slot_id_hint">ID eingeben</string>
   <!--Description text shown if the data slot ID is empty-->
-  <string name="install_location_named_slot_id_empty">ID eingeben (oben)</string>
+  <string name="install_location_named_slot_id_empty">ID oben eingeben</string>
   <!--Error tooltip shown if the data slot ID is empty-->
   <string name="install_location_named_slot_id_error_is_empty">Die Slot-ID darf nicht leer sein.</string>
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
@@ -308,7 +308,7 @@ Wollen Sie den Kernel jetzt setzen?</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
   <string name="filemanager_missing_desc">Es ist kein angemessener File Manager installier, Installieren Sie bitte einen File Manager um zu patchende Files auszuwählen.</string>
   <!--Text for the details card indicating that the patching is done-->
-  <string name="details_done">Fertig.</string>
+  <string name="details_done">Fertig</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">%1$s/%2$s Files</string>
   <!--Title for total size of partition-->
@@ -469,7 +469,10 @@ in der Einstellungen von DualBootPatcher.</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Neuer Ordner</string>
   <!--Android 8.0+ notification channel name for background services-->
+  <string name="notification_channel_background_services_name">Hintergrunddienste</string>
   <!--Android 8.0+ notification channel description for background services-->
+  <string name="notification_channel_background_services_desc">Persistente Benachrichtigung wird gezeigt
+wenn ein Hintergrunddienst läuft.</string>
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">suchen</string>
   <!--Word/phrase for None (used in eg. a list)-->
