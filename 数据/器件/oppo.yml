@@ -1,12 +1,12 @@
 ---
 - name: OPPO R9s
   id: r9s
-    codenames:
+  codenames:
     - r9s
     - OPPO R9s
     - R9s
 
-    architecture: arm64-v8a
+  architecture: arm64-v8a
 
   block_devs:
     base_dirs:
