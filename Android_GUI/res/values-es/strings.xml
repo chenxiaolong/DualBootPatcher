@@ -54,7 +54,7 @@ mbtool. Esto puede ocurrir si el acceso root fue denegado o si el ramdisk no est
   <!--Default name for the multi-slot ROMs-->
   <string name="multislot">Multi espacio %s</string>
   <!--Default name for the data-slot ROMs-->
-  <string name="dataslot">%s (Eanura de Datos)</string>
+  <string name="dataslot">%s (Ranura de Datos)</string>
   <!--Default name for the extsd-slot ROMs-->
   <string name="extsdslot">%s (Espacio SD-ext)</string>
   <!--Text shown when a ROM's version could not be detected-->
@@ -519,7 +519,10 @@ por ejemplo cambiar de ROMs no funcionarán</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Nueva carpeta</string>
   <!--Android 8.0+ notification channel name for background services-->
+  <string name="notification_channel_background_services_name">Servicios en segundo plano</string>
   <!--Android 8.0+ notification channel description for background services-->
+  <string name="notification_channel_background_services_desc">Mostrar notificaciones
+           Cuando el servicio esté corriendo en segundo plano</string>
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Buscar</string>
   <!--Word/phrase for None (used in eg. a list)-->
