@@ -3,6 +3,7 @@
   id: ailsa_ii
   codenames:
     - ailsa_ii
+    - axon7
   architecture: arm64-v8a
 
   block_devs:
