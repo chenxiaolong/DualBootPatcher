@@ -312,7 +312,7 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
 
 bool InstallerUtil::patch_boot_image(const std::string &input_file,
                                      const std::string &output_file,
-                                     std::vector<std::function<RamdiskPatcherFn>> &rps)
+                                     const std::vector<std::function<RamdiskPatcherFn>> &rps)
 {
     std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
@@ -489,7 +489,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
 bool InstallerUtil::patch_ramdisk(const std::string &input_file,
                                   const std::string &output_file,
                                   unsigned int depth,
-                                  std::vector<std::function<RamdiskPatcherFn>> &rps)
+                                  const std::vector<std::function<RamdiskPatcherFn>> &rps)
 {
     if (depth > 1) {
         LOGV("Ignoring doubly-nested ramdisk");
@@ -536,7 +536,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
 }
 
 bool InstallerUtil::patch_ramdisk_dir(const std::string &ramdisk_dir,
-                                      std::vector<std::function<RamdiskPatcherFn>> &rps)
+                                      const std::vector<std::function<RamdiskPatcherFn>> &rps)
 {
     for (auto const &rp : rps) {
         if (!rp(ramdisk_dir)) {

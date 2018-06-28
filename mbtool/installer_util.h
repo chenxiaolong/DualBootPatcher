@@ -42,13 +42,13 @@ public:
 
     static bool patch_boot_image(const std::string &input_file,
                                  const std::string &output_file,
-                                 std::vector<std::function<RamdiskPatcherFn>> &rps);
+                                 const std::vector<std::function<RamdiskPatcherFn>> &rps);
     static bool patch_ramdisk(const std::string &input_file,
                               const std::string &output_file,
                               unsigned int depth,
-                              std::vector<std::function<RamdiskPatcherFn>> &rps);
+                              const std::vector<std::function<RamdiskPatcherFn>> &rps);
     static bool patch_ramdisk_dir(const std::string &ramdisk_dir,
-                                  std::vector<std::function<RamdiskPatcherFn>> &rps);
+                                  const std::vector<std::function<RamdiskPatcherFn>> &rps);
     static bool patch_kernel_rkp(const std::string &input_file,
                                  const std::string &output_file);
 
