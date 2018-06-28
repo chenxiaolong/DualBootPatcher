@@ -1586,9 +1586,19 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     // Patch current boot image to undo the init symlink patch. This is
     // necessary to flash something that also tries to touch /init.
     LOGV("Patching ramdisk to undo init modifications");
-    std::vector<std::function<RamdiskPatcherFn>> rps{rp_restore_init()};
-    if (!InstallerUtil::patch_boot_image(_boot_block_dev, _boot_block_dev,
-                                         rps)) {
+
+    std::string temp_boot_img(_temp);
+    temp_boot_img += "/boot.img";
+
+    if (InstallerUtil::patch_boot_image(_boot_block_dev, temp_boot_img, {
+        rp_restore_init(),
+    })) {
+        if (auto r = util::copy_contents(temp_boot_img, _boot_block_dev); !r) {
+            LOGW("Failed to copy %s to %s: %s. Continuing anyway...",
+                 temp_boot_img.c_str(), _boot_block_dev.c_str(),
+                 r.error().message().c_str());
+        }
+    } else {
         LOGW("Failed to patch boot image. Continuing anyway...");
     }
 
@@ -1880,7 +1890,7 @@ Installer::ProceedState Installer::install_stage_finish()
     std::string temp_boot_img(_temp);
     temp_boot_img += "/boot.img";
 
-    std::vector<std::function<RamdiskPatcherFn>> rps{
+    if (!InstallerUtil::patch_boot_image(_boot_block_dev, temp_boot_img, {
         rp_write_rom_id(_rom->id),
         rp_restore_default_prop(),
         rp_add_dbp_prop(_detected_device, _use_fuse_exfat),
@@ -1888,9 +1898,7 @@ Installer::ProceedState Installer::install_stage_finish()
         rp_symlink_fuse_exfat(),
         rp_symlink_init(),
         rp_add_device_json(_temp + "/device.json"),
-    };
-
-    if (!InstallerUtil::patch_boot_image(_boot_block_dev, temp_boot_img, rps)) {
+    })) {
         display_msg("Failed to patch boot image");
         return ProceedState::Fail;
     }
