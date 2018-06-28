@@ -312,7 +312,7 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
 
 bool InstallerUtil::patch_boot_image(const std::string &input_file,
                                      const std::string &output_file,
-                                     std::vector<std::function<RamdiskPatcherFn>> &rps)
+                                     const std::vector<std::function<RamdiskPatcherFn>> &rps)
 {
     std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
@@ -395,6 +395,8 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         }
 
         auto type = out_entry.type();
+        LOGD("%s: Writer is requesting entry type: %d",
+             output_file.c_str(), *type);
 
         // Write entry metadata
         ret = writer.write_entry(out_entry);
@@ -406,6 +408,9 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
 
         // Special case for loki aboot
         if (*type == ENTRY_TYPE_ABOOT) {
+            LOGD("%s: Copying aboot partition: %s",
+                 output_file.c_str(), ABOOT_PARTITION);
+
             if (bi_copy_file_to_data(ABOOT_PARTITION, writer)) {
                 return false;
             }
@@ -413,7 +418,8 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
             ret = reader.go_to_entry(in_entry, *type);
             if (!ret) {
                 if (ret.error() == ReaderError::EndOfEntries) {
-                    LOGV("Skipping non existent boot image entry: %d", *type);
+                    LOGV("%s: Skipping non-existent boot image entry: %d",
+                         input_file.c_str(), *type);
                     continue;
                 } else {
                     LOGE("%s: Failed to go to entry: %d: %s",
@@ -424,6 +430,8 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
             }
 
             if (type == ENTRY_TYPE_RAMDISK) {
+                LOGD("%s: Writing patched ramdisk", output_file.c_str());
+
                 std::string ramdisk_in(tmpdir);
                 ramdisk_in += "/ramdisk.in";
                 std::string ramdisk_out(tmpdir);
@@ -446,6 +454,8 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     return false;
                 }
             } else if (type == ENTRY_TYPE_KERNEL) {
+                LOGD("%s: Writing patched kernel", output_file.c_str());
+
                 std::string kernel_in(tmpdir);
                 kernel_in += "/kernel.in";
                 std::string kernel_out(tmpdir);
@@ -468,6 +478,8 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     return false;
                 }
             } else {
+                LOGD("%s: Copying entry directly", output_file.c_str());
+
                 // Copy entry directly
                 if (!bi_copy_data_to_data(reader, writer)) {
                     return false;
@@ -489,7 +501,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
 bool InstallerUtil::patch_ramdisk(const std::string &input_file,
                                   const std::string &output_file,
                                   unsigned int depth,
-                                  std::vector<std::function<RamdiskPatcherFn>> &rps)
+                                  const std::vector<std::function<RamdiskPatcherFn>> &rps)
 {
     if (depth > 1) {
         LOGV("Ignoring doubly-nested ramdisk");
@@ -536,7 +548,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
 }
 
 bool InstallerUtil::patch_ramdisk_dir(const std::string &ramdisk_dir,
-                                      std::vector<std::function<RamdiskPatcherFn>> &rps)
+                                      const std::vector<std::function<RamdiskPatcherFn>> &rps)
 {
     for (auto const &rp : rps) {
         if (!rp(ramdisk_dir)) {
