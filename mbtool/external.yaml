@@ -1,11 +1,13 @@
 ---
 - files:
+    - include/boot/audit/libaudit.h
     - include/boot/init/cutils/uevent.h
     - include/boot/init/devices.h
     - include/boot/init/uevent.h
     - include/boot/init/uevent_listener.h
     - include/boot/init/unique_fd.h
     - include/boot/property_service.h
+    - src/boot/audit/libaudit.cpp
     - src/boot/init/cutils/uevent.cpp
     - src/boot/init/devices.cpp
     - src/boot/init/uevent_listener.cpp

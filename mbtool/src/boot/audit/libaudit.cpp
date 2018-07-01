@@ -17,8 +17,6 @@
  * Written by William Roberts <w.roberts@sta.samsung.com>
  */
 
-#define LOG_TAG "mbtool/boot/audit/libaudit"
-
 #include "boot/audit/libaudit.h"
 
 #include <cerrno>
@@ -26,21 +24,16 @@
 
 #include <unistd.h>
 
-#include "mblog/logging.h"
-
 extern "C" {
 
 /**
  * Waits for an ack from the kernel
  * @param fd
  *  The netlink socket fd
- * @param seq
- *  The current sequence number were acking on
  * @return
  *  This function returns 0 on success, else -errno.
  */
-static int get_ack(int fd, int16_t seq)
-{
+static int get_ack(int fd) {
     int rc;
     struct audit_message rep;
 
@@ -56,15 +49,10 @@ static int get_ack(int fd, int16_t seq)
 
     if (rep.nlh.nlmsg_type == NLMSG_ERROR) {
         audit_get_reply(fd, &rep, GET_REPLY_BLOCKING, 0);
-        rc = ((struct nlmsgerr *) rep.data)->error;
+        rc = ((struct nlmsgerr*)rep.data)->error;
         if (rc) {
             return -rc;
         }
-    }
-
-    if ((int16_t) rep.nlh.nlmsg_seq != seq) {
-        LOGW("Expected sequence number between user space and kernel space is out of skew, "
-          "expected %u got %u", seq, rep.nlh.nlmsg_seq);
     }
 
     return 0;
@@ -83,8 +71,7 @@ static int get_ack(int fd, int16_t seq)
  * @return
  *  This function returns a positive sequence number on success, else -errno.
  */
-static int audit_send(int fd, int type, const void *data, size_t size)
-{
+static int audit_send(int fd, int type, const void* data, size_t size) {
     int rc;
     static int16_t sequence = 0;
     struct audit_message req;
@@ -111,7 +98,6 @@ static int audit_send(int fd, int type, const void *data, size_t size)
 
     /* Ensure the message is not too big */
     if (NLMSG_SPACE(size) > MAX_AUDIT_MESSAGE_LENGTH) {
-        LOGE("netlink message is too large");
         return -EINVAL;
     }
 
@@ -137,36 +123,33 @@ static int audit_send(int fd, int type, const void *data, size_t size)
     /* While failing and its due to interrupts */
 
     rc = TEMP_FAILURE_RETRY(sendto(fd, &req, req.nlh.nlmsg_len, 0,
-                                   (struct sockaddr*) &addr, sizeof(addr)));
+                                   (struct sockaddr*)&addr, sizeof(addr)));
 
     /* Not all the bytes were sent */
     if (rc < 0) {
         rc = -errno;
-        LOGE("Error sending data over the netlink socket: %s", strerror(-errno));
         goto out;
-    } else if ((uint32_t) rc != req.nlh.nlmsg_len) {
+    } else if ((uint32_t)rc != req.nlh.nlmsg_len) {
         rc = -EPROTO;
         goto out;
     }
 
     /* We sent all the bytes, get the ack */
-    rc = get_ack(fd, sequence);
+    rc = get_ack(fd);
 
     /* If the ack failed, return the error, else return the sequence number */
-    rc = (rc == 0) ? (int) sequence : rc;
+    rc = (rc == 0) ? (int)sequence : rc;
 
 out:
     /* Don't let sequence roll to negative */
     if (sequence < 0) {
-        LOGW("Auditd to Kernel sequence number has rolled over");
         sequence = 0;
     }
 
     return rc;
 }
 
-int audit_setup(int fd, uint32_t pid)
-{
+int audit_setup(int fd, pid_t pid) {
     int rc;
     struct audit_message rep;
     struct audit_status status;
@@ -179,13 +162,11 @@ int audit_setup(int fd, uint32_t pid)
      * and the the mask set to AUDIT_STATUS_PID
      */
     status.pid = pid;
-    status.mask = AUDIT_STATUS_PID | AUDIT_STATUS_RATE_LIMIT;
-    status.rate_limit = 20; // audit entries per second
+    status.mask = AUDIT_STATUS_PID;
 
     /* Let the kernel know this pid will be registering for audit events */
     rc = audit_send(fd, AUDIT_SET, &status, sizeof(status));
     if (rc < 0) {
-        LOGE("Could net set pid for audit events, error: %s", strerror(-rc));
         return rc;
     }
 
@@ -204,13 +185,31 @@ int audit_setup(int fd, uint32_t pid)
     return 0;
 }
 
-int audit_open()
-{
+int audit_rate_limit(int fd, unsigned rate_limit) {
+    int rc;
+    struct audit_message rep;
+    struct audit_status status;
+
+    memset(&status, 0, sizeof(status));
+
+    status.mask = AUDIT_STATUS_RATE_LIMIT;
+    status.rate_limit = rate_limit; /* audit entries per second */
+
+    rc = audit_send(fd, AUDIT_SET, &status, sizeof(status));
+    if (rc < 0) {
+        return rc;
+    }
+
+    audit_get_reply(fd, &rep, GET_REPLY_NONBLOCKING, 0);
+
+    return 0;
+}
+
+int audit_open() {
     return socket(PF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, NETLINK_AUDIT);
 }
 
-int audit_get_reply(int fd, struct audit_message *rep, reply_t block, int peek)
-{
+int audit_get_reply(int fd, struct audit_message* rep, reply_t block, int peek) {
     ssize_t len;
     int flags;
     int rc = 0;
@@ -232,7 +231,7 @@ int audit_get_reply(int fd, struct audit_message *rep, reply_t block, int peek)
      * however, can be returned.
      */
     len = TEMP_FAILURE_RETRY(recvfrom(fd, rep, sizeof(*rep), flags,
-                                      (struct sockaddr*) &nladdr, &nladdrlen));
+                                      (struct sockaddr*)&nladdr, &nladdrlen));
 
     /*
      * EAGAIN should be re-tried until success or another error manifests.
@@ -243,37 +242,28 @@ int audit_get_reply(int fd, struct audit_message *rep, reply_t block, int peek)
             /* If request is non blocking and errno is EAGAIN, just return 0 */
             return 0;
         }
-        LOGE("Error receiving from netlink socket, error: %s", strerror(-rc));
         return rc;
     }
 
     if (nladdrlen != sizeof(nladdr)) {
-        LOGE("Protocol fault, error: %s", strerror(EPROTO));
         return -EPROTO;
     }
 
     /* Make sure the netlink message was not spoof'd */
     if (nladdr.nl_pid) {
-        LOGE("Invalid netlink pid received, expected 0 got: %d", nladdr.nl_pid);
         return -EINVAL;
     }
 
     /* Check if the reply from the kernel was ok */
-    if (!NLMSG_OK(&rep->nlh, (size_t) len)) {
+    if (!NLMSG_OK(&rep->nlh, (size_t)len)) {
         rc = (len == sizeof(*rep)) ? -EFBIG : -EBADE;
-        LOGE("Bad kernel response %s", strerror(-rc));
     }
 
     return rc;
 }
 
-void audit_close(int fd)
-{
-    int rc = close(fd);
-    if (rc < 0) {
-        LOGE("Attempting to close invalid fd %d, error: %s", fd, strerror(errno));
-    }
-    return;
+void audit_close(int fd) {
+    close(fd);
 }
 
 }

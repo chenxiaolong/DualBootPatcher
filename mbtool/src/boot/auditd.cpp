@@ -50,12 +50,12 @@ static bool audit_mainloop()
         audit_close(fd);
     });
 
-    if (audit_setup(fd, static_cast<uint32_t>(getpid())) < 0) {
+    if (audit_setup(fd, getpid()) < 0) {
         return false;
     }
 
     while (true) {
-        struct audit_message reply;
+        audit_message reply;
         reply.nlh.nlmsg_type = 0;
         reply.nlh.nlmsg_len = 0;
         reply.data[0] = '\0';
