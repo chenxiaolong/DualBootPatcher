@@ -29,14 +29,14 @@
 #include "mbutil/socket.h"
 
 // Hackish, but gets the job done
-#include "../mbtool/protocol/mb_get_booted_rom_id_generated.h"
-#include "../mbtool/protocol/mb_get_installed_roms_generated.h"
-#include "../mbtool/protocol/mb_get_version_generated.h"
-#include "../mbtool/protocol/mb_switch_rom_generated.h"
-#include "../mbtool/protocol/reboot_generated.h"
-#include "../mbtool/protocol/shutdown_generated.h"
-#include "../mbtool/protocol/request_generated.h"
-#include "../mbtool/protocol/response_generated.h"
+#include "../mbtool/include/protocol/mb_get_booted_rom_id_generated.h"
+#include "../mbtool/include/protocol/mb_get_installed_roms_generated.h"
+#include "../mbtool/include/protocol/mb_get_version_generated.h"
+#include "../mbtool/include/protocol/mb_switch_rom_generated.h"
+#include "../mbtool/include/protocol/reboot_generated.h"
+#include "../mbtool/include/protocol/shutdown_generated.h"
+#include "../mbtool/include/protocol/request_generated.h"
+#include "../mbtool/include/protocol/response_generated.h"
 
 #define LOG_TAG "mbbootui/daemon_connection"
 
