@@ -199,8 +199,6 @@ add_subdirectory(signtool)
 add_subdirectory(devicesgen)
 add_subdirectory(android)
 
-add_cxx_hack_to_all_targets()
-
 # Must go after signtool since it references SIGNTOOL_COMMAND
 configure_file(
     cmake/SignFiles.cmake.in

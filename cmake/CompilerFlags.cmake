@@ -212,25 +212,6 @@ function(android_link_allow_multiple_definitions first_target)
     endif()
 endfunction()
 
-# libunwind (pulled in by libc++) requires dladdr() on armeabi-v7a.
-# c++-hack-static contains a dummy version of the function that always fails and
-# this forces it to be linked into every target.
-if(${MBP_BUILD_TARGET} STREQUAL android-system
-        AND "${ANDROID_STL}" STREQUAL "c++_static"
-        AND "${ANDROID_ABI}" STREQUAL "armeabi-v7a")
-    add_subdirectory(cmake/libc++-hack)
-
-    string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " ${MBP_LIBCXX_HACK_PATH}")
-endif()
-
-function(add_cxx_hack_to_all_targets)
-    if(TARGET c++-hack-static)
-        foreach(target ${BUILDSYSTEM_TARGETS})
-            add_dependencies(${target} c++-hack-static)
-        endforeach()
-    endif()
-endfunction()
-
 function(unix_link_executable_statically first_target)
     if(UNIX)
         foreach(target "${first_target}" ${ARGN})
