@@ -130,7 +130,6 @@ if(variants AND MBP_ENABLE_TESTS)
     )
 
     if(ANDROID)
-        android_link_allow_multiple_definitions(mbdevice_tests)
         unix_link_executable_statically(mbdevice_tests)
     endif()
 

@@ -59,7 +59,6 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
 )
 
-android_link_allow_multiple_definitions(mbbootui)
 unix_link_executable_statically(mbbootui)
 
 target_link_libraries(

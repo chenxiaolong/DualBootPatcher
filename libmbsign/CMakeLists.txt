@@ -78,7 +78,6 @@ if(variants AND MBP_ENABLE_TESTS)
     )
 
     if(ANDROID)
-        android_link_allow_multiple_definitions(mbsign_tests)
         unix_link_executable_statically(mbsign_tests)
     endif()
 

@@ -23,7 +23,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         Fuse::Fuse
     )
 
-    android_link_allow_multiple_definitions(odinupdater fuse-sparse)
     unix_link_executable_statically(odinupdater fuse-sparse)
 
     install(

@@ -199,19 +199,6 @@ if(NOT MSVC)
     )
 endif()
 
-# https://github.com/android-ndk/ndk/issues/17
-function(android_link_allow_multiple_definitions first_target)
-    if(ANDROID AND "${ANDROID_STL}" STREQUAL "c++_static")
-        foreach(target "${first_target}" ${ARGN})
-            set_property(
-                TARGET "${target}"
-                APPEND_STRING
-                PROPERTY LINK_FLAGS " -Wl,--allow-multiple-definition"
-            )
-        endforeach()
-    endif()
-endfunction()
-
 function(unix_link_executable_statically first_target)
     if(UNIX)
         foreach(target "${first_target}" ${ARGN})

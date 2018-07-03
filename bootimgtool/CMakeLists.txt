@@ -49,7 +49,6 @@ foreach(variant ${variants})
             )
         endif()
     elseif(${variant} STREQUAL static)
-        android_link_allow_multiple_definitions(${bin_target})
         unix_link_executable_statically(${bin_target})
     endif()
 
