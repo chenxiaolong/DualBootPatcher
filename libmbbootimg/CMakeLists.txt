@@ -118,6 +118,11 @@ if(variants AND MBP_ENABLE_TESTS)
         OpenSSL::Crypto
     )
 
+    if(ANDROID)
+        android_link_allow_multiple_definitions(mbbootimg_tests)
+        unix_link_executable_statically(mbbootimg_tests)
+    endif()
+
     # Add to ctest
     add_test(
         NAME mbbootimg_tests

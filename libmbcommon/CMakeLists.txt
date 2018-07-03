@@ -166,6 +166,11 @@ if(variants AND MBP_ENABLE_TESTS)
         gmock_main
     )
 
+    if(ANDROID)
+        android_link_allow_multiple_definitions(mbcommon_tests)
+        unix_link_executable_statically(mbcommon_tests)
+    endif()
+
     # Add to ctest
     add_test(
         NAME mbcommon_tests
