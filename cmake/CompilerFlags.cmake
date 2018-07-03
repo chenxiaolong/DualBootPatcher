@@ -169,6 +169,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # Disable warnings
         add_compile_options(
             -Wno-documentation-unknown-command # \cond is not understood
+            -Wno-missing-noreturn # Caused by disabling exceptions in Outcome
             -Wno-shadow-field-in-constructor
         )
     endif()
