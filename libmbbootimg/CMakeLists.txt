@@ -115,6 +115,7 @@ if(variants AND MBP_ENABLE_TESTS)
         mbcommon-static
         gtest
         gtest_main
+        OpenSSL::Crypto
     )
 
     # Add to ctest
