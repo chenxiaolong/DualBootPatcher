@@ -34,7 +34,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-__BEGIN_DECLS
+struct timespec;
+
+namespace mb
+{
 
 typedef struct prop_info prop_info;
 
@@ -43,30 +46,30 @@ typedef struct prop_info prop_info;
 /*
  * Sets system property `key` to `value`, creating the system property if it doesn't already exist.
  */
-int mb__system_property_set(const char* key, const char* value) /* __INTRODUCED_IN(12) */;
+int __system_property_set(const char* key, const char* value) /* __INTRODUCED_IN(12) */;
 
 /*
  * Returns a `prop_info` corresponding system property `name`, or nullptr if it doesn't exist.
- * Use mb__system_property_read_callback to query the current value.
+ * Use __system_property_read_callback to query the current value.
  *
  * Property lookup is expensive, so it can be useful to cache the result of this function.
  */
-const prop_info* mb__system_property_find(const char* name);
+const prop_info* __system_property_find(const char* name);
 
 /*
  * Calls `callback` with a consistent trio of name, value, and serial number for property `pi`.
  */
-void mb__system_property_read_callback(const prop_info *pi,
+void __system_property_read_callback(const prop_info *pi,
     void (*callback)(void* cookie, const char *name, const char *value, uint32_t serial),
     void* cookie) /* __INTRODUCED_IN(26) */;
 
 /*
  * Passes a `prop_info` for each system property to the provided
- * callback.  Use mb__system_property_read_callback() to read the value.
+ * callback.  Use __system_property_read_callback() to read the value.
  *
  * This method is for inspecting and debugging the property system, and not generally useful.
  */
-int mb__system_property_foreach(void (*propfn)(const prop_info* pi, void* cookie), void* cookie)
+int __system_property_foreach(void (*propfn)(const prop_info* pi, void* cookie), void* cookie)
   /* __INTRODUCED_IN(19) */;
 
 /*
@@ -81,22 +84,21 @@ int mb__system_property_foreach(void (*propfn)(const prop_info* pi, void* cookie
  * Returns true and updates `*new_serial_ptr` on success, or false if the call
  * timed out.
  */
-struct timespec;
-bool mb__system_property_wait(const prop_info* pi,
-                              uint32_t old_serial,
-                              uint32_t* new_serial_ptr,
-                              const struct timespec* relative_timeout)
+bool __system_property_wait(const prop_info* pi,
+                            uint32_t old_serial,
+                            uint32_t* new_serial_ptr,
+                            const struct timespec* relative_timeout)
     /* __INTRODUCED_IN(26) */;
 
 /* Deprecated. In Android O and above, there's no limit on property name length. */
 #define PROP_NAME_MAX   32
-/* Deprecated. Use mb__system_property_read_callback instead. */
-int mb__system_property_read(const prop_info* pi, char* name, char* value);
-/* Deprecated. Use mb__system_property_read_callback instead. */
-int mb__system_property_get(const char* name, char* value);
-/* Deprecated. Use mb__system_property_foreach instead. */
-const prop_info* mb__system_property_find_nth(unsigned n);
+/* Deprecated. Use __system_property_read_callback instead. */
+int __system_property_read(const prop_info* pi, char* name, char* value);
+/* Deprecated. Use __system_property_read_callback instead. */
+int __system_property_get(const char* name, char* value);
+/* Deprecated. Use __system_property_foreach instead. */
+const prop_info* __system_property_find_nth(unsigned n);
 
-__END_DECLS
+}
 
 #endif

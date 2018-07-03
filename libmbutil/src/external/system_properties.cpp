@@ -84,6 +84,9 @@
     } \
   } while(0)
 
+namespace mb
+{
+
 static constexpr int PROP_FILENAME_MAX = 1024;
 
 static constexpr uint32_t PROP_AREA_MAGIC = 0x504f5250;
@@ -227,7 +230,7 @@ struct prop_info {
 };
 
 // This is public because it was exposed in the NDK. As of 2017-01, ~60 apps reference this symbol.
-prop_area* mb__system_property_area__ = nullptr;
+prop_area* __system_property_area__ = nullptr;
 
 static char property_filename[PROP_FILENAME_MAX] = PROP_FILENAME;
 #if MB_ENABLE_COMPAT_PROPERTIES
@@ -965,8 +968,8 @@ void context_node::unmap() {
   }
 
   munmap(pa_, pa_size);
-  if (pa_ == mb__system_property_area__) {
-    mb__system_property_area__ = nullptr;
+  if (pa_ == __system_property_area__) {
+    __system_property_area__ = nullptr;
   }
   pa_ = nullptr;
 }
@@ -976,21 +979,21 @@ static bool map_system_property_area(bool access_rw, bool* fsetxattr_failed) {
   int len =
       snprintf(filename, sizeof(filename), "%s/properties_serial", property_filename);
   if (len < 0 || len > PROP_FILENAME_MAX) {
-    mb__system_property_area__ = nullptr;
+    __system_property_area__ = nullptr;
     return false;
   }
 
   if (access_rw) {
-    mb__system_property_area__ =
+    __system_property_area__ =
         map_prop_area_rw(filename, "u:object_r:properties_serial:s0", fsetxattr_failed);
   } else {
-    mb__system_property_area__ = map_prop_area(filename
+    __system_property_area__ = map_prop_area(filename
 #if MB_ENABLE_COMPAT_PROPERTIES
       , false
 #endif
     );
   }
-  return mb__system_property_area__;
+  return __system_property_area__;
 }
 
 static prop_area* get_prop_area_for_name(const char* name) {
@@ -1186,15 +1189,15 @@ static bool is_dir(const char* pathname) {
 static void free_and_unmap_contexts() {
   list_free(&prefixes);
   list_free(&contexts);
-  if (mb__system_property_area__) {
-    munmap(mb__system_property_area__, pa_size);
-    mb__system_property_area__ = nullptr;
+  if (__system_property_area__) {
+    munmap(__system_property_area__, pa_size);
+    __system_property_area__ = nullptr;
   }
 }
 
-int mb__system_properties_init() {
+int __system_properties_init() {
   // This is called from __libc_init_common, and should leave errno at 0 (http://b/37248982).
-  mb::ErrorRestorer error_restorer;
+  ErrorRestorer error_restorer;
 
   if (initialized) {
     list_foreach(contexts, [](context_node* l) { l->reset_access(); });
@@ -1209,22 +1212,22 @@ int mb__system_properties_init() {
       return -1;
     }
   } else {
-    mb__system_property_area__ = map_prop_area(property_filename
+    __system_property_area__ = map_prop_area(property_filename
 #if MB_ENABLE_COMPAT_PROPERTIES
       , true
 #endif
     );
-    if (!mb__system_property_area__) {
+    if (!__system_property_area__) {
       return -1;
     }
-    list_add(&contexts, "legacy_system_prop_area", mb__system_property_area__);
+    list_add(&contexts, "legacy_system_prop_area", __system_property_area__);
     list_add_after_len(&prefixes, "*", contexts);
   }
   initialized = true;
   return 0;
 }
 
-int mb__system_property_set_filename(const char* filename) {
+int __system_property_set_filename(const char* filename) {
   size_t len = strlen(filename);
   if (len >= sizeof(property_filename)) return -1;
 
@@ -1232,7 +1235,7 @@ int mb__system_property_set_filename(const char* filename) {
   return 0;
 }
 
-int mb__system_property_area_init() {
+int __system_property_area_init() {
   free_and_unmap_contexts();
   mkdir(property_filename, S_IRWXU | S_IXGRP | S_IXOTH);
   if (!initialize_properties()) {
@@ -1253,23 +1256,23 @@ int mb__system_property_area_init() {
   return fsetxattr_failed ? -2 : 0;
 }
 
-uint32_t mb__system_property_area_serial() {
-  prop_area* pa = mb__system_property_area__;
+uint32_t __system_property_area_serial() {
+  prop_area* pa = __system_property_area__;
   if (!pa) {
     return -1;
   }
-  // Make sure this read fulfilled before mb__system_property_serial
+  // Make sure this read fulfilled before __system_property_serial
   return atomic_load_explicit(pa->serial(), memory_order_acquire);
 }
 
-const prop_info* mb__system_property_find(const char* name) {
-  if (!mb__system_property_area__) {
+const prop_info* __system_property_find(const char* name) {
+  if (!__system_property_area__) {
     return nullptr;
   }
 
 #if MB_ENABLE_COMPAT_PROPERTIES
   if (__predict_false(compat_mode)) {
-    return mb__system_property_find_compat(name);
+    return __system_property_find_compat(name);
   }
 #endif
 
@@ -1289,15 +1292,15 @@ static inline uint_least32_t load_const_atomic(const atomic_uint_least32_t* s, m
   return atomic_load_explicit(non_const_s, mo);
 }
 
-int mb__system_property_read(const prop_info* pi, char* name, char* value) {
+int __system_property_read(const prop_info* pi, char* name, char* value) {
 #if MB_ENABLE_COMPAT_PROPERTIES
   if (__predict_false(compat_mode)) {
-    return mb__system_property_read_compat(pi, name, value);
+    return __system_property_read_compat(pi, name, value);
   }
 #endif
 
   while (true) {
-    uint32_t serial = mb__system_property_serial(pi);  // acquire semantics
+    uint32_t serial = __system_property_serial(pi);  // acquire semantics
     size_t len = SERIAL_VALUE_LEN(serial);
     memcpy(value, pi->value, len + 1);
     // TODO: Fix the synchronization scheme here.
@@ -1314,7 +1317,7 @@ int mb__system_property_read(const prop_info* pi, char* name, char* value) {
         size_t namelen = strlcpy(name, pi->name, PROP_NAME_MAX);
         if (namelen >= PROP_NAME_MAX) {
           LOGE("The property name length for \"%s\" is >= %d;"
-               " please use mb__system_property_read_callback"
+               " please use __system_property_read_callback"
                " to read this property. (the name is truncated to \"%s\")",
                pi->name, PROP_NAME_MAX - 1, name);
         }
@@ -1324,33 +1327,33 @@ int mb__system_property_read(const prop_info* pi, char* name, char* value) {
   }
 }
 
-void mb__system_property_read_callback(const prop_info* pi,
-                                       void (*callback)(void* cookie,
-                                                        const char* name,
-                                                        const char* value,
-                                                        uint32_t serial),
-                                       void* cookie) {
+void __system_property_read_callback(const prop_info* pi,
+                                     void (*callback)(void* cookie,
+                                                      const char* name,
+                                                      const char* value,
+                                                      uint32_t serial),
+                                     void* cookie) {
 #if MB_ENABLE_COMPAT_PROPERTIES
   // TODO (dimitry): do we need compat mode for this function?
   if (__predict_false(compat_mode)) {
-    uint32_t serial = mb__system_property_serial_compat(pi);
+    uint32_t serial = __system_property_serial_compat(pi);
     char name_buf[PROP_NAME_MAX];
     char value_buf[PROP_VALUE_MAX];
-    mb__system_property_read_compat(pi, name_buf, value_buf);
+    __system_property_read_compat(pi, name_buf, value_buf);
     callback(cookie, name_buf, value_buf, serial);
     return;
   }
 #endif
 
   while (true) {
-    uint32_t serial = mb__system_property_serial(pi);  // acquire semantics
+    uint32_t serial = __system_property_serial(pi);  // acquire semantics
     size_t len = SERIAL_VALUE_LEN(serial);
     char value_buf[len + 1];
 
     memcpy(value_buf, pi->value, len);
     value_buf[len] = '\0';
 
-    // TODO: see todo in mb__system_property_read function
+    // TODO: see todo in __system_property_read function
     atomic_thread_fence(memory_order_acquire);
     if (serial == load_const_atomic(&(pi->serial), memory_order_relaxed)) {
       callback(cookie, pi->name, value_buf, serial);
@@ -1359,11 +1362,11 @@ void mb__system_property_read_callback(const prop_info* pi,
   }
 }
 
-int mb__system_property_get(const char* name, char* value) {
-  const prop_info* pi = mb__system_property_find(name);
+int __system_property_get(const char* name, char* value) {
+  const prop_info* pi = __system_property_find(name);
 
   if (pi != 0) {
-    return mb__system_property_read(pi, nullptr, value);
+    return __system_property_read(pi, nullptr, value);
   } else {
     value[0] = 0;
     return 0;
@@ -1377,7 +1380,7 @@ static atomic_uint_least32_t g_propservice_protocol_version = 0;
 
 static void detect_protocol_version() {
   char value[PROP_VALUE_MAX];
-  if (mb__system_property_get(kServiceVersionPropertyName, value) == 0) {
+  if (__system_property_get(kServiceVersionPropertyName, value) == 0) {
     g_propservice_protocol_version = kProtocolVersion1;
     LOGW("Using old property service protocol (\"%s\" is not set)",
          kServiceVersionPropertyName);
@@ -1393,7 +1396,7 @@ static void detect_protocol_version() {
   }
 }
 
-int mb__system_property_set(const char* key, const char* value) {
+int __system_property_set(const char* key, const char* value) {
   if (key == nullptr) return -1;
   if (value == nullptr) value = "";
   if (strlen(value) >= PROP_VALUE_MAX) return -1;
@@ -1460,12 +1463,12 @@ int mb__system_property_set(const char* key, const char* value) {
   }
 }
 
-int mb__system_property_update(prop_info* pi, const char* value, unsigned int len) {
+int __system_property_update(prop_info* pi, const char* value, unsigned int len) {
   if (len >= PROP_VALUE_MAX) {
     return -1;
   }
 
-  prop_area* pa = mb__system_property_area__;
+  prop_area* pa = __system_property_area__;
 
   if (!pa) {
     return -1;
@@ -1490,8 +1493,8 @@ int mb__system_property_update(prop_info* pi, const char* value, unsigned int le
   return 0;
 }
 
-int mb__system_property_add(const char* name, unsigned int namelen, const char* value,
-                            unsigned int valuelen) {
+int __system_property_add(const char* name, unsigned int namelen, const char* value,
+                          unsigned int valuelen) {
   if (valuelen >= PROP_VALUE_MAX) {
     return -1;
   }
@@ -1500,7 +1503,7 @@ int mb__system_property_add(const char* name, unsigned int namelen, const char* 
     return -1;
   }
 
-  if (!mb__system_property_area__) {
+  if (!__system_property_area__) {
     return -1;
   }
 
@@ -1519,15 +1522,15 @@ int mb__system_property_add(const char* name, unsigned int namelen, const char* 
   // There is only a single mutator, but we want to make sure that
   // updates are visible to a reader waiting for the update.
   atomic_store_explicit(
-      mb__system_property_area__->serial(),
-      atomic_load_explicit(mb__system_property_area__->serial(), memory_order_relaxed) + 1,
+      __system_property_area__->serial(),
+      atomic_load_explicit(__system_property_area__->serial(), memory_order_relaxed) + 1,
       memory_order_release);
-  __futex_wake(mb__system_property_area__->serial(), INT32_MAX);
+  __futex_wake(__system_property_area__->serial(), INT32_MAX);
   return 0;
 }
 
 // Wait for non-locked serial, and retrieve it with acquire semantics.
-uint32_t mb__system_property_serial(const prop_info* pi) {
+uint32_t __system_property_serial(const prop_info* pi) {
   uint32_t serial = load_const_atomic(&pi->serial, memory_order_acquire);
   while (SERIAL_DIRTY(serial)) {
     __futex_wait(const_cast<_Atomic(uint_least32_t)*>(&pi->serial), serial, nullptr);
@@ -1536,21 +1539,21 @@ uint32_t mb__system_property_serial(const prop_info* pi) {
   return serial;
 }
 
-uint32_t mb__system_property_wait_any(uint32_t old_serial) {
+uint32_t __system_property_wait_any(uint32_t old_serial) {
   uint32_t new_serial;
-  mb__system_property_wait(nullptr, old_serial, &new_serial, nullptr);
+  __system_property_wait(nullptr, old_serial, &new_serial, nullptr);
   return new_serial;
 }
 
-bool mb__system_property_wait(const prop_info* pi,
-                              uint32_t old_serial,
-                              uint32_t* new_serial_ptr,
-                              const timespec* relative_timeout) {
+bool __system_property_wait(const prop_info* pi,
+                            uint32_t old_serial,
+                            uint32_t* new_serial_ptr,
+                            const timespec* relative_timeout) {
   // Are we waiting on the global serial or a specific serial?
   atomic_uint_least32_t* serial_ptr;
   if (pi == nullptr) {
-    if (mb__system_property_area__ == nullptr) return -1;
-    serial_ptr = mb__system_property_area__->serial();
+    if (__system_property_area__ == nullptr) return -1;
+    serial_ptr = __system_property_area__->serial();
   } else {
     serial_ptr = const_cast<atomic_uint_least32_t*>(&pi->serial);
   }
@@ -1568,7 +1571,7 @@ bool mb__system_property_wait(const prop_info* pi,
   return true;
 }
 
-const prop_info* mb__system_property_find_nth(unsigned n) {
+const prop_info* __system_property_find_nth(unsigned n) {
   struct find_nth {
     const uint32_t sought;
     uint32_t current;
@@ -1580,18 +1583,18 @@ const prop_info* mb__system_property_find_nth(unsigned n) {
       if (self->current++ == self->sought) self->result = pi;
     }
   } state(n);
-  mb__system_property_foreach(find_nth::fn, &state);
+  __system_property_foreach(find_nth::fn, &state);
   return state.result;
 }
 
-int mb__system_property_foreach(void (*propfn)(const prop_info* pi, void* cookie), void* cookie) {
-  if (!mb__system_property_area__) {
+int __system_property_foreach(void (*propfn)(const prop_info* pi, void* cookie), void* cookie) {
+  if (!__system_property_area__) {
     return -1;
   }
 
 #if MB_ENABLE_COMPAT_PROPERTIES
   if (__predict_false(compat_mode)) {
-    return mb__system_property_foreach_compat(propfn, cookie);
+    return __system_property_foreach_compat(propfn, cookie);
   }
 #endif
 
@@ -1601,4 +1604,6 @@ int mb__system_property_foreach(void (*propfn)(const prop_info* pi, void* cookie
     }
   });
   return 0;
+}
+
 }

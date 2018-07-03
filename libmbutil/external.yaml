@@ -11,7 +11,7 @@
   commit: 3c75c11a5cb537bbdf499701e4298cee2e07a604
 
 - files:
-    - src/external/system_properties_compat.c
+    - src/external/system_properties_compat.cpp
   repo: https://android.googlesource.com/platform/bionic
   tag: android-7.1.2_r36
   commit: 8011119dffb81326eeecdc2effb3b878d536ff50
