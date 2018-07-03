@@ -230,3 +230,20 @@ function(add_cxx_hack_to_all_targets)
         endforeach()
     endif()
 endfunction()
+
+function(unix_link_executable_statically first_target)
+    if(UNIX)
+        foreach(target "${first_target}" ${ARGN})
+            set_property(
+                TARGET "${target}"
+                APPEND_STRING
+                PROPERTY LINK_FLAGS " -static"
+            )
+            set_target_properties(
+                "${target}"
+                PROPERTIES
+                LINK_SEARCH_START_STATIC ON
+            )
+        endforeach()
+    endif()
+endfunction()
