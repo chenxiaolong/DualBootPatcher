@@ -194,7 +194,7 @@ oc::result<std::string> file_read_all(const std::string &path)
             return std::errc::result_out_of_range;
         }
 
-        data.reserve(size);
+        data.reserve(static_cast<size_t>(size));
     }
     if (fseeko(fp.get(), 0, SEEK_SET) < 0) {
         return ec_from_errno();
