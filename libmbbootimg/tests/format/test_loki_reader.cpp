@@ -394,7 +394,7 @@ TEST(LokiOldFindRamdiskSizeTest, OutOfBoundsRamdiskOffsetShouldFail)
     ASSERT_TRUE(file.is_open());
 
     auto ret = LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
-                                                       data.size() + 1,
+                                                       static_cast<uint32_t>(data.size() + 1),
                                                        ramdisk_size);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), LokiError::RamdiskOffsetGreaterThanAbootOffset);
