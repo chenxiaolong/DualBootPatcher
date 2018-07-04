@@ -26,9 +26,11 @@
 #include <cwchar>
 
 #ifdef _WIN32
-#include <windows.h>
+#  include <windows.h>
+#elif defined(USE_EXTERNAL_ICONV)
+#  include "mbcommon/external/iconv.h"
 #else
-#include <iconv.h>
+#  include <iconv.h>
 #endif
 
 #include "mbcommon/error.h"

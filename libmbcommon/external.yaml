@@ -1,0 +1,7 @@
+---
+- files:
+    - include/mbcommon/external/bionic_mbstate.h
+    - include/mbcommon/external/iconv.h
+    - src/external/iconv.cpp
+  repo: https://android.googlesource.com/platform/bionic
+  commit: 50acae8f2ae017c49b1d616e93ce9f97f6b3d118

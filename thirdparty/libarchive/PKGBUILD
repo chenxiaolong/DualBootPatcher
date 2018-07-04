@@ -14,14 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 _prebuilts='https://dbp.noobdev.io/repo/prebuilts'
-_ver_libiconv=1.15-1
 _ver_liblzma=5.2.4-1
 _ver_lz4=1.8.2-2
 
 pkgbase=libarchive
 pkgname=(libarchive libarchive-lowapi)
 pkgver=3.3.2
-pkgrel=3
+pkgrel=4
 pkgdesc="Multi-format archive and compression library"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://www.libarchive.org/"
@@ -30,9 +29,7 @@ source=("git+https://github.com/libarchive/libarchive.git#tag=v${pkgver}"
         'https://raw.githubusercontent.com/chenxiaolong/DualBootPatcher/v9.3.0/cmake/android.toolchain.cmake'
         0001-Force-UTF-8-as-the-default-charset-on-Android-since-.patch
         0002-NDK-unified-headers-uses-f_flags-for-struct-statfs.patch)
-_source_template=("${_prebuilts}/libiconv-${_ver_libiconv}-@ARCH@.pkg.tar.xz"
-                  "${_prebuilts}/libiconv-${_ver_libiconv}-@ARCH@.pkg.tar.xz.sig"
-                  "${_prebuilts}/liblzma-${_ver_liblzma}-@ARCH@.pkg.tar.xz"
+_source_template=("${_prebuilts}/liblzma-${_ver_liblzma}-@ARCH@.pkg.tar.xz"
                   "${_prebuilts}/liblzma-${_ver_liblzma}-@ARCH@.pkg.tar.xz.sig"
                   "${_prebuilts}/lz4-${_ver_lz4}-@ARCH@.pkg.tar.xz"
                   "${_prebuilts}/lz4-${_ver_lz4}-@ARCH@.pkg.tar.xz.sig")
@@ -40,8 +37,7 @@ source_armv7=("${_source_template[@]/@ARCH@/armv7}")
 source_aarch64=("${_source_template[@]/@ARCH@/aarch64}")
 source_x86=("${_source_template[@]/@ARCH@/x86}")
 source_x86_64=("${_source_template[@]/@ARCH@/x86_64}")
-noextract=("libiconv-${_ver_libiconv}-${CARCH}.pkg.tar.xz"
-           "liblzma-${_ver_liblzma}-${CARCH}.pkg.tar.xz"
+noextract=("liblzma-${_ver_liblzma}-${CARCH}.pkg.tar.xz"
            "lz4-${_ver_lz4}-${CARCH}.pkg.tar.xz")
 validpgpkeys=('2233C479609BDCEC43BE9232F6A3B19090EFF32C')
 
@@ -59,9 +55,8 @@ prepare() {
     mkdir -p common
     cd common
 
-    mkdir -p libiconv liblzma lz4
+    mkdir -p liblzma lz4
 
-    bsdtar -xf "${srcdir}/libiconv-${_ver_libiconv}-${CARCH}.pkg.tar.xz" -C libiconv
     bsdtar -xf "${srcdir}/liblzma-${_ver_liblzma}-${CARCH}.pkg.tar.xz" -C liblzma
     bsdtar -xf "${srcdir}/lz4-${_ver_lz4}-${CARCH}.pkg.tar.xz" -C lz4
 }
@@ -96,9 +91,8 @@ build() {
         -DENABLE_CPIO=OFF
         -DENABLE_CAT=OFF
         -DENABLE_TEST=OFF
-        -DENABLE_ICONV=OFF # At least until we need it
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
-        -DCMAKE_FIND_ROOT_PATH="${srcdir}/common/libiconv;${srcdir}/common/liblzma;${srcdir}/common/lz4"
+        -DCMAKE_FIND_ROOT_PATH="${srcdir}/common/liblzma;${srcdir}/common/lz4"
         -DCMAKE_TOOLCHAIN_FILE="${srcdir}/android.toolchain.cmake"
         -DANDROID_ABI="${abi}"
     )
@@ -139,27 +133,19 @@ sha512sums=('SKIP'
             '52b53f4132fad8a21d5c766b56a2f36790eb2199bc1f5f3c08c3d9ca1c89862c047d2886ffecc76e90e7bcfbd40d7386621da47c0d9d1c619d8284979fd4412e'
             '4365d30da7f280e1cd966f80e5ec7ef06d0253ec19722f4aa091f772956a9695a06f1bb49565c69380d2b79c705b7c684b5f8dd707448f22df04c67b90b8a6ae'
             '4d85c1070be075dc9b3a8162eed188051fa339c54c806efa9d061810bafed9889594bc421bbc131102c8f79a372d372e9a42841524433cd8e905406c50bebb3f')
-sha512sums_armv7=('408d375cdedce1c3545a2b1e29c3d86780f9fe726eee5b23348540ee032230680affcd9c6685fc8227d578819e046e2544b35896a4d4248d1d59b5f46399c286'
-                  'SKIP'
-                  '486f0390e37e873fbafa965f1f6dc4363c0aa7f131f21191c888ef191decf68a077f199748b4208e56e0d7f0b0415aad500cb187577ae717ccc239abeb045db9'
+sha512sums_armv7=('486f0390e37e873fbafa965f1f6dc4363c0aa7f131f21191c888ef191decf68a077f199748b4208e56e0d7f0b0415aad500cb187577ae717ccc239abeb045db9'
                   'SKIP'
                   '2ad7ffc1a1c94c7d304722bb2e5f1c9b668986a849193e36bec8ba2f58ec35fe6c8b750287fa4404284a7099d15578df879bd5b84f78524ac6b5023fe1a78900'
                   'SKIP')
-sha512sums_aarch64=('ce1229780ecd372d014ef8a876eba0ec3942f494cd2532985961c827b92ae9853f99e8bd06566bac218619e384bfe7edcb9eaf4da8efbc159d6b5763cbd56255'
-                    'SKIP'
-                    'fc84f2fd6288c8b7f793a3d79d39e9dde1a29117da13f70d9955a7787d369346d1f6ac6615da4d7487fe9e9441a990b1bbecee78a120096e9c60e6e30d90c7f1'
+sha512sums_aarch64=('fc84f2fd6288c8b7f793a3d79d39e9dde1a29117da13f70d9955a7787d369346d1f6ac6615da4d7487fe9e9441a990b1bbecee78a120096e9c60e6e30d90c7f1'
                     'SKIP'
                     '38e156af25ff155dd7c02318bc47b2290c17fe37e635bf68fd8be2d592c3d53ccf9c79d71e0b322e8c0afb9f92e173da8ae4c2534add53c67d9df1e0b9fd4bc4'
                     'SKIP')
-sha512sums_x86=('6fff503771eab5e021eaf8bbc7952d0d4d1d358f9f7a24ebb2e8e72613d51be04eee0824a10b5271dc32f00f1432b0320758678b4462c7b056ebb543f9ca8556'
-                'SKIP'
-                'e37174e6fcdfd26d23f79233a56d3b46455c60d58360b50e0bc4a268bcd43792bc1d964da6c8416129c8b6e0298bae1f4d63e2aad7320c6c6d2322916cbf4ac6'
+sha512sums_x86=('e37174e6fcdfd26d23f79233a56d3b46455c60d58360b50e0bc4a268bcd43792bc1d964da6c8416129c8b6e0298bae1f4d63e2aad7320c6c6d2322916cbf4ac6'
                 'SKIP'
                 '7d43d6e50eaf3840de2252bdc65134ce3b5022104f01087920271ca6e27881e5e91f6404afea2f364bb8f8ced2b62cf11df7f36761534a2673ff70a1b7e59554'
                 'SKIP')
-sha512sums_x86_64=('5da1a7282e9cae8bd9d73efcec61163c740a1d04e513f24445b03b3ef1bab97b4fa2fc5bed245519c0a62ab521484e07eca0ea09696dd7922184380cdb596ec3'
-                   'SKIP'
-                   '6d4b93ed1ede309df14057165e95b309e34aa4a510d8227fbd8e76a380a2f262f5ebe34d142f3730b88fbb31b7259fc235ef1d7241862dd915e77bbb419c49bd'
+sha512sums_x86_64=('6d4b93ed1ede309df14057165e95b309e34aa4a510d8227fbd8e76a380a2f262f5ebe34d142f3730b88fbb31b7259fc235ef1d7241862dd915e77bbb419c49bd'
                    'SKIP'
                    'aaf77816d72c50553e1f7092e545e4fc7b8d133f847b8d57eaf3c50a2283c473904f64fc79c0de7225c29c21d77a5040e11b00b1a0645b35c3a4a9f1e1d43810'
                    'SKIP')

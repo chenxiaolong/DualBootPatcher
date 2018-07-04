@@ -140,25 +140,6 @@ elseif(ANDROID)
     set(LibArchive_LIBRARY     "${libarchive_root}/lib/libarchive.a" CACHE INTERNAL "")
 endif()
 
-################################################################################
-# libiconv for Android
-################################################################################
-
-set(LIBICONV_VER "1.15-1")
-
-if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libiconv ${LIBICONV_VER} armeabi-v7a SHA512=408d375cdedce1c3545a2b1e29c3d86780f9fe726eee5b23348540ee032230680affcd9c6685fc8227d578819e046e2544b35896a4d4248d1d59b5f46399c286)
-    get_prebuilt(libiconv ${LIBICONV_VER} arm64-v8a   SHA512=ce1229780ecd372d014ef8a876eba0ec3942f494cd2532985961c827b92ae9853f99e8bd06566bac218619e384bfe7edcb9eaf4da8efbc159d6b5763cbd56255)
-    get_prebuilt(libiconv ${LIBICONV_VER} x86         SHA512=6fff503771eab5e021eaf8bbc7952d0d4d1d358f9f7a24ebb2e8e72613d51be04eee0824a10b5271dc32f00f1432b0320758678b4462c7b056ebb543f9ca8556)
-    get_prebuilt(libiconv ${LIBICONV_VER} x86_64      SHA512=5da1a7282e9cae8bd9d73efcec61163c740a1d04e513f24445b03b3ef1bab97b4fa2fc5bed245519c0a62ab521484e07eca0ea09696dd7922184380cdb596ec3)
-elseif(ANDROID)
-    set(libiconv_root "${MBP_PREBUILTS_BINARY_DIR}/libiconv/${LIBICONV_VER}/${ANDROID_ABI}")
-    list(APPEND CMAKE_FIND_ROOT_PATH "${libiconv_root}")
-
-    set(ICONV_INCLUDE_DIR "${libiconv_root}/include"        CACHE INTERNAL "")
-    set(ICONV_LIBRARY     "${libiconv_root}/lib/libiconv.a" CACHE INTERNAL "")
-endif()
-
 ###############################################################################
 # liblzma for Android
 ################################################################################
