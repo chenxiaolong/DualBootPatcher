@@ -34,19 +34,26 @@
  * OTAs from pre-K versions are no longer supported.
  */
 
-#include <string.h>
+#include <type_traits>
+
+#include <cstring>
 
 #include "mbutil/external/bionic_futex.h"
 
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include "mbutil/external/_system_properties.h"
 
-#define TOC_NAME_LEN(toc)       ((toc) >> 24)
-#define TOC_TO_INFO(area, toc)  ((prop_info_compat*) (((char*) area) + ((toc) & 0xFFFFFF)))
-#define SERIAL_DIRTY(serial)    ((serial)&1)
+#define TOC_NAME_LEN(toc)        ((toc) >> 24)
+#define TOC_TO_INFO(area, toc)   (reinterpret_cast<PropInfoCompat *>( \
+    reinterpret_cast<char *>(area) + ((toc) & 0xFFFFFF)))
+#define SERIAL_DIRTY(serial)     ((serial) & 1)
 #define SERIAL_VALUE_LEN(serial) ((serial) >> 24)
 
-struct prop_area_compat {
+namespace mb
+{
+
+struct PropAreaCompat
+{
     unsigned volatile count;
     unsigned volatile serial;
     unsigned magic;
@@ -55,68 +62,70 @@ struct prop_area_compat {
     unsigned toc[1];
 };
 
-typedef struct prop_area_compat prop_area_compat;
-
 struct prop_area;
-typedef struct prop_area prop_area;
 
-struct prop_info_compat {
+struct PropInfoCompat
+{
     char name[PROP_NAME_MAX];
     unsigned volatile serial;
     char value[PROP_VALUE_MAX];
 };
 
-typedef struct prop_info_compat prop_info_compat;
+extern prop_area *__system_property_area__;
 
-extern prop_area *mb__system_property_area__;
-
-__LIBC_HIDDEN__ uint32_t mb__system_property_serial_compat(const prop_info *_pi)
+__LIBC_HIDDEN__ uint32_t __system_property_serial_compat(const prop_info *_pi)
 {
-    const prop_info_compat *pi = (const prop_info_compat *) _pi;
+    auto *pi = reinterpret_cast<const PropInfoCompat *>(_pi);
     return pi->serial;
 }
 
-__LIBC_HIDDEN__ const prop_info *mb__system_property_find_compat(const char *name)
+__LIBC_HIDDEN__ const prop_info *__system_property_find_compat(const char *name)
 {
-    prop_area_compat *pa = (prop_area_compat *)mb__system_property_area__;
+    auto *pa = reinterpret_cast<PropAreaCompat *>(__system_property_area__);
     unsigned count = pa->count;
     unsigned *toc = pa->toc;
     unsigned len = strlen(name);
-    prop_info_compat *pi;
 
-    if (len >= PROP_NAME_MAX)
-        return 0;
-    if (len < 1)
-        return 0;
-
-    while(count--) {
-        unsigned entry = *toc++;
-        if(TOC_NAME_LEN(entry) != len) continue;
-
-        pi = TOC_TO_INFO(pa, entry);
-        if(memcmp(name, pi->name, len)) continue;
-
-        return (const prop_info *)pi;
+    if (len >= PROP_NAME_MAX) {
+        return nullptr;
+    }
+    if (len < 1) {
+        return nullptr;
     }
 
-    return 0;
+    while (count--) {
+        unsigned entry = *toc++;
+        if (TOC_NAME_LEN(entry) != len) {
+            continue;
+        }
+
+        PropInfoCompat *pi = TOC_TO_INFO(pa, entry);
+        if (memcmp(name, pi->name, len) != 0) {
+            continue;
+        }
+
+        return reinterpret_cast<const prop_info *>(pi);
+    }
+
+    return nullptr;
 }
 
-__LIBC_HIDDEN__ int mb__system_property_read_compat(const prop_info *_pi, char *name, char *value)
+__LIBC_HIDDEN__ int __system_property_read_compat(const prop_info *_pi,
+                                                  char *name, char *value)
 {
-    unsigned serial, len;
-    const prop_info_compat *pi = (const prop_info_compat *)_pi;
+    auto *pi = reinterpret_cast<const PropInfoCompat *>(_pi);
 
-    for(;;) {
-        serial = pi->serial;
-        while(SERIAL_DIRTY(serial)) {
-            __futex_wait((volatile void *)&pi->serial, serial, NULL);
+    for (;;) {
+        unsigned serial = pi->serial;
+        while (SERIAL_DIRTY(serial)) {
+            __futex_wait(const_cast<unsigned volatile *>(&pi->serial), serial,
+                         nullptr);
             serial = pi->serial;
         }
-        len = SERIAL_VALUE_LEN(serial);
+        unsigned len = SERIAL_VALUE_LEN(serial);
         memcpy(value, pi->value, len + 1);
-        if(serial == pi->serial) {
-            if(name != 0) {
+        if (serial == pi->serial) {
+            if (name) {
                 strcpy(name, pi->name);
             }
             return len;
@@ -124,18 +133,19 @@ __LIBC_HIDDEN__ int mb__system_property_read_compat(const prop_info *_pi, char *
     }
 }
 
-__LIBC_HIDDEN__ int mb__system_property_foreach_compat(
+__LIBC_HIDDEN__ int __system_property_foreach_compat(
         void (*propfn)(const prop_info *pi, void *cookie),
         void *cookie)
 {
-    prop_area_compat *pa = (prop_area_compat *)mb__system_property_area__;
-    unsigned i;
+    auto *pa = reinterpret_cast<PropAreaCompat *>(__system_property_area__);
 
-    for (i = 0; i < pa->count; i++) {
+    for (unsigned i = 0; i < pa->count; i++) {
         unsigned entry = pa->toc[i];
-        prop_info_compat *pi = TOC_TO_INFO(pa, entry);
-        propfn((const prop_info *)pi, cookie);
+        auto *pi = TOC_TO_INFO(pa, entry);
+        propfn(reinterpret_cast<const prop_info *>(pi), cookie);
     }
 
     return 0;
+}
+
 }

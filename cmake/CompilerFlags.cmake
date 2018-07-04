@@ -169,6 +169,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # Disable warnings
         add_compile_options(
             -Wno-documentation-unknown-command # \cond is not understood
+            -Wno-missing-noreturn # Caused by disabling exceptions in Outcome
             -Wno-shadow-field-in-constructor
         )
     endif()
@@ -198,34 +199,19 @@ if(NOT MSVC)
     )
 endif()
 
-# https://github.com/android-ndk/ndk/issues/17
-function(android_link_allow_multiple_definitions first_target)
-    if(ANDROID AND "${ANDROID_STL}" STREQUAL "c++_static")
+function(unix_link_executable_statically first_target)
+    if(UNIX)
         foreach(target "${first_target}" ${ARGN})
             set_property(
                 TARGET "${target}"
                 APPEND_STRING
-                PROPERTY LINK_FLAGS " -Wl,--allow-multiple-definition"
+                PROPERTY LINK_FLAGS " -static"
             )
-        endforeach()
-    endif()
-endfunction()
-
-# libunwind (pulled in by libc++) requires dladdr() on armeabi-v7a.
-# c++-hack-static contains a dummy version of the function that always fails and
-# this forces it to be linked into every target.
-if(${MBP_BUILD_TARGET} STREQUAL android-system
-        AND "${ANDROID_STL}" STREQUAL "c++_static"
-        AND "${ANDROID_ABI}" STREQUAL "armeabi-v7a")
-    add_subdirectory(cmake/libc++-hack)
-
-    string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " ${MBP_LIBCXX_HACK_PATH}")
-endif()
-
-function(add_cxx_hack_to_all_targets)
-    if(TARGET c++-hack-static)
-        foreach(target ${BUILDSYSTEM_TARGETS})
-            add_dependencies(${target} c++-hack-static)
+            set_target_properties(
+                "${target}"
+                PROPERTIES
+                LINK_SEARCH_START_STATIC ON
+            )
         endforeach()
     endif()
 endfunction()

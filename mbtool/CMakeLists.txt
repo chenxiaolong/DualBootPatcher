@@ -142,14 +142,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         -DRECOVERY
     )
 
-    set_target_properties(
-        mbtool mbtool_recovery
-        PROPERTIES
-        LINK_FLAGS "-static"
-        LINK_SEARCH_START_STATIC ON
-    )
-
-    android_link_allow_multiple_definitions(mbtool mbtool_recovery)
+    unix_link_executable_statically(mbtool mbtool_recovery)
 
     target_link_libraries(
         mbtool-util

@@ -166,6 +166,10 @@ if(variants AND MBP_ENABLE_TESTS)
         gmock_main
     )
 
+    if(${MBP_BUILD_TARGET} STREQUAL android-system)
+        unix_link_executable_statically(mbcommon_tests)
+    endif()
+
     # Add to ctest
     add_test(
         NAME mbcommon_tests

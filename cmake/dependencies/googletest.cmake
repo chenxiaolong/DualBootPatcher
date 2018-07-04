@@ -8,15 +8,32 @@ if(MBP_ENABLE_TESTS)
         foreach(_target gtest gtest_main gmock gmock_main)
             target_compile_options(
                 ${_target}
-                PUBLIC
+                PRIVATE
                 -Wno-conversion
-                -Wno-duplicated-branches
                 -Wno-missing-declarations
                 # https://github.com/google/googletest/issues/1303
                 -Wno-null-dereference
                 -Wno-sign-conversion
                 -Wno-zero-as-null-pointer-constant
             )
+
+            if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+                target_compile_options(
+                    ${_target}
+                    PRIVATE
+                    -Wno-format-nonliteral
+                    -Wno-missing-field-initializers
+                    -Wno-missing-noreturn
+                    -Wno-missing-prototypes
+                    -Wno-missing-variable-declarations
+                )
+            else()
+                target_compile_options(
+                    ${_target}
+                    PRIVATE
+                    -Wno-duplicated-branches
+                )
+            endif()
         endforeach()
     endif()
 

@@ -125,7 +125,8 @@ struct SparseTest : testing::Test
         chdr = {};
         chdr.chunk_type = CHUNK_TYPE_FILL;
         chdr.chunk_sz = 4; // 16 bytes
-        chdr.total_sz = shdr.chunk_hdr_sz + sizeof(uint32_t);
+        chdr.total_sz = static_cast<uint32_t>(shdr.chunk_hdr_sz)
+                + static_cast<uint32_t>(sizeof(uint32_t));
         fix_chunk_header_byte_order(chdr);
 
         ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
@@ -152,7 +153,8 @@ struct SparseTest : testing::Test
         chdr = {};
         chdr.chunk_type = CHUNK_TYPE_CRC32;
         chdr.chunk_sz = 0;
-        chdr.total_sz = shdr.chunk_hdr_sz + sizeof(uint32_t);
+        chdr.total_sz = static_cast<uint32_t>(shdr.chunk_hdr_sz)
+                + static_cast<uint16_t>(sizeof(uint32_t));
         fix_chunk_header_byte_order(chdr);
 
         ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
@@ -400,7 +402,7 @@ TEST_F(SparseTest, CheckInvalidSkipChunkFatal)
     ChunkHeader chdr = {};
     chdr.chunk_type = CHUNK_TYPE_DONT_CARE;
     chdr.chunk_sz = 1; // 4 bytes
-    chdr.total_sz = shdr.chunk_hdr_sz + 1;
+    chdr.total_sz = shdr.chunk_hdr_sz + 1u;
     fix_chunk_header_byte_order(chdr);
 
     ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
@@ -468,7 +470,7 @@ TEST_F(SparseTest, CheckInvalidChunkTotalSizeFatal)
     ChunkHeader chdr = {};
     chdr.chunk_type = CHUNK_TYPE_FILL;
     chdr.chunk_sz = 1; // 4 bytes
-    chdr.total_sz = shdr.chunk_hdr_sz - 1;
+    chdr.total_sz = shdr.chunk_hdr_sz - 1u;
     fix_chunk_header_byte_order(chdr);
 
     ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));

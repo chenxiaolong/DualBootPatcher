@@ -42,7 +42,7 @@ TEST_F(FileUtilTest, ReadRetryNormal)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_))
             .Times(5)
-            .WillRepeatedly(testing::Return(2));
+            .WillRepeatedly(testing::Return(2u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -57,11 +57,11 @@ TEST_F(FileUtilTest, ReadRetryEOF)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(0));
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(0u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -82,7 +82,7 @@ TEST_F(FileUtilTest, ReadRetryInterrupted)
             .WillOnce(testing::Return(eintr))
             .WillOnce(testing::Return(eintr))
             .WillOnce(testing::Return(eintr))
-            .WillOnce(testing::Return(10));
+            .WillOnce(testing::Return(10u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -110,7 +110,7 @@ TEST_F(FileUtilTest, WriteRetryNormal)
 {
     EXPECT_CALL(_file, on_write(testing::_, testing::_))
             .Times(5)
-            .WillRepeatedly(testing::Return(2));
+            .WillRepeatedly(testing::Return(2u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -124,11 +124,11 @@ TEST_F(FileUtilTest, WriteRetryEOF)
 {
     EXPECT_CALL(_file, on_write(testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(0));
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(0u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -148,7 +148,7 @@ TEST_F(FileUtilTest, WriteRetryInterrupted)
             .WillOnce(testing::Return(eintr))
             .WillOnce(testing::Return(eintr))
             .WillOnce(testing::Return(eintr))
-            .WillOnce(testing::Return(10));
+            .WillOnce(testing::Return(10u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -174,7 +174,7 @@ TEST_F(FileUtilTest, ReadExactNormal)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_))
             .Times(5)
-            .WillRepeatedly(testing::Return(2));
+            .WillRepeatedly(testing::Return(2u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -187,11 +187,11 @@ TEST_F(FileUtilTest, ReadExactEOF)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(0));
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(0u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -206,10 +206,10 @@ TEST_F(FileUtilTest, ReadExactPartialFail)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
             .WillOnce(testing::Return(std::error_code{}));
 
     // Open file
@@ -225,7 +225,7 @@ TEST_F(FileUtilTest, WriteExactNormal)
 {
     EXPECT_CALL(_file, on_write(testing::_, testing::_))
             .Times(5)
-            .WillRepeatedly(testing::Return(2));
+            .WillRepeatedly(testing::Return(2u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -237,11 +237,11 @@ TEST_F(FileUtilTest, WriteExactEOF)
 {
     EXPECT_CALL(_file, on_write(testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(0));
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(0u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -255,10 +255,10 @@ TEST_F(FileUtilTest, WriteExactPartialFail)
 {
     EXPECT_CALL(_file, on_write(testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
             .WillOnce(testing::Return(std::error_code{}));
 
     // Open file
@@ -273,7 +273,7 @@ TEST_F(FileUtilTest, ReadDiscardNormal)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_))
             .Times(5)
-            .WillRepeatedly(testing::Return(2));
+            .WillRepeatedly(testing::Return(2u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -287,11 +287,11 @@ TEST_F(FileUtilTest, ReadDiscardEOF)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(0));
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(0u));
 
     // Open file
     ASSERT_TRUE(_file.open());
@@ -305,10 +305,10 @@ TEST_F(FileUtilTest, ReadDiscardPartialFail)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
-            .WillOnce(testing::Return(2))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
+            .WillOnce(testing::Return(2u))
             .WillOnce(testing::Return(std::error_code{}));
 
     // Open file
@@ -461,7 +461,7 @@ TEST(FileMoveTest, LargeForwardsCopyShouldSucceed)
 {
     std::vector<unsigned char> buf(100000);
 
-    auto middle = buf.begin() + buf.size() / 2;
+    auto middle = buf.begin() + (buf.end() - buf.begin()) / 2;
     std::fill(buf.begin(), middle, 'a');
     std::fill(middle, buf.end(), 'b');
 
@@ -481,7 +481,7 @@ TEST(FileMoveTest, LargeBackwardsCopyShouldSucceed)
 {
     std::vector<unsigned char> buf(100000);
 
-    auto middle = buf.begin() + buf.size() / 2;
+    auto middle = buf.begin() + (buf.end() - buf.begin()) / 2;
     std::fill(buf.begin(), middle, 'a');
     std::fill(middle, buf.end(), 'b');
 

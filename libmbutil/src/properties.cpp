@@ -53,7 +53,7 @@ static void initialize_properties()
     std::lock_guard<std::mutex> lock(initialized_lock);
 
     if (!initialized) {
-        mb__system_properties_init();
+        __system_properties_init();
         initialized = true;
     }
 }
@@ -91,7 +91,7 @@ static PropertyIterAction read_property_cb(const prop_info *pi,
     Ctx ctx{&fn, PropertyIterAction::Stop};
 
     // Assume properties are already initialized if there's a prop_info object
-    mb__system_property_read_callback(
+    __system_property_read_callback(
             pi, [](void *cookie, const char *name, const char *value,
                    uint32_t serial) {
         (void) serial;
@@ -107,7 +107,7 @@ std::optional<std::string> property_get(const std::string &key)
 {
     initialize_properties();
 
-    const prop_info *pi = mb__system_property_find(key.c_str());
+    const prop_info *pi = __system_property_find(key.c_str());
     if (!pi) {
         return std::nullopt;
     }
@@ -148,7 +148,7 @@ bool property_set(const std::string &key, const std::string &value)
 {
     initialize_properties();
 
-    return mb__system_property_set(key.c_str(), value.c_str()) == 0;
+    return __system_property_set(key.c_str(), value.c_str()) == 0;
 }
 
 bool property_set_direct(const std::string &key, const std::string &value)
@@ -156,17 +156,17 @@ bool property_set_direct(const std::string &key, const std::string &value)
     initialize_properties();
 
     prop_info *pi = const_cast<prop_info *>(
-            mb__system_property_find(key.c_str()));
+            __system_property_find(key.c_str()));
     int ret;
 
     if (pi) {
-        ret = mb__system_property_update(pi, value.c_str(),
-                                         static_cast<unsigned int>(value.size()));
+        ret = __system_property_update(pi, value.c_str(),
+                                       static_cast<unsigned int>(value.size()));
     } else {
-        ret = mb__system_property_add(key.c_str(),
-                                      static_cast<unsigned int>(key.size()),
-                                      value.c_str(),
-                                      static_cast<unsigned int>(value.size()));
+        ret = __system_property_add(key.c_str(),
+                                    static_cast<unsigned int>(key.size()),
+                                    value.c_str(),
+                                    static_cast<unsigned int>(value.size()));
     }
 
     return ret == 0;
@@ -184,7 +184,7 @@ bool property_iter(const std::function<PropertyIterCb> &fn)
 
     initialize_properties();
 
-    return mb__system_property_foreach(
+    return __system_property_foreach(
             [](const prop_info *pi, void *cookie) {
         auto *ctx_ = static_cast<Ctx *>(cookie);
 
@@ -203,8 +203,7 @@ std::optional<PropertiesMap> property_get_all()
 
     initialize_properties();
 
-    if (mb__system_property_foreach(
-            [](const prop_info *pi, void *cookie) {
+    if (__system_property_foreach([](const prop_info *pi, void *cookie) {
         auto *map = static_cast<PropertiesMap *>(cookie);
 
         read_property_cb(pi, [&](std::string_view key, std::string_view value) {

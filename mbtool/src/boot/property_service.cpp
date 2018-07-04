@@ -192,7 +192,7 @@ bool PropertyService::initialize()
         return false;
     }
 
-    if (mb__system_property_area_init() != 0) {
+    if (mb::__system_property_area_init() != 0) {
         return false;
     }
 
@@ -201,9 +201,9 @@ bool PropertyService::initialize()
 
 std::optional<std::string> PropertyService::get(const std::string &name)
 {
-    if (auto const pi = mb__system_property_find(name.c_str())) {
+    if (auto const pi = mb::__system_property_find(name.c_str())) {
         std::string value;
-        mb__system_property_read_callback(
+        mb::__system_property_read_callback(
                 pi, [](void *cookie, const char *, const char *v, uint32_t) {
             *static_cast<std::string *>(cookie) = v;
         }, &value);
@@ -256,8 +256,8 @@ uint32_t PropertyService::set_internal(const std::string &name,
         return PROP_ERROR_INVALID_VALUE;
     }
 
-    if (auto pi = const_cast<prop_info *>(
-            mb__system_property_find(name.c_str()))) {
+    if (auto pi = const_cast<mb::prop_info *>(
+            mb::__system_property_find(name.c_str()))) {
         // ro.* properties are actually "write-once".
         if (mb::starts_with(name, "ro.")) {
             LOGE("['%s'='%s'] Failed to set property: Property already set",
@@ -265,10 +265,10 @@ uint32_t PropertyService::set_internal(const std::string &name,
             return PROP_ERROR_READ_ONLY_PROPERTY;
         }
 
-        mb__system_property_update(pi, value.data(), value.size());
+        mb::__system_property_update(pi, value.data(), value.size());
     } else {
-        int rc = mb__system_property_add(name.data(), name.size(), value.data(),
-                                         value.size());
+        int rc = mb::__system_property_add(name.data(), name.size(),
+                                           value.data(), value.size());
         if (rc < 0) {
             LOGE("['%s'='%s'] Failed to add property",
                  name.c_str(), std::string(value).c_str());

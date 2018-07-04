@@ -20,11 +20,15 @@
 #include "mbutil/loopdev.h"
 
 #include <vector>
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
 #include <fcntl.h>
+
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <unistd.h>
@@ -77,7 +81,7 @@ static oc::result<int> find_loopdev_by_loop_control()
 
     if (mknod(loopdev, S_IFBLK | 0644, static_cast<dev_t>(makedev(7, n))) < 0
             && errno != EEXIST) {
-        ec_from_errno();
+        return ec_from_errno();
     }
 
     return n;
