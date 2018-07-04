@@ -129,7 +129,7 @@ if(variants AND MBP_ENABLE_TESTS)
         gtest_main
     )
 
-    if(ANDROID)
+    if(${MBP_BUILD_TARGET} STREQUAL android-system)
         unix_link_executable_statically(mbdevice_tests)
     endif()
 

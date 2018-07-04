@@ -118,7 +118,7 @@ if(variants AND MBP_ENABLE_TESTS)
         OpenSSL::Crypto
     )
 
-    if(ANDROID)
+    if(${MBP_BUILD_TARGET} STREQUAL android-system)
         unix_link_executable_statically(mbbootimg_tests)
     endif()
 
