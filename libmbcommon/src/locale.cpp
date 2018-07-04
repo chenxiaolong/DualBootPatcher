@@ -131,7 +131,7 @@ static size_t get_bytes(const Container &str)
     return str.size() * sizeof(typename Container::value_type);
 }
 
-template<class InStrV = std::wstring_view, class OutStr = std::wstring>
+template<class InStrV, class OutStr>
 static oc::result<OutStr> iconv_convert(const char *from_code,
                                         const char *to_code,
                                         InStrV in)
