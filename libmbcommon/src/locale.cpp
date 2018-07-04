@@ -26,9 +26,11 @@
 #include <cwchar>
 
 #ifdef _WIN32
-#include <windows.h>
+#  include <windows.h>
+#elif defined(USE_EXTERNAL_ICONV)
+#  include "mbcommon/external/iconv.h"
 #else
-#include <iconv.h>
+#  include <iconv.h>
 #endif
 
 #include "mbcommon/error.h"
@@ -110,7 +112,11 @@ static oc::result<std::string> win32_convert_to_mbs(UINT code_page,
 
 #else
 
+#ifdef __ANDROID__
+static constexpr char ICONV_CODE_DEFAULT[] = "UTF-8";
+#else
 static constexpr char ICONV_CODE_DEFAULT[] = "";
+#endif
 static constexpr char ICONV_CODE_WCHAR_T[] = "WCHAR_T";
 static constexpr char ICONV_CODE_UTF_8  [] = "UTF-8";
 
@@ -127,7 +133,7 @@ static size_t get_bytes(const Container &str)
     return str.size() * sizeof(typename Container::value_type);
 }
 
-template<class InStrV = std::wstring_view, class OutStr = std::wstring>
+template<class InStrV, class OutStr>
 static oc::result<OutStr> iconv_convert(const char *from_code,
                                         const char *to_code,
                                         InStrV in)

@@ -117,17 +117,17 @@ endif()
 # libarchive for Android
 ################################################################################
 
-set(LIBARCHIVE_VER "3.3.2-3")
+set(LIBARCHIVE_VER "3.3.2-4")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} armeabi-v7a SHA512=a570b4e573ce25c75516e105a1d2668f116564e82d5fa3e7945515ff080d21e024c77a2313248eec9e71ecff8184f34beb74815451812268884f872fb51756a7)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} arm64-v8a   SHA512=8ae7f6f9a93454289313db4bf53dd6f9449c6d75f51ce2161bd0f502e50b171266946720145d72fb0ba54f739d5d6a52bf74aebdcd17eb5bd9b6d695ee9c31ab)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86         SHA512=ab56a1a9c26112344adee21fb6dafd8b23c748991c04eed31806866cd3b658b08f26e9820c8dad2605a7420da39aab783562554b548efc56086c5a2985538e8d)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86_64      SHA512=82c3c15c540b739605d7fcc4b35fb3bd7068b344b46526a29a3ae3cd7cbd35ea8c3408a76014ced354cb904b0685c4ad1a067027b42f796401af3037596ccc60)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} armeabi-v7a SHA512=16a0aed9982a2bf43079b8e40e680beee12d8b63ee16c008ffdb816609b0cc2f2c785297c6dfbaef29c9a1d2c8f5cccd90c67b8e7af0b848ed22d47b359d4c3a)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} arm64-v8a   SHA512=c3ca21a2a271c5b5b30b2e884a06db8afcdd2cd1d35ab6ef43576d4863a57922ebd5f703e382e8063fd4e9675b5a336afb34aefce8fc29c135462c722a44aa46)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86         SHA512=62acdde9972f2aa2135fd8de01c567a4e32e21ef158fb0f09be26e106eb9f2059675c2bc68fb3818db5e729ab0dca6da190b13b2d066c9413c9e3f2dcf745a7d)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86_64      SHA512=b5382820b9f246380ea5534ad93224b65652c708d833688f13f32131043078184577ac2351d7eb457260a9a115d4c10a9dde4743d8ecd1eb3bcd9619f731869b)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} armeabi-v7a SHA512=24a952d7986ad68ab3d1d702a84681477bbe1c2a5de011be99b5dcf7035677f7fb8006fa1226bdedb822a774188d7899aa18f8bfff61bca211899e1ec5921a50)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} arm64-v8a   SHA512=44c0d9c08d791fddfb24b751695b1f5c88406dc5b3a179f1b4049e0eb42ba6175e53e8b6d6a457b465232ffc415982dcbbb5eed246ba20ab581cdf26e53dfd7d)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86         SHA512=1af895fad7bace24c9ffbca5e39aeb101c2b949271679f25f0ccabdd184d569ace38640e7053c3db825561077460c422fc257a08e6d5f3e53cafd86e4deed79f)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86_64      SHA512=d675a6bc0efe915e59c895ffb2eab2e643fa524f5b18971e95bb3ffa18bd7693cd0bde758c91b75816f236544057220600e0233659a3aa83d55c3831dc250e34)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} armeabi-v7a SHA512=d0d4684140c01b09fb1e8563028231c3f29b921fee1dff5db8fced2d7ebfe4951badeb02d08e6280bd77b0d6a3ea6a57bfe112964d1890c025510895f5478926)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} arm64-v8a   SHA512=8b23c600573b3a7bd8c2f5c08cacf95d3d14fa18d48f9652fa15bd76f7284f5dbd8fa94c5c8150c6242e74d4cc493bbfc59950033e9f22c5d3c2f1c533f7d08d)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86         SHA512=538da58a4e1acb6cbb912054b8c6d48af04a171ecde80055d7227ae29d017de82b521ddbb9f067bf3cc56dc731405dfaf2e73bdadfbb92b82d923446f8369e97)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86_64      SHA512=1e269d1cf73b8398b381df673a76c89b23d75f7344bad708913ec98d48312742ca9b368380eaf58f07e456dd3d783876fee30f3bd6a88232b7650e5da287bfe5)
 elseif(ANDROID)
     if(${MBP_BUILD_TARGET} STREQUAL android-app)
         set(libarchive_root "${MBP_PREBUILTS_BINARY_DIR}/libarchive-lowapi/${LIBARCHIVE_VER}/${ANDROID_ABI}")
@@ -138,25 +138,6 @@ elseif(ANDROID)
 
     set(LibArchive_INCLUDE_DIR "${libarchive_root}/include"          CACHE INTERNAL "")
     set(LibArchive_LIBRARY     "${libarchive_root}/lib/libarchive.a" CACHE INTERNAL "")
-endif()
-
-################################################################################
-# libiconv for Android
-################################################################################
-
-set(LIBICONV_VER "1.15-1")
-
-if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libiconv ${LIBICONV_VER} armeabi-v7a SHA512=408d375cdedce1c3545a2b1e29c3d86780f9fe726eee5b23348540ee032230680affcd9c6685fc8227d578819e046e2544b35896a4d4248d1d59b5f46399c286)
-    get_prebuilt(libiconv ${LIBICONV_VER} arm64-v8a   SHA512=ce1229780ecd372d014ef8a876eba0ec3942f494cd2532985961c827b92ae9853f99e8bd06566bac218619e384bfe7edcb9eaf4da8efbc159d6b5763cbd56255)
-    get_prebuilt(libiconv ${LIBICONV_VER} x86         SHA512=6fff503771eab5e021eaf8bbc7952d0d4d1d358f9f7a24ebb2e8e72613d51be04eee0824a10b5271dc32f00f1432b0320758678b4462c7b056ebb543f9ca8556)
-    get_prebuilt(libiconv ${LIBICONV_VER} x86_64      SHA512=5da1a7282e9cae8bd9d73efcec61163c740a1d04e513f24445b03b3ef1bab97b4fa2fc5bed245519c0a62ab521484e07eca0ea09696dd7922184380cdb596ec3)
-elseif(ANDROID)
-    set(libiconv_root "${MBP_PREBUILTS_BINARY_DIR}/libiconv/${LIBICONV_VER}/${ANDROID_ABI}")
-    list(APPEND CMAKE_FIND_ROOT_PATH "${libiconv_root}")
-
-    set(ICONV_INCLUDE_DIR "${libiconv_root}/include"        CACHE INTERNAL "")
-    set(ICONV_LIBRARY     "${libiconv_root}/lib/libiconv.a" CACHE INTERNAL "")
 endif()
 
 ###############################################################################
