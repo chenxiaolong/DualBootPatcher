@@ -393,9 +393,9 @@ TEST_F(FileSearchTest, FindNormal)
 
 TEST(FileMoveTest, DegenerateCasesShouldSucceed)
 {
-    constexpr char buf[] = "abcdef";
+    char buf[] = "abcdef";
 
-    MemoryFile file(const_cast<char *>(buf), sizeof(buf) - 1);
+    MemoryFile file(buf, sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
     // src == dest
@@ -407,9 +407,9 @@ TEST(FileMoveTest, DegenerateCasesShouldSucceed)
 
 TEST(FileMoveTest, NormalForwardsCopyShouldSucceed)
 {
-    constexpr char buf[] = "abcdef";
+    char buf[] = "abcdef";
 
-    MemoryFile file(const_cast<char *>(buf), sizeof(buf) - 1);
+    MemoryFile file(buf, sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
     auto n = file_move(file, 2, 0, 3);
@@ -420,9 +420,9 @@ TEST(FileMoveTest, NormalForwardsCopyShouldSucceed)
 
 TEST(FileMoveTest, NormalBackwardsCopyShouldSucceed)
 {
-    constexpr char buf[] = "abcdef";
+    char buf[] = "abcdef";
 
-    MemoryFile file(const_cast<char *>(buf), sizeof(buf) - 1);
+    MemoryFile file(buf, sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
     auto n = file_move(file, 0, 2, 3);
@@ -433,9 +433,9 @@ TEST(FileMoveTest, NormalBackwardsCopyShouldSucceed)
 
 TEST(FileMoveTest, OutOfBoundsForwardsCopyShouldCopyPartially)
 {
-    constexpr char buf[] = "abcdef";
+    char buf[] = "abcdef";
 
-    MemoryFile file(const_cast<char *>(buf), sizeof(buf) - 1);
+    MemoryFile file(buf, sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
     auto n = file_move(file, 2, 0, 5);
@@ -446,9 +446,9 @@ TEST(FileMoveTest, OutOfBoundsForwardsCopyShouldCopyPartially)
 
 TEST(FileMoveTest, OutOfBoundsBackwardsCopyShouldCopyPartially)
 {
-    constexpr char buf[] = "abcdef";
+    char buf[] = "abcdef";
 
-    MemoryFile file(const_cast<char *>(buf), sizeof(buf) - 1);
+    MemoryFile file(buf, sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
     auto n = file_move(file, 0, 2, 5);

@@ -241,19 +241,29 @@ oc::result<uint64_t> MemoryFile::on_seek(int64_t offset, int whence)
         }
         return m_pos = static_cast<size_t>(offset);
     case SEEK_CUR:
-        if ((offset < 0 && static_cast<uint64_t>(-offset) > m_pos)
-                || (offset > 0 && static_cast<uint64_t>(offset)
-                        > SIZE_MAX - m_pos)) {
-            return FileError::ArgumentOutOfRange;
+        if (offset < 0) {
+            if (static_cast<uint64_t>(-offset) > m_pos) {
+                return FileError::ArgumentOutOfRange;
+            }
+            return m_pos -= static_cast<size_t>(-offset);
+        } else {
+            if (static_cast<uint64_t>(offset) > SIZE_MAX - m_pos) {
+                return FileError::ArgumentOutOfRange;
+            }
+            return m_pos += static_cast<size_t>(offset);
         }
-        return m_pos += static_cast<size_t>(offset);
     case SEEK_END:
-        if ((offset < 0 && static_cast<size_t>(-offset) > m_size)
-                || (offset > 0 && static_cast<uint64_t>(offset)
-                        > SIZE_MAX - m_size)) {
-            return FileError::ArgumentOutOfRange;
+        if (offset < 0) {
+            if (static_cast<uint64_t>(-offset) > m_size) {
+                return FileError::ArgumentOutOfRange;
+            }
+            return m_pos = m_size - static_cast<size_t>(-offset);
+        } else {
+            if (static_cast<uint64_t>(offset) > SIZE_MAX - m_size) {
+                return FileError::ArgumentOutOfRange;
+            }
+            return m_pos = m_size + static_cast<size_t>(offset);
         }
-        return m_pos = m_size + static_cast<size_t>(offset);
     default:
         MB_UNREACHABLE("Invalid whence argument: %d", whence);
     }
