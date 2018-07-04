@@ -48,11 +48,11 @@ TEST(FileStaticMemoryTest, CloseFile)
 
 TEST(FileStaticMemoryTest, ReadInBounds)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
     char out[1];
 
-    MemoryFile file(const_cast<char *>(in), in_size);
+    MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
     auto out_size = file.read(out, sizeof(out));
@@ -63,11 +63,11 @@ TEST(FileStaticMemoryTest, ReadInBounds)
 
 TEST(FileStaticMemoryTest, ReadOutOfBounds)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
     char out[1];
 
-    MemoryFile file(const_cast<char *>(in), in_size);
+    MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
@@ -92,11 +92,11 @@ TEST(FileStaticMemoryTest, ReadEmpty)
 
 TEST(FileStaticMemoryTest, ReadTooLarge)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
     char out[2];
 
-    MemoryFile file(const_cast<char *>(in), in_size);
+    MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
     auto out_size = file.read(out, sizeof(out));
@@ -107,10 +107,10 @@ TEST(FileStaticMemoryTest, ReadTooLarge)
 
 TEST(FileStaticMemoryTest, WriteInBounds)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
 
-    MemoryFile file(const_cast<char *>(in), in_size);
+    MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
     auto n = file.write("y", 1);
@@ -121,10 +121,10 @@ TEST(FileStaticMemoryTest, WriteInBounds)
 
 TEST(FileStaticMemoryTest, WriteOutOfBounds)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
 
-    MemoryFile file(const_cast<char *>(in), in_size);
+    MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
@@ -135,10 +135,10 @@ TEST(FileStaticMemoryTest, WriteOutOfBounds)
 
 TEST(FileStaticMemoryTest, WriteTooLarge)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
 
-    MemoryFile file(const_cast<char *>(in), in_size);
+    MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
     auto n = file.write("yz", 2);
@@ -149,10 +149,10 @@ TEST(FileStaticMemoryTest, WriteTooLarge)
 
 TEST(FileStaticMemoryTest, SeekNormal)
 {
-    constexpr char in[] = "abcdefghijklmnopqrstuvwxyz";
+    char in[] = "abcdefghijklmnopqrstuvwxyz";
     constexpr size_t in_size = 26;
 
-    MemoryFile file(const_cast<char *>(in), in_size);
+    MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
     // SEEK_SET
@@ -183,10 +183,10 @@ TEST(FileStaticMemoryTest, SeekNormal)
 
 TEST(FileStaticMemoryTest, SeekInvalid)
 {
-    constexpr char in[] = "abcdefghijklmnopqrstuvwxyz";
+    char in[] = "abcdefghijklmnopqrstuvwxyz";
     constexpr size_t in_size = 26;
 
-    MemoryFile file(const_cast<char *>(in), in_size);
+    MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
     // Negative SEEK_SET
@@ -228,10 +228,10 @@ TEST(FileStaticMemoryTest, SeekInvalid)
 
 TEST(FileStaticMemoryTest, CheckTruncateUnsupported)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
 
-    MemoryFile file(const_cast<char *>(in), in_size);
+    MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
     auto result = file.truncate(10);
