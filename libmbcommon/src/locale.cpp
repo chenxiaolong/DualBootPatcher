@@ -110,7 +110,11 @@ static oc::result<std::string> win32_convert_to_mbs(UINT code_page,
 
 #else
 
+#ifdef __ANDROID__
+static constexpr char ICONV_CODE_DEFAULT[] = "UTF-8";
+#else
 static constexpr char ICONV_CODE_DEFAULT[] = "";
+#endif
 static constexpr char ICONV_CODE_WCHAR_T[] = "WCHAR_T";
 static constexpr char ICONV_CODE_UTF_8  [] = "UTF-8";
 
