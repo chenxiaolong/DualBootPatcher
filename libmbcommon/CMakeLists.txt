@@ -25,6 +25,13 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     )
 endif()
 
+set_source_files_properties(
+    src/external/iconv.cpp
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-conversion -Wno-sign-conversion -Wno-shadow"
+)
+
 set(variants)
 
 if(MBP_TARGET_HAS_BUILDS)
@@ -63,7 +70,18 @@ foreach(variant ${variants})
         ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
     )
 
-    if(WIN32)
+    if(${MBP_BUILD_TARGET} STREQUAL android-app)
+        target_sources(
+            ${lib_target}
+            PRIVATE
+            src/external/iconv.cpp
+        )
+        target_compile_definitions(
+            ${lib_target}
+            PRIVATE
+            -DUSE_EXTERNAL_ICONV
+        )
+    elseif(WIN32)
         target_sources(
             ${lib_target}
             PRIVATE
@@ -101,13 +119,6 @@ foreach(variant ${variants})
         interface.mbcommon.private-headers
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
     )
-
-    if(TARGET Iconv::Iconv)
-        target_link_libraries(
-            ${lib_target}
-            PRIVATE Iconv::Iconv
-        )
-    endif()
 
     # Install shared library
     if(${variant} STREQUAL shared)
@@ -165,6 +176,10 @@ if(variants AND MBP_ENABLE_TESTS)
         gmock
         gmock_main
     )
+
+    if(${MBP_BUILD_TARGET} STREQUAL android-system)
+        unix_link_executable_statically(mbcommon_tests)
+    endif()
 
     # Add to ctest
     add_test(

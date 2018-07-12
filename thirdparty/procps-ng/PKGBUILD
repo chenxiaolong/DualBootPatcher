@@ -1,4 +1,4 @@
-# Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,17 +14,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=procps-ng
-pkgver=3.3.12
-pkgrel=1
+pkgver=3.3.15
+pkgrel=2
 pkgdesc="Utilities that provide information out of /proc"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://gitlab.com/procps-ng/procps"
 license=(GPL LGPL)
-source=("https://downloads.sourceforge.net/project/procps-ng/Production/procps-ng-${pkgver}.tar.xz")
-sha512sums=('ea816740ff72cc53d99b5d2e78a511b627ea5b295e0efff67605c56d1ab075abc6b0e2da3df4facbfe903fc9d679e892d351b6884a966d37c6f4bfd9141a924b')
+source=("https://gitlab.com/procps-ng/procps/-/archive/v${pkgver}/procps-v${pkgver}.tar.bz2")
+sha512sums=('0c50ef0f19305f1b53089f20f29d8058b23dde20983dbed759ea0fe8128b22518fd137dec389c3630988b6bbf0cf485418a328153b89ec4e1dfbf6d89322c064')
 
 prepare() {
-    cd "${pkgname}-${pkgver}"
+    cd "${pkgname%-*}-v${pkgver}"
 
     sed -i \
         -e '/AC_FUNC_MALLOC/d' \
@@ -37,7 +37,7 @@ prepare() {
 build() {
     local abi api
     abi=$(android_get_abi_name)
-    api=21
+    api=28
 
     android_build_standalone_toolchain "${srcdir}/toolchain" "${api}"
     export PATH="${srcdir}/toolchain/bin:${PATH}"
@@ -48,7 +48,7 @@ build() {
     local triplet
     triplet=$("${srcdir}"/toolchain/bin/*-gcc -dumpmachine)
 
-    cd "${pkgname}-${pkgver}"
+    cd "${pkgname%-*}-v${pkgver}"
 
     CFLAGS="${cflags}" \
     ./configure \
@@ -62,7 +62,7 @@ build() {
 }
 
 package() {
-    cd "${pkgname}-${pkgver}"
+    cd "${pkgname%-*}-v${pkgver}"
 
     make DESTDIR="${pkgdir}" \
         install-libLTLIBRARIES \

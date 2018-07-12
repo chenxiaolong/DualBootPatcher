@@ -16,16 +16,22 @@ public final class MbRom extends Table {
 
   public String id() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer idAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
+  public ByteBuffer idInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 4, 1); }
   public String systemPath() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer systemPathAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public ByteBuffer systemPathInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 1); }
   public String cachePath() { int o = __offset(8); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer cachePathAsByteBuffer() { return __vector_as_bytebuffer(8, 1); }
+  public ByteBuffer cachePathInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 8, 1); }
   public String dataPath() { int o = __offset(10); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer dataPathAsByteBuffer() { return __vector_as_bytebuffer(10, 1); }
+  public ByteBuffer dataPathInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 10, 1); }
   public String version() { int o = __offset(12); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer versionAsByteBuffer() { return __vector_as_bytebuffer(12, 1); }
+  public ByteBuffer versionInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 12, 1); }
   public String build() { int o = __offset(14); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer buildAsByteBuffer() { return __vector_as_bytebuffer(14, 1); }
+  public ByteBuffer buildInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 14, 1); }
 
   public static int createMbRom(FlatBufferBuilder builder,
       int idOffset,

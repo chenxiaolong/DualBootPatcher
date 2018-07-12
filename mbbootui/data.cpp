@@ -577,9 +577,9 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
             if (!battery_path.empty()) {
                 std::string capacity_file = battery_path;
                 capacity_file += "/capacity";
-                cap = fopen(capacity_file.c_str(), "rt");
+                cap = fopen(capacity_file.c_str(), "rte");
             } else {
-                cap = fopen("/sys/class/power_supply/battery/capacity", "rt");
+                cap = fopen("/sys/class/power_supply/battery/capacity", "rte");
             }
             if (cap) {
                 fgets(cap_s, 4, cap);
@@ -595,9 +595,9 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
             if (!battery_path.empty()) {
                 std::string status_file = battery_path;
                 status_file += "/status";
-                cap = fopen(status_file.c_str(), "rt");
+                cap = fopen(status_file.c_str(), "rte");
             } else {
-                cap = fopen("/sys/class/power_supply/battery/status", "rt");
+                cap = fopen("/sys/class/power_supply/battery/status", "rte");
             }
             if (cap) {
                 fgets(cap_s, 2, cap);

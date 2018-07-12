@@ -2,14 +2,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     add_executable(odinupdater odinupdater.cpp)
     add_executable(fuse-sparse fuse-sparse.cpp)
 
-    set_target_properties(
-        odinupdater
-        fuse-sparse
-        PROPERTIES
-        LINK_FLAGS "-static"
-        LINK_SEARCH_START_STATIC ON
-    )
-
     target_link_libraries(
         odinupdater
         PRIVATE
@@ -31,7 +23,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         Fuse::Fuse
     )
 
-    android_link_allow_multiple_definitions(odinupdater fuse-sparse)
+    unix_link_executable_statically(odinupdater fuse-sparse)
 
     install(
         TARGETS odinupdater fuse-sparse

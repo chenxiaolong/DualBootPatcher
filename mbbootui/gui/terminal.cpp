@@ -85,6 +85,7 @@ public:
             g_pty_fd = fdMaster;
             return true;
         } else {
+            // O_CLOEXEC should not be used
             int fdSlave = open(ptsname(fdMaster), O_RDWR);
             close(fdMaster);
             runSlave(fdSlave);

@@ -19,9 +19,8 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
-
-#include <cstdio>
 
 #include "mbcommon/outcome.h"
 
@@ -30,27 +29,40 @@ namespace mb::util
 
 enum class MountError
 {
-    EndOfFile = 1,
-    PathNotMounted,
+    PathNotMounted = 1,
 };
 
 std::error_code make_error_code(MountError e);
 
 const std::error_category & mount_error_category();
 
-constexpr char PROC_MOUNTS[] = "/proc/mounts";
-
 struct MountEntry
 {
-    std::string fsname;
-    std::string dir;
+    //! [mountinfo[1]] ID
+    std::optional<unsigned int> id;
+    //! [mountinfo[2]] Parent
+    std::optional<unsigned int> parent;
+    //! [mountinfo[3]] Device number of mount point
+    std::optional<dev_t> dev;
+    //! [mountinfo[4]] Root directory for bind mount
+    std::optional<std::string> root;
+    //! [mountinfo[5], mounts[2]] Mount point
+    std::string target;
+    //! [mountinfo[6], mounts[4]] VFS options
+    std::string vfs_options;
+    //! [mountinfo[8], mounts[3]] Filesystem type
     std::string type;
-    std::string opts;
-    int freq;
-    int passno;
+    //! [mountinfo[9], mounts[1]] Source device
+    std::string source;
+    //! [mountinfo[10], mounts[4]] FS options
+    std::string fs_options;
+    //! [mounts[5]] Dump frequency in days
+    std::optional<int> freq;
+    //! [mounts[6]] Parallel fsck pass number
+    std::optional<int> passno;
 };
 
-oc::result<MountEntry> get_mount_entry(std::FILE *fp);
+oc::result<std::vector<MountEntry>> get_mount_entries();
 
 oc::result<void> is_mounted(const std::string &mountpoint);
 oc::result<void> unmount_all(const std::string &dir);

@@ -22,11 +22,7 @@
   <!--Thank you message for contributors and links to relavent URLs-->
   <string name="credits">特別感謝每一位貢獻者！
 作者：chenxiaolong
-繁體中文翻譯：abc0922001@github
-繁體中文優化：孟武．尼德霍格．龍
-翻譯內容參考一些android或java書上的內容，有一部分則參考簡體的翻譯。如果有翻譯不好的地方，請到https://dbp.noobdev.io/ 提供正確的翻譯。
-在程式裡找不到語言的設定，因為是跟著系統語言改的。
-簡體翻譯人員：CloverGit（smile米奇333）</string>
+繁體中文翻譯：abc0922001@github、孟武．尼德霍格．龍</string>
   <!--Title for card shown in the switcher when the connection to mbtool failed-->
   <string name="mbtool_connect_fail_title">無法連線到mbtool</string>
   <!--Message for the card shown in the switcher when the connection to mbtool failed-->
@@ -34,7 +30,7 @@
   <!--Navigation drawer item for selecting the ROM-->
   <string name="title_roms">系統</string>
   <!--Navigation drawer item for patching a zip file-->
-  <string name="title_patch_zip">破解 Zip檔</string>
+  <string name="title_patch_zip">破解 Zip 檔</string>
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">可用空間</string>
   <!--Navigation drawer item for changing the ROM settings-->
@@ -191,7 +187,7 @@
   <!--Title shown in dialog asking for the installation location of a zip file-->
   <string name="in_app_flashing_dialog_installation_location">安裝到：</string>
   <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
-  <string name="in_app_flashing_dialog_verifying_zip">驗證 zip檔</string>
+  <string name="in_app_flashing_dialog_verifying_zip">驗證 zip 檔</string>
   <!--Error message shown when the selected zip file is not found-->
   <string name="in_app_flashing_error_zip_not_found">找不到檔案。</string>
   <!--Error message shown when the selected zip file could not be read-->
@@ -298,10 +294,6 @@
   <string name="patcher_card_subtitle_cancelled">取消</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">破解器選項</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">主系統更新</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">用於更新你的主系統，不影響其他系統</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">系統會被安裝到%s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -415,7 +407,7 @@
   <!--Title for the preference to choose the initial screen to show when opening the app-->
   <string name="rom_settings_initial_screen_title">初始畫面</string>
   <!--Description for the initial screen preference-->
-  <string name="rom_settings_initial_screen_desc">啟動時，顯示歡迎畫面。</string>
+  <string name="rom_settings_initial_screen_desc">啟動時，預設顯示哪個選單</string>
   <!--Title for the preference to use the dark theme-->
   <string name="rom_settings_use_dark_theme">使用暗色主題</string>
   <!--Title for the preference to enable receiving intents from third party applications-->
@@ -472,6 +464,8 @@
   <string name="path_chooser_save_label">儲存</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">新增資料夾</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">搜尋</string>
   <!--Word/phrase for None (used in eg. a list)-->

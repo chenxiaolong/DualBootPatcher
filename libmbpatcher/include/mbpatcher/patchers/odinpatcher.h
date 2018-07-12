@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -55,10 +55,9 @@ public:
     // Patching
     void set_file_info(const FileInfo * const info) override;
 
-    bool patch_file(ProgressUpdatedCallback progress_cb,
-                    FilesUpdatedCallback files_cb,
-                    DetailsUpdatedCallback details_cb,
-                    void *userdata) override;
+    bool patch_file(const ProgressUpdatedCallback &progress_cb,
+                    const FilesUpdatedCallback &files_cb,
+                    const DetailsUpdatedCallback &details_cb) override;
 
     void cancel_patching() override;
 
@@ -85,9 +84,8 @@ private:
     std::unordered_set<std::string> m_added_files;
 
     // Callbacks
-    OdinPatcher::ProgressUpdatedCallback m_progress_cb;
-    OdinPatcher::DetailsUpdatedCallback m_details_cb;
-    void *m_userdata;
+    const ProgressUpdatedCallback *m_progress_cb;
+    const DetailsUpdatedCallback *m_details_cb;
 
     // Patching
     archive *m_a_input;
@@ -96,7 +94,8 @@ private:
     bool patch_tar();
 
     bool process_file(archive *a, archive_entry *entry, bool sparse);
-    bool process_contents(archive *a, unsigned int depth);
+    bool process_contents(archive *a, unsigned int depth,
+                          const char *raw_entry_path);
     bool open_input_archive();
     bool close_input_archive();
     bool open_output_archive();

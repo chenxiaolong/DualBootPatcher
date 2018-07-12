@@ -1,6 +1,6 @@
 [main]
 host = https://www.transifex.com
-lang_map = he: iw, id_ID: id-rID, pl_PL: pl-rPL, pt_BR: pt-rBR, pt_PT: pt-rPT, ru_RU: ru-rRU, zh_CN: zh-rCN, zh_TW: zh-rTW
+lang_map = he: iw, id_ID: id-rID, pl_PL: pl-rPL, pt_BR: pt-rBR, pt_PT: pt-rPT, ru_RU: ru-rRU, zh_CN: zh-rCN, zh_HK: zh-rHK, zh_TW: zh-rTW
 
 [dualbootpatcher.android-gui]
 file_filter = Android_GUI/res/values-<lang>/strings.xml

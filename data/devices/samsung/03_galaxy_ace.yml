@@ -151,3 +151,40 @@
     pixel_format: BGRA_8888
     battery_path: /sys/class/power_supply/battery/capacity
     theme: portrait_hdpi
+
+- name: Samsung Galaxy Ace 4 (SM-G316HU)
+  id: vivalto5mve3g
+  codenames:
+    - vivalto5mve3g
+    - SM-G316HU
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sprd-sdhci.3/by-name
+    system:
+      - /dev/block/platform/sprd-sdhci.3/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/sprd-sdhci.3/by-name/CSC
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/sprd-sdhci.3/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/sprd-sdhci.3/by-name/KERNEL
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
+      - /dev/block/mmcblk0p21
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/backlight/panel/brightness
+    default_brightness: 255
+    theme: portrait_hdpi

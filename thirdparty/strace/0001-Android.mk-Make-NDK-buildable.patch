@@ -1,0 +1,96 @@
+From 6dfc1ba9b243700b9853f8db0554a33b2ad9c773 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
+Date: Thu, 7 Jun 2018 18:23:42 -0400
+Subject: [PATCH] Android.mk: Make NDK buildable
+
+---
+ Android.mk | 55 ++++++++++++++++++++++++++++++------------------------
+ 1 file changed, 31 insertions(+), 24 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index b2a8fcf3..f19ca635 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -194,48 +194,55 @@ LOCAL_SRC_FILES := \
+ # We have "config.h", but since we're using one file for both LP32 and LP64,
+ # we need to set the hard-coded size #defines here instead.
+ LOCAL_CFLAGS := -DHAVE_CONFIG_H
+-LOCAL_CFLAGS_32 += -DSIZEOF_LONG_LONG=8 -DSIZEOF_LONG=4 -DSIZEOF_RLIM_T=4 -DHAVE_STRUCT_STAT64=1
+-LOCAL_CFLAGS_64 += -DSIZEOF_LONG_LONG=8 -DSIZEOF_LONG=8 -DSIZEOF_RLIM_T=8
++ifneq (,$(filter $(TARGET_ARCH),arm mips x86))
++    LOCAL_CFLAGS += -DSIZEOF_LONG_LONG=8 -DSIZEOF_LONG=4 -DSIZEOF_RLIM_T=4 -DHAVE_STRUCT_STAT64=1
++else ifneq (,$(filter $(TARGET_ARCH),arm64 mips64 x86_64))
++    LOCAL_CFLAGS += -DSIZEOF_LONG_LONG=8 -DSIZEOF_LONG=8 -DSIZEOF_RLIM_T=8
++endif
+ LOCAL_CFLAGS += -DSIZEOF_KERNEL_LONG_T=SIZEOF_LONG -DSIZEOF_OFF_T=SIZEOF_LONG
+ 
+-LOCAL_CFLAGS_arm += -DARM=1
+-LOCAL_CFLAGS_arm += -DHAVE_STRUCT___OLD_KERNEL_STAT=1
+-
+-LOCAL_CFLAGS_arm64 += -DAARCH64=1
+-
+-LOCAL_CFLAGS_mips += -DMIPS=1 -DLINUX_MIPSO32=1
+-LOCAL_CFLAGS_mips += -DHAVE_ASM_SYSMIPS_H=1
+-
+-LOCAL_CFLAGS_mips64 += -DMIPS=1 -DLINUX_MIPSN64=1
+-LOCAL_CFLAGS_mips64 += -DHAVE_ASM_SYSMIPS_H=1
+-
+-LOCAL_CFLAGS_x86 += -DI386=1
+-LOCAL_CFLAGS_x86 += -DHAVE_STRUCT___OLD_KERNEL_STAT=1
+-
+-LOCAL_CFLAGS_x86_64 += -DX86_64=1
++ifeq ($(TARGET_ARCH),arm)
++    LOCAL_CFLAGS += -DARM=1
++    LOCAL_CFLAGS += -DHAVE_STRUCT___OLD_KERNEL_STAT=1
++    LOCAL_C_INCLUDES += $(LOCAL_PATH)/linux/arm $(LOCAL_PATH)/linux
++else ifeq ($(TARGET_ARCH),arm64)
++    LOCAL_CFLAGS += -DAARCH64=1
++    LOCAL_C_INCLUDES += $(LOCAL_PATH)/linux/aarch64 $(LOCAL_PATH)/linux
++else ifeq ($(TARGET_ARCH),mips)
++    LOCAL_CFLAGS += -DMIPS=1 -DLINUX_MIPSO32=1
++    LOCAL_CFLAGS += -DHAVE_ASM_SYSMIPS_H=1
++    LOCAL_C_INCLUDES += $(LOCAL_PATH)/linux/mips $(LOCAL_PATH)/linux
++else ifeq ($(TARGET_ARCH),mips64)
++    LOCAL_CFLAGS += -DMIPS=1 -DLINUX_MIPSN64=1
++    LOCAL_CFLAGS += -DHAVE_ASM_SYSMIPS_H=1
++    LOCAL_C_INCLUDES += $(LOCAL_PATH)/linux/mips $(LOCAL_PATH)/linux
++else ifeq ($(TARGET_ARCH),x86)
++    LOCAL_CFLAGS += -DI386=1
++    LOCAL_CFLAGS += -DHAVE_STRUCT___OLD_KERNEL_STAT=1
++    LOCAL_C_INCLUDES += $(LOCAL_PATH)/linux/i386 $(LOCAL_PATH)/linux
++else ifeq ($(TARGET_ARCH),x86_64)
++    LOCAL_CFLAGS += -DX86_64=1
++    LOCAL_C_INCLUDES += $(LOCAL_PATH)/linux/x86_64 $(LOCAL_PATH)/linux
++endif
+ 
+ LOCAL_CFLAGS += \
+     -Wall \
+     -Werror \
++    -Wno-expansion-to-defined \
+     -Wno-missing-field-initializers \
+     -Wno-pointer-arith \
+     -Wno-unused-parameter \
+     -Wno-sign-compare \
+     -fno-strict-aliasing \
+ 
+-LOCAL_C_INCLUDES_arm := $(LOCAL_PATH)/linux/arm $(LOCAL_PATH)/linux
+-LOCAL_C_INCLUDES_arm64 := $(LOCAL_PATH)/linux/aarch64 $(LOCAL_PATH)/linux
+-LOCAL_C_INCLUDES_mips := $(LOCAL_PATH)/linux/mips $(LOCAL_PATH)/linux
+-LOCAL_C_INCLUDES_mips64 := $(LOCAL_PATH)/linux/mips $(LOCAL_PATH)/linux
+-LOCAL_C_INCLUDES_x86 := $(LOCAL_PATH)/linux/i386 $(LOCAL_PATH)/linux
+-LOCAL_C_INCLUDES_x86_64 := $(LOCAL_PATH)/linux/x86_64 $(LOCAL_PATH)/linux
+-
+ LOCAL_MODULE := strace
+ 
+ LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
+ 
+ LOCAL_MODULE_TAGS := debug
+ 
++LOCAL_LDFLAGS := -static
++
+ include $(BUILD_EXECUTABLE)
+ 
+ endif
+-- 
+2.17.1
+

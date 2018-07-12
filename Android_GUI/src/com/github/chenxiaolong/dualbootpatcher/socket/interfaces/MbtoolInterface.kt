@@ -269,6 +269,19 @@ interface MbtoolInterface {
     fun rebootViaMbtool(arg: String?)
 
     /**
+     * Shuts down the device via the framework.
+     *
+     * mbtool will launch an intent to start Android's ShutdownActivity
+     *
+     * @param confirm Whether Android's shutdown dialog should be shown
+     * @throws IOException When any socket communication error occurs
+     * @throws MbtoolException
+     * @throws MbtoolCommandException
+     */
+    @Throws(IOException::class, MbtoolException::class, MbtoolCommandException::class)
+    fun shutdownViaFramework(confirm: Boolean)
+
+    /**
      * Shuts down the device via init.
      *
      * NOTE: May result in an unclean shutdown as Android's init will simply kill all processes,

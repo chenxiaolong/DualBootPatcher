@@ -56,14 +56,16 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         fsck-wrapper
         PRIVATE
         -nostdlib
+        $<$<STREQUAL:${ANDROID_ABI},armeabi-v7a>:-fno-integrated-as>
     )
 
     set_target_properties(
         fsck-wrapper
         PROPERTIES
-        LINK_FLAGS "-static -nostdlib"
-        LINK_SEARCH_START_STATIC ON
+        LINK_FLAGS "-nostdlib"
     )
+
+    unix_link_executable_statically(fsck-wrapper)
 
     install(
         TARGETS fsck-wrapper

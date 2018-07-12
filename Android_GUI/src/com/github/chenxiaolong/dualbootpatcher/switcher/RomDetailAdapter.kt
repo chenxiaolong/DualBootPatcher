@@ -82,12 +82,11 @@ class RomDetailAdapter internal constructor(
             val romInfo = romCardItem.romInfo
 
             // Load thumbnail
-            val context = vThumbnail.context
             val f = File(romInfo.thumbnailPath!!)
             if (f.exists() && f.canRead()) {
-                Picasso.with(context).load(f).error(romInfo.imageResId).into(vThumbnail)
+                Picasso.get().load(f).error(romInfo.imageResId).into(vThumbnail)
             } else {
-                Picasso.with(context).load(romInfo.imageResId).into(vThumbnail)
+                Picasso.get().load(romInfo.imageResId).into(vThumbnail)
             }
 
             // Load name, version, build

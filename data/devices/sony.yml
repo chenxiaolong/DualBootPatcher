@@ -1,4 +1,52 @@
 ---
+- name: Sony Xperia Z5 Premium
+  id: Satsuki
+  codenames:
+    - satsuki
+    - E6853
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc.0/f9824900.sdhci/by-name
+
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p43
+
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/f9824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p41
+
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/f9824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p42
+
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/f9824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p29
+
+    recovery:
+      - /dev/block/bootdevice/by-name/FOTAKernel
+      - /dev/block/platform/soc/f9824900.sdhci/by-name/FOTAKernel
+      - /dev/block/mmcblk0p32
+      
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBA_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    default_brightness: 1023
+    theme: portrait_hdpi
+
 - name: Sony Xperia Sola
   id: pepper
   codenames:

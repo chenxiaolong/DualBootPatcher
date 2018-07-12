@@ -1,4 +1,76 @@
 ---
+- name: Huawei Ascend Mate 7 Monarch
+  id: hwmt7
+  codenames:
+    - hwmt7
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p38
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p39
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p40
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p13
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p14
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/hisi_fb.1048577/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
+
+- name: Huawei Honor 4X (China Mobile)
+  id: chetl00h
+  codenames:
+    - CHE-TL00H
+    - CHE-TL00h
+    - hi6210sft
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p38
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p34
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p40
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p27
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p28
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/balong_fb.1/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    battery_path: /sys/devices/battery.0/power_supply/Battery
+    theme: portrait_hdpi
+
 - name: Huawei Ascend P7
   id: hwp7
   codenames:
@@ -32,6 +104,46 @@
     max_brightness: 255
     default_brightness: 162
     battery_path: /sys/devices/platform/bq_bci_battery.1/power_supply/Battery
+    theme: portrait_hdpi
+
+- name: Huawei P8
+  id: GRACE
+  codenames:
+    - grace
+    - GRA
+    - GRACE
+    - HWGRA
+    - hi3635
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p38
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p34
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p40
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p27
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p28
+    extra:
+      - /dev/block/platform/hi_mci.0/by-name/cust
+      - /dev/block/mmcblk0p39
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/hisi_fb.1048577/leds/lcd_backlight0/brightness
+    battery_path: /sys/devices/fff34000.pmic/battery.94/power_supply/Battery
     theme: portrait_hdpi
 
 - name: Huawei Ascend Mate 2
@@ -258,20 +370,26 @@
 
   block_devs:
     base_dirs:
+      - /dev/block/bootdevice/by-name
       - /dev/block/platform/soc.0/7824900.sdhci/by-name
     system:
+      - /dev/block/bootdevice/by-name/system
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
       - /dev/block/mmcblk0p24
     cache:
+      - /dev/block/bootdevice/by-name/cache
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
       - /dev/block/mmcblk0p22
     data:
+      - /dev/block/bootdevice/by-name/userdata
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
       - /dev/block/mmcblk0p26
     boot:
+      - /dev/block/bootdevice/by-name/boot
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
       - /dev/block/mmcblk0p19
     recovery:
+      - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p20
 
@@ -625,6 +743,40 @@
     battery_path: /sys/class/power_supply/Battery
     theme: portrait_hdpi
 
+- name: Huawei Honor V8
+  id: KNT
+  codenames:
+    - KNT
+    - hi3650
+    - HWKNT
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p43
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p36
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p49
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p28
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p29
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd_backlight0/brightness
+    battery_path: /sys/class/power_supply/Battery
+    theme: portrait_hdpi
+
 - name: Huawei P9 Lite
   id: VNS
   codenames:
@@ -798,4 +950,62 @@
     battery_path: /sys/class/power_supply/battery/capacity
     graphics_backends:
       - fbdev
+    theme: portrait_hdpi
+
+- name: Huawei Honor 8 Lite(P8 Lite 2017)
+  id: Prague
+  codenames:
+    - Prague
+    - PRA-AL00
+    - PRA-AL00X
+    - PRA-TL10
+    - PRA-L01
+    - PRA-L02
+    - PRA-L03
+    - PRA-L11
+    - PRA-L21
+    - PRA-L22
+    - PRA-L23
+    - PRA-L31
+    - PRA-LX1
+    - PRA-LX2
+    - PRA-LX3
+    - Prague-TL00
+    - Prague-L03
+    - Prague-L11
+    - Prague-L21
+    - Prague-L22
+    - Prague-L23
+    - Prague-L31
+    - HWPRA-H
+    - hi6250
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p44
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p36
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p49
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p28
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p29
+ 
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/hisi_fb.524289/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    battery_path: /sys/devices/platform/battery/power_supply/Battery
     theme: portrait_hdpi

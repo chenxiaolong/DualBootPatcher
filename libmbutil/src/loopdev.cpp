@@ -20,11 +20,15 @@
 #include "mbutil/loopdev.h"
 
 #include <vector>
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
 #include <fcntl.h>
+
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <unistd.h>
@@ -59,7 +63,7 @@ static oc::result<int> find_loopdev_by_loop_control()
 {
     int fd = -1;
 
-    if ((fd = open(LOOP_CONTROL, O_RDWR)) < 0) {
+    if ((fd = open(LOOP_CONTROL, O_RDWR | O_CLOEXEC)) < 0) {
         return ec_from_errno();
     }
 
@@ -77,7 +81,7 @@ static oc::result<int> find_loopdev_by_loop_control()
 
     if (mknod(loopdev, S_IFBLK | 0644, static_cast<dev_t>(makedev(7, n))) < 0
             && errno != EEXIST) {
-        ec_from_errno();
+        return ec_from_errno();
     }
 
     return n;
@@ -168,7 +172,7 @@ oc::result<void> loopdev_set_up_device(const std::string &loopdev,
                                        const std::string &file,
                                        uint64_t offset, bool ro)
 {
-    int ffd = open(file.c_str(), ro ? O_RDONLY : O_RDWR);
+    int ffd = open(file.c_str(), (ro ? O_RDONLY : O_RDWR) | O_CLOEXEC);
     if (ffd < 0) {
         return ec_from_errno();
     }
@@ -177,7 +181,7 @@ oc::result<void> loopdev_set_up_device(const std::string &loopdev,
         close(ffd);
     });
 
-    int lfd = open(loopdev.c_str(), ro ? O_RDONLY : O_RDWR);
+    int lfd = open(loopdev.c_str(), (ro ? O_RDONLY : O_RDWR) | O_CLOEXEC);
     if (lfd < 0) {
         return ec_from_errno();
     }
@@ -207,7 +211,7 @@ oc::result<void> loopdev_set_up_device(const std::string &loopdev,
 
 oc::result<void> loopdev_remove_device(const std::string &loopdev)
 {
-    int lfd = open(loopdev.c_str(), O_RDONLY);
+    int lfd = open(loopdev.c_str(), O_RDONLY | O_CLOEXEC);
     if (lfd < 0) {
         return ec_from_errno();
     }

@@ -299,10 +299,6 @@ Por favor garanta as permissões de armazenamento para poder adaptar os arquivos
   <string name="patcher_card_subtitle_cancelled">Cancelado</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Opções de adaptação</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Atualização da ROM Primária</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Atualizar a ROM primária sem afetar outras ROMs</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Instalar ROM em %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -474,6 +470,8 @@ Isto pode ter acontecido se uma versão não-oficial do app esta sendo usada ou 
   <string name="path_chooser_save_label">Salvar</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Nova pasta</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Procurar</string>
   <!--Word/phrase for None (used in eg. a list)-->

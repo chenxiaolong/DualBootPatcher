@@ -175,6 +175,43 @@
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
+    
+- name: Samsung Galaxy J5 (2016)
+  id: j5xnlte
+  codenames:
+    - j5xnlte
+    - j5xnltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p25
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p26
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p28
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p16
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p17
+  boot_ui:
+    supported: true
+
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+
 
 - name: Samsung Galaxy E5
   id: e5
@@ -393,4 +430,250 @@
     graphics_backends:
       - fbdev
     pixel_format: BGRA_8888
+    theme: portrait_hdpi
+    
+- name: Samsung Galaxy J5 (2017) (Exynos)
+  id: j5y17lte
+  codenames:
+    - j5y17lte
+    - j5y17ltexxm
+    - j5y17lteub
+    - j5y17lteubm
+    - j5y17ltedx
+    - j5y17ltextc
+    - j5y17ltektt
+    - j5y17ltelgt
+    - j5y17lteskt
+    - SM-J530F
+    - SM-J530FM
+    - SM-J530G
+    - SM-J530GM
+    - SM-J530Y
+    - SM-J530YM
+    - SM-J530K
+    - SM-J530L
+    - SM-J530S
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/13540000.dwmmc0/by-name
+    system:
+      - /dev/block/bootdevice/by-name/SYSTEM
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/bootdevice/by-name/CACHE
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/bootdevice/by-name/USERDATA
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p24
+    boot:
+      - /dev/block/bootdevice/by-name/BOOT
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p10
+    recovery:
+      - /dev/block/bootdevice/by-name/RECOVERY
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p11
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
+    
+- name: Samsung Galaxy A8 (2018) (Exynos)
+  id: jackpotlte
+  codenames:
+    # Regular variant
+    - SM-A530F
+    - jackpotltexx
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/13500000.dwmmc0/by-name
+    system:
+      - /dev/block/bootdevice/by-name/SYSTEM
+      - /dev/block/platform/13500000.dwmmc0/by-name/SYSTEM
+      - /dev/block/sda17
+    cache:
+      - /dev/block/bootdevice/by-name/CACHE
+      - /dev/block/platform/13500000.dwmmc0/by-name/CACHE
+      - /dev/block/sda18
+    data:
+      - /dev/block/bootdevice/by-name/USERDATA
+      - /dev/block/platform/13500000.dwmmc0/by-name/USERDATA
+      - /dev/block/sda24
+    boot:
+      - /dev/block/bootdevice/by-name/BOOT
+      - /dev/block/platform/13500000.dwmmc0/by-name/BOOT
+      - /dev/block/sda7
+    recovery:
+      - /dev/block/bootdevice/RECOVERY
+      - /dev/block/platform/13500000.dwmmc0/by-name/RECOVERY
+      - /dev/block/sda8
+    extra:
+      - /dev/block/bootdevice/RADIO
+      - /dev/block/platform/13500000.dwmmc0/by-name/RADIO
+      - /dev/block/sda10
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 36600
+    default_brightness: 16200
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy A8+ (2018) (Exynos)
+  id: jackpot2lte
+  codenames:
+    # Regular variant
+    - SM-A730F
+    - jackpot2ltexx
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/13500000.dwmmc0/by-name
+    system:
+      - /dev/block/bootdevice/by-name/SYSTEM
+      - /dev/block/platform/13500000.dwmmc0/by-name/SYSTEM
+      - /dev/block/sda17
+    cache:
+      - /dev/block/bootdevice/by-name/CACHE
+      - /dev/block/platform/13500000.dwmmc0/by-name/CACHE
+      - /dev/block/sda18
+    data:
+      - /dev/block/bootdevice/by-name/USERDATA
+      - /dev/block/platform/13500000.dwmmc0/by-name/USERDATA
+      - /dev/block/sda24
+    boot:
+      - /dev/block/bootdevice/by-name/BOOT
+      - /dev/block/platform/13500000.dwmmc0/by-name/BOOT
+      - /dev/block/sda7
+    recovery:
+      - /dev/block/bootdevice/RECOVERY
+      - /dev/block/platform/13500000.dwmmc0/by-name/RECOVERY
+      - /dev/block/sda8
+    extra:
+      - /dev/block/bootdevice/RADIO
+      - /dev/block/platform/13500000.dwmmc0/by-name/RADIO
+      - /dev/block/sda10
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 36600
+    default_brightness: 16200
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
+
+- name: Samsung Galaxy A7 (2017) (Exynos)
+  id: a7y17lte
+  codenames:
+    - SM-A720F
+    - a7y17lte
+  architecture: arm64-v8a
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/13540000.dwmmc0/by-num
+    system:
+      - /dev/block/mmcblk0p19
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+    cache:
+      - /dev/block/mmcblk0p20
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+    data:
+      - /dev/block/mmcblk0p25
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+    boot:
+      - /dev/block/mmcblk0p10
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+    recovery:
+      - /dev/block/mmcblk0p11
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+   
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+
+- name: Samsung Galaxy Docomo J
+  id: js01lte
+  codenames:
+    - js01lte
+    - js01lte-dcm
+    - sc02f
+    - SC02F
+    - SC-02F
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/bootdevice/recovery
+      - /dev/block/mmcblk0p15
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/modem
+      - /dev/block/bootdevice/modem
+      - /dev/block/mmcblk0p2
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/mdp.0/qcom,mdss_fb_primary.173/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
     theme: portrait_hdpi

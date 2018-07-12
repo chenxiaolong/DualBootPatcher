@@ -17,6 +17,7 @@ public final class SignedExecResponse extends Table {
   public short result() { int o = __offset(4); return o != 0 ? bb.getShort(o + bb_pos) : 0; }
   public String errorMsg() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer errorMsgAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public ByteBuffer errorMsgInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 1); }
   public int exitStatus() { int o = __offset(8); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public int termSig() { int o = __offset(10); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public SignedExecError error() { return error(new SignedExecError()); }

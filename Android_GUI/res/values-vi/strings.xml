@@ -20,7 +20,7 @@
   <!--Licenses link text-->
   <string name="link_licenses">Bản quyền</string>
   <!--Thank you message for contributors and links to relavent URLs-->
-  <string name="credits">Cám tất cả mọi người đã giúp đỡ làm bản Patcher này! </string>
+  <string name="credits">Cám tất cả mọi người và TaiNguyen đã giúp đỡ làm bản Patcher này! </string>
   <!--Title for card shown in the switcher when the connection to mbtool failed-->
   <string name="mbtool_connect_fail_title">Không thể kết nối tới mbtool</string>
   <!--Message for the card shown in the switcher when the connection to mbtool failed-->
@@ -83,11 +83,11 @@ cập nhật.\n\nChạm để thử lại.</string>
   <string name="unknown_boot_partition">Không thể xác định được phân vùng khởi động bởi vì
         thiết bị \'s tên mã \'%s\' không được hổ trợ.</string>
   <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
-  <string name="checksums_invalid">Kiểm tra SHA512 checksums cho bản rom này \'s boot.img hoặc *.img
+  <string name="checksums_invalid">Kiểm tra SHA512 checksums cho bản rom này boot.img hoặc *.img
         tập tin trong /sdcard/MultiBoot/%s/ không chính xác. Ứng dụng bên thứ ba đã thay
-        những images n. Bạn có chắc muốn chuyển đổi rom?</string>
+        những images . Bạn có chắc muốn chuyển đổi rom?</string>
   <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
-  <string name="checksums_missing">Kiểm tra SHA512 checksums cho bản rom này\'s boot.img hoặc *.img
+  <string name="checksums_missing">Kiểm tra SHA512 checksums cho bản rom này boot.img hoặc *.img
         tập tin trong /sdcard/MultiBoot/%s/ bị thiếu. Điều này giống như là bạn đã cập nhật từ
         phiên bản cũ của ứng dụng. Bạn có chắc muốn chuyển đổi rom?</string>
   <!--Version text shown on ROM card if the version could not be detected-->
@@ -186,7 +186,7 @@ cập nhật.\n\nChạm để thử lại.</string>
   <!--FAB button text for adding a backup to flash-->
   <string name="in_app_flashing_fab_add_backup">Thêm sao lưu</string>
   <!--Title of pending action card for flashing a file-->
-  <string name="in_app_flashing_action_flash_file">Cài đặt file zip</string>
+  <string name="in_app_flashing_action_flash_file">Flash file</string>
   <!--Title of pending action card for restoring a backup-->
   <string name="in_app_flashing_action_restore_backup">Phục hồi sao lưu</string>
   <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
@@ -196,7 +196,7 @@ cập nhật.\n\nChạm để thử lại.</string>
   <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
   <string name="in_app_flashing_restore_targets">Mục tiêu: %s</string>
   <!--Subtitle text in pending action card showing the installation location-->
-  <string name="in_app_flashing_location">Vị trí: %s</string>
+  <string name="in_app_flashing_location">ROM ID: %s</string>
   <!--Title shown in dialog asking for the installation location of a zip file-->
   <string name="in_app_flashing_dialog_installation_location">Vị trí cài đặt:</string>
   <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
@@ -287,9 +287,9 @@ dấu gạch chéo (\"/\") hoặc là \".\" hay \"..\".</string>
   <!--Text shown on blank background when no files have been added for patching yet-->
   <string name="patcher_background_message">Chạm vào + để thêm tệp vào bản vá.</string>
   <!--Label for FAB to add a flashable zip-->
-  <string name="patcher_add_flashable_zip">Thêm tệp flash zip</string>
+  <string name="patcher_add_flashable_zip">Thêm tệp zip</string>
   <!--Label for FAB to add an Odin image-->
-  <string name="patcher_add_odin_image">Thêm ảnh Odin</string>
+  <string name="patcher_add_odin_image">Thêm image Odin</string>
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <string name="patcher_storage_permission_required">The patcher không thể patch các tập tin mà không thể đọc
         và ghi vào bộ nhớ trong. Hãy cấp quyền cho bộ nhớ để có thể Patch các tập tin.</string>
@@ -315,11 +315,6 @@ hàng đợi.</string>
   <string name="patcher_card_subtitle_cancelled">Bị hủy bỏ</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Tùy chọn vá</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Primary ROM nâng cấp</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Cập nhật ROM chính mà không ảnh hưởng đến
-ROM khác</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Cài đặt ROM %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -517,6 +512,8 @@ ROM chuyển đổi sẽ không làm việc.</string>
   <string name="path_chooser_save_label">Lưu</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Thư mục mới</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Tìm kiếm</string>
   <!--Word/phrase for None (used in eg. a list)-->

@@ -130,7 +130,7 @@ extern "C" struct minui_backend * BACKEND_FUNCTION(BACKEND_NAME)()
     fb_fix_screeninfo fi;
     int fd;
 
-    fd = open("/dev/graphics/fb0", O_RDWR);
+    fd = open("/dev/graphics/fb0", O_RDWR | O_CLOEXEC);
     if (fd < 0) {
         perror("open_overlay cannot open fb0");
         return nullptr;
@@ -165,7 +165,7 @@ static void overlay_blank(minui_backend* backend __unused, bool blank)
         char brightness[4];
         snprintf(brightness, 4, "%03d", tw_device.tw_max_brightness() / 2);
 
-        fd = open(brightness_path.c_str(), O_RDWR);
+        fd = open(brightness_path.c_str(), O_RDWR | O_CLOEXEC);
         if (fd < 0) {
             perror("cannot open LCD backlight");
             return;
@@ -176,7 +176,7 @@ static void overlay_blank(minui_backend* backend __unused, bool blank)
         auto const &secondary_brightness_path =
                 tw_device.tw_secondary_brightness_path();
         if (!secondary_brightness_path.empty()) {
-            fd = open(secondary_brightness_path.c_str(), O_RDWR);
+            fd = open(secondary_brightness_path.c_str(), O_RDWR | O_CLOEXEC);
             if (fd < 0) {
                 perror("cannot open LCD backlight 2");
                 return;
@@ -201,7 +201,7 @@ void setDisplaySplit(void)
     if (!isMDP5) {
         return;
     }
-    FILE* fp = fopen("/sys/class/graphics/fb0/msm_fb_split", "r");
+    FILE* fp = fopen("/sys/class/graphics/fb0/msm_fb_split", "re");
     if (fp) {
         //Format "left right" space as delimiter
         if (fread(split, sizeof(char), 64, fp)) {
@@ -273,7 +273,7 @@ int alloc_ion_mem(unsigned int size)
     struct ion_fd_data fd_data;
     struct ion_allocation_data ionAllocData;
 
-    mem_info.ion_fd = open("/dev/ion", O_RDWR|O_DSYNC);
+    mem_info.ion_fd = open("/dev/ion", O_RDWR | O_DSYNC | O_CLOEXEC);
     if (mem_info.ion_fd < 0) {
         perror("ERROR: Can't open ion ");
         return -errno;
@@ -583,7 +583,7 @@ int free_overlay(int fd)
 
 static GRSurface* overlay_init(minui_backend* backend)
 {
-    int fd = open("/dev/graphics/fb0", O_RDWR);
+    int fd = open("/dev/graphics/fb0", O_RDWR | O_CLOEXEC);
     if (fd == -1) {
         perror("cannot open fb0");
         return nullptr;

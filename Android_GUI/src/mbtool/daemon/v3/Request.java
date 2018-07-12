@@ -34,5 +34,6 @@ public final class Request extends Table {
     return o;
   }
   public static void finishRequestBuffer(FlatBufferBuilder builder, int offset) { builder.finish(offset); }
+  public static void finishSizePrefixedRequestBuffer(FlatBufferBuilder builder, int offset) { builder.finishSizePrefixed(offset); }
 }
 

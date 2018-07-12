@@ -319,11 +319,6 @@ redu.</string>
   <string name="patcher_card_subtitle_cancelled">Otkazano</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Opcije patchera</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Nadogradnja primarnog ROMa</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Nadogradi primarni ROM bez utjecaja na druge
-ROMove</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Instalira ROM na %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -529,6 +524,8 @@ prebacivanje ROMova neće raditi.</string>
   <string name="path_chooser_save_label">Spremi</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Nova mapa</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Traži</string>
   <!--Word/phrase for None (used in eg. a list)-->

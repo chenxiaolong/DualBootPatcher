@@ -17,7 +17,8 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher
 
-import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
@@ -131,6 +132,18 @@ class SwitcherService : ThreadPoolService() {
         setForegroundNotification()
     }
 
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(CHANNEL_ID,
+                    getString(R.string.notification_channel_background_services_name),
+                    NotificationManager.IMPORTANCE_MIN)
+            channel.description = getString(R.string.notification_channel_background_services_desc)
+
+            val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            nm.createNotificationChannel(channel)
+        }
+    }
+
     private fun setForegroundNotification() {
         val startupIntent = Intent(this, MainActivity::class.java)
         startupIntent.action = Intent.ACTION_MAIN
@@ -139,15 +152,14 @@ class SwitcherService : ThreadPoolService() {
         val startupPendingIntent = PendingIntent.getActivity(
                 this, 0, startupIntent, PendingIntent.FLAG_UPDATE_CURRENT)
 
-        val builder = NotificationCompat.Builder(this)
+        createNotificationChannel()
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setContentIntent(startupPendingIntent)
                 .setContentTitle(getString(R.string.switcher_service_background_service))
-                .setPriority(Notification.PRIORITY_MIN)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setCategory(Notification.CATEGORY_SERVICE)
-        }
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
 
         startForeground(NOTIFICATION_ID, builder.build())
     }
@@ -255,6 +267,8 @@ class SwitcherService : ThreadPoolService() {
         private const val THREAD_POOL_DEFAULT_THREADS = 2
 
         private const val NOTIFICATION_ID = 1
+
+        private const val CHANNEL_ID = "background_service"
 
         private val newTaskId = AtomicInteger(0)
         private val taskCache = SparseArray<BaseServiceTask>()

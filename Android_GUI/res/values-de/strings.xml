@@ -15,23 +15,23 @@
   <string name="link_source_code">Quellcode</string>
   <!--XDA forum thread web page URL-->
   <!--XDA forum thread link text-->
-  <string name="link_xda_thread">XDA Thema</string>
+  <string name="link_xda_thread">XDA Thread</string>
   <!--Licenses URL-->
   <!--Licenses link text-->
   <string name="link_licenses">Lizenzen</string>
   <!--Thank you message for contributors and links to relavent URLs-->
-  <string name="credits">Ein besonderes Dankeschön an alle, die mitgeholfen hat, diesen Patcher möglich zu machen.</string>
+  <string name="credits">Ein besonderes Dankeschön an alle die mit geholfen haben diesen Patcher zu ermöglichen.</string>
   <!--Title for card shown in the switcher when the connection to mbtool failed-->
   <string name="mbtool_connect_fail_title">Die Verbindung zu mbtool schlug fehl.</string>
   <!--Message for the card shown in the switcher when the connection to mbtool failed-->
-  <string name="mbtool_connect_fail_message">Die App konnte sich nicht mit mbtool verbinden. Diese könnte daran liegen, dass die Root-Berechtigung verweigert wurde oder Ramdisk nicht geupdatet wurde.
-\n\nDrücke, um es erneut zu versuchen.</string>
+  <string name="mbtool_connect_fail_message">Die App konnte sich nicht mit mbtool verbinden. Dies könnte daran liegen, dass keine Root-Berechtigung vorliegt oder Ramdisk nicht geupdatet wurde.
+\n\nDrücken um es erneut zu versuchen.</string>
   <!--Navigation drawer item for selecting the ROM-->
   <string name="title_roms">ROMs</string>
   <!--Navigation drawer item for patching a zip file-->
   <string name="title_patch_zip">Patche Zip-Datei</string>
   <!--Navigation drawer item for checking free space-->
-  <string name="title_free_space">Freier Platz</string>
+  <string name="title_free_space">Freier Speicher</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Einstellungen</string>
   <!--Navigation drawer item for changing the app sharing settings-->
@@ -41,15 +41,15 @@
   <!--Navigation drawer item for showing the about screen-->
   <string name="title_about">Über</string>
   <!--Nagivation drawer item for exiting the app-->
-  <string name="title_exit">Verlasse</string>
+  <string name="title_exit">Verlassen</string>
   <!--Accessibility text for opening the app drawer-->
   <string name="drawer_open">Navigation drawer öffnen</string>
   <!--Accessibility text for closing the app drawer-->
   <string name="drawer_close">Navigation drawer schließen</string>
   <!--Default name for the primary ROM-->
-  <string name="primary">Erste</string>
+  <string name="primary">Primär</string>
   <!--Default name for the secondary ROM-->
-  <string name="secondary">Zweite</string>
+  <string name="secondary">Skundär</string>
   <!--Default name for the multi-slot ROMs-->
   <string name="multislot">Multi Platz %s</string>
   <!--Default name for the data-slot ROMs-->
@@ -59,13 +59,13 @@
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Die Betriebssystemversion konnte nicht gefunden werden.</string>
   <!--Title of progress dialog shown when switching ROMs-->
-  <string name="switching_rom">Wechsel das Betriebssystem</string>
+  <string name="switching_rom">Wechsle ROM</string>
   <!--Title of progress dialog shown when setting kernel-->
   <string name="setting_kernel">Setze den Kernel</string>
   <!--Message shown when switching ROMs succeeds-->
-  <string name="choose_rom_success">Erfolgreich das Betriebssystem gewechselt</string>
+  <string name="choose_rom_success">Erfolgreich die ROM gewechselt</string>
   <!--Message shown when switching ROMs failed-->
-  <string name="choose_rom_failure">Unerfolgreich das Betriebssystem gewechselt.</string>
+  <string name="choose_rom_failure">Fehler beim wechseln der ROM</string>
   <!--Message shown when switching ROMs and checksums don't match-->
   <string name="choose_rom_checksums_invalid">Image Checksummen stimmen nicht überein</string>
   <!--Message shown when switching ROMs and checksums are missing-->
@@ -82,10 +82,11 @@
   <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
   <string name="checksums_invalid">Die SHA512 Checksummen für das boot.img oder anderen *.img Dateien im file /sdcard/MultiBoot/%s/  stimmen nicht mit den erwarteten Checksummen überein. Eine Drittanwendung hat diese Images möglicherweise geändert. Mit dem Romwechsel fortfahren?</string>
   <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
+  <string name="checksums_missing">Die SHA512 Checksummen für das boot.img oder anderen *.img Dateien in /sdcard/MultiBoot/%s/ dieser ROM sind nicht vorhanden. Dies wird wahrscheinlich durch das  upgraden von einer älteren Version dieser App hervorgerufen. Mit dem ROM-Wechsel fortfahren?</string>
   <!--Version text shown on ROM card if the version could not be detected-->
   <string name="rom_card_unknown_version">Unbekannte Version</string>
   <!--Build text shown on ROM card if the build could not be detected-->
-  <string name="rom_card_unknown_build">Unberkannter Build</string>
+  <string name="rom_card_unknown_build">Unbekannter Build</string>
   <!--ROM menu item for updating the ramdisk-->
   <string name="rom_menu_update_ramdisk">Ramdisk updaten</string>
   <!--ROM menu item for setting kernel-->
@@ -95,7 +96,7 @@
   <!--ROM menu item for adding an icon to the home screen-->
   <string name="rom_menu_add_to_home_screen">Zum Home screen hinzufügen</string>
   <!--ROM menu item for changing the name-->
-  <string name="rom_menu_edit_name">`Name ändern</string>
+  <string name="rom_menu_edit_name">Name ändern</string>
   <!--ROM menu item for changing the image-->
   <string name="rom_menu_change_image">Image ändern</string>
   <!--ROM menu item for resetting back to the default image-->
@@ -220,7 +221,7 @@ Wollen Sie den Kernel jetzt setzen?</string>
   <!--ROM details item showing the number of system apps, updated apps, and user apps-->
   <string name="rom_details_info_apps_counts">Apps</string>
   <!--ROM details value showing the number of system apps, updated apps, and user apps-->
-  <string name="rom_details_info_apps_counts_value">%1$sSystem Apps, %2$supgedatete Apps, %3$sUser Apps</string>
+  <string name="rom_details_info_apps_counts_value">%1$s System Apps, %2$s upgedatete Apps, %3$s User Apps</string>
   <!--ROM details item showing the path to the system directory or image-->
   <string name="rom_details_info_system_path">System Pfad</string>
   <!--ROM details item showing the path to the cache directory or image-->
@@ -288,16 +289,12 @@ Wollen Sie den Kernel jetzt setzen?</string>
   <string name="patcher_card_subtitle_cancelled">Abgebrochen</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Patcher Optionen</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Primäres ROM upgrade</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Primäre ROM updaten, ohne andere ROMs damit beeinzuflussen.</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Rom wird nach %s installiert</string>
   <!--Text box hint for specifying the data slot ID-->
   <string name="install_location_named_slot_id_hint">ID eingeben</string>
   <!--Description text shown if the data slot ID is empty-->
-  <string name="install_location_named_slot_id_empty">ID eingeben (oben)</string>
+  <string name="install_location_named_slot_id_empty">ID oben eingeben</string>
   <!--Error tooltip shown if the data slot ID is empty-->
   <string name="install_location_named_slot_id_error_is_empty">Die Slot-ID darf nicht leer sein.</string>
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
@@ -311,7 +308,7 @@ Wollen Sie den Kernel jetzt setzen?</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
   <string name="filemanager_missing_desc">Es ist kein angemessener File Manager installier, Installieren Sie bitte einen File Manager um zu patchende Files auszuwählen.</string>
   <!--Text for the details card indicating that the patching is done-->
-  <string name="details_done">Fertig.</string>
+  <string name="details_done">Fertig</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">%1$s/%2$s Files</string>
   <!--Title for total size of partition-->
@@ -361,6 +358,12 @@ Wollen Sie neustarten?</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
   <string name="update_ramdisk_failure_desc">Fehler beim updaten von ramdisk. Der log wurde nach MultiBoot/ramdisk-update.log in den internen Speicher gespeichert.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
+  <plurals name="force_update_ramdisk_countdown">
+    <item quantity="one">Sie sind nur noch %1$dSchritt 
+von einem Zwangsupdate der Ramdisk entfernt.</item>
+    <item quantity="other">Sie sind noch %1$dSchritte 
+von einem Zwangsupdate der Ramdisk entfernt.</item>
+  </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <string name="force_updating_ramdisk">ramdisk wird force geupdatet</string>
   <!--Title for the section in the settings to manage the Boot UI-->
@@ -400,15 +403,23 @@ Wollen Sie neustarten?</string>
   <!--Title for the preference to show the reboot button in the navigation drawer-->
   <string name="rom_settings_show_reboot_title">Neustart Button anzeigen</string>
   <!--Title for the preference to choose the initial screen to show when opening the app-->
+  <string name="rom_settings_initial_screen_title">Startbildschirm</string>
   <!--Description for the initial screen preference-->
   <string name="rom_settings_initial_screen_desc">Erstes Bild das gezeigt wird, wenn die App geöffnet wird.</string>
   <!--Title for the preference to use the dark theme-->
   <string name="rom_settings_use_dark_theme">Dark Theme verwenden</string>
   <!--Title for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_title">Erlaube Intents zu empfangen.</string>
   <!--Description for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_desc">Erlaube Apps von Drittanbietern Intents an diese App 
+zu senden, um Aktionen wie einen ROM-Wechsel 
+oder das Patchen einer Datei auszuführen.</string>
   <!--Title for the preference to enable confirmation dialog before rebooting-->
   <string name="rom_settings_show_reboot_confirm_title">Nesutart Dialog anzeigen</string>
   <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_desc">Zeige den Neustart-Dialog von Android anstelle einen direkten
+Neustart durchzuführen. Dies erlaubt beispielsweise das booten 
+direkt ins Recovery von Roms, die ein erweitertes Bootmenü haben.</string>
   <!--Title for the preference to set the number of parallel patching operations-->
   <string name="rom_settings_parallel_patching_title">Parallel Patch Operationen</string>
   <!--Description for the preference to set the number of parallel patching operations-->
@@ -416,6 +427,11 @@ Wollen Sie neustarten?</string>
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Individuelles App teilen</string>
   <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_desc">Individuelles App sharing erlaubt Apps
+        Daten an einem gemeinsamen Speicherort abzulegen, auf den von jedem Rom zugegriffen werden kann. Das benutzen eines gemeinsames Speichers
+        synchronisiert die Daten über die ROM Grenzen hinweg  (z.B.. Chrome tabs).\n\nAchtung: Ein Neustart ist notwendig, um die Änderungen zu aktivieren..\n\nUm das individuelle App sharing zu erlauben, muss diese Option in jedem Rom in den Einstellungen aktiviert werden.  Zum Beispiel: Für das primary ROM, aktiviere das Teilen der Daten für
+        Chrome. Chrome wird somit den gemeinsamen Datenspeicher benutzen. Danach boote in ein anderes ROM und
+       aktivere ebenso den gemeinsamen Datenspeicher für Chrome. Ab dann wird auch hier der gemeinsame Datenspeicher benutzt.</string>
   <!--App label in the individual app sharing screen shown if the app uses shared data-->
   <string name="indiv_app_sharing_shared_data">Geteilte Daten</string>
   <!--App label in the individual app sharing screen shown if the app is not shared-->
@@ -431,6 +447,9 @@ Wollen Sie neustarten?</string>
   <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
   <string name="indiv_app_sharing_app_no_longer_shared">Die App \"%s\" wird nicht länger geteilt.</string>
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <string name="third_party_intents_not_allowed">Blockierter Intent von einer Dritternbieter-App. Um anderen Apps
+zu erlauben einen Intent zu senden, aktivieren Sie diese Option
+in der Einstellungen von DualBootPatcher.</string>
   <!--Progress dialog message shown when starting mbtool (with root)-->
   <string name="mbtool_dialog_starting_mbtool">mbtool wird gestartet...\n(Root benötigt)</string>
   <!--Progress dialog message shown when updating mbtool (with root)-->
@@ -449,6 +468,11 @@ Wollen Sie neustarten?</string>
   <string name="path_chooser_save_label">speichern</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Neuer Ordner</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <string name="notification_channel_background_services_name">Hintergrunddienste</string>
+  <!--Android 8.0+ notification channel description for background services-->
+  <string name="notification_channel_background_services_desc">Persistente Benachrichtigung wird gezeigt
+wenn ein Hintergrunddienst läuft.</string>
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">suchen</string>
   <!--Word/phrase for None (used in eg. a list)-->

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -64,12 +64,12 @@ MemoryFile::MemoryFile()
  * Construct the file handle and open the file. Use is_open() to check if the
  * file was successfully opened.
  *
- * \sa open(const void *, size_t)
+ * \sa open(void *, size_t)
  *
  * \param buf Data buffer
  * \param size Size of data buffer
  */
-MemoryFile::MemoryFile(const void *buf, size_t size)
+MemoryFile::MemoryFile(void *buf, size_t size)
     : MemoryFile()
 {
     (void) open(buf, size);
@@ -134,10 +134,10 @@ MemoryFile & MemoryFile::operator=(MemoryFile &&rhs) noexcept
  * \return Nothing if the file is successfully opened. Otherwise, the error
  *         code.
  */
-oc::result<void> MemoryFile::open(const void *buf, size_t size)
+oc::result<void> MemoryFile::open(void *buf, size_t size)
 {
     if (state() == FileState::New) {
-        m_data = const_cast<void *>(buf);
+        m_data = buf;
         m_size = size;
         m_data_ptr = nullptr;
         m_size_ptr = nullptr;
@@ -241,19 +241,29 @@ oc::result<uint64_t> MemoryFile::on_seek(int64_t offset, int whence)
         }
         return m_pos = static_cast<size_t>(offset);
     case SEEK_CUR:
-        if ((offset < 0 && static_cast<uint64_t>(-offset) > m_pos)
-                || (offset > 0 && static_cast<uint64_t>(offset)
-                        > SIZE_MAX - m_pos)) {
-            return FileError::ArgumentOutOfRange;
+        if (offset < 0) {
+            if (static_cast<uint64_t>(-offset) > m_pos) {
+                return FileError::ArgumentOutOfRange;
+            }
+            return m_pos -= static_cast<size_t>(-offset);
+        } else {
+            if (static_cast<uint64_t>(offset) > SIZE_MAX - m_pos) {
+                return FileError::ArgumentOutOfRange;
+            }
+            return m_pos += static_cast<size_t>(offset);
         }
-        return m_pos += static_cast<size_t>(offset);
     case SEEK_END:
-        if ((offset < 0 && static_cast<size_t>(-offset) > m_size)
-                || (offset > 0 && static_cast<uint64_t>(offset)
-                        > SIZE_MAX - m_size)) {
-            return FileError::ArgumentOutOfRange;
+        if (offset < 0) {
+            if (static_cast<uint64_t>(-offset) > m_size) {
+                return FileError::ArgumentOutOfRange;
+            }
+            return m_pos = m_size - static_cast<size_t>(-offset);
+        } else {
+            if (static_cast<uint64_t>(offset) > SIZE_MAX - m_size) {
+                return FileError::ArgumentOutOfRange;
+            }
+            return m_pos = m_size + static_cast<size_t>(offset);
         }
-        return m_pos = m_size + static_cast<size_t>(offset);
     default:
         MB_UNREACHABLE("Invalid whence argument: %d", whence);
     }

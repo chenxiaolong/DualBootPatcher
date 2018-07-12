@@ -6,10 +6,10 @@ set_source_files_properties(
 )
 
 set_source_files_properties(
-    src/external/system_properties_compat.c
+    src/external/system_properties_compat.cpp
     PROPERTIES
     COMPILE_FLAGS
-    "-Wno-cast-align -Wno-cast-qual -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-strict-prototypes"
+    "-Wno-shorten-64-to-32 -Wno-sign-conversion"
 )
 
 set(variants)
@@ -53,9 +53,8 @@ foreach(variant ${variants})
         src/time.cpp
         src/vibrate.cpp
         src/external/system_properties.cpp
-        src/external/system_properties_compat.c
+        src/external/system_properties_compat.cpp
         src/result/file_op_result.cpp
-        external/android_reboot.c
     )
 
     # Includes

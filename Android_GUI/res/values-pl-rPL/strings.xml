@@ -317,11 +317,6 @@ ukośnik ( \"/\") lub \".\" lub \"..\".</string>
   <string name="patcher_card_subtitle_cancelled">Anulowano</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Opcje patchera</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Aktualizacja głównego ROMu</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Zaktualizuj główny ROM bez wpływu na inne
-        ROMy</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Instaluje ROM do %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -526,6 +521,8 @@ zasilania Zaawansowany restart.</string>
   <string name="path_chooser_save_label">Zapisz</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Nowy folder</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Szukaj</string>
   <!--Word/phrase for None (used in eg. a list)-->

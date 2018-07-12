@@ -55,7 +55,7 @@ inline const std::error_code & make_error_code(const FstabErrorInfo &ei)
 }
 
 [[noreturn]]
-inline void throw_as_system_error_with_payload(const FstabErrorInfo &ei)
+inline void outcome_throw_as_system_error_with_payload(const FstabErrorInfo &ei)
 {
     (void) ei;
     OUTCOME_THROW_EXCEPTION(std::system_error(make_error_code(ei)));
@@ -90,6 +90,11 @@ constexpr unsigned long MF_QUOTA            = 1 << 22;
 constexpr unsigned long MF_ERASEBLKSIZE     = 1 << 23;
 constexpr unsigned long MF_LOGICALBLKSIZE   = 1 << 24;
 constexpr unsigned long MF_AVB              = 1 << 25;
+
+std::pair<unsigned long, std::vector<std::string>>
+parse_mount_options(std::string_view options);
+std::pair<unsigned long, std::vector<std::string>>
+parse_fs_mgr_options(std::string_view options);
 
 struct FstabRec
 {

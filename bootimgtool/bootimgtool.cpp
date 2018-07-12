@@ -53,7 +53,6 @@
 
 // libmbpio
 #include <mbpio/directory.h>
-#include <mbpio/error.h>
 #include <mbpio/path.h>
 
 #define FIELD_CMDLINE                   "cmdline"
@@ -79,6 +78,12 @@
 #define IMAGE_IPL                       "ipl"
 #define IMAGE_RPM                       "rpm"
 #define IMAGE_APPSBL                    "appsbl"
+
+#ifdef _WIN32
+#  define CLOEXEC_FLAG "N"
+#else
+#  define CLOEXEC_FLAG "e"
+#endif
 
 
 namespace rj = rapidjson;
@@ -402,7 +407,7 @@ static bool read_header(const std::string &path, Header &header)
     static const char *fmt_unsupported =
             "Ignoring unsupported key for boot image type: '%s'\n";
 
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rb" CLOEXEC_FLAG), fclose);
     if (!fp) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
                 path.c_str(), strerror(errno));
@@ -506,7 +511,7 @@ static bool write_header(const std::string &path, const Header &header)
     absolute_to_offset(base, kernel_offset, ramdisk_offset, second_offset,
                        tags_offset);
 
-    ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "wb" CLOEXEC_FLAG), fclose);
     if (!fp) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
                 path.c_str(), strerror(errno));
@@ -573,7 +578,7 @@ static bool write_header(const std::string &path, const Header &header)
 
 static bool write_data_file_to_entry(const std::string &path, Writer &writer)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rb" CLOEXEC_FLAG), fclose);
     if (!fp) {
         // Entries are optional
         if (errno == ENOENT) {
@@ -613,7 +618,7 @@ static bool write_data_file_to_entry(const std::string &path, Writer &writer)
 
 static bool write_data_entry_to_file(const std::string &path, Reader &reader)
 {
-    ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "wb" CLOEXEC_FLAG), fclose);
     if (!fp) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
                 path.c_str(), strerror(errno));
@@ -857,9 +862,9 @@ static bool unpack_main(int argc, char *argv[])
 
     prepend_if_empty(paths, output_dir, prefix);
 
-    if (!mb::io::create_directories(output_dir)) {
+    if (auto r = mb::io::create_directories(output_dir); !r) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
-                output_dir.c_str(), mb::io::last_error_string().c_str());
+                output_dir.c_str(), r.error().message().c_str());
         return false;
     }
 

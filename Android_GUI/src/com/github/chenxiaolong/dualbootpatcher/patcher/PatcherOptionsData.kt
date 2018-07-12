@@ -26,7 +26,7 @@ internal class PatcherOptionsData(
         internal var currentDevice: Device?,
 
         /**
-         * List of supported devices, including rick roll devices.
+         * List of supported devices.
          */
         internal var devices: List<Device>,
 

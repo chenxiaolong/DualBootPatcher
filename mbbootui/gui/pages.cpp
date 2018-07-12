@@ -1187,7 +1187,7 @@ char* PageManager::LoadFileToBuffer(const std::string& filename,
             return nullptr;
         }
 
-        int fd = open(filename.c_str(), O_RDONLY);
+        int fd = open(filename.c_str(), O_RDONLY | O_CLOEXEC);
         if (fd == -1) {
             LOGE("PageManager::LoadFileToBuffer failed to open '%s' - (%s)", filename.c_str(), strerror(errno));
             free(buffer);

@@ -31,7 +31,7 @@
     <!-- Indicate the version of the app on the about screen -->
     <string name="version">Version %s</string>
     <!-- GitHub source code web page URL -->
-    <string name="url_source_code" translatable="false">https://github.com/chenxiaolong/DualBootPatcher</string>
+    <string name="url_source_code" translatable="false">https://github.com/chenxiaolong/DualBootPatcher/tree/%s</string>
     <!-- GitHub source code link text -->
     <string name="link_source_code">Source Code</string>
     <!-- XDA forum thread web page URL -->
@@ -39,7 +39,7 @@
     <!-- XDA forum thread link text -->
     <string name="link_xda_thread">XDA Thread</string>
     <!-- Licenses URL -->
-    <string name="url_licenses" translatable="false">https://github.com/chenxiaolong/DualBootPatcher/tree/master/licenses</string>
+    <string name="url_licenses" translatable="false">https://github.com/chenxiaolong/DualBootPatcher/tree/%s/licenses</string>
     <!-- Licenses link text -->
     <string name="link_licenses">Licenses</string>
     <!-- Thank you message for contributors and links to relavent URLs -->
@@ -375,11 +375,6 @@
     <!-- Patcher options dialog title -->
     <string name="patcher_options_dialog_title">Patcher options</string>
 
-    <!-- Name for primary ROM upgrade installation location -->
-    <string name="install_location_primary_upgrade">Primary ROM Upgrade</string>
-    <!-- Description for primary ROM upgrade installation location -->
-    <string name="install_location_primary_upgrade_desc">Update primary ROM without affecting other
-        ROMS</string>
     <!-- Description for all other installation locations -->
     <string name="install_location_desc">Installs ROM to %s</string>
     <!-- Text box hint for specifying the data slot ID -->
@@ -612,6 +607,12 @@
     <string name="path_chooser_save_label">Save</string>
     <!-- Path chooser dialog button to create a new folder -->
     <string name="path_chooser_new_folder_label">New folder</string>
+
+    <!-- Android 8.0+ notification channel name for background services -->
+    <string name="notification_channel_background_services_name">Background services</string>
+    <!-- Android 8.0+ notification channel description for background services -->
+    <string name="notification_channel_background_services_desc">Persistent notifications shown
+        when a background service is running.</string>
 
     <!-- Word/phrase for Search (used in action bars) -->
     <string name="search">Search</string>

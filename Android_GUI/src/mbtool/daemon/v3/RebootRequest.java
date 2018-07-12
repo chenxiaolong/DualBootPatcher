@@ -16,6 +16,7 @@ public final class RebootRequest extends Table {
 
   public String arg() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer argAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
+  public ByteBuffer argInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 4, 1); }
   public short type() { int o = __offset(6); return o != 0 ? bb.getShort(o + bb_pos) : 0; }
   public boolean confirm() { int o = __offset(8); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
 
