@@ -321,6 +321,10 @@ bool Installer::create_chroot()
 
     // Other mounts
     if (log_mount("none", in_chroot("/dev").c_str(), "tmpfs", 0, "") < 0
+            || log_mkdir(in_chroot("/dev/__properties__").c_str(), 0755) < 0
+            || log_mount("/dev/__properties__",
+                         in_chroot("/dev/__properties__").c_str(), "",
+                         MS_BIND | MS_RDONLY, "") < 0
             || log_mkdir(in_chroot("/dev/pts").c_str(), 0755) < 0
             || log_mount("none", in_chroot("/dev/pts").c_str(), "devpts", 0, "") < 0
             || log_mount("none", in_chroot("/proc").c_str(), "proc", 0, "") < 0
@@ -427,6 +431,7 @@ bool Installer::destroy_chroot() const
     log_umount(in_chroot("/data").c_str());
     log_umount(in_chroot("/efs").c_str());
 
+    log_umount(in_chroot("/dev/__properties__").c_str());
     log_umount(in_chroot("/dev/pts").c_str());
     log_umount(in_chroot("/dev").c_str());
     log_umount(in_chroot("/proc").c_str());
@@ -845,9 +850,13 @@ bool Installer::change_root(const std::string &path)
 
 bool Installer::set_up_legacy_properties()
 {
-    // We don't need to worry about /dev/__properties__ since that's not present
-    // in the chroot. Bionic will automatically fall back to getting the fd from
-    // the ANDROID_PROPERTY_WORKSPACE environment variable.
+    // If /dev/__properties__ is not present, then bionic will automatically
+    // fall back to getting the fd from the ANDROID_PROPERTY_WORKSPACE
+    // environment variable. Support for this was removed in Oreo.
+    if (rename("/dev/__properties__", "/dev/__properties__.modern") < 0) {
+        LOGE("Failed to rename /dev/__properties__: %s", strerror(errno));
+        return false;
+    }
 
     if (!_legacy_prop_svc.initialize()) {
         LOGE("Failed to initialize legacy property service");
