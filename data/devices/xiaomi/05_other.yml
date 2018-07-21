@@ -117,6 +117,37 @@
       - /dev/block/bootdevice/by-name/vendor
       - /dev/block/platform/soc/1d84000.ufshc/by-name/vendor
       - /dev/block/sde47
+      #bluetooth
+      - /dev/block/bootdevice/by-name/bluetooth
+      #logo
+      - /dev/block/bootdevice/by-name/logo
+      #dsp
+      - /dev/block/bootdevice/by-name/dsp
+      #others
+      - /dev/block/bootdevice/by-name/cmnlib64_a
+      - /dev/block/bootdevice/by-name/aop_a
+      - /dev/block/bootdevice/by-name/devcfg_a
+      - /dev/block/bootdevice/by-name/qupfw_a
+      - /dev/block/bootdevice/by-name/tz_a
+      - /dev/block/bootdevice/by-name/storsec_a
+      - /dev/block/bootdevice/by-name/keymaster_a
+      - /dev/block/bootdevice/by-name/xbl_a
+      - /dev/block/bootdevice/by-name/xbl_config_a
+      - /dev/block/bootdevice/by-name/abl_a
+      - /dev/block/bootdevice/by-name/cmnlib_a
+      - /dev/block/bootdevice/by-name/hyp_a
+      - /dev/block/bootdevice/by-name/cmnlib64_b
+      - /dev/block/bootdevice/by-name/aop_b
+      - /dev/block/bootdevice/by-name/devcfg_b
+      - /dev/block/bootdevice/by-name/qupfw_b
+      - /dev/block/bootdevice/by-name/tz_b
+      - /dev/block/bootdevice/by-name/storsec_b
+      - /dev/block/bootdevice/by-name/keymaster_b
+      - /dev/block/bootdevice/by-name/xbl_b
+      - /dev/block/bootdevice/by-name/xbl_config_b
+      - /dev/block/bootdevice/by-name/abl_b
+      - /dev/block/bootdevice/by-name/cmnlib_b
+      - /dev/block/bootdevice/by-name/hyp_b
 
   boot_ui:
     supported: true
