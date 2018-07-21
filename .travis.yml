@@ -17,6 +17,9 @@ script:
   # Build APK
   - |
     docker run --rm -i -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) -v "$(pwd):/builder/DualBootPatcher:rw,z" -v "${HOME}/.android:/builder/.android:rw,z" yshalsager/dualbootpatcher:9.3.0-4-android bash << EOF
+    wget https://dl.google.com/android/repository/android-ndk-r17b-linux-x86_64.zip && unzip android-ndk-r17b-linux-x86_64.zip && mv android-ndk-r17b android-ndk
+    echo "export ANDROID_NDK=$(pwd)/android-ndk" >> ~/.bashrc
+    echo "export ANDROID_NDK_HOME=$(pwd)/android-ndk" >> ~/.bashrc
     cd DualBootPatcher/builder && cmake .. -DMBP_BUILD_TARGET=android -DMBP_BUILD_TYPE=debug && make -j16 && rm -rf assets && cpack && make apk -j16
     make android-system_armeabi-v7a -j16 && make -C data/devices -j16
     exit
