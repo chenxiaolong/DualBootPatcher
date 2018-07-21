@@ -104,10 +104,6 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc/1d84000.ufshc/by-name/recovery
       - /dev/block/sda19
-    vendor:
-      - /dev/block/bootdevice/by-name/vendor
-      - /dev/block/platform/soc/1d84000.ufshc/by-name/vendor
-      - /dev/block/sde47
     extra:
       #cust
       - /dev/block/bootdevice/by-name/cust
@@ -117,6 +113,10 @@
       - /dev/block/bootdevice/by-name/modem
       - /dev/block/platform/soc/1d84000.ufshc/by-name/modem
       - /dev/block/sde46
+      #vendor
+      - /dev/block/bootdevice/by-name/vendor
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/vendor
+      - /dev/block/sde47
 
   boot_ui:
     supported: true
