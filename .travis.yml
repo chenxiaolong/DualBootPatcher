@@ -17,7 +17,7 @@ script:
   # Build APK
   - |
     docker run --rm -i -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) -v "$(pwd):/builder/DualBootPatcher:rw,z" -v "${HOME}/.android:/builder/.android:rw,z" yshalsager/dualbootpatcher:9.3.0-4-android bash << EOF
-    sudo apt-get install wget
+    apt-get install wget
     wget https://dl.google.com/android/repository/android-ndk-r17b-linux-x86_64.zip && unzip android-ndk-r17b-linux-x86_64.zip && mv android-ndk-r17b android-ndk
     echo "export ANDROID_NDK=$(pwd)/android-ndk" >> ~/.bashrc
     echo "export ANDROID_NDK_HOME=$(pwd)/android-ndk" >> ~/.bashrc
