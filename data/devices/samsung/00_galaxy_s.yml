@@ -26,7 +26,7 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
-  
+
   boot_ui:
     supported: true
     flags:
@@ -965,60 +965,14 @@
     pixel_format: ABGR_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S8 (Exynos)
+- name: Samsung Galaxy S8/S8+ (Exynos)
   id: dreamlte
   codenames:
     # Regular variant
     - SM-G950F
     - dreamlte
     - dreamltexx
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/bootdevice/by-name
-      - /dev/block/platform/11120000.ufs/by-name
-    system:
-      - /dev/block/bootdevice/by-name/SYSTEM
-      - /dev/block/platform/11120000.ufs/by-name/SYSTEM
-      - /dev/block/sda17
-    cache:
-      - /dev/block/bootdevice/by-name/CACHE
-      - /dev/block/platform/11120000.ufs/by-name/CACHE
-      - /dev/block/sda18
-    data:
-      - /dev/block/bootdevice/by-name/USERDATA
-      - /dev/block/platform/11120000.ufs/by-name/USERDATA
-      - /dev/block/sda24
-    boot:
-      - /dev/block/bootdevice/by-name/BOOT
-      - /dev/block/platform/11120000.ufs/by-name/BOOT
-      - /dev/block/sda7
-    recovery:
-      - /dev/block/bootdevice/RECOVERY
-      - /dev/block/platform/11120000.ufs/by-name/RECOVERY
-      - /dev/block/sda8
-    extra:
-      - /dev/block/bootdevice/RADIO
-      - /dev/block/platform/11120000.ufs/by-name/RADIO
-      - /dev/block/sda10
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/platform/panel_drv@001/backlight/panel/brightness
-    max_brightness: 36600
-    default_brightness: 16200
-    pixel_format: ABGR_8888
-    theme: portrait_hdpi
-
-- name: Samsung Galaxy S8+ (Exynos)
-  id: dream2lte
-  codenames:
-    # Regular variant
+    # Plus variant
     - SM-G955F
     - dream2lte
     - dream2ltexx
@@ -1045,11 +999,11 @@
       - /dev/block/platform/11120000.ufs/by-name/BOOT
       - /dev/block/sda7
     recovery:
-      - /dev/block/bootdevice/RECOVERY
+      - /dev/block/bootdevice/by-name/RECOVERY
       - /dev/block/platform/11120000.ufs/by-name/RECOVERY
       - /dev/block/sda8
     extra:
-      - /dev/block/bootdevice/RADIO
+      - /dev/block/bootdevice/by-name/RADIO
       - /dev/block/platform/11120000.ufs/by-name/RADIO
       - /dev/block/sda10
 
@@ -1065,45 +1019,12 @@
     pixel_format: ABGR_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S8 (Snapdragon)
+- name: Samsung Galaxy S8/S8+ (Snapdragon)
   id: dreamqlte
   codenames:
     # Regular variant
     - dreamqlte
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/bootdevice/by-name
-    system:
-      - /dev/block/bootdevice/by-name/system
-    cache:
-      - /dev/block/bootdevice/by-name/cache
-    data:
-      - /dev/block/bootdevice/by-name/userdata
-    boot:
-      - /dev/block/bootdevice/by-name/boot
-    recovery:
-      - /dev/block/bootdevice/recovery
-    extra:
-      - /dev/block/bootdevice/modem
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 36500
-    default_brightness: 15000
-    pixel_format: RGBX_8888
-    theme: portrait_hdpi
-
-- name: Samsung Galaxy S8+ (Snapdragon)
-  id: dream2qlte
-  codenames:
-    # Regular variant
+    # Plus variant
     - dream2qlte
     - dream2qltechn
     - dream2qltezh
@@ -1131,11 +1052,11 @@
       - /dev/block/platform/soc/1da4000.ufshc/by-name/boot
       - /dev/block/sda17
     recovery:
-      - /dev/block/bootdevice/recovery
+      - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
       - /dev/block/sda18
     extra:
-      - /dev/block/bootdevice/modem
+      - /dev/block/bootdevice/by-name/modem
       - /dev/block/platform/soc/1da4000.ufshc/by-name/modem
       - /dev/block/sda16
 

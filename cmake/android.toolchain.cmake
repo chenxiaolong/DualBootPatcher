@@ -54,17 +54,31 @@ set(ANDROID_NDK_TOOLCHAIN_INCLUDED true)
 
 # Android NDK
 get_filename_component(ANDROID_NDK "$ENV{ANDROID_NDK}" ABSOLUTE)
-file(TO_CMAKE_PATH "${ANDROID_NDK}" ANDROID_NDK)
 
 # Android NDK revision
+# Possible formats:
+# * r16, build 1234: 16.0.1234
+# * r16b, build 1234: 16.1.1234
+# * r16 beta 1, build 1234: 16.0.1234-beta1
+#
+# Canary builds are not specially marked.
 file(READ "${ANDROID_NDK}/source.properties" ANDROID_NDK_SOURCE_PROPERTIES)
-set(ANDROID_NDK_SOURCE_PROPERTIES_REGEX
-  "^Pkg\\.Desc = Android NDK\nPkg\\.Revision = ([0-9]+)\\.")
-if(NOT ANDROID_NDK_SOURCE_PROPERTIES MATCHES "${ANDROID_NDK_SOURCE_PROPERTIES_REGEX}")
+
+set(ANDROID_NDK_REVISION_REGEX
+  "^Pkg\\.Desc = Android NDK\nPkg\\.Revision = ([0-9]+)\\.([0-9]+)\\.([0-9]+)(-beta([0-9]+))?")
+if(NOT ANDROID_NDK_SOURCE_PROPERTIES MATCHES "${ANDROID_NDK_REVISION_REGEX}")
   message(SEND_ERROR "Failed to parse Android NDK revision: ${ANDROID_NDK}/source.properties.\n${ANDROID_NDK_SOURCE_PROPERTIES}")
 endif()
-string(REGEX REPLACE "${ANDROID_NDK_SOURCE_PROPERTIES_REGEX}" "\\1"
-  ANDROID_NDK_REVISION "${ANDROID_NDK_SOURCE_PROPERTIES}")
+
+set(ANDROID_NDK_MAJOR "${CMAKE_MATCH_1}")
+set(ANDROID_NDK_MINOR "${CMAKE_MATCH_2}")
+set(ANDROID_NDK_BUILD "${CMAKE_MATCH_3}")
+set(ANDROID_NDK_BETA "${CMAKE_MATCH_5}")
+if(ANDROID_NDK_BETA STREQUAL "")
+  set(ANDROID_NDK_BETA "0")
+endif()
+set(ANDROID_NDK_REVISION
+  "${ANDROID_NDK_MAJOR}.${ANDROID_NDK_MINOR}.${ANDROID_NDK_BUILD}${CMAKE_MATCH_4}")
 
 # Touch toolchain variable to suppress "unused variable" warning.
 # This happens if CMake is invoked with the same command line the second time.
@@ -152,11 +166,17 @@ endif()
 # Default values for configurable variables.
 if(NOT ANDROID_TOOLCHAIN)
   set(ANDROID_TOOLCHAIN clang)
+elseif(ANDROID_TOOLCHAIN STREQUAL gcc)
+  message(WARNING
+    "GCC is deprecated and will be removed in the next release. See "
+    "https://android.googlesource.com/platform/ndk/+/master/docs/ClangMigration.md.")
 endif()
 if(NOT ANDROID_ABI)
   set(ANDROID_ABI armeabi-v7a)
 endif()
 if(ANDROID_PLATFORM MATCHES "^android-([0-9]|1[0-3])$")
+  message(WARNING "${ANDROID_PLATFORM} is unsupported. Using minimum supported "
+                  "version android-14")
   set(ANDROID_PLATFORM android-14)
 elseif(ANDROID_PLATFORM STREQUAL android-20)
   set(ANDROID_PLATFORM android-19)
@@ -170,9 +190,22 @@ if(ANDROID_ABI MATCHES "64(-v8a)?$" AND ANDROID_PLATFORM_LEVEL LESS 21)
   set(ANDROID_PLATFORM android-21)
   set(ANDROID_PLATFORM_LEVEL 21)
 endif()
+
 if(NOT ANDROID_STL)
-  set(ANDROID_STL gnustl_static)
+  set(ANDROID_STL c++_static)
 endif()
+
+if("${ANDROID_STL}" STREQUAL "gnustl_shared" OR
+    "${ANDROID_STL}" STREQUAL "gnustl_static" OR
+    "${ANDROID_STL}" STREQUAL "stlport_shared" OR
+    "${ANDROID_STL}" STREQUAL "stlport_static")
+  message(WARNING
+    "${ANDROID_STL} is deprecated and will be removed in the next release. "
+    "Please switch to either c++_shared or c++_static. See "
+    "https://developer.android.com/ndk/guides/cpp-support.html for more "
+    "information.")
+endif()
+
 if(NOT DEFINED ANDROID_PIE)
   if(ANDROID_PLATFORM_LEVEL LESS 16)
     set(ANDROID_PIE FALSE)
@@ -226,20 +259,13 @@ endif()
 
 # ABI.
 set(CMAKE_ANDROID_ARCH_ABI ${ANDROID_ABI})
-if(ANDROID_ABI MATCHES "^armeabi(-v7a)?$")
+if(ANDROID_ABI STREQUAL armeabi-v7a)
   set(ANDROID_SYSROOT_ABI arm)
   set(ANDROID_TOOLCHAIN_NAME arm-linux-androideabi)
   set(ANDROID_TOOLCHAIN_ROOT ${ANDROID_TOOLCHAIN_NAME})
   set(ANDROID_HEADER_TRIPLE arm-linux-androideabi)
-  if(ANDROID_ABI STREQUAL armeabi)
-    message(WARNING "armeabi is deprecated and will be removed in a future NDK "
-                    "release.")
-    set(CMAKE_SYSTEM_PROCESSOR armv5te)
-    set(ANDROID_LLVM_TRIPLE armv5te-none-linux-androideabi)
-  elseif(ANDROID_ABI STREQUAL armeabi-v7a)
-    set(CMAKE_SYSTEM_PROCESSOR armv7-a)
-    set(ANDROID_LLVM_TRIPLE armv7-none-linux-androideabi)
-  endif()
+  set(CMAKE_SYSTEM_PROCESSOR armv7-a)
+  set(ANDROID_LLVM_TRIPLE armv7-none-linux-androideabi)
 elseif(ANDROID_ABI STREQUAL arm64-v8a)
   set(ANDROID_SYSROOT_ABI arm64)
   set(CMAKE_SYSTEM_PROCESSOR aarch64)
@@ -261,26 +287,14 @@ elseif(ANDROID_ABI STREQUAL x86_64)
   set(ANDROID_TOOLCHAIN_ROOT ${ANDROID_ABI})
   set(ANDROID_LLVM_TRIPLE x86_64-none-linux-android)
   set(ANDROID_HEADER_TRIPLE x86_64-linux-android)
-elseif(ANDROID_ABI STREQUAL mips)
-  message(WARNING "mips is deprecated and will be removed in a future NDK "
-                  "release.")
-  set(ANDROID_SYSROOT_ABI mips)
-  set(CMAKE_SYSTEM_PROCESSOR mips)
-  set(ANDROID_TOOLCHAIN_NAME mips64el-linux-android)
-  set(ANDROID_TOOLCHAIN_ROOT ${ANDROID_TOOLCHAIN_NAME})
-  set(ANDROID_LLVM_TRIPLE mipsel-none-linux-android)
-  set(ANDROID_HEADER_TRIPLE mipsel-linux-android)
-elseif(ANDROID_ABI STREQUAL mips64)
-  message(WARNING "mips64 is deprecated and will be removed in a future NDK "
-                  "release.")
-  set(ANDROID_SYSROOT_ABI mips64)
-  set(CMAKE_SYSTEM_PROCESSOR mips64)
-  set(ANDROID_TOOLCHAIN_NAME mips64el-linux-android)
-  set(ANDROID_TOOLCHAIN_ROOT ${ANDROID_TOOLCHAIN_NAME})
-  set(ANDROID_LLVM_TRIPLE mips64el-none-linux-android)
-  set(ANDROID_HEADER_TRIPLE mips64el-linux-android)
 else()
-  message(FATAL_ERROR "Invalid Android ABI: ${ANDROID_ABI}.")
+  set(ANDROID_ABI_ERROR "")
+  if(ANDROID_ABI STREQUAL armeabi)
+    set(ANDROID_ABI_ERROR " (armeabi is no longer supported. Use armeabi-v7a.)")
+  elseif(ANDROID_ABI MATCHES "^(mips|mips64)$")
+    set(ANDROID_ABI_ERROR " (MIPS and MIPS64 are no longer supported.)")
+  endif()
+  message(FATAL_ERROR "Invalid Android ABI: ${ANDROID_ABI}.${ANDROID_ABI_ERROR}")
 endif()
 
 set(ANDROID_COMPILER_FLAGS)
@@ -295,15 +309,20 @@ list(APPEND ANDROID_LINKER_FLAGS -Wl,--exclude-libs,libgcc.a)
 list(APPEND ANDROID_LINKER_FLAGS -Wl,--exclude-libs,libatomic.a)
 
 # STL.
+set(USE_NOSTDLIBXX TRUE)
 set(ANDROID_STL_STATIC_LIBRARIES)
 set(ANDROID_STL_SHARED_LIBRARIES)
+set(ANDROID_STL_LDLIBS)
 if(ANDROID_STL STREQUAL system)
+  set(USE_NOSTDLIBXX FALSE)
   if(NOT "x${ANDROID_CPP_FEATURES}" STREQUAL "x")
     set(ANDROID_STL_STATIC_LIBRARIES supc++)
   endif()
 elseif(ANDROID_STL STREQUAL stlport_static)
+  set(USE_NOSTDLIBXX FALSE)
   set(ANDROID_STL_STATIC_LIBRARIES stlport_static)
 elseif(ANDROID_STL STREQUAL stlport_shared)
+  set(USE_NOSTDLIBXX FALSE)
   set(ANDROID_STL_SHARED_LIBRARIES stlport_shared)
 elseif(ANDROID_STL STREQUAL gnustl_static)
   set(ANDROID_STL_STATIC_LIBRARIES gnustl_static)
@@ -311,12 +330,29 @@ elseif(ANDROID_STL STREQUAL gnustl_shared)
   set(ANDROID_STL_STATIC_LIBRARIES supc++)
   set(ANDROID_STL_SHARED_LIBRARIES gnustl_shared)
 elseif(ANDROID_STL STREQUAL c++_static)
-  set(ANDROID_STL_STATIC_LIBRARIES c++)
+  list(APPEND ANDROID_STL_STATIC_LIBRARIES c++_static c++abi)
+  if(ANDROID_PLATFORM_LEVEL LESS 21)
+    list(APPEND ANDROID_STL_STATIC_LIBRARIES android_support)
+  endif()
+  if(ANDROID_ABI STREQUAL armeabi-v7a)
+    list(APPEND ANDROID_STL_STATIC_LIBRARIES unwind)
+    list(APPEND ANDROID_STL_LDLIBS dl)
+  endif()
 elseif(ANDROID_STL STREQUAL c++_shared)
-  set(ANDROID_STL_SHARED_LIBRARIES c++)
+  if(ANDROID_PLATFORM_LEVEL LESS 21)
+    list(APPEND ANDROID_STL_STATIC_LIBRARIES android_support)
+  endif()
+  if(ANDROID_ABI STREQUAL armeabi-v7a)
+    list(APPEND ANDROID_STL_STATIC_LIBRARIES unwind)
+  endif()
+  list(APPEND ANDROID_STL_SHARED_LIBRARIES c++_shared)
 elseif(ANDROID_STL STREQUAL none)
 else()
   message(FATAL_ERROR "Invalid Android STL: ${ANDROID_STL}.")
+endif()
+
+if(USE_NOSTDLIBXX AND ANDROID_TOOLCHAIN STREQUAL clang)
+  list(APPEND ANDROID_LINKER_FLAGS "-nostdlib++")
 endif()
 
 # Behavior of CMAKE_SYSTEM_LIBRARY_PATH and CMAKE_LIBRARY_PATH are really weird
@@ -482,14 +518,6 @@ if(ANDROID_ABI STREQUAL mips)
   list(APPEND ANDROID_COMPILER_FLAGS
     -mips32)
 endif()
-if(ANDROID_ABI STREQUAL "mips64" AND ANDROID_TOOLCHAIN STREQUAL clang)
-  list(APPEND ANDROID_COMPILER_FLAGS "-fintegrated-as")
-endif()
-if(ANDROID_ABI MATCHES "^armeabi" AND ANDROID_TOOLCHAIN STREQUAL clang)
-  # Disable integrated-as for better compatibility.
-  list(APPEND ANDROID_COMPILER_FLAGS
-    -fno-integrated-as)
-endif()
 if(ANDROID_ABI STREQUAL mips AND ANDROID_TOOLCHAIN STREQUAL clang)
   # Help clang use mips64el multilib GCC
   list(APPEND ANDROID_LINKER_FLAGS
@@ -549,6 +577,9 @@ foreach(library ${ANDROID_STL_SHARED_LIBRARIES})
   list(APPEND ANDROID_CXX_STANDARD_LIBRARIES
     "${ANDROID_NDK}/sources/cxx-stl/${ANDROID_STL_PREFIX}/libs/${ANDROID_ABI}/lib${library}.so")
 endforeach()
+foreach(library ${ANDROID_STL_LDLIBS})
+  list(APPEND ANDROID_CXX_STANDARD_LIBRARIES "-l${library}")
+endforeach()
 set(CMAKE_C_STANDARD_LIBRARIES_INIT "-latomic -lm")
 set(CMAKE_CXX_STANDARD_LIBRARIES_INIT "${CMAKE_C_STANDARD_LIBRARIES_INIT}")
 if(ANDROID_CXX_STANDARD_LIBRARIES)
@@ -557,12 +588,25 @@ if(ANDROID_CXX_STANDARD_LIBRARIES)
 endif()
 
 # Configuration specific flags.
+
+# x86 and x86_64 use large model pic, whereas everything else uses small model.
+# In the past we've always used -fPIE, but the LLVMgold plugin (for LTO)
+# complains if the models are mismatched.
+list(APPEND ANDROID_PIE_FLAGS -pie)
+if(ANDROID_ABI MATCHES "x86")
+  list(APPEND ANDROID_PIE_FLAGS -fPIE)
+else()
+  list(APPEND ANDROID_PIE_FLAGS -fpie)
+endif()
+
+# PIE is supported on all currently supported Android releases, but it is not
+# supported with static executables, so we still provide ANDROID_PIE as an
+# escape hatch for those.
 if(ANDROID_PIE)
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-  list(APPEND ANDROID_LINKER_FLAGS_EXE
-    -pie
-    -fPIE)
+  list(APPEND ANDROID_LINKER_FLAGS_EXE ${ANDROID_PIE_FLAGS})
 endif()
+
 if(ANDROID_CPP_FEATURES)
   separate_arguments(ANDROID_CPP_FEATURES)
   foreach(feature ${ANDROID_CPP_FEATURES})

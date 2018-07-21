@@ -1,0 +1,17 @@
+---
+- files:
+    - include/mbutil/external/bionic_futex.h
+    - include/mbutil/external/bionic_lock.h
+    - include/mbutil/external/bionic_macros.h
+    - include/mbutil/external/_system_properties.h
+    - include/mbutil/external/system_properties.h
+    - src/external/system_properties.cpp
+  repo: https://android.googlesource.com/platform/bionic
+  tag: android-8.1.0_r29
+  commit: 3c75c11a5cb537bbdf499701e4298cee2e07a604
+
+- files:
+    - src/external/system_properties_compat.cpp
+  repo: https://android.googlesource.com/platform/bionic
+  tag: android-7.1.2_r36
+  commit: 8011119dffb81326eeecdc2effb3b878d536ff50

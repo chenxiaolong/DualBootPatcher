@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
         val dimensions = BitmapFactory.Options()
         dimensions.inJustDecodeBounds = true
         BitmapFactory.decodeResource(resources, R.drawable.material, dimensions)
-        Picasso.with(this).load(R.drawable.material)
+        Picasso.get().load(R.drawable.material)
                 .resize(dimensions.outWidth, dimensions.outHeight).into(navImage)
 
         // Set nav drawer header text

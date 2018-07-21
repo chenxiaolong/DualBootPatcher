@@ -40,7 +40,7 @@ using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
  */
 oc::result<Sha512Digest> sha512_hash(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
     if (!fp) {
         return ec_from_errno();
     }

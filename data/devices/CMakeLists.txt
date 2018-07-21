@@ -25,6 +25,7 @@ set(files
     google.yml
     gree.yml
     htc.yml
+    homtom.yml
     huawei.yml
     infinix.yml
     infocus.yml
@@ -39,6 +40,7 @@ set(files
     meizu.yml
     motorola.yml
     nokia.yml
+    nextbit.yml
     nexus.yml
     nubia.yml
     oneplus.yml

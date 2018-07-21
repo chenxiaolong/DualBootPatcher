@@ -65,9 +65,9 @@ static int open_png(const char* name, png_structp* png_ptr, png_infop* info_ptr,
 
     snprintf(resPath, sizeof(resPath)-1, "%s/images/%s.png", tw_resource_path.c_str(), name);
     resPath[sizeof(resPath)-1] = '\0';
-    FILE* fp = fopen(resPath, "rb");
+    FILE* fp = fopen(resPath, "rbe");
     if (fp == nullptr) {
-        fp = fopen(name, "rb");
+        fp = fopen(name, "rbe");
         if (fp == nullptr) {
             result = -1;
             goto exit;
@@ -279,13 +279,13 @@ int res_create_surface_jpg(const char* name, gr_surface* pSurface)
     unsigned char* pData;
     size_t width, height, stride, pixelSize;
 
-    FILE* fp = fopen(name, "rb");
+    FILE* fp = fopen(name, "rbe");
     if (fp == nullptr) {
         char resPath[256];
 
         snprintf(resPath, sizeof(resPath)-1, "%s/images/%s", tw_resource_path.c_str(), name);
         resPath[sizeof(resPath)-1] = '\0';
-        fp = fopen(resPath, "rb");
+        fp = fopen(resPath, "rbe");
         if (fp == nullptr) {
             result = -1;
             goto exit;

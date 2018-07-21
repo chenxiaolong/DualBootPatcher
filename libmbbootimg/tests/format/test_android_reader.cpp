@@ -79,7 +79,7 @@ TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldFail)
     AndroidHeader header;
     uint64_t offset;
 
-    MemoryFile file(static_cast<const void *>(nullptr), 0);
+    MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_header(reader, file,
@@ -96,7 +96,7 @@ TEST(FindAndroidHeaderTest, MissingMagicShouldFail)
     AndroidHeader header;
     uint64_t offset;
 
-    MemoryFile file(static_cast<const void *>(nullptr), 0);
+    MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_header(reader, file,
@@ -113,7 +113,7 @@ TEST(FindAndroidHeaderTest, TruncatedHeaderShouldFail)
     AndroidHeader header;
     uint64_t offset;
 
-    MemoryFile file(BOOT_MAGIC, BOOT_MAGIC_SIZE);
+    MemoryFile file(const_cast<unsigned char *>(BOOT_MAGIC), BOOT_MAGIC_SIZE);
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_header(reader, file,
@@ -168,7 +168,7 @@ TEST(FindSEAndroidMagicTest, UndersizedImageShouldFail)
 
     uint64_t offset;
 
-    MemoryFile file(static_cast<const void *>(nullptr), 0);
+    MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_samsung_seandroid_magic(

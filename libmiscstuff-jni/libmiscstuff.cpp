@@ -58,13 +58,11 @@ MB_PRINTF(3, 4)
 static bool throw_exception(JNIEnv *env, const char *class_name,
                             const char *fmt, ...)
 {
-    jclass clazz;
     char *buf;
-    int ret;
     va_list ap;
 
     va_start(ap, fmt);
-    ret = vasprintf(&buf, fmt, ap);
+    int ret = vasprintf(&buf, fmt, ap);
     va_end(ap);
 
     if (ret < 0) {
@@ -72,16 +70,17 @@ static bool throw_exception(JNIEnv *env, const char *class_name,
         abort();
     }
 
-    clazz = env->FindClass(class_name);
+    auto free_buf = finally([&] {
+        free(buf);
+    });
+
+    jclass clazz = env->FindClass(class_name);
     if (!clazz) {
         // Java will throw an exception after returning
         return false;
     }
 
-    ret = env->ThrowNew(clazz, buf);
-    free(buf);
-
-    return ret == 0;
+    return env->ThrowNew(clazz, buf) == 0;
 }
 
 JNIEXPORT void JNICALL

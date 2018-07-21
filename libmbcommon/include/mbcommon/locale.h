@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,25 +21,16 @@
 
 #include "mbcommon/common.h"
 
-#include <string>
+#include <string_view>
 
 #include "mbcommon/outcome.h"
 
 namespace mb
 {
 
-MB_EXPORT oc::result<std::wstring> mbs_to_wcs_n(const char *str, size_t len);
-MB_EXPORT oc::result<std::string> wcs_to_mbs_n(const wchar_t *str, size_t len);
-MB_EXPORT oc::result<std::wstring> utf8_to_wcs_n(const char *str, size_t len);
-MB_EXPORT oc::result<std::string> wcs_to_utf8_n(const wchar_t *str, size_t len);
-
-MB_EXPORT oc::result<std::wstring> mbs_to_wcs(const char *str);
-MB_EXPORT oc::result<std::wstring> mbs_to_wcs(const std::string &str);
-MB_EXPORT oc::result<std::string> wcs_to_mbs(const wchar_t *str);
-MB_EXPORT oc::result<std::string> wcs_to_mbs(const std::wstring &str);
-MB_EXPORT oc::result<std::wstring> utf8_to_wcs(const char *str);
-MB_EXPORT oc::result<std::wstring> utf8_to_wcs(const std::string &str);
-MB_EXPORT oc::result<std::string> wcs_to_utf8(const wchar_t *str);
-MB_EXPORT oc::result<std::string> wcs_to_utf8(const std::wstring &str);
+MB_EXPORT oc::result<std::wstring> mbs_to_wcs(std::string_view str);
+MB_EXPORT oc::result<std::string> wcs_to_mbs(std::wstring_view str);
+MB_EXPORT oc::result<std::wstring> utf8_to_wcs(std::string_view str);
+MB_EXPORT oc::result<std::string> wcs_to_utf8(std::wstring_view str);
 
 }

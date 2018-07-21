@@ -100,10 +100,9 @@ static bool hex_to_binary(const char *hex, void **data, size_t *data_size)
 }
 
 static mb::oc::result<mb::FileSearchAction>
-search_result_cb(mb::File &file, void *userdata, uint64_t offset)
+search_result_cb(const char *name, mb::File &file, uint64_t offset)
 {
     (void) file;
-    const char *name = static_cast<char *>(userdata);
     printf("%s: 0x%016" PRIx64 "\n", name, offset);
     return mb::FileSearchAction::Continue;
 }
@@ -114,9 +113,11 @@ static bool search(const char *name, mb::File &file,
                    size_t bsize, const void *pattern,
                    size_t pattern_size, std::optional<uint64_t> max_matches)
 {
+    using namespace std::placeholders;
+
     auto ret = mb::file_search(file, start, end, bsize, pattern, pattern_size,
-                               max_matches, &search_result_cb,
-                               const_cast<char *>(name));
+                               max_matches,
+                               std::bind(search_result_cb, name, _1, _2));
     if (!ret) {
         fprintf(stderr, "%s: Search failed: %s\n",
                 name, ret.error().message().c_str());

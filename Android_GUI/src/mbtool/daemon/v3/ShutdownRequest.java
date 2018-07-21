@@ -14,17 +14,21 @@ public final class ShutdownRequest extends Table {
   public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
   public ShutdownRequest __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
-  public short type() { int o = __offset(4); return o != 0 ? bb.getShort(o + bb_pos) : 0; }
+  public short type() { int o = __offset(4); return o != 0 ? bb.getShort(o + bb_pos) : 2; }
+  public boolean confirm() { int o = __offset(6); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
 
   public static int createShutdownRequest(FlatBufferBuilder builder,
-      short type) {
-    builder.startObject(1);
+      short type,
+      boolean confirm) {
+    builder.startObject(2);
     ShutdownRequest.addType(builder, type);
+    ShutdownRequest.addConfirm(builder, confirm);
     return ShutdownRequest.endShutdownRequest(builder);
   }
 
-  public static void startShutdownRequest(FlatBufferBuilder builder) { builder.startObject(1); }
-  public static void addType(FlatBufferBuilder builder, short type) { builder.addShort(0, type, 0); }
+  public static void startShutdownRequest(FlatBufferBuilder builder) { builder.startObject(2); }
+  public static void addType(FlatBufferBuilder builder, short type) { builder.addShort(0, type, 2); }
+  public static void addConfirm(FlatBufferBuilder builder, boolean confirm) { builder.addBoolean(1, confirm, false); }
   public static int endShutdownRequest(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

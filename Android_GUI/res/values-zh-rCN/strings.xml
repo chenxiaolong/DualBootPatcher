@@ -297,10 +297,6 @@
   <string name="patcher_card_subtitle_cancelled">已取消</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">补丁处理选项</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">用于升级主系统</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">这个选项仅用于处在分区中的主系统,虽然有所不同,但是本质上打不打补丁是一样的</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">该系统将会安装到 %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -472,6 +468,8 @@
   <string name="path_chooser_save_label">保存</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">新建文件夹</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">搜索</string>
   <!--Word/phrase for None (used in eg. a list)-->

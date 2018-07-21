@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
 pkgname=safe-iop
 pkgver=8.1.0_r2
-pkgrel=1
+pkgrel=2
 pkgdesc="Safe integer operation library for C"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://android.googlesource.com/platform/external/safe-iop"
@@ -39,7 +39,7 @@ build() {
         NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-21 \
+        APP_PLATFORM=android-28 \
         "${MAKEFLAGS}"
 }
 

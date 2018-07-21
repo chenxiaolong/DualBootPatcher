@@ -6,8 +6,9 @@ public final class ShutdownType {
   private ShutdownType() { }
   public static final short INIT = 0;
   public static final short DIRECT = 1;
+  public static final short FRAMEWORK = 2;
 
-  public static final String[] names = { "INIT", "DIRECT", };
+  public static final String[] names = { "INIT", "DIRECT", "FRAMEWORK", };
 
   public static String name(int e) { return names[e]; }
 }

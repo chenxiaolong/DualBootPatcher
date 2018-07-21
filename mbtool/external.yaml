@@ -1,0 +1,23 @@
+---
+- files:
+    - include/boot/audit/libaudit.h
+    - include/boot/init/cutils/uevent.h
+    - include/boot/init/devices.h
+    - include/boot/init/uevent.h
+    - include/boot/init/uevent_listener.h
+    - include/boot/init/unique_fd.h
+    - include/boot/property_service.h
+    - src/boot/audit/libaudit.cpp
+    - src/boot/init/cutils/uevent.cpp
+    - src/boot/init/devices.cpp
+    - src/boot/init/uevent_listener.cpp
+    - src/boot/property_service.cpp
+  repo: https://android.googlesource.com/platform/system/core
+  tag: android-8.1.0_r29
+  commit: cb0f6139bd58d9e0113b6c75f5f7965ca7850179
+
+- files:
+    - include/util/legacy_property_service.h
+    - src/util/legacy_property_service.cpp
+  repo: https://github.com/omnirom/android_bootable_recovery
+  commit: bf4f24f2274a384539b95b8e16df57b2b67f56dd

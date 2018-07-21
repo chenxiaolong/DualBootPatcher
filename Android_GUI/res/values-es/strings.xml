@@ -54,7 +54,7 @@ mbtool. Esto puede ocurrir si el acceso root fue denegado o si el ramdisk no est
   <!--Default name for the multi-slot ROMs-->
   <string name="multislot">Multi espacio %s</string>
   <!--Default name for the data-slot ROMs-->
-  <string name="dataslot">%s (Eanura de Datos)</string>
+  <string name="dataslot">%s (Ranura de Datos)</string>
   <!--Default name for the extsd-slot ROMs-->
   <string name="extsdslot">%s (Espacio SD-ext)</string>
   <!--Text shown when a ROM's version could not be detected-->
@@ -316,11 +316,6 @@ lista.</string>
   <string name="patcher_card_subtitle_cancelled">Parche cancelado</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Opciones del parchador</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Actualización de la ROM primaria</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Actualizar la ROM primaria sin afectar otras
-ROMS</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Instala la ROM en %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -523,6 +518,11 @@ por ejemplo cambiar de ROMs no funcionarán</string>
   <string name="path_chooser_save_label">Guardar</string>
   <!--Path chooser dialog button to create a new folder-->
   <string name="path_chooser_new_folder_label">Nueva carpeta</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <string name="notification_channel_background_services_name">Servicios en segundo plano</string>
+  <!--Android 8.0+ notification channel description for background services-->
+  <string name="notification_channel_background_services_desc">Mostrar notificaciones
+           Cuando el servicio esté corriendo en segundo plano</string>
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Buscar</string>
   <!--Word/phrase for None (used in eg. a list)-->

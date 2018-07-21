@@ -1,4 +1,4 @@
-# Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,13 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-FROM registry.fedoraproject.org/fedora:27
+FROM registry.fedoraproject.org/fedora:28
 
 # Install gosu
 ENV GOSU_VERSION 1.10
 RUN dnf -y install gnupg \
     && curl -Lo /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-amd64" \
-    && curl -Lo /tmp/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64.asc" \
+    && curl -Lo /tmp/gosu.asc "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-amd64.asc" \
     && export GNUPGHOME="$(mktemp -d)" \
     && gpg --keyserver keyserver.ubuntu.com \
         --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
@@ -45,8 +45,8 @@ RUN dnf -y install gnupg \
     && dnf clean all
 
 # Install Android NDK
-ARG ANDROID_NDK_VERSION=r16b
-ARG ANDROID_NDK_CHECKSUM=42aa43aae89a50d1c66c3f9fdecd676936da6128
+ARG ANDROID_NDK_VERSION=r17
+ARG ANDROID_NDK_CHECKSUM=1d886a64483adf3f3a3e3aaf7ac5084184006ac7
 ENV ANDROID_NDK_HOME /opt/android-ndk
 ENV ANDROID_NDK ${ANDROID_NDK_HOME}
 

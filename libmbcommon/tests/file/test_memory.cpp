@@ -48,7 +48,7 @@ TEST(FileStaticMemoryTest, CloseFile)
 
 TEST(FileStaticMemoryTest, ReadInBounds)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
     char out[1];
 
@@ -63,7 +63,7 @@ TEST(FileStaticMemoryTest, ReadInBounds)
 
 TEST(FileStaticMemoryTest, ReadOutOfBounds)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
     char out[1];
 
@@ -92,7 +92,7 @@ TEST(FileStaticMemoryTest, ReadEmpty)
 
 TEST(FileStaticMemoryTest, ReadTooLarge)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
     char out[2];
 
@@ -107,7 +107,7 @@ TEST(FileStaticMemoryTest, ReadTooLarge)
 
 TEST(FileStaticMemoryTest, WriteInBounds)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
 
     MemoryFile file(in, in_size);
@@ -121,7 +121,7 @@ TEST(FileStaticMemoryTest, WriteInBounds)
 
 TEST(FileStaticMemoryTest, WriteOutOfBounds)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
 
     MemoryFile file(in, in_size);
@@ -135,7 +135,7 @@ TEST(FileStaticMemoryTest, WriteOutOfBounds)
 
 TEST(FileStaticMemoryTest, WriteTooLarge)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
 
     MemoryFile file(in, in_size);
@@ -149,7 +149,7 @@ TEST(FileStaticMemoryTest, WriteTooLarge)
 
 TEST(FileStaticMemoryTest, SeekNormal)
 {
-    constexpr char in[] = "abcdefghijklmnopqrstuvwxyz";
+    char in[] = "abcdefghijklmnopqrstuvwxyz";
     constexpr size_t in_size = 26;
 
     MemoryFile file(in, in_size);
@@ -183,7 +183,7 @@ TEST(FileStaticMemoryTest, SeekNormal)
 
 TEST(FileStaticMemoryTest, SeekInvalid)
 {
-    constexpr char in[] = "abcdefghijklmnopqrstuvwxyz";
+    char in[] = "abcdefghijklmnopqrstuvwxyz";
     constexpr size_t in_size = 26;
 
     MemoryFile file(in, in_size);
@@ -228,7 +228,7 @@ TEST(FileStaticMemoryTest, SeekInvalid)
 
 TEST(FileStaticMemoryTest, CheckTruncateUnsupported)
 {
-    constexpr char in[] = "x";
+    char in[] = "x";
     constexpr size_t in_size = 1;
 
     MemoryFile file(in, in_size);

@@ -42,6 +42,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.actions.RomInstallerPara
 import mbtool.daemon.v3.PathDeleteFlag
 import mbtool.daemon.v3.SignedExecResult
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.ArrayList
 import java.util.Arrays
@@ -257,12 +258,11 @@ class MbtoolTask(
 
         printSeparator()
 
-        var backupDir: String? = null
-        if (params.backupDirUri != null) {
-            backupDir = getPathFromUri(params.backupDirUri!!, iface)
-            if (backupDir == null) {
-                return false
-            }
+        val backupDir = try {
+            getPathFromUri(params.backupDirUri!!, iface) ?: return false
+        } catch (e: FileNotFoundException) {
+            printBoldText(Color.RED, "Backup directory does not exist: ${params.backupDirUri}\n")
+            return false
         }
 
         @Suppress("DEPRECATION")
@@ -294,14 +294,8 @@ class MbtoolTask(
         args.add(params.romId!!)
         args.add("-t")
         args.add(params.targets!!.joinToString(","))
-        if (params.backupName != null) {
-            args.add("-n")
-            args.add(params.backupName!!)
-        }
-        if (backupDir != null) {
-            args.add("-d")
-            args.add(translateEmulatedPath(backupDir))
-        }
+        args.add("-d")
+        args.add(translateEmulatedPath(backupDir) + File.separator + params.backupName)
         if (params.force) {
             args.add("-f")
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include "mbcommon/file.h"
 
 namespace mb
@@ -27,16 +29,16 @@ namespace mb
 class MB_EXPORT CallbackFile : public File
 {
 public:
-    using OpenCb = oc::result<void> (*)(File &file, void *userdata);
-    using CloseCb = oc::result<void> (*)(File &file, void *userdata);
-    using ReadCb = oc::result<size_t> (*)(File &file, void *userdata,
-                                          void *buf, size_t size);
-    using WriteCb = oc::result<size_t> (*)(File &file, void *userdata,
-                                           const void *buf, size_t size);
-    using SeekCb = oc::result<uint64_t> (*)(File &file, void *userdata,
-                                            int64_t offset, int whence);
-    using TruncateCb = oc::result<void> (*)(File &file, void *userdata,
-                                            uint64_t size);
+    using OpenCb = std::function<oc::result<void>(File &file)>;
+    using CloseCb = std::function<oc::result<void>(File &file)>;
+    using ReadCb = std::function<oc::result<size_t>(
+            File &file, void *buf, size_t size)>;
+    using WriteCb = std::function<oc::result<size_t>(
+            File &file, const void *buf, size_t size)>;
+    using SeekCb = std::function<oc::result<uint64_t>(
+            File &file, int64_t offset, int whence)>;
+    using TruncateCb = std::function<oc::result<void>(
+            File &file, uint64_t size)>;
 
     CallbackFile();
     CallbackFile(OpenCb open_cb,
@@ -44,8 +46,7 @@ public:
                  ReadCb read_cb,
                  WriteCb write_cb,
                  SeekCb seek_cb,
-                 TruncateCb truncate_cb,
-                 void *userdata);
+                 TruncateCb truncate_cb);
     virtual ~CallbackFile();
 
     CallbackFile(CallbackFile &&other) noexcept;
@@ -58,8 +59,7 @@ public:
                           ReadCb read_cb,
                           WriteCb write_cb,
                           SeekCb seek_cb,
-                          TruncateCb truncate_cb,
-                          void *userdata);
+                          TruncateCb truncate_cb);
 
 protected:
     oc::result<void> on_open() override;
@@ -79,7 +79,6 @@ private:
     WriteCb m_write_cb;
     SeekCb m_seek_cb;
     TruncateCb m_truncate_cb;
-    void *m_userdata;
     /*! \endcond */
 };
 

@@ -261,10 +261,6 @@
   <string name="patcher_card_subtitle_cancelled">מבוטל</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">אפשרויות מטלא (פאצ׳ר)</string>
-  <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">עדכון מערכת הפעלה ראשית</string>
-  <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">עדכן את מערכת ההפעלה הראשית מבלי לפגוע בתפקוד מערכות הפעלה אחרות</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">מתקין את מערכת ההפעלה ל%s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -335,6 +331,8 @@
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <plurals name="force_update_ramdisk_countdown">
     <item quantity="one">כעת אתה צעד %1$d מכפיית עדכון הramdisk.</item>
+    <item quantity="two">כעת אתה %1$d צעדים מכפיית עדכון הramdisk.</item>
+    <item quantity="many">כעת אתה %1$d צעדים מכפיית עדכון הramdisk.</item>
     <item quantity="other">כעת אתה %1$d צעדים מכפיית עדכון הramdisk.</item>
   </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
@@ -402,6 +400,8 @@
   <!--Path chooser dialog button to select a directory-->
   <!--Path chooser dialog button to save a file-->
   <!--Path chooser dialog button to create a new folder-->
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">חיפוש</string>
   <!--Word/phrase for None (used in eg. a list)-->

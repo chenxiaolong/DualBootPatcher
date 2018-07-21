@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -50,10 +50,9 @@ public:
     // Patching
     void set_file_info(const FileInfo * const info) override;
 
-    bool patch_file(ProgressUpdatedCallback progress_cb,
-                    FilesUpdatedCallback files_cb,
-                    DetailsUpdatedCallback details_cb,
-                    void *userdata) override;
+    bool patch_file(const ProgressUpdatedCallback &progress_cb,
+                    const FilesUpdatedCallback &files_cb,
+                    const DetailsUpdatedCallback &details_cb) override;
 
     void cancel_patching() override;
 
@@ -73,10 +72,9 @@ private:
     ErrorCode m_error;
 
     // Callbacks
-    ProgressUpdatedCallback m_progress_cb;
-    FilesUpdatedCallback m_files_cb;
-    DetailsUpdatedCallback m_details_cb;
-    void *m_userdata;
+    const ProgressUpdatedCallback *m_progress_cb;
+    const FilesUpdatedCallback *m_files_cb;
+    const DetailsUpdatedCallback *m_details_cb;
 
     // Patching
     ZipCtx *m_z_input = nullptr;
@@ -98,7 +96,7 @@ private:
     void update_files(uint64_t files, uint64_t max_files);
     void update_details(const std::string &msg);
 
-    static void la_progress_cb(uint64_t bytes, void *userdata);
+    void la_progress_cb(uint64_t bytes);
 };
 
 }

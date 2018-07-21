@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -153,19 +153,17 @@ CallbackFile::CallbackFile()
  * \param write_cb File write callback
  * \param seek_cb File seek callback
  * \param truncate_cb File truncate callback
- * \param userdata Data pointer to pass to callbacks
  */
 CallbackFile::CallbackFile(OpenCb open_cb,
                            CloseCb close_cb,
                            ReadCb read_cb,
                            WriteCb write_cb,
                            SeekCb seek_cb,
-                           TruncateCb truncate_cb,
-                           void *userdata)
+                           TruncateCb truncate_cb)
     : CallbackFile()
 {
-    (void) open(open_cb, close_cb, read_cb, write_cb, seek_cb, truncate_cb,
-                userdata);
+    (void) open(std::move(open_cb), std::move(close_cb), std::move(read_cb),
+                std::move(write_cb), std::move(seek_cb), std::move(truncate_cb));
 }
 
 CallbackFile::~CallbackFile()
@@ -175,13 +173,12 @@ CallbackFile::~CallbackFile()
 
 CallbackFile::CallbackFile(CallbackFile &&other) noexcept
     : File(std::move(other))
-    , m_open_cb(other.m_open_cb)
-    , m_close_cb(other.m_close_cb)
-    , m_read_cb(other.m_read_cb)
-    , m_write_cb(other.m_write_cb)
-    , m_seek_cb(other.m_seek_cb)
-    , m_truncate_cb(other.m_truncate_cb)
-    , m_userdata(other.m_userdata)
+    , m_open_cb(std::move(other.m_open_cb))
+    , m_close_cb(std::move(other.m_close_cb))
+    , m_read_cb(std::move(other.m_read_cb))
+    , m_write_cb(std::move(other.m_write_cb))
+    , m_seek_cb(std::move(other.m_seek_cb))
+    , m_truncate_cb(std::move(other.m_truncate_cb))
 {
     other.clear();
 }
@@ -190,13 +187,12 @@ CallbackFile & CallbackFile::operator=(CallbackFile &&rhs) noexcept
 {
     File::operator=(std::move(rhs));
 
-    m_open_cb = rhs.m_open_cb;
-    m_close_cb = rhs.m_close_cb;
-    m_read_cb = rhs.m_read_cb;
-    m_write_cb = rhs.m_write_cb;
-    m_seek_cb = rhs.m_seek_cb;
-    m_truncate_cb = rhs.m_truncate_cb;
-    m_userdata = rhs.m_userdata;
+    m_open_cb = std::move(rhs.m_open_cb);
+    m_close_cb = std::move(rhs.m_close_cb);
+    m_read_cb = std::move(rhs.m_read_cb);
+    m_write_cb = std::move(rhs.m_write_cb);
+    m_seek_cb = std::move(rhs.m_seek_cb);
+    m_truncate_cb = std::move(rhs.m_truncate_cb);
 
     rhs.clear();
 
@@ -215,24 +211,21 @@ CallbackFile & CallbackFile::operator=(CallbackFile &&rhs) noexcept
  * \param write_cb File write callback
  * \param seek_cb File seek callback
  * \param truncate_cb File truncate callback
- * \param userdata Data pointer to pass to callbacks
  */
 oc::result<void> CallbackFile::open(OpenCb open_cb,
                                     CloseCb close_cb,
                                     ReadCb read_cb,
                                     WriteCb write_cb,
                                     SeekCb seek_cb,
-                                    TruncateCb truncate_cb,
-                                    void *userdata)
+                                    TruncateCb truncate_cb)
 {
     if (state() == FileState::New) {
-        m_open_cb = open_cb;
-        m_close_cb = close_cb;
-        m_read_cb = read_cb;
-        m_write_cb = write_cb;
-        m_seek_cb = seek_cb;
-        m_truncate_cb = truncate_cb;
-        m_userdata = userdata;
+        m_open_cb = std::move(open_cb);
+        m_close_cb = std::move(close_cb);
+        m_read_cb = std::move(read_cb);
+        m_write_cb = std::move(write_cb);
+        m_seek_cb = std::move(seek_cb);
+        m_truncate_cb = std::move(truncate_cb);
     }
 
     return File::open();
@@ -241,7 +234,7 @@ oc::result<void> CallbackFile::open(OpenCb open_cb,
 oc::result<void> CallbackFile::on_open()
 {
     if (m_open_cb) {
-        return m_open_cb(*this, m_userdata);
+        return m_open_cb(*this);
     } else {
         return File::on_open();
     }
@@ -255,7 +248,7 @@ oc::result<void> CallbackFile::on_close()
     });
 
     if (m_close_cb) {
-        return m_close_cb(*this, m_userdata);
+        return m_close_cb(*this);
     } else {
         return File::on_close();
     }
@@ -264,7 +257,7 @@ oc::result<void> CallbackFile::on_close()
 oc::result<size_t> CallbackFile::on_read(void *buf, size_t size)
 {
     if (m_read_cb) {
-        return m_read_cb(*this, m_userdata, buf, size);
+        return m_read_cb(*this, buf, size);
     } else {
         return File::on_read(buf, size);
     }
@@ -273,7 +266,7 @@ oc::result<size_t> CallbackFile::on_read(void *buf, size_t size)
 oc::result<size_t> CallbackFile::on_write(const void *buf, size_t size)
 {
     if (m_write_cb) {
-        return m_write_cb(*this, m_userdata, buf, size);
+        return m_write_cb(*this, buf, size);
     } else {
         return File::on_write(buf, size);
     }
@@ -282,7 +275,7 @@ oc::result<size_t> CallbackFile::on_write(const void *buf, size_t size)
 oc::result<uint64_t> CallbackFile::on_seek(int64_t offset, int whence)
 {
     if (m_seek_cb) {
-        return m_seek_cb(*this, m_userdata, offset, whence);
+        return m_seek_cb(*this, offset, whence);
     } else {
         return File::on_seek(offset, whence);
     }
@@ -291,7 +284,7 @@ oc::result<uint64_t> CallbackFile::on_seek(int64_t offset, int whence)
 oc::result<void> CallbackFile::on_truncate(uint64_t size)
 {
     if (m_truncate_cb) {
-        return m_truncate_cb(*this, m_userdata, size);
+        return m_truncate_cb(*this, size);
     } else {
         return File::on_truncate(size);
     }
@@ -305,7 +298,6 @@ void CallbackFile::clear()
     m_write_cb = nullptr;
     m_seek_cb = nullptr;
     m_truncate_cb = nullptr;
-    m_userdata = nullptr;
 }
 
 }

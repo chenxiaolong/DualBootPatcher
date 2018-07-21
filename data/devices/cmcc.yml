@@ -1,44 +1,42 @@
-- name: M653 
-  id: M653
-  codenames:
-    - M653
-    - wt86617
-    - A3S
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/bootdevice/by-name
-      - /dev/block/platform/soc/7824900.sdhci/by-name
-    system:
-      - /dev/block/bootdevice/by-name/system
-      - /dev/block/platform/soc/7824900.sdhci/by-name/system
-      - /dev/block/mmcblk0p24
-    cache:
-      - /dev/block/bootdevice/by-name/cache
-      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
-      - /dev/block/mmcblk0p25
-    data:
-      - /dev/block/bootdevice/by-name/userdata
-      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
-      - /dev/block/mmcblk0p47
-    boot:
-      - /dev/block/bootdevice/by-name/boot
-      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
-      - /dev/block/mmcblk0p21
-    recovery:
-      - /dev/block/bootdevice/by-name/recovery
-      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
-      - /dev/block/mmcblk0p22
-
-  boot_ui:
-    supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
-    pixel_format: RGBX_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
+name: M653 
+ +  id: wt86617
+ +  codenames:
+ +    - wt86617
+ +  architecture: arm64-v8a
+ +
+ +  block_devs:
+ +    base_dirs:
+ +      - /dev/block/bootdevice/by-name
+ +      - /dev/block/platform/soc/7824900.sdhci/by-name
+ +    system:
+ +      - /dev/block/bootdevice/by-name/system
+ +      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+ +      - /dev/block/mmcblk0p24
+ +    cache:
+ +      - /dev/block/bootdevice/by-name/cache
+ +      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+ +      - /dev/block/mmcblk0p25
+ +    data:
+ +      - /dev/block/bootdevice/by-name/userdata
+ +      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+ +      - /dev/block/mmcblk0p47
+ +    boot:
+ +      - /dev/block/bootdevice/by-name/boot
+ +      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+ +      - /dev/block/mmcblk0p21
+ +    recovery:
+ +      - /dev/block/bootdevice/by-name/recovery
+ +      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+ +      - /dev/block/mmcblk0p22
+ +
+ +  boot_ui:
+ +    supported: true
+ +    graphics_backends:
+ +      - fbdev
+ +    flags:
+ +      - TW_QCOM_RTC_FIX
+ +    pixel_format: RGBX_8888
+ +    brightness_path: /sys/class/leds/lcd-backlight/brightness
+ +    max_brightness: 255
+ +    default_brightness: 162
+ +    theme: portrait_hdpi

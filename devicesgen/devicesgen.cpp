@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     FILE *fp = stdout;
 
     if (output_file) {
-        fp = fopen(output_file, "w");
+        fp = fopen(output_file, "we");
         if (!fp) {
             fprintf(stderr, "%s: Failed to open file: %s\n",
                     output_file, strerror(errno));

@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,11 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 _prebuilts='https://dbp.noobdev.io/repo/prebuilts'
-_ver_libpng=8.1.0_r2-1
+_ver_libpng=8.1.0_r2-2
 
 pkgname=freetype2
 pkgver=8.1.0_r2
-pkgrel=1
+pkgrel=2
 pkgdesc="TrueType font rendering library"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://android.googlesource.com/platform/external/freetype"
@@ -56,7 +56,7 @@ build() {
         NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-21 \
+        APP_PLATFORM=android-28 \
         "${MAKEFLAGS}"
 }
 
@@ -74,11 +74,11 @@ package() {
 
 sha512sums=('SKIP'
             '7de6df668a8ba974a8105263bac554c682bcea2dfc53062df013a186b818f66986639362d026be969d42a5f3248705d15cd7e937e0402883c4f26eff53781c1e')
-sha512sums_armv7=('0f1a34e27b39cb54aea366c9ba496ccec5faca4dcdb03ba75e91b5e8cadb4f6c88a6feb48e00df136561df360e0a7ce5540a300223f7377b3fc93df1c8f07958'
+sha512sums_armv7=('d7e3a1d01b06db858e0fa76248db06a7e7e40f5c9eb9df8a484f0102c4bf637cecbdfbb96d5aef29cc52cb1804eb134631d0e1c4dbb444c0585af8270f5bfc20'
                   'SKIP')
-sha512sums_aarch64=('fb5110df17096581e0b2faf6d1ff3e6abfe080380a1d87877c3fee854b2ac4719440107e3b6f5eb9a390c226ead8f726765e2062cd098c3fc3ac22443d1506f9'
+sha512sums_aarch64=('b53337eb0e552bc0aeeeffdabd99216ab441bac17ece16542a24c36504d6c12953e95f3c7c3a1b0a10146fa1c91f3e0c7fbe9781e967a9c20f975c1b00758642'
                     'SKIP')
-sha512sums_x86=('b3fff96d96e43d6776b61007146e54138cc41c25b10ed14e2b75ff82ac07c244f66d34d2097f6708d5ebf08d8eae7acb5105131d303208d4e1f5023b6410ad7e'
+sha512sums_x86=('187b79724027d65e46973e516559532b8216aeb02b886ca7932d074c1365dc0b83cab75139616a8a657a873a4dc5ae2fbe36e4d406d85b51fc43b4662760f9e3'
                 'SKIP')
-sha512sums_x86_64=('7551c14005976f505c301f6470ca777f5505d9e1e99e2d7457917e31855e04fc3cf7f6f1d1ec8fb1c64b71bfdf11d9c035aa40046a2e61d67676949ea0d93f39'
+sha512sums_x86_64=('70bfd7733dc5f1fb5886a7d6cbe3bca57795ed1047ffaa9eb446dde5250bb8e0bcfb6804c35b48d49d0341a3b6662154ba34ea74934b0ca453ae2931032e29db'
                    'SKIP')

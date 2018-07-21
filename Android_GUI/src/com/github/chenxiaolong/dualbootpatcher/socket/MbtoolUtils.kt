@@ -37,7 +37,7 @@ object MbtoolUtils {
             // Snapshot builds
             minVersionMap[Feature.DAEMON] = Version("9.1.0.r54")
             minVersionMap[Feature.APP_SHARING] = Version("8.0.0.r2155")
-            minVersionMap[Feature.IN_APP_INSTALLATION] = Version("8.0.0.r2859")
+            minVersionMap[Feature.IN_APP_INSTALLATION] = Version("9.3.0.r768")
         } else {
             // Debug/release builds
             minVersionMap[Feature.DAEMON] = Version("9.1.0")

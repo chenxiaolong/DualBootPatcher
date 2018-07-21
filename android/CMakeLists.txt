@@ -47,7 +47,7 @@ if(MBP_TOP_LEVEL_BUILD)
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DANDROID_ABI=${abi}
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
-            -DMBP_ENABLE_TESTS=OFF
+            -DMBP_ENABLE_TESTS=${MBP_ENABLE_TESTS}
             -DMBP_PREBUILTS_BINARY_DIR=${MBP_PREBUILTS_BINARY_DIR}
             -DMBP_SIGN_CONFIG_PATH=${MBP_SIGN_CONFIG_PATH}
             -DJAVA_KEYTOOL=${JAVA_KEYTOOL}
@@ -77,7 +77,7 @@ if(MBP_TOP_LEVEL_BUILD)
             ${INTERNAL_COMMON_OPTIONS}
             -DCMAKE_BUILD_TYPE=${MBP_SYSTEM_CMAKE_BUILD_TYPE}
             -DANDROID_PIE=OFF
-            -DANDROID_PLATFORM=android-21
+            -DANDROID_PLATFORM=android-28
             -DANDROID_STL=c++_static
             -DMBP_BUILD_TARGET=android-system
         )

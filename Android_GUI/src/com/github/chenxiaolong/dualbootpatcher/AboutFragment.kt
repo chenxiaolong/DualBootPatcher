@@ -17,9 +17,11 @@
 
 package com.github.chenxiaolong.dualbootpatcher
 
+import android.os.Build
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.text.Html
+import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
@@ -43,25 +45,32 @@ class AboutFragment : Fragment() {
 
         val credits: TextView = activity!!.findViewById(R.id.about_credits)
 
-        val linkable = "<a href=\"%s\">%s</a>\n"
         val newline = "<br />"
         val separator = " | "
 
         val creditsText = getString(R.string.credits)
-        val sourceCode = String.format(linkable,
-                getString(R.string.url_source_code),
+        val sourceCode = makeHtmlLink(getString(R.string.url_source_code, BuildConfig.GIT_SHA),
                 getString(R.string.link_source_code))
-        val xdaThread = String.format(linkable,
-                getString(R.string.url_xda_thread),
+        val xdaThread = makeHtmlLink(getString(R.string.url_xda_thread),
                 getString(R.string.link_xda_thread))
-        val licenses = String.format(linkable,
-                getString(R.string.url_licenses),
+        val licenses = makeHtmlLink(getString(R.string.url_licenses, BuildConfig.GIT_SHA),
                 getString(R.string.link_licenses))
 
-        credits.text = Html.fromHtml(creditsText + newline + newline
+        credits.text = fromHtml(creditsText + newline + newline
                 + sourceCode + separator + xdaThread + separator + licenses)
         credits.movementMethod = LinkMovementMethod.getInstance()
     }
+
+    private fun makeHtmlLink(url: String, text: String): String =
+        "<a href=\"${Html.escapeHtml(url)}\">${Html.escapeHtml(text)}</a>"
+
+    @Suppress("DEPRECATION")
+    private fun fromHtml(html: String): Spanned =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
+        } else {
+            Html.fromHtml(html)
+        }
 
     companion object {
         val FRAGMENT_TAG: String = AboutFragment::class.java.canonicalName
