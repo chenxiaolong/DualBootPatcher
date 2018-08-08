@@ -413,12 +413,12 @@
     boot:
       - /dev/block/bootdevice/by-name/boot
       - /dev/block/mmcblk0p70
-      - /dev/block/platform/soc/7c4000.sdhci/by-num/p79
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p70
       - /dev/block/platform/soc/7c4000.sdhci/by-name/boot
     recovery:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p71
-      - /dev/block/platform/soc/7c4000.sdhci/by-num/p79
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p71
       - /dev/block/platform/soc/7c4000.sdhci/by-name/recovery
       
   boot_ui:
