@@ -394,21 +394,32 @@
   block_devs:
     base_dirs:
       - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7c4000.sdhci/by-name
     system:
       - /dev/block/bootdevice/by-name/system
       - /dev/block/mmcblk0p79
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p79
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/system
     cache:
       - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p77
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p77
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/cache
     data:
       - /dev/block/bootdevice/by-name/userdata
       - /dev/block/mmcblk0p81
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p81
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/userdata
     boot:
       - /dev/block/bootdevice/by-name/boot
       - /dev/block/mmcblk0p70
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p79
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/boot
     recovery:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p71
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p79
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/recovery
       
   boot_ui:
     supported: yes
