@@ -1283,7 +1283,7 @@
   boot_ui:
     supported: true
     flags:
-      - (TW_HAS_DOWNLOAD_MODE)
+      - TW_SCREEN_BLANK_ON_BOOT
     graphics_backends:
       - fbdev
     brightness_path: /sys/class/leds/lcd-backlight/brightness
