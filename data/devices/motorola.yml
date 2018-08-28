@@ -1231,56 +1231,54 @@
   id: albus
   codenames:
     - albus
-	- xt1710-6
-	- xt1710-7
-	- xt1710-8
+    - xt1710-6
+    - xt1710-7
+    - xt1710-8
   architecture: arm64-v8a
-
-  block_devs:
+   block_devs:
     base_dirs:
       - /dev/block/bootdevice/by-name
-	  - /dev/block/platform/soc/7824900.sdhci/by-name
+      - /dev/block/platform/soc/7824900.sdhci/by-name
     system:
       - /dev/block/bootdevice/by-name/system
-	  - /dev/block/mmcblk0p53
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p53
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
     cache:
       - /dev/block/bootdevice/by-name/cache
-	  - /dev/block/mmcblk0p52
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p52
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
     data:
       - /dev/block/bootdevice/by-name/userdata
-	  - /dev/block/mmcblk0p54
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p54
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
     boot:
       - /dev/block/bootdevice/by-name/boot
-	  - /dev/block/mmcblk0p37
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p37
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
     recovery:
       - /dev/block/bootdevice/by-name/recovery
-	  - /dev/block/mmcblk0p38
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p38
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
     extra:
     - /dev/block/bootdevice/by-name/oem
-	  - /dev/block/mmcblk0p51
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/oem
-	  - /dev/block/bootdevice/by-name/persist
-	  - /dev/block/mmcblk0p30
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/persist
-	  - /dev/block/bootdevice/by-name/modem 
-	  - /dev/block/mmcblk0p19
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/modem
-	  - /dev/block/bootdevice/by-name/misc
-	  - /dev/block/mmcblk0p39
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/misc
-	  - /dev/block/bootdevice/by-name/modemst1
-	  - /dev/block/mmcblk0p27
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/modemst1
-	  - /dev/block/bootdevice/by-name/modemst2
-	  - /dev/block/mmcblk0p28
-	  - /dev/block/platform/soc/7824900.sdhci/by-name/modemst2
-
-  boot_ui:
+    - /dev/block/mmcblk0p51
+    - /dev/block/platform/soc/7824900.sdhci/by-name/oem
+    - /dev/block/bootdevice/by-name/persist
+    - /dev/block/mmcblk0p30
+    - /dev/block/platform/soc/7824900.sdhci/by-name/persist
+    - /dev/block/bootdevice/by-name/modem 
+    - /dev/block/mmcblk0p19
+    - /dev/block/platform/soc/7824900.sdhci/by-name/modem
+    - /dev/block/bootdevice/by-name/misc
+    - /dev/block/mmcblk0p39
+    - /dev/block/platform/soc/7824900.sdhci/by-name/misc
+    - /dev/block/bootdevice/by-name/modemst1
+    - /dev/block/mmcblk0p27
+    - /dev/block/platform/soc/7824900.sdhci/by-name/modemst1
+    - /dev/block/bootdevice/by-name/modemst2
+    - /dev/block/mmcblk0p28
+    - /dev/block/platform/soc/7824900.sdhci/by-name/modemst2
+   boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
