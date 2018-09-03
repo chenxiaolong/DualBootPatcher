@@ -38,26 +38,27 @@
    id: suez
    codenames:
     - suez
-  architecture: aarch64 (arm64)
+   architecture: aarch64 (arm64)
 
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/mtk-msdc.0/by-name
-    system:
-      - /dev/block/platform/mtk-msdc.0/by-name/system
-      - /dev/block/mmcblk0p13
-    cache:
-      - /dev/block/platform/mtk-msdc.0/by-name/cache
-      - /dev/block/mmcblk0p14
-    metadata:
-      - /dev/block/platform/mtk-msdc.0/by-name/metadata
-      - /dev/block/mmcblk0p8
-    userdata:
-      - /dev/block/platform/mtk-msdc.0/by-name/userdata
-      - /dev/block/mmcblk0p15
-    boot:
-      - /dev/block/platform/mtk-msdc.0/by-name/boot
-      - /dev/block/mmcblk0p11
-    recovery:
-      - /dev/block/platform/mtk-msdc.0/by-name/recovery
-      - /dev/block/mmcblk0p12
+   block_devs:
+     base_dirs:
+       - /dev/block/platform/mtk-msdc.0/by-name
+     system:
+       - /dev/block/platform/mtk-msdc.0/by-name/system
+       - /dev/block/mmcblk0p13
+     cache:
+       - /dev/block/platform/mtk-msdc.0/by-name/cache
+       - /dev/block/mmcblk0p14
+     metadata:
+       - /dev/block/platform/mtk-msdc.0/by-name/metadata
+       - /dev/block/mmcblk0p8
+     userdata:
+       - /dev/block/platform/mtk-msdc.0/by-name/userdata
+       - /dev/block/mmcblk0p15
+     boot:
+       - /dev/block/platform/mtk-msdc.0/by-name/boot
+       - /dev/block/mmcblk0p11
+     recovery:
+       - /dev/block/platform/mtk-msdc.0/by-name/recovery
+       - /dev/block/mmcblk0p12
+ 
