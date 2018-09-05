@@ -1,4 +1,5 @@
 [![Build Status](https://jenkins.noobdev.io/job/DualBootPatcher_Master/badge/icon)](https://jenkins.noobdev.io/job/DualBootPatcher_Master/)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fchenxiaolong%2FDualBootPatcher.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fchenxiaolong%2FDualBootPatcher?ref=badge_shield)
 
 DualBootPatcher
 ===============
@@ -25,3 +26,7 @@ License
 -------
 
 The patcher is licensed under GPLv3+ (see the LICENSE file). Third party libraries and programs are used under their respective licenses. Copies of these licenses are in the `licenses/` directory of this repository. Patches and other source code modifications to third party software are under the same license as the original software.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fchenxiaolong%2FDualBootPatcher.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fchenxiaolong%2FDualBootPatcher?ref=badge_large)
