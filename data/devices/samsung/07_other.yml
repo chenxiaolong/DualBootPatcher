@@ -413,7 +413,7 @@
     theme: portrait_hdpi
     
 - name: Samsung Galaxy J1 3G
-  id: j13g
+  id: core33g
   codenames:
     - j13g
     - SM-J100H
@@ -447,4 +447,4 @@
     pixel_format: RGBX_8888
     brightness_path: /sys/class/backlight/panel/brightness
     default_brightness: 255
-theme: portrait_hdpi
+    theme: portrait_hdpi
