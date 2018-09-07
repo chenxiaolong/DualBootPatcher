@@ -413,7 +413,7 @@
     theme: portrait_hdpi
     
 - name: Samsung Galaxy J1 3G
-  id: core33g
+  id: j13g
   codenames:
     - j13g
     - SM-J100H
