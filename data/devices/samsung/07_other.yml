@@ -375,11 +375,11 @@
     recovery:
       - /dev/block/platform/sdio_emmc/by-name/RECOVERY
 
-- name: Samsung Galaxy Core Prime
-  id: core33g
+- name: Samsung Galaxy J1 3G
+  id: j13g
   codenames:
-    - core33g
-    - SM-G360H
+    - j13g
+    - SM-J100H
   architecture: armeabi-v7a
 
   block_devs:
