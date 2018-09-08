@@ -50,6 +50,7 @@ set(files
     quantum.yml
     samsung/00_galaxy_s.yml
     samsung/01_galaxy_note.yml
+    samsung/01_galaxy_j1.yml
     samsung/02_galaxy_a_j.yml
     samsung/03_galaxy_ace.yml
     samsung/04_galaxy_mega.yml
