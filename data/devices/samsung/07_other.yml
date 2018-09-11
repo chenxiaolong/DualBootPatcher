@@ -396,17 +396,6 @@
       - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
     extra:
       - /dev/block/platform/sprd-sdhci.3/by-name/MODEM
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    pixel_format: RGBX_8888
-  theme: portrait_hdpi
   
 - name: Samsung Galaxy Core Prime
   id: core33g
