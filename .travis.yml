@@ -12,7 +12,7 @@ before_install:
 
   # Clone DualBootPatcher Repository
 
-  - git clone --recursive https://github.com/yshalsager/DualBootPatcher -b master DualBootPatcher/
+  - git clone --recursive https://github.com/adamayyad/DualBootPatcher -b master DualBootPatcher/
 
   # Pull docker images
 
