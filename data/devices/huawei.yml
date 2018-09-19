@@ -1020,8 +1020,9 @@
       - ANE-L22
       - ANE-L23
       - ANE-AL00
-      - ANE-TL00
       - ANE-LX2J
+      - ANE-TL00
+      - hi6250
   architecture: arm64-v8a
     base_dirs:
       - /dev/block/platform/hi_mci.0/by-name
