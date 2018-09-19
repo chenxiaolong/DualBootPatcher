@@ -1009,3 +1009,101 @@
     default_brightness: 162
     battery_path: /sys/devices/platform/battery/power_supply/Battery
     theme: portrait_hdpi
+
+- name:  Huawei P20 Lite
+  id: anne
+  codenames:
+      - ANE-LX1
+      - ANE-LX2
+      - ANE-LX3
+      - ANE-L21
+      - ANE-L22
+      - ANE-L23
+      - ANE-AL00
+      - ANE-TL00
+      - ANE-LX2J
+  architecture: arm64-v8a
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/mmcblk0p51
+      - /dev/block/bootdevice/by-name/system
+    cache:
+      - /dev/block/mmcblk0p42
+      - /dev/block/bootdevice/by-name/cache
+    data:
+      - /dev/block/mmcblk0p56
+      - /dev/block/bootdevice/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/kernel
+      - /dev/block/mmcblk0p30
+    recovery:
+      -  /dev/block/bootdevice/by-name/recovery-ramdisk
+      - /dev/block/mmcblk0p32
+    extra:
+      - /dev/block/platform/hi_mci.0/by-num/p1
+      - /dev/block/platform/hi_mci.0/by-num/p10
+      - /dev/block/platform/hi_mci.0/by-num/p11
+      - /dev/block/platform/hi_mci.0/by-num/p12
+      - /dev/block/platform/hi_mci.0/by-num/p13
+      - /dev/block/platform/hi_mci.0/by-num/p14
+      - /dev/block/platform/hi_mci.0/by-num/p15
+      - /dev/block/platform/hi_mci.0/by-num/p16
+      - /dev/block/platform/hi_mci.0/by-num/p17
+      - /dev/block/platform/hi_mci.0/by-num/p18
+      - /dev/block/platform/hi_mci.0/by-num/p19
+      - /dev/block/platform/hi_mci.0/by-num/p2
+      - /dev/block/platform/hi_mci.0/by-num/p20
+      - /dev/block/platform/hi_mci.0/by-num/p21
+      - /dev/block/platform/hi_mci.0/by-num/p22
+      - /dev/block/platform/hi_mci.0/by-num/p23
+      - /dev/block/platform/hi_mci.0/by-num/p24
+      - /dev/block/platform/hi_mci.0/by-num/p25
+      - /dev/block/platform/hi_mci.0/by-num/p26
+      - /dev/block/platform/hi_mci.0/by-num/p27
+      - /dev/block/platform/hi_mci.0/by-num/p28
+      - /dev/block/platform/hi_mci.0/by-num/p29
+      - /dev/block/platform/hi_mci.0/by-num/p3
+      - /dev/block/platform/hi_mci.0/by-num/p31
+      - /dev/block/platform/hi_mci.0/by-num/p33
+      - /dev/block/platform/hi_mci.0/by-num/p34
+      - /dev/block/platform/hi_mci.0/by-num/p35
+      - /dev/block/platform/hi_mci.0/by-num/p36
+      - /dev/block/platform/hi_mci.0/by-num/p37
+      - /dev/block/platform/hi_mci.0/by-num/p38
+      - /dev/block/platform/hi_mci.0/by-num/p39
+      - /dev/block/platform/hi_mci.0/by-num/p4
+      - /dev/block/platform/hi_mci.0/by-num/p40
+      - /dev/block/platform/hi_mci.0/by-num/p41
+      - /dev/block/platform/hi_mci.0/by-num/p43
+      - /dev/block/platform/hi_mci.0/by-num/p44
+      - /dev/block/platform/hi_mci.0/by-num/p45
+      - /dev/block/platform/hi_mci.0/by-num/p46
+      - /dev/block/platform/hi_mci.0/by-num/p47
+      - /dev/block/platform/hi_mci.0/by-num/p48
+      - /dev/block/platform/hi_mci.0/by-num/p49
+      - /dev/block/platform/hi_mci.0/by-num/p5
+      - /dev/block/platform/hi_mci.0/by-num/p50
+      - /dev/block/platform/hi_mci.0/by-num/p52
+      - /dev/block/platform/hi_mci.0/by-num/p53
+      - /dev/block/platform/hi_mci.0/by-num/p54
+      - /dev/block/platform/hi_mci.0/by-num/p55
+      - /dev/block/platform/hi_mci.0/by-num/p6
+      - /dev/block/platform/hi_mci.0/by-num/p7
+      - /dev/block/platform/hi_mci.0/by-num/p8
+      - /dev/block/platform/hi_mci.0/by-num/p9
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/devices/hisi_fb.524289/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/devices/platform/battery/power_supply/Battery
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
