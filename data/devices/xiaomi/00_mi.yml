@@ -454,7 +454,7 @@
       - /dev/block/mmcblk0p60
     data:
       - /dev/block/platform/soc/c0c4000.sdhci/by-name/userdata
-      - /dev/block/bootdevice/by-name/usedata
+      - /dev/block/bootdevice/by-name/userdata
       - /dev/block/mmcblk0p64
     boot:
       - /dev/block/platform/soc/c0c4000.sdhci/by-name/boot
