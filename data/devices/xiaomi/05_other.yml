@@ -226,42 +226,29 @@
     
     ---
 - name: Xiaomi POCO F1
-
   id: beryllium
-
   codenames:
     - beryllium
-    - POCO F1
-
   architecture: arm64-v8a
-
-
+  
   block_devs:
-    
     base_dirs:
       - /dev/block/platform/soc/1d84000.ufshc/by-name
-
     system:
       - /dev/block/platform/soc/1d84000.ufshc/by-name/system
       - /dev/block/sde48
-
     cache:
       - /dev/block/platform/soc/1d84000.ufshc/by-name/cache
       - /dev/block/sda20
-
-
     data:
       - /dev/block/platform/soc/1d84000.ufshc/by-name/userdata
       - /dev/block/sda21
-
     boot:
       - /dev/block/platform/soc/1d84000.ufshc/by-name/boot
       - /dev/block/sde45
-
     recovery:
       - /dev/block/platform/soc/1d84000.ufshc/by-name/recovery
       - /dev/block/sda19
-
   boot_ui:
     supported: false
       
