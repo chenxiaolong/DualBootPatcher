@@ -215,10 +215,14 @@
       - /dev/block/platform/msm_sdcc.1/by-name/system
       - /dev/block/bootdevice/by-name/system
       - /dev/block/mmcblk0p21
-    cache:
+    vendor:
       - /dev/block/platform/msm_sdcc.1/by-name/cache
       - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/preload
+      - /dev/block/bootdevice/by-name/preload
+      - /dev/block/mmcblk0p22
     data:
       - /dev/block/platform/msm_sdcc.1/by-name/userdata
       - /dev/block/bootdevice/by-name/userdata
