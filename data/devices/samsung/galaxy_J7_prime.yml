@@ -77,9 +77,9 @@
     supported: true
     flags:
       - TW_GRAPHICS_FORCE_USE_LINELENGTH
-    brightness_path: 
+    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
     max_brightness: 255
-    default_brightness: 168
+    default_brightness: 162
     cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
     battery_path: /sys/class/power_supply/battery/capacity
     graphics_backends:
