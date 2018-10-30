@@ -172,3 +172,72 @@
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
+---
+- name: ZTE ZTE BLADE L110
+  id: ZTE_BLADE_L110
+  codenames:
+      - BLADE
+      - L110
+      - ZTE
+      - ZTE_BLADE_scx35_sp7731gea
+  architecture: 
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdio_emmc/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p17
+      - /dev/block/platform/sdio_emmc/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p18
+      - /dev/block/platform/sdio_emmc/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/sdio_emmc/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p16
+      - /dev/block/platform/sdio_emmc/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p19
+      - /dev/block/platform/sdio_emmc/by-name/recovery
+    extra:
+      - /dev/block/mmcblk0boot0
+      - /dev/block/mmcblk0boot1
+      - /dev/block/mmcblk0p1
+      - /dev/block/platform/sdio_emmc/by-name/fbootlogo
+      - /dev/block/platform/sdio_emmc/by-name/logo
+      - /dev/block/platform/sdio_emmc/by-name/misc
+      - /dev/block/platform/sdio_emmc/by-name/miscdata
+      - /dev/block/platform/sdio_emmc/by-name/prodnv
+      - /dev/block/platform/sdio_emmc/by-name/wcnfixnv1
+      - /dev/block/platform/sdio_emmc/by-name/wcnfixnv2
+      - /dev/block/platform/sdio_emmc/by-name/wcnmodem
+      - /dev/block/platform/sdio_emmc/by-name/wcnruntimenv1
+      - /dev/block/platform/sdio_emmc/by-name/wcnruntimenv2
+      - /dev/block/platform/sdio_emmc/by-name/wdsp
+      - /dev/block/platform/sdio_emmc/by-name/wfixnv1
+      - /dev/block/platform/sdio_emmc/by-name/wfixnv2
+      - /dev/block/platform/sdio_emmc/by-name/wmodem
+      - /dev/block/platform/sdio_emmc/by-name/wruntimenv1
+      - /dev/block/platform/sdio_emmc/by-name/wruntimenv2
+      - /dev/block/platform/sdio_sd/mmcblk1p1
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: 
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
