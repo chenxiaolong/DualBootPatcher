@@ -16,8 +16,8 @@
 _commit_fuse=3ecfa58e23f723914cb479262dbf393ee4821295
 
 pkgname=exfat
-pkgver=1.2.8
-pkgrel=2
+pkgver=1.3.0
+pkgrel=1
 pkgdesc="FUSE-based exfat driver"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://github.com/relan/exfat"
@@ -26,17 +26,20 @@ source=("fuse::git+https://github.com/LineageOS/android_external_fuse.git#commit
         "exfat::git+https://github.com/relan/exfat.git#tag=v${pkgver}"
         0002-Create-multicall-binary.patch
         0003-Android-does-not-define-__STDC_VERSION__.patch
+        0001-Don-t-use-Android-log.patch
         Android.mk)
 sha512sums=('SKIP'
             'SKIP'
             '2f7d5082ccc024ab8c7d91320f2c0e7e8c11e56df05cc84c8420cc3b931d3ad6449892d4e6bf5b7f600fe81339b5ae573657ad4cda0796a999cca30d4a0f2d17'
             '5082dd6b9b198160896168bdf35d3953a5bc262a447da038b6bb43c10ed1954e16f58e4a2e89744dc37ee62184052c52592300505d5843b64cef14d31bd96c6e'
-            '40df1e10587726737ca28a4a9b2fc6159666e64465f13a0f7e4e33b9356794f905d0717c15f4c184b6ef05d57e409666facfc6f84e7fe3d58d2730097cbca96f')
+            '03673b804c0cba4a5d41764ae5de6eb0272c298f60779d1c892a98f7d77a65aa8a49a5eecc600aae9d381f8991533018afeb5ac62eff483de5f5f39359dc975b'
+            '79d4145a7099881e8a0b6aacb36de14489b0117cd9a7e13f12229b013bf87e47961b35027e7853f810f807512003cb3f7529c9526aa8033a95027ff8fbd8d925')
 
 prepare() {
     cd exfat
     patch -p1 -i ../0002-Create-multicall-binary.patch
     patch -p1 -i ../0003-Android-does-not-define-__STDC_VERSION__.patch
+    patch -p1 -i ../0001-Don-t-use-Android-log.patch
 
     autoreconf -vfi
 }
@@ -50,7 +53,9 @@ build() {
     export PATH="${srcdir}/toolchain/bin:${PATH}"
 
     local triplet
-    triplet=$("${srcdir}"/toolchain/bin/*-gcc -dumpmachine)
+    triplet=("${srcdir}"/toolchain/bin/*-gcc)
+    triplet=${triplet##*/}
+    triplet=${triplet%-gcc}
 
     mkdir -p build
     pushd build
@@ -65,6 +70,7 @@ build() {
         APP_ABI="${abi}" \
         APP_PLATFORM="android-${api}" \
         LIBEXFAT_CONFIGURE_DIR="${srcdir}/build/libexfat" \
+        VERSION="${pkgver}" \
         "${MAKEFLAGS}"
 }
 
