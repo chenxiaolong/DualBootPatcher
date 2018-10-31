@@ -53,7 +53,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app
     # file will work with newer versions of the NDK, we'll depend on an exact
     # version.
     set(ndk_version_whitelist
-        r17.0.4754217
+        r18.1.5063045
     )
 
     if(NOT ANDROID_NDK_RELEASE IN_LIST ndk_version_whitelist)
