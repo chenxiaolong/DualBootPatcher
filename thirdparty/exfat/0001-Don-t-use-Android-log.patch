@@ -1,0 +1,67 @@
+From 6626d6c892d5a958e89374fa6b10bc33823ced11 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
+Date: Wed, 31 Oct 2018 19:30:33 -0400
+Subject: [PATCH] Don't use Android log
+
+---
+ libexfat/log.c | 16 ----------------
+ 1 file changed, 16 deletions(-)
+
+diff --git a/libexfat/log.c b/libexfat/log.c
+index f29f74b..d62bf75 100644
+--- a/libexfat/log.c
++++ b/libexfat/log.c
+@@ -22,11 +22,7 @@
+ 
+ #include "exfat.h"
+ #include <stdarg.h>
+-#ifdef __ANDROID__
+-#include <android/log.h>
+-#else
+ #include <syslog.h>
+-#endif
+ #include <unistd.h>
+ 
+ int exfat_errors;
+@@ -47,12 +43,8 @@ void exfat_bug(const char* format, ...)
+ 	va_end(ap);
+ 	fputs(".\n", stderr);
+ 
+-#ifdef __ANDROID__
+-	__android_log_vprint(ANDROID_LOG_FATAL, PACKAGE, format, aq);
+-#else
+ 	if (!isatty(STDERR_FILENO))
+ 		vsyslog(LOG_CRIT, format, aq);
+-#endif
+ 	va_end(aq);
+ 
+ 	abort();
+@@ -75,12 +67,8 @@ void exfat_error(const char* format, ...)
+ 	va_end(ap);
+ 	fputs(".\n", stderr);
+ 
+-#ifdef __ANDROID__
+-	__android_log_vprint(ANDROID_LOG_ERROR, PACKAGE, format, aq);
+-#else
+ 	if (!isatty(STDERR_FILENO))
+ 		vsyslog(LOG_ERR, format, aq);
+-#endif
+ 	va_end(aq);
+ }
+ 
+@@ -101,12 +89,8 @@ void exfat_warn(const char* format, ...)
+ 	va_end(ap);
+ 	fputs(".\n", stderr);
+ 
+-#ifdef __ANDROID__
+-	__android_log_vprint(ANDROID_LOG_WARN, PACKAGE, format, aq);
+-#else
+ 	if (!isatty(STDERR_FILENO))
+ 		vsyslog(LOG_WARNING, format, aq);
+-#endif
+ 	va_end(aq);
+ }
+ 
+-- 
+2.17.2
+
