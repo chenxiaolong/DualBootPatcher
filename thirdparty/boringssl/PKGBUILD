@@ -13,19 +13,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-_commit=982279b366eccd9e4146036c7fcda7f72d2cbdff
+_commit=dc332205326340ec1bf7d553452c7699904054b4
 
 pkgname=boringssl
-pkgver=r5241.982279b36
+pkgver=r5501.dc3322053
 pkgrel=1
 pkgdesc="BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs."
 arch=(armv7 aarch64 x86 x86_64)
 url="https://boringssl.googlesource.com/boringssl/"
 license=(custom:BSD)
-source=("git+https://boringssl.googlesource.com/boringssl#commit=${_commit}"
-        'https://raw.githubusercontent.com/chenxiaolong/DualBootPatcher/v9.3.0/cmake/android.toolchain.cmake')
-sha512sums=('SKIP'
-            '52b53f4132fad8a21d5c766b56a2f36790eb2199bc1f5f3c08c3d9ca1c89862c047d2886ffecc76e90e7bcfbd40d7386621da47c0d9d1c619d8284979fd4412e')
+source=("git+https://boringssl.googlesource.com/boringssl#commit=${_commit}")
+sha512sums=('SKIP')
 
 pkgver() {
     cd "${pkgname}"
@@ -56,7 +54,7 @@ build() {
         -DCMAKE_ASM_FLAGS="${asflags}"
         -DCMAKE_C_FLAGS="${cflags}"
         -DCMAKE_CXX_FLAGS="${cxxflags}"
-        -DCMAKE_TOOLCHAIN_FILE=../android.toolchain.cmake
+        -DCMAKE_TOOLCHAIN_FILE="${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake"
         -DANDROID_ABI="${abi}"
         -DANDROID_PLATFORM="${api}"
         -DOPENSSL_SMALL=TRUE
