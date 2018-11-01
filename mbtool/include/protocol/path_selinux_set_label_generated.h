@@ -31,7 +31,7 @@ struct PathSELinuxSetLabelError FLATBUFFERS_FINAL_CLASS : private flatbuffers::T
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
            VerifyOffset(verifier, VT_MSG) &&
-           verifier.Verify(msg()) &&
+           verifier.VerifyString(msg()) &&
            verifier.EndTable();
   }
 };
@@ -95,9 +95,9 @@ struct PathSELinuxSetLabelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers:
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_PATH) &&
-           verifier.Verify(path()) &&
+           verifier.VerifyString(path()) &&
            VerifyOffset(verifier, VT_LABEL) &&
-           verifier.Verify(label()) &&
+           verifier.VerifyString(label()) &&
            VerifyField<uint8_t>(verifier, VT_FOLLOW_SYMLINKS) &&
            verifier.EndTable();
   }
@@ -170,7 +170,7 @@ struct PathSELinuxSetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
            VerifyOffset(verifier, VT_ERROR_MSG) &&
-           verifier.Verify(error_msg()) &&
+           verifier.VerifyString(error_msg()) &&
            VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();

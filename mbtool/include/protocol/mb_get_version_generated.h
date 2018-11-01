@@ -52,7 +52,7 @@ struct MbGetVersionResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_VERSION) &&
-           verifier.Verify(version()) &&
+           verifier.VerifyString(version()) &&
            verifier.EndTable();
   }
 };

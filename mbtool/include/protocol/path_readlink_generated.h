@@ -31,7 +31,7 @@ struct PathReadlinkError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
            VerifyOffset(verifier, VT_MSG) &&
-           verifier.Verify(msg()) &&
+           verifier.VerifyString(msg()) &&
            verifier.EndTable();
   }
 };
@@ -87,7 +87,7 @@ struct PathReadlinkRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table 
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_PATH) &&
-           verifier.Verify(path()) &&
+           verifier.VerifyString(path()) &&
            verifier.EndTable();
   }
 };
@@ -140,7 +140,7 @@ struct PathReadlinkResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_TARGET) &&
-           verifier.Verify(target()) &&
+           verifier.VerifyString(target()) &&
            VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();

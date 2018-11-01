@@ -52,7 +52,7 @@ struct MbGetBootedRomIdResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::T
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_ROM_ID) &&
-           verifier.Verify(rom_id()) &&
+           verifier.VerifyString(rom_id()) &&
            verifier.EndTable();
   }
 };
