@@ -14,8 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=lz4
-pkgver=1.8.2
-pkgrel=2
+pkgver=1.8.3
+pkgrel=1
 pkgdesc="Very fast lossless compression algorithm"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://github.com/Cyan4973/lz4"
