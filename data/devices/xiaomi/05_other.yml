@@ -223,3 +223,140 @@
     default_brightness: 153
     pixel_format: RGBX_8888
     theme: portrait_hdpi
+    
+    ---
+- name: Xiaomi MIX 2S
+  id: polaris
+  codenames:
+      - 2S
+      - MIX
+      - polaris
+  architecture: 
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/1d84000.ufshc/by-name
+      - /dev/block/bootdevice/by-name
+      - /dev/block/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/by-name/system
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/system
+      - /dev/block/sde48
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/by-name/cache
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cache
+      - /dev/block/sda20
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/by-name/userdata
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/userdata
+      - /dev/block/sda21
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/by-name/boot
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/boot
+      - /dev/block/sde45
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/by-name/recovery
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/recovery
+      - /dev/block/sda19
+    extra:
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/ImageFv
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/abl_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/abl_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/aop_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/aop_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/apdp
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk01
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk02
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk03
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk04
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk05
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk31
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk32
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk33
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk41
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk42
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk43
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk44
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk45
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk46
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk47
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk48
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk49
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk51
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk52
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bk53
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bluetooth
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cdt
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cmnlib64_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cmnlib64_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cmnlib_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cmnlib_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cust
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/ddr
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/devcfg_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/devcfg_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/devinfo
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/dip
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/dsp
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/dtbo
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/frp
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fsc
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fsg
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/hyp_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/hyp_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/keymaster_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/keymaster_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/keystore
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/limits
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/logdump
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/logfs
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/logo
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/minidump
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/misc
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/modem
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/modemst1
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/modemst2
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/msadp
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/oops
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/persist
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/persistbak
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/qupfw_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/qupfw_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/sec
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/splash
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/spunvm
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/ssd
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/sti
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/storsec_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/storsec_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/switch
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/toolsfv
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/tz_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/tz_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/vbmeta
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/vendor
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/xbl_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/xbl_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/xbl_config_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/xbl_config_b
+      - storage
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: 
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
