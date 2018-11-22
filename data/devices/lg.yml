@@ -792,3 +792,130 @@
     brightness_path: /sys/devices/soc/c900000.qcom,mdss_mdp/c900000.qcom,mdss_mdp:qcom,mdss_fb_primary/leds/lcd-backlight/brightness
     default_brightness: 158
     theme: portrait_hdpi
+
+- name: LG V30+ (global)
+  id: LG-H930DS
+
+  codenames:
+    - joan
+    - LG-H930
+    - LG-H930DS
+
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/1da4000.ufshc/by-name
+      - /dev/block/bootdevice/by-name
+
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/system
+      - /dev/block/sda18
+
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cache
+      - /dev/block/sda19
+
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/userdata
+      - /dev/block/sda21
+
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/boot
+      - /dev/block/sde1
+
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
+      - /dev/block/sde2
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/recoverybak
+      - /dev/block/sde3
+      
+    extra:
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/OP
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/abl
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/ablbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/apdp
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cdt
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cmnlib
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cmnlib64
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cmnlib64bak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cmnlibbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/ddr
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/devcfg
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/devcfgbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/devinfo
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/dip
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/dpo
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/drm
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/eksst
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/encrypt
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/factory
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/fota
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/frp
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/fsc
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/fsg
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/ftm
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/grow
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/grow2
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/grow3
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/grow4
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/grow5
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/grow6
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/grow7
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/hyp
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/hypbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/keymaster
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/keymasterbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/keystore
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/laf
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/lafbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/limits
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/logfs
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/misc
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/modem
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/modemst1
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/modemst2
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/mpt
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/msadp
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/persist
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/pmic
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/pmicbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/pstore
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/qni
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/raw_resources
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/raw_resourcesbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/rct
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/rpm
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/rpmbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/sec
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/sns
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/srtc
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/ssd
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/storsec
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/storsecbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/toolsfv
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/tz
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/tzbak
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/xbl
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/xbl2
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi    
+    
