@@ -1,0 +1,69 @@
+name: Sony C6603
+id: yuga
+codenames:
+- C6603
+- yuga
+architecture: armeabi-v7a
+block_devs:
+base_dirs:
+- /dev/block/platform/msm_sdcc.1/by-name
+- /dev/block/bootdevice/by-name
+system:
+- /dev/block/bootdevice/by-name/system
+- /dev/block/mmcblk0p24
+- /dev/block/platform/msm_sdcc.1/by-name/system
+cache:
+- /dev/block/bootdevice/by-name/cache
+- /dev/block/mmcblk0p25
+- /dev/block/platform/msm_sdcc.1/by-name/cache
+data:
+- /dev/block/bootdevice/by-name/userdata
+- /dev/block/mmcblk0p26
+- /dev/block/platform/msm_sdcc.1/by-name/userdata
+boot:
+- /dev/block/bootdevice/by-name/boot
+- /dev/block/mmcblk0p17
+- /dev/block/platform/msm_sdcc.1/by-name/boot
+recovery:
+- /dev/block/bootdevice/by-name/recovery
+- /dev/block/mmcblk0p23
+- /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+extra:
+- /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+- /dev/block/platform/msm_sdcc.1/by-name/LTALabel
+- /dev/block/platform/msm_sdcc.1/by-name/TA
+- /dev/block/platform/msm_sdcc.1/by-name/aboot
+- /dev/block/platform/msm_sdcc.1/by-name/alt_aboot
+- /dev/block/platform/msm_sdcc.1/by-name/alt_rpm
+- /dev/block/platform/msm_sdcc.1/by-name/alt_s1sbl2
+- /dev/block/platform/msm_sdcc.1/by-name/alt_sbl1
+- /dev/block/platform/msm_sdcc.1/by-name/alt_sbl2
+- /dev/block/platform/msm_sdcc.1/by-name/alt_sbl3
+- /dev/block/platform/msm_sdcc.1/by-name/alt_tz
+- /dev/block/platform/msm_sdcc.1/by-name/apps_log
+- /dev/block/platform/msm_sdcc.1/by-name/m9kefs1
+- /dev/block/platform/msm_sdcc.1/by-name/m9kefs2
+- /dev/block/platform/msm_sdcc.1/by-name/m9kefs3
+- /dev/block/platform/msm_sdcc.1/by-name/ramdump
+- /dev/block/platform/msm_sdcc.1/by-name/rpm
+- /dev/block/platform/msm_sdcc.1/by-name/s1sbl2
+- /dev/block/platform/msm_sdcc.1/by-name/sbl1
+- /dev/block/platform/msm_sdcc.1/by-name/sbl2
+- /dev/block/platform/msm_sdcc.1/by-name/sbl3
+- /dev/block/platform/msm_sdcc.1/by-name/tz
+- /dev/block/sda1
+- /dev/block/mmcblk1
+- /dev/block/mmcblk1p1
+
+boot_ui:
+supported: true
+flags:
+- TW_GRAPHICS_FORCE_USE_LINELENGTH
+brightness_path: /sys/class/leds/lcd-backlight/brightness
+max_brightness: 255
+default_brightness: 168
+cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+battery_path: /sys/class/power_supply/battery/capacity
+graphics_backends:
+- fbdev
+theme: portrait_hdpi
