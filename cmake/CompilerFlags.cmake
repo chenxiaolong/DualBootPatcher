@@ -38,6 +38,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # Don't warn for valid msprintf specifiers
         add_compile_options(-Wno-pedantic-ms-format)
 
+        # Target Vista and up
+        add_definitions(-D_WIN32_WINNT=0x0600)
+
         # Enable ASLR
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--dynamicbase")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--dynamicbase")
