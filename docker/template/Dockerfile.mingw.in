@@ -1,4 +1,4 @@
-# Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ FROM @REPO@:@VERSION@-@RELEASE@-base
 RUN dnf -y install dnf-plugins-core \
     && dnf -y copr enable chenxiaolong/mingw \
     && dnf -y install \
-        mingw32-gtest \
         mingw32-libarchive \
         mingw32-qt5-qtbase \
         p7zip-plugins \
