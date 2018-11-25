@@ -258,7 +258,7 @@ oc::result<void> SonyElfFormatWriter::write_header(File &file,
 
 oc::result<void> SonyElfFormatWriter::get_entry(File &file, Entry &entry)
 {
-    OUTCOME_TRYV(m_seg->get_entry(file, entry, m_writer));
+    OUTCOME_TRYV(m_seg->get_entry(file, entry));
 
     auto swentry = m_seg->entry();
 
@@ -280,18 +280,18 @@ oc::result<void> SonyElfFormatWriter::get_entry(File &file, Entry &entry)
 oc::result<void> SonyElfFormatWriter::write_entry(File &file,
                                                   const Entry &entry)
 {
-    return m_seg->write_entry(file, entry, m_writer);
+    return m_seg->write_entry(file, entry);
 }
 
 oc::result<size_t> SonyElfFormatWriter::write_data(File &file, const void *buf,
                                                    size_t buf_size)
 {
-    return m_seg->write_data(file, buf, buf_size, m_writer);
+    return m_seg->write_data(file, buf, buf_size);
 }
 
 oc::result<void> SonyElfFormatWriter::finish_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
+    OUTCOME_TRYV(m_seg->finish_entry(file));
 
     auto swentry = m_seg->entry();
 

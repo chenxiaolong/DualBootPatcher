@@ -31,6 +31,7 @@
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/segment_error_p.h"
+#include "mbbootimg/reader_error.h"
 
 namespace mb::bootimg
 {
@@ -63,8 +64,7 @@ oc::result<void> SegmentReader::set_entries(std::vector<SegmentReaderEntry> entr
 }
 
 oc::result<void> SegmentReader::move_to_entry(File &file, Entry &entry,
-                                              std::vector<SegmentReaderEntry>::iterator srentry,
-                                              Reader &reader)
+                                              std::vector<SegmentReaderEntry>::iterator srentry)
 {
     if (srentry->offset > UINT64_MAX - srentry->size) {
         return SegmentError::EntryWouldOverflowOffset;
@@ -91,8 +91,7 @@ oc::result<void> SegmentReader::move_to_entry(File &file, Entry &entry,
     return oc::success();
 }
 
-oc::result<void> SegmentReader::read_entry(File &file, Entry &entry,
-                                           Reader &reader)
+oc::result<void> SegmentReader::read_entry(File &file, Entry &entry)
 {
     auto srentry = m_entries.end();
 
@@ -109,11 +108,11 @@ oc::result<void> SegmentReader::read_entry(File &file, Entry &entry,
         return ReaderError::EndOfEntries;
     }
 
-    return move_to_entry(file, entry, srentry, reader);
+    return move_to_entry(file, entry, srentry);
 }
 
 oc::result<void> SegmentReader::go_to_entry(File &file, Entry &entry,
-                                            int entry_type, Reader &reader)
+                                            int entry_type)
 {
     decltype(m_entries)::iterator srentry;
 
@@ -135,11 +134,11 @@ oc::result<void> SegmentReader::go_to_entry(File &file, Entry &entry,
         return ReaderError::EndOfEntries;
     }
 
-    return move_to_entry(file, entry, srentry, reader);
+    return move_to_entry(file, entry, srentry);
 }
 
 oc::result<size_t> SegmentReader::read_data(File &file, void *buf,
-                                            size_t buf_size, Reader &reader)
+                                            size_t buf_size)
 {
     auto to_copy = static_cast<size_t>(std::min<uint64_t>(
             buf_size, m_read_end_offset - m_read_cur_offset));

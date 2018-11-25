@@ -26,7 +26,6 @@
 
 #include "mbbootimg/format/loki_error.h"
 #include "mbbootimg/format/loki_reader_p.h"
-#include "mbbootimg/reader.h"
 
 using namespace mb;
 using namespace mb::bootimg;
@@ -36,8 +35,6 @@ using namespace mb::bootimg::loki;
 
 TEST(FindLokiHeaderTest, ValidMagicShouldSucceed)
 {
-    Reader reader;
-
     LokiHeader source = {};
     memcpy(source.magic, LOKI_MAGIC, LOKI_MAGIC_SIZE);
 
@@ -53,29 +50,24 @@ TEST(FindLokiHeaderTest, ValidMagicShouldSucceed)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::find_loki_header(reader, file, header,
-                                                   offset));
+    ASSERT_TRUE(LokiFormatReader::find_loki_header(file, header, offset));
 }
 
 TEST(FindLokiHeaderTest, UndersizedImageShouldFail)
 {
-    Reader reader;
-
     LokiHeader header;
     uint64_t offset;
 
     MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    auto ret = LokiFormatReader::find_loki_header(reader, file, header, offset);
+    auto ret = LokiFormatReader::find_loki_header(file, header, offset);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), LokiError::LokiHeaderTooSmall);
 }
 
 TEST(FindLokiHeaderTest, InvalidMagicShouldFail)
 {
-    Reader reader;
-
     LokiHeader source = {};
     memcpy(source.magic, LOKI_MAGIC, LOKI_MAGIC_SIZE);
 
@@ -92,7 +84,7 @@ TEST(FindLokiHeaderTest, InvalidMagicShouldFail)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    auto ret = LokiFormatReader::find_loki_header(reader, file, header, offset);
+    auto ret = LokiFormatReader::find_loki_header(file, header, offset);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), LokiError::InvalidLokiMagic);
 }
@@ -101,8 +93,6 @@ TEST(FindLokiHeaderTest, InvalidMagicShouldFail)
 
 TEST(LokiFindRamdiskAddressTest, OldImageShouldUseJflteAddress)
 {
-    Reader reader;
-
     android::AndroidHeader ahdr = {};
     ahdr.kernel_addr = 0x80208000;
 
@@ -122,7 +112,7 @@ TEST(LokiFindRamdiskAddressTest, OldImageShouldUseJflteAddress)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
+    ASSERT_TRUE(LokiFormatReader::find_ramdisk_address(file, ahdr, lhdr,
                                                        ramdisk_addr));
 
     ASSERT_EQ(ramdisk_addr, ahdr.kernel_addr + 0x01ff8000);
@@ -130,8 +120,6 @@ TEST(LokiFindRamdiskAddressTest, OldImageShouldUseJflteAddress)
 
 TEST(LokiFindRamdiskAddressTest, NewImageValidShouldSucceed)
 {
-    Reader reader;
-
     android::AndroidHeader ahdr = {};
 
     LokiHeader lhdr = {};
@@ -158,7 +146,7 @@ TEST(LokiFindRamdiskAddressTest, NewImageValidShouldSucceed)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
+    ASSERT_TRUE(LokiFormatReader::find_ramdisk_address(file, ahdr, lhdr,
                                                        ramdisk_addr));
 
     ASSERT_EQ(ramdisk_addr, 0xddccbbaa);
@@ -166,8 +154,6 @@ TEST(LokiFindRamdiskAddressTest, NewImageValidShouldSucceed)
 
 TEST(LokiFindRamdiskAddressTest, NewImageMissingShellcodeShouldFail)
 {
-    Reader reader;
-
     android::AndroidHeader ahdr = {};
 
     LokiHeader lhdr = {};
@@ -178,16 +164,14 @@ TEST(LokiFindRamdiskAddressTest, NewImageMissingShellcodeShouldFail)
     MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    auto ret = LokiFormatReader::find_ramdisk_address(reader, file, ahdr,
-                                                      lhdr, ramdisk_addr);
+    auto ret = LokiFormatReader::find_ramdisk_address(file, ahdr, lhdr,
+                                                      ramdisk_addr);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), LokiError::ShellcodeNotFound);
 }
 
 TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldFail)
 {
-    Reader reader;
-
     android::AndroidHeader ahdr = {};
 
     LokiHeader lhdr = {};
@@ -209,8 +193,8 @@ TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldFail)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    auto ret = LokiFormatReader::find_ramdisk_address(reader, file, ahdr,
-                                                      lhdr, ramdisk_addr);
+    auto ret = LokiFormatReader::find_ramdisk_address(file, ahdr, lhdr,
+                                                      ramdisk_addr);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), FileError::UnexpectedEof);
 }
@@ -219,8 +203,6 @@ TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldFail)
 
 TEST(LokiOldFindGzipOffsetTest, ZeroFlagHeaderFoundShouldSucceed)
 {
-    Reader reader;
-
     unsigned char data[] = {
         0x1f, 0x8b, 0x08, 0x00,
     };
@@ -230,16 +212,13 @@ TEST(LokiOldFindGzipOffsetTest, ZeroFlagHeaderFoundShouldSucceed)
     MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
-                                                       gzip_offset));
+    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(file, 0, gzip_offset));
 
     ASSERT_EQ(gzip_offset, 0u);
 }
 
 TEST(LokiOldFindGzipOffsetTest, EightFlagHeaderFoundShouldSucceed)
 {
-    Reader reader;
-
     unsigned char data[] = {
         0x1f, 0x8b, 0x08, 0x08,
     };
@@ -249,16 +228,13 @@ TEST(LokiOldFindGzipOffsetTest, EightFlagHeaderFoundShouldSucceed)
     MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
-                                                       gzip_offset));
+    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(file, 0, gzip_offset));
 
     ASSERT_EQ(gzip_offset, 0u);
 }
 
 TEST(LokiOldFindGzipOffsetTest, EightFlagShouldHavePrecedence)
 {
-    Reader reader;
-
     unsigned char data[] = {
         0x1f, 0x8b, 0x08, 0x00,
         0x1f, 0x8b, 0x08, 0x08,
@@ -269,16 +245,13 @@ TEST(LokiOldFindGzipOffsetTest, EightFlagShouldHavePrecedence)
     MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
-                                                       gzip_offset));
+    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(file, 0, gzip_offset));
 
     ASSERT_EQ(gzip_offset, 4u);
 }
 
 TEST(LokiOldFindGzipOffsetTest, StartOffsetShouldBeRespected)
 {
-    Reader reader;
-
     unsigned char data[] = {
         0x1f, 0x8b, 0x08, 0x00,
         0x1f, 0x8b, 0x08, 0x00,
@@ -289,31 +262,25 @@ TEST(LokiOldFindGzipOffsetTest, StartOffsetShouldBeRespected)
     MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
-                                                       gzip_offset));
+    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(file, 4, gzip_offset));
 
     ASSERT_EQ(gzip_offset, 4u);
 }
 
 TEST(LokiOldFindGzipOffsetTest, MissingMagicShouldFail)
 {
-    Reader reader;
-
     uint64_t gzip_offset;
 
     MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    auto ret = LokiFormatReader::find_gzip_offset_old(reader, file, 4,
-                                                      gzip_offset);
+    auto ret = LokiFormatReader::find_gzip_offset_old(file, 4, gzip_offset);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), LokiError::NoRamdiskGzipHeaderFound);
 }
 
 TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldFail)
 {
-    Reader reader;
-
     unsigned char data[] = {
         0x1f, 0x8b, 0x08,
     };
@@ -323,8 +290,7 @@ TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldFail)
     MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    auto ret = LokiFormatReader::find_gzip_offset_old(reader, file, 4,
-                                                      gzip_offset);
+    auto ret = LokiFormatReader::find_gzip_offset_old(file, 4, gzip_offset);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), LokiError::NoRamdiskGzipHeaderFound);
 }
@@ -333,8 +299,6 @@ TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldFail)
 
 TEST(LokiOldFindRamdiskSizeTest, ValidSamsungImageShouldSucceed)
 {
-    Reader reader;
-
     android::AndroidHeader ahdr = {};
     ahdr.ramdisk_addr = 0x88e0ff90; // jflteatt
     ahdr.page_size = 2048;
@@ -347,7 +311,7 @@ TEST(LokiOldFindRamdiskSizeTest, ValidSamsungImageShouldSucceed)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
+    ASSERT_TRUE(LokiFormatReader::find_ramdisk_size_old(file, ahdr,
                                                         ahdr.page_size,
                                                         ramdisk_size));
 
@@ -356,8 +320,6 @@ TEST(LokiOldFindRamdiskSizeTest, ValidSamsungImageShouldSucceed)
 
 TEST(LokiOldFindRamdiskSizeTest, ValidLGImageShouldSucceed)
 {
-    Reader reader;
-
     android::AndroidHeader ahdr = {};
     ahdr.ramdisk_addr = 0xf8132a0; // LG G2 (AT&T)
     ahdr.page_size = 2048;
@@ -370,7 +332,7 @@ TEST(LokiOldFindRamdiskSizeTest, ValidLGImageShouldSucceed)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
+    ASSERT_TRUE(LokiFormatReader::find_ramdisk_size_old(file, ahdr,
                                                         ahdr.page_size,
                                                         ramdisk_size));
 
@@ -379,8 +341,6 @@ TEST(LokiOldFindRamdiskSizeTest, ValidLGImageShouldSucceed)
 
 TEST(LokiOldFindRamdiskSizeTest, OutOfBoundsRamdiskOffsetShouldFail)
 {
-    Reader reader;
-
     android::AndroidHeader ahdr = {};
     ahdr.ramdisk_addr = 0x88e0ff90; // jflteatt
     ahdr.page_size = 2048;
@@ -393,7 +353,7 @@ TEST(LokiOldFindRamdiskSizeTest, OutOfBoundsRamdiskOffsetShouldFail)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    auto ret = LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
+    auto ret = LokiFormatReader::find_ramdisk_size_old(file, ahdr,
                                                        static_cast<uint32_t>(data.size() + 1),
                                                        ramdisk_size);
     ASSERT_FALSE(ret);
@@ -404,8 +364,6 @@ TEST(LokiOldFindRamdiskSizeTest, OutOfBoundsRamdiskOffsetShouldFail)
 
 TEST(FindLinuxKernelSizeTest, ValidImageShouldSucceed)
 {
-    Reader reader;
-
     std::vector<unsigned char> data;
     data.resize(2048 + 0x2c);
     data.push_back(0xaa);
@@ -418,7 +376,7 @@ TEST(FindLinuxKernelSizeTest, ValidImageShouldSucceed)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::find_linux_kernel_size(reader, file, 2048,
+    ASSERT_TRUE(LokiFormatReader::find_linux_kernel_size(file, 2048,
                                                          kernel_size));
 
     ASSERT_EQ(kernel_size, 0xddccbbaa);
@@ -426,8 +384,6 @@ TEST(FindLinuxKernelSizeTest, ValidImageShouldSucceed)
 
 TEST(FindLinuxKernelSizeTest, TruncatedImageShouldFail)
 {
-    Reader reader;
-
     std::vector<unsigned char> data;
     data.resize(2048 + 0x2c);
 
@@ -436,7 +392,7 @@ TEST(FindLinuxKernelSizeTest, TruncatedImageShouldFail)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    auto ret = LokiFormatReader::find_linux_kernel_size(reader, file, 2048,
+    auto ret = LokiFormatReader::find_linux_kernel_size(file, 2048,
                                                         kernel_size);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), FileError::UnexpectedEof);
@@ -496,7 +452,7 @@ TEST(LokiReadOldHeaderTest, ValidImageShouldSucceed)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::read_header_old(reader, file, ahdr, lhdr,
+    ASSERT_TRUE(LokiFormatReader::read_header_old(file, ahdr, lhdr,
                                                   header, kernel_offset,
                                                   kernel_size, ramdisk_offset,
                                                   ramdisk_size));
@@ -545,7 +501,6 @@ TEST(LokiReadOldHeaderTest, ValidImageShouldSucceed)
 
 TEST(LokiReadNewHeaderTest, ValidImageShouldSucceed)
 {
-    Reader reader;
     Header header;
 
     android::AndroidHeader ahdr = {};
@@ -600,7 +555,7 @@ TEST(LokiReadNewHeaderTest, ValidImageShouldSucceed)
     MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(LokiFormatReader::read_header_new(reader, file, ahdr, lhdr,
+    ASSERT_TRUE(LokiFormatReader::read_header_new(file, ahdr, lhdr,
                                                   header, kernel_offset,
                                                   kernel_size, ramdisk_offset,
                                                   ramdisk_size, dt_offset));

@@ -53,16 +53,16 @@ public:
     oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
 
     static oc::result<void>
-    find_header(Reader &reader, File &file,
+    find_header(File &file,
                 uint64_t max_header_offset,
                 AndroidHeader &header_out,
                 uint64_t &offset_out);
     static oc::result<void>
-    find_samsung_seandroid_magic(Reader &reader, File &file,
+    find_samsung_seandroid_magic(File &file,
                                  const AndroidHeader &hdr,
                                  uint64_t &offset_out);
     static oc::result<void>
-    find_bump_magic(Reader &reader, File &file,
+    find_bump_magic(File &file,
                     const AndroidHeader &hdr,
                     uint64_t &offset_out);
     static bool convert_header(const AndroidHeader &hdr, Header &header);

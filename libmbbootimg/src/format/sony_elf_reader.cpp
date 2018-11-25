@@ -81,7 +81,7 @@ oc::result<int> SonyElfFormatReader::open(File &file, int best_bid)
     }
 
     // Find the Sony ELF header
-    auto ret = find_sony_elf_header(m_reader, file, m_hdr);
+    auto ret = find_sony_elf_header(file, m_hdr);
     if (ret) {
         // Update bid to account for matched bits
         bid += static_cast<int>(SONY_EI_NIDENT * 8);
@@ -207,19 +207,19 @@ oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
 
 oc::result<void> SonyElfFormatReader::read_entry(File &file, Entry &entry)
 {
-    return m_seg->read_entry(file, entry, m_reader);
+    return m_seg->read_entry(file, entry);
 }
 
 oc::result<void> SonyElfFormatReader::go_to_entry(File &file, Entry &entry,
                                                   int entry_type)
 {
-    return m_seg->go_to_entry(file, entry, entry_type, m_reader);
+    return m_seg->go_to_entry(file, entry, entry_type);
 }
 
 oc::result<size_t> SonyElfFormatReader::read_data(File &file, void *buf,
                                                   size_t buf_size)
 {
-    return m_seg->read_data(file, buf, buf_size, m_reader);
+    return m_seg->read_data(file, buf, buf_size);
 }
 
 /*!
@@ -233,7 +233,6 @@ oc::result<size_t> SonyElfFormatReader::read_data(File &file, void *buf,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] reader Reader for setting error messages
  * \param[in] file File handle
  * \param[out] header_out Pointer to store header
  *
@@ -243,7 +242,7 @@ oc::result<size_t> SonyElfFormatReader::read_data(File &file, void *buf,
  *   * A specific error code if any file operation fails
  */
 oc::result<void>
-SonyElfFormatReader::find_sony_elf_header(Reader &reader, File &file,
+SonyElfFormatReader::find_sony_elf_header(File &file,
                                           Sony_Elf32_Ehdr &header_out)
 {
     Sony_Elf32_Ehdr header;

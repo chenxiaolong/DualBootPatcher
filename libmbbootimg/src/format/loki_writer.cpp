@@ -118,7 +118,7 @@ oc::result<void> LokiFormatWriter::close(File &file)
             OUTCOME_TRYV(file_write_exact(file, &m_hdr, sizeof(m_hdr)));
 
             // Patch with Loki
-            OUTCOME_TRYV(_loki_patch_file(m_writer, file, m_aboot.data(),
+            OUTCOME_TRYV(_loki_patch_file(file, m_aboot.data(),
                                           m_aboot.size()));
         }
     }
@@ -212,12 +212,12 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
 
 oc::result<void> LokiFormatWriter::get_entry(File &file, Entry &entry)
 {
-    return m_seg->get_entry(file, entry, m_writer);
+    return m_seg->get_entry(file, entry);
 }
 
 oc::result<void> LokiFormatWriter::write_entry(File &file, const Entry &entry)
 {
-    return m_seg->write_entry(file, entry, m_writer);
+    return m_seg->write_entry(file, entry);
 }
 
 oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
@@ -237,7 +237,7 @@ oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
 
         return buf_size;
     } else {
-        OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size, m_writer));
+        OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size));
 
         // We always include the image in the hash. The size is sometimes
         // included and is handled in finish_entry().
@@ -251,7 +251,7 @@ oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
 
 oc::result<void> LokiFormatWriter::finish_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
+    OUTCOME_TRYV(m_seg->finish_entry(file));
 
     auto swentry = m_seg->entry();
 

@@ -47,8 +47,7 @@ namespace mtk
 {
 
 static oc::result<void>
-_mtk_header_update_size(Writer &writer, File &file,
-                        uint64_t offset, uint32_t size)
+_mtk_header_update_size(File &file, uint64_t offset, uint32_t size)
 {
     uint32_t le32_size = mb_htole32(size);
 
@@ -65,8 +64,8 @@ _mtk_header_update_size(Writer &writer, File &file,
 }
 
 static oc::result<void>
-_mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
-                  File &file, unsigned char digest[SHA_DIGEST_LENGTH])
+_mtk_compute_sha1(SegmentWriter &seg, File &file,
+                  unsigned char digest[SHA_DIGEST_LENGTH])
 {
     SHA_CTX sha_ctx;
     char buf[10240];
@@ -185,12 +184,12 @@ oc::result<void> MtkFormatWriter::close(File &file)
             for (auto const &entry : m_seg->entries()) {
                 if (entry.type == ENTRY_TYPE_MTK_KERNEL_HEADER) {
                     OUTCOME_TRYV(_mtk_header_update_size(
-                            m_writer, file, entry.offset,
+                            file, entry.offset,
                             static_cast<uint32_t>(
                                     m_hdr.kernel_size - sizeof(MtkHeader))));
                 } else if (entry.type == ENTRY_TYPE_MTK_RAMDISK_HEADER) {
                     OUTCOME_TRYV(_mtk_header_update_size(
-                            m_writer, file, entry.offset,
+                            file, entry.offset,
                             static_cast<uint32_t>(
                                     m_hdr.ramdisk_size - sizeof(MtkHeader))));
                 }
@@ -201,7 +200,7 @@ oc::result<void> MtkFormatWriter::close(File &file)
             // them. Thus, if we calculated the SHA1sum during write, it would
             // be incorrect.
             OUTCOME_TRYV(_mtk_compute_sha1(
-                    m_writer, *m_seg, file,
+                    *m_seg, file,
                     reinterpret_cast<unsigned char *>(m_hdr.id)));
 
             // Convert fields back to little-endian
@@ -305,23 +304,23 @@ oc::result<void> MtkFormatWriter::write_header(File &file, const Header &header)
 
 oc::result<void> MtkFormatWriter::get_entry(File &file, Entry &entry)
 {
-    return m_seg->get_entry(file, entry, m_writer);
+    return m_seg->get_entry(file, entry);
 }
 
 oc::result<void> MtkFormatWriter::write_entry(File &file, const Entry &entry)
 {
-    return m_seg->write_entry(file, entry, m_writer);
+    return m_seg->write_entry(file, entry);
 }
 
 oc::result<size_t> MtkFormatWriter::write_data(File &file, const void *buf,
                                                size_t buf_size)
 {
-    return m_seg->write_data(file, buf, buf_size, m_writer);
+    return m_seg->write_data(file, buf, buf_size);
 }
 
 oc::result<void> MtkFormatWriter::finish_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
+    OUTCOME_TRYV(m_seg->finish_entry(file));
 
     auto swentry = m_seg->entry();
 

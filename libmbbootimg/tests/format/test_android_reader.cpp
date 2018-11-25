@@ -35,8 +35,6 @@ using namespace mb::bootimg::android;
 
 TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
 {
-    Reader reader;
-
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
@@ -46,15 +44,13 @@ TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
     MemoryFile file(&source, sizeof(source));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(AndroidFormatReader::find_header(reader, file,
+    ASSERT_TRUE(AndroidFormatReader::find_header(file,
                                                  MAX_HEADER_OFFSET,
                                                  header, offset));
 }
 
 TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
 {
-    Reader reader;
-
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
@@ -67,22 +63,20 @@ TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
     // Seek to bad location initially
     ASSERT_TRUE(file.seek(10, SEEK_SET));
 
-    ASSERT_TRUE(AndroidFormatReader::find_header(reader, file,
+    ASSERT_TRUE(AndroidFormatReader::find_header(file,
                                                  MAX_HEADER_OFFSET,
                                                  header, offset));
 }
 
 TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldFail)
 {
-    Reader reader;
-
     AndroidHeader header;
     uint64_t offset;
 
     MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    auto ret = AndroidFormatReader::find_header(reader, file,
+    auto ret = AndroidFormatReader::find_header(file,
                                                 MAX_HEADER_OFFSET + 1, header,
                                                 offset);
     ASSERT_FALSE(ret);
@@ -91,15 +85,13 @@ TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldFail)
 
 TEST(FindAndroidHeaderTest, MissingMagicShouldFail)
 {
-    Reader reader;
-
     AndroidHeader header;
     uint64_t offset;
 
     MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    auto ret = AndroidFormatReader::find_header(reader, file,
+    auto ret = AndroidFormatReader::find_header(file,
                                                 MAX_HEADER_OFFSET,
                                                 header, offset);
     ASSERT_FALSE(ret);
@@ -108,15 +100,13 @@ TEST(FindAndroidHeaderTest, MissingMagicShouldFail)
 
 TEST(FindAndroidHeaderTest, TruncatedHeaderShouldFail)
 {
-    Reader reader;
-
     AndroidHeader header;
     uint64_t offset;
 
     MemoryFile file(const_cast<unsigned char *>(BOOT_MAGIC), BOOT_MAGIC_SIZE);
     ASSERT_TRUE(file.is_open());
 
-    auto ret = AndroidFormatReader::find_header(reader, file,
+    auto ret = AndroidFormatReader::find_header(file,
                                                 MAX_HEADER_OFFSET,
                                                 header, offset);
     ASSERT_FALSE(ret);
@@ -127,8 +117,6 @@ TEST(FindAndroidHeaderTest, TruncatedHeaderShouldFail)
 
 TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
 {
-    Reader reader;
-
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
     source.kernel_size = 0;
@@ -151,13 +139,11 @@ TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(AndroidFormatReader::find_samsung_seandroid_magic(
-            reader, file, source, offset));
+            file, source, offset));
 }
 
 TEST(FindSEAndroidMagicTest, UndersizedImageShouldFail)
 {
-    Reader reader;
-
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
     source.kernel_size = 0;
@@ -172,15 +158,13 @@ TEST(FindSEAndroidMagicTest, UndersizedImageShouldFail)
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_samsung_seandroid_magic(
-            reader, file, source, offset);
+            file, source, offset);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), AndroidError::SamsungMagicNotFound);
 }
 
 TEST(FindSEAndroidMagicTest, InvalidMagicShouldFail)
 {
-    Reader reader;
-
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
     source.kernel_size = 0;
@@ -204,7 +188,7 @@ TEST(FindSEAndroidMagicTest, InvalidMagicShouldFail)
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_samsung_seandroid_magic(
-            reader, file, source, offset);
+            file, source, offset);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), AndroidError::SamsungMagicNotFound);
 }

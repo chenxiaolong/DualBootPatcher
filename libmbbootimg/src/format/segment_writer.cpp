@@ -32,6 +32,7 @@
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/align_p.h"
 #include "mbbootimg/format/segment_error_p.h"
+#include "mbbootimg/writer_error.h"
 
 namespace mb::bootimg
 {
@@ -74,8 +75,7 @@ void SegmentWriter::update_size_if_unset(uint32_t size)
     }
 }
 
-oc::result<void> SegmentWriter::get_entry(File &file, Entry &entry,
-                                          Writer &writer)
+oc::result<void> SegmentWriter::get_entry(File &file, Entry &entry)
 {
     if (!m_pos) {
         OUTCOME_TRY(pos, file.seek(0, SEEK_CUR));
@@ -112,11 +112,9 @@ oc::result<void> SegmentWriter::get_entry(File &file, Entry &entry,
     return oc::success();
 }
 
-oc::result<void> SegmentWriter::write_entry(File &file, const Entry &entry,
-                                            Writer &writer)
+oc::result<void> SegmentWriter::write_entry(File &file, const Entry &entry)
 {
     (void) file;
-    (void) writer;
 
     // Use entry size if specified
     auto size = entry.size();
@@ -133,7 +131,7 @@ oc::result<void> SegmentWriter::write_entry(File &file, const Entry &entry,
 }
 
 oc::result<size_t> SegmentWriter::write_data(File &file, const void *buf,
-                                             size_t buf_size, Writer &writer)
+                                             size_t buf_size)
 {
     // Check for overflow
     if (buf_size > UINT32_MAX || m_entry_size > UINT32_MAX - buf_size
@@ -152,7 +150,7 @@ oc::result<size_t> SegmentWriter::write_data(File &file, const void *buf,
     return buf_size;
 }
 
-oc::result<void> SegmentWriter::finish_entry(File &file, Writer &writer)
+oc::result<void> SegmentWriter::finish_entry(File &file)
 {
     // Update size with number of bytes written
     update_size_if_unset(m_entry_size);

@@ -53,29 +53,29 @@ public:
     oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
 
     static oc::result<void>
-    find_loki_header(Reader &reader, File &file,
+    find_loki_header(File &file,
                      LokiHeader &header_out,
                      uint64_t &offset_out);
     static oc::result<void>
-    find_ramdisk_address(Reader &reader, File &file,
+    find_ramdisk_address(File &file,
                          const android::AndroidHeader &hdr,
                          const LokiHeader &loki_hdr,
                          uint32_t &ramdisk_addr_out);
     static oc::result<void>
-    find_gzip_offset_old(Reader &reader, File &file,
+    find_gzip_offset_old(File &file,
                          uint32_t start_offset,
                          uint64_t &gzip_offset_out);
     static oc::result<void>
-    find_ramdisk_size_old(Reader &reader, File &file,
+    find_ramdisk_size_old(File &file,
                           const android::AndroidHeader &hdr,
                           uint32_t ramdisk_offset,
                           uint32_t &ramdisk_size_out);
     static oc::result<void>
-    find_linux_kernel_size(Reader &reader, File &file,
+    find_linux_kernel_size(File &file,
                            uint32_t kernel_offset,
                            uint32_t &kernel_size_out);
     static oc::result<void>
-    read_header_old(Reader &reader, File &file,
+    read_header_old(File &file,
                     const android::AndroidHeader &hdr,
                     const LokiHeader &loki_hdr,
                     Header &header,
@@ -84,7 +84,7 @@ public:
                     uint64_t &ramdisk_offset_out,
                     uint32_t &ramdisk_size_out);
     static oc::result<void>
-    read_header_new(Reader &reader, File &file,
+    read_header_new(File &file,
                     const android::AndroidHeader &hdr,
                     const LokiHeader &loki_hdr,
                     Header &header,

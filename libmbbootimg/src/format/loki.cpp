@@ -41,7 +41,6 @@
 #include "mbbootimg/format/align_p.h"
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/loki_error.h"
-#include "mbbootimg/writer.h"
 
 struct LokiTarget
 {
@@ -143,8 +142,7 @@ static bool _patch_shellcode(uint32_t header, uint32_t ramdisk,
 }
 
 static oc::result<void>
-_loki_read_android_header(Writer &writer, File &file,
-                          android::AndroidHeader &ahdr)
+_loki_read_android_header(File &file, android::AndroidHeader &ahdr)
 {
     OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
@@ -156,8 +154,7 @@ _loki_read_android_header(Writer &writer, File &file,
 }
 
 static oc::result<void>
-_loki_write_android_header(Writer &writer, File &file,
-                           const android::AndroidHeader &ahdr)
+_loki_write_android_header(File &file, const android::AndroidHeader &ahdr)
 {
     android::AndroidHeader dup = ahdr;
 
@@ -171,8 +168,7 @@ _loki_write_android_header(Writer &writer, File &file,
 }
 
 static oc::result<void>
-_loki_write_loki_header(Writer &writer, File &file,
-                        const LokiHeader &lhdr)
+_loki_write_loki_header(File &file, const LokiHeader &lhdr)
 {
     LokiHeader dup = lhdr;
 
@@ -186,8 +182,8 @@ _loki_write_loki_header(Writer &writer, File &file,
 }
 
 static oc::result<void>
-_loki_move_dt_image(Writer &writer, File &file,
-                    uint64_t aboot_offset, uint32_t fake_size, uint32_t dt_size)
+_loki_move_dt_image(File &file, uint64_t aboot_offset, uint32_t fake_size,
+                    uint32_t dt_size)
 {
     // Move DT image
     OUTCOME_TRY(n, file_move(file, aboot_offset, aboot_offset + fake_size,
@@ -200,7 +196,7 @@ _loki_move_dt_image(Writer &writer, File &file,
 }
 
 static oc::result<void>
-_loki_write_aboot(Writer &writer, File &file,
+_loki_write_aboot(File &file,
                   const unsigned char *aboot, size_t aboot_size,
                   uint64_t aboot_offset, size_t aboot_func_offset,
                   uint32_t fake_size)
@@ -219,7 +215,7 @@ _loki_write_aboot(Writer &writer, File &file,
 }
 
 static oc::result<void>
-_loki_write_shellcode(Writer &writer, File &file,
+_loki_write_shellcode(File &file,
                       uint64_t aboot_offset, uint32_t aboot_func_align,
                       unsigned char patch[LOKI_SHELLCODE_SIZE])
 {
@@ -234,7 +230,6 @@ _loki_write_shellcode(Writer &writer, File &file,
 /*!
  * \brief Patch Android boot image with Loki exploit in-place
  *
- * \param writer Writer instance for setting error message
  * \param file File handle
  * \param aboot aboot image
  * \param aboot_size Size of aboot image
@@ -243,7 +238,7 @@ _loki_write_shellcode(Writer &writer, File &file,
  *   * Nothing if the boot image is successfully patched
  *   * A specific error code if a file operation fails
  */
-oc::result<void> _loki_patch_file(Writer &writer, File &file,
+oc::result<void> _loki_patch_file(File &file,
                                   const void *aboot, size_t aboot_size)
 {
     auto aboot_ptr = reinterpret_cast<const unsigned char *>(aboot);
@@ -311,7 +306,7 @@ oc::result<void> _loki_patch_file(Writer &writer, File &file,
         return LokiError::UnsupportedAbootImage;
     }
 
-    OUTCOME_TRYV(_loki_read_android_header(writer, file, ahdr));
+    OUTCOME_TRYV(_loki_read_android_header(file, ahdr));
 
     // Set up Loki header
     memcpy(lhdr.magic, LOKI_MAGIC, LOKI_MAGIC_SIZE);
@@ -349,10 +344,10 @@ oc::result<void> _loki_patch_file(Writer &writer, File &file,
             - static_cast<uint32_t>(offset);
 
     // Write Android header
-    OUTCOME_TRYV(_loki_write_android_header(writer, file, ahdr));
+    OUTCOME_TRYV(_loki_write_android_header(file, ahdr));
 
     // Write Loki header
-    OUTCOME_TRYV(_loki_write_loki_header(writer, file, lhdr));
+    OUTCOME_TRYV(_loki_write_loki_header(file, lhdr));
 
     aboot_offset = static_cast<uint64_t>(ahdr.page_size)
             + lhdr.orig_kernel_size
@@ -361,17 +356,17 @@ oc::result<void> _loki_patch_file(Writer &writer, File &file,
             + align_page_size<uint32_t>(lhdr.orig_ramdisk_size, ahdr.page_size);
 
     // Move DT image
-    OUTCOME_TRYV(_loki_move_dt_image(writer, file, aboot_offset,
+    OUTCOME_TRYV(_loki_move_dt_image(file, aboot_offset,
                                      static_cast<uint32_t>(fake_size),
                                      ahdr.dt_size));
 
     // Write aboot
-    OUTCOME_TRYV(_loki_write_aboot(writer, file, aboot_ptr, aboot_size,
+    OUTCOME_TRYV(_loki_write_aboot(file, aboot_ptr, aboot_size,
                                    aboot_offset, aboot_func_offset,
                                    static_cast<uint32_t>(fake_size)));
 
     // Write shellcode
-    OUTCOME_TRYV(_loki_write_shellcode(writer, file, aboot_offset,
+    OUTCOME_TRYV(_loki_write_shellcode(file, aboot_offset,
                                        static_cast<uint32_t>(offset), patch));
 
     return oc::success();

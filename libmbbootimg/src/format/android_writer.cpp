@@ -217,19 +217,19 @@ oc::result<void> AndroidFormatWriter::write_header(File &file,
 
 oc::result<void> AndroidFormatWriter::get_entry(File &file, Entry &entry)
 {
-    return m_seg->get_entry(file, entry, m_writer);
+    return m_seg->get_entry(file, entry);
 }
 
 oc::result<void> AndroidFormatWriter::write_entry(File &file,
                                                   const Entry &entry)
 {
-    return m_seg->write_entry(file, entry, m_writer);
+    return m_seg->write_entry(file, entry);
 }
 
 oc::result<size_t> AndroidFormatWriter::write_data(File &file, const void *buf,
                                                    size_t buf_size)
 {
-    OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size, m_writer));
+    OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size));
 
     // We always include the image in the hash. The size is sometimes included
     // and is handled in finish_entry().
@@ -242,7 +242,7 @@ oc::result<size_t> AndroidFormatWriter::write_data(File &file, const void *buf,
 
 oc::result<void> AndroidFormatWriter::finish_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
+    OUTCOME_TRYV(m_seg->finish_entry(file));
 
     auto swentry = m_seg->entry();
 

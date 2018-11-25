@@ -86,7 +86,7 @@ oc::result<int> LokiFormatReader::open(File &file, int best_bid)
 
     // Find the Loki header
     uint64_t loki_offset;
-    auto ret = find_loki_header(m_reader, file, m_loki_hdr, loki_offset);
+    auto ret = find_loki_header(file, m_loki_hdr, loki_offset);
     if (ret) {
         // Update bid to account for matched bits
         m_loki_offset = loki_offset;
@@ -101,7 +101,7 @@ oc::result<int> LokiFormatReader::open(File &file, int best_bid)
     // Find the Android header
     uint64_t header_offset;
     ret = android::AndroidFormatReader::find_header(
-            m_reader, file, LOKI_MAX_HEADER_OFFSET, m_hdr, header_offset);
+            file, LOKI_MAX_HEADER_OFFSET, m_hdr, header_offset);
     if (ret) {
         // Update bid to account for matched bits
         m_header_offset = header_offset;
@@ -145,12 +145,12 @@ oc::result<void> LokiFormatReader::read_header(File &file, Header &header)
     if (m_loki_hdr.orig_kernel_size != 0
             && m_loki_hdr.orig_ramdisk_size != 0
             && m_loki_hdr.ramdisk_addr != 0) {
-        OUTCOME_TRYV(read_header_new(m_reader, file, m_hdr, m_loki_hdr, header,
+        OUTCOME_TRYV(read_header_new(file, m_hdr, m_loki_hdr, header,
                                      kernel_offset, kernel_size,
                                      ramdisk_offset, ramdisk_size,
                                      dt_offset));
     } else {
-        OUTCOME_TRYV(read_header_old(m_reader, file, m_hdr, m_loki_hdr, header,
+        OUTCOME_TRYV(read_header_old(file, m_hdr, m_loki_hdr, header,
                                      kernel_offset, kernel_size,
                                      ramdisk_offset, ramdisk_size));
     }
@@ -174,19 +174,19 @@ oc::result<void> LokiFormatReader::read_header(File &file, Header &header)
 
 oc::result<void> LokiFormatReader::read_entry(File &file, Entry &entry)
 {
-    return m_seg->read_entry(file, entry, m_reader);
+    return m_seg->read_entry(file, entry);
 }
 
 oc::result<void> LokiFormatReader::go_to_entry(File &file, Entry &entry,
                                                int entry_type)
 {
-    return m_seg->go_to_entry(file, entry, entry_type, m_reader);
+    return m_seg->go_to_entry(file, entry, entry_type);
 }
 
 oc::result<size_t> LokiFormatReader::read_data(File &file, void *buf,
                                                size_t buf_size)
 {
-    return m_seg->read_data(file, buf, buf_size, m_reader);
+    return m_seg->read_data(file, buf, buf_size);
 }
 
 /*!
@@ -200,7 +200,6 @@ oc::result<size_t> LokiFormatReader::read_data(File &file, void *buf,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] reader Reader
  * \param[in] file File handle
  * \param[out] header_out Pointer to store header
  * \param[out] offset_out Pointer to store header offset
@@ -210,7 +209,7 @@ oc::result<size_t> LokiFormatReader::read_data(File &file, void *buf,
  *   * A LokiError if the header is not found
  *   * A specified error code if any file operation fails
  */
-oc::result<void> LokiFormatReader::find_loki_header(Reader &reader, File &file,
+oc::result<void> LokiFormatReader::find_loki_header(File &file,
                                                     LokiHeader &header_out,
                                                     uint64_t &offset_out)
 {
@@ -246,7 +245,6 @@ oc::result<void> LokiFormatReader::find_loki_header(Reader &reader, File &file,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] hdr Android header
  * \param[in] loki_hdr Loki header
@@ -258,7 +256,7 @@ oc::result<void> LokiFormatReader::find_loki_header(Reader &reader, File &file,
  *   * A specific error code if any file operation fails
  */
 oc::result<void>
-LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
+LokiFormatReader::find_ramdisk_address(File &file,
                                        const android::AndroidHeader &hdr,
                                        const LokiHeader &loki_hdr,
                                        uint32_t &ramdisk_addr_out)
@@ -320,7 +318,6 @@ LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] start_offset Starting offset for search
  * \param[out] gzip_offset_out Pointer to store gzip ramdisk offset
@@ -331,7 +328,7 @@ LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
  *   * A specific error if any file operation fails
  */
 oc::result<void>
-LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
+LokiFormatReader::find_gzip_offset_old(File &file,
                                        uint32_t start_offset,
                                        uint64_t &gzip_offset_out)
 {
@@ -415,7 +412,6 @@ LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] hdr Android header
  * \param[in] ramdisk_offset Offset of ramdisk in image
@@ -427,7 +423,7 @@ LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
  *   * A specific error if any file operation fails
  */
 oc::result<void>
-LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
+LokiFormatReader::find_ramdisk_size_old(File &file,
                                         const android::AndroidHeader &hdr,
                                         uint32_t ramdisk_offset,
                                         uint32_t &ramdisk_size_out)
@@ -491,7 +487,6 @@ LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] kernel_offset Offset of kernel in boot image
  * \param[out] kernel_size_out Pointer to store kernel size
@@ -502,7 +497,7 @@ LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
  *   * A specific error if any file operation fails
  */
 oc::result<void>
-LokiFormatReader::find_linux_kernel_size(Reader &reader,File &file,
+LokiFormatReader::find_linux_kernel_size(File &file,
                                          uint32_t kernel_offset,
                                          uint32_t &kernel_size_out)
 {
@@ -524,7 +519,6 @@ LokiFormatReader::find_linux_kernel_size(Reader &reader,File &file,
 /*!
  * \brief Read header for old-style Loki image
  *
- * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] hdr Android header for image
  * \param[in] loki_hdr Loki header for image
@@ -538,7 +532,7 @@ LokiFormatReader::find_linux_kernel_size(Reader &reader,File &file,
  *         error code.
  */
 oc::result<void>
-LokiFormatReader::read_header_old(Reader &reader, File &file,
+LokiFormatReader::read_header_old(File &file,
                                   const android::AndroidHeader &hdr,
                                   const LokiHeader &loki_hdr,
                                   Header &header,
@@ -563,23 +557,21 @@ LokiFormatReader::read_header_old(Reader &reader, File &file,
             + android::DEFAULT_TAGS_OFFSET;
 
     // Try to guess kernel size
-    OUTCOME_TRYV(find_linux_kernel_size(reader, file, hdr.page_size,
-                                        kernel_size));
+    OUTCOME_TRYV(find_linux_kernel_size(file, hdr.page_size, kernel_size));
 
     // Look for gzip offset for the ramdisk
     OUTCOME_TRYV(find_gzip_offset_old(
-            reader, file, hdr.page_size + kernel_size
+            file, hdr.page_size + kernel_size
                     + align_page_size<uint32_t>(kernel_size, hdr.page_size),
             gzip_offset));
 
     // Try to guess ramdisk size
-    OUTCOME_TRYV(find_ramdisk_size_old(reader, file, hdr,
+    OUTCOME_TRYV(find_ramdisk_size_old(file, hdr,
                                        static_cast<uint32_t>(gzip_offset),
                                        ramdisk_size));
 
     // Guess original ramdisk address
-    OUTCOME_TRYV(find_ramdisk_address(reader, file, hdr, loki_hdr,
-                                      ramdisk_addr));
+    OUTCOME_TRYV(find_ramdisk_address(file, hdr, loki_hdr, ramdisk_addr));
 
     kernel_size_out = kernel_size;
     ramdisk_size_out = ramdisk_size;
@@ -624,7 +616,6 @@ LokiFormatReader::read_header_old(Reader &reader, File &file,
 /*!
  * \brief Read header for new-style Loki image
  *
- * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] hdr Android header for image
  * \param[in] loki_hdr Loki header for image
@@ -639,7 +630,7 @@ LokiFormatReader::read_header_old(Reader &reader, File &file,
  *         error code.
  */
 oc::result<void>
-LokiFormatReader::read_header_new(Reader &reader, File &file,
+LokiFormatReader::read_header_new(File &file,
                                   const android::AndroidHeader &hdr,
                                   const LokiHeader &loki_hdr,
                                   Header &header,
@@ -663,8 +654,7 @@ LokiFormatReader::read_header_new(Reader &reader, File &file,
     }
 
     // Find original ramdisk address
-    OUTCOME_TRYV(find_ramdisk_address(reader, file, hdr, loki_hdr,
-                                      ramdisk_addr));
+    OUTCOME_TRYV(find_ramdisk_address(file, hdr, loki_hdr, ramdisk_addr));
 
     // Restore original values in boot image header
     kernel_size_out = loki_hdr.orig_kernel_size;

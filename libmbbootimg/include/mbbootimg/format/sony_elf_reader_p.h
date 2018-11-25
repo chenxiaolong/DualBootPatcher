@@ -50,8 +50,7 @@ public:
     oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
 
     static oc::result<void>
-    find_sony_elf_header(Reader &reader, File &file,
-                         Sony_Elf32_Ehdr &header_out);
+    find_sony_elf_header(File &file, Sony_Elf32_Ehdr &header_out);
 
 private:
     // Header values
