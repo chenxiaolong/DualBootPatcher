@@ -80,8 +80,7 @@ enum class WriterState : uint8_t
     Header  = 1u << 2,
     Entry   = 1u << 3,
     Data    = 1u << 4,
-    Fatal   = 1u << 5,
-    Moved   = 1u << 6,
+    Moved   = 1u << 5,
 };
 MB_DECLARE_FLAGS(WriterStates, WriterState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(WriterStates)

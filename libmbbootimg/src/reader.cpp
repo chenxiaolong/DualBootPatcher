@@ -749,34 +749,6 @@ bool Reader::is_open()
     return m_state != ReaderState::New;
 }
 
-/*!
- * \brief Check whether the reader is in a fatal state
- *
- * If the reader is in a fatal state, the only valid operation is to call
- * close().
- *
- * \return Whether reader is in a fatal state
- */
-bool Reader::is_fatal()
-{
-    return m_state == ReaderState::Fatal;
-}
-
-/*!
- * \brief Set whether reader is in a fatal state
- *
- * This function only has an effect if the reader is opened.
- *
- * If the reader is in a fatal state, the only valid operation is to call
- * close().
- */
-void Reader::set_fatal()
-{
-    if (!(m_state & (ReaderState::New | ReaderState::Moved))) {
-        m_state = ReaderState::Fatal;
-    }
-}
-
 oc::result<void> Reader::register_format(std::unique_ptr<FormatReader> format)
 {
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);

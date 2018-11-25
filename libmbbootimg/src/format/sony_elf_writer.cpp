@@ -268,16 +268,10 @@ oc::result<void> SonyElfFormatWriter::get_entry(File &file, Entry &entry)
 
         entry.set_size(m_cmdline.size());
 
-        auto set_as_fatal = finally([&] {
-            m_writer.set_fatal();
-        });
-
         OUTCOME_TRYV(write_entry(file, entry));
         OUTCOME_TRYV(write_data(file, m_cmdline.data(), m_cmdline.size()));
         OUTCOME_TRYV(finish_entry(file));
         OUTCOME_TRYV(get_entry(file, entry));
-
-        set_as_fatal.dismiss();
     }
 
     return oc::success();

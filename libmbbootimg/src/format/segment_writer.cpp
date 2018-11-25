@@ -143,9 +143,6 @@ oc::result<size_t> SegmentWriter::write_data(File &file, const void *buf,
 
     auto ret = file_write_exact(file, buf, buf_size);
     if (!ret) {
-        // This is a fatal error. We must guarantee that buf_size bytes will be
-        // written.
-        writer.set_fatal();
         return ret.as_failure();
     }
 
