@@ -28,17 +28,18 @@
 
 using namespace mb;
 using namespace mb::detail;
+using namespace testing;
 
 TEST(FileTest, CheckInitialValues)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     ASSERT_EQ(file.state(), FileState::New);
 }
 
 TEST(FileTest, CheckStatesNormal)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     EXPECT_CALL(file, on_open())
             .Times(1);
@@ -136,7 +137,7 @@ TEST(FileTest, FreeNewFile)
     TestFileCounters counters;
 
     {
-        testing::NiceMock<MockTestFile> file(&counters);
+        NiceMock<MockTestFile> file(&counters);
     }
 
     // The close callback should not have been called because nothing was opened
@@ -148,7 +149,7 @@ TEST(FileTest, FreeOpenedFile)
     TestFileCounters counters;
 
     {
-        testing::NiceMock<MockTestFile> file(&counters);
+        NiceMock<MockTestFile> file(&counters);
 
         ASSERT_TRUE(file.open());
     }
@@ -162,7 +163,7 @@ TEST(FileTest, FreeClosedFile)
     TestFileCounters counters;
 
     {
-        testing::NiceMock<MockTestFile> file(&counters);
+        NiceMock<MockTestFile> file(&counters);
 
         EXPECT_CALL(file, on_close())
                 .Times(1);
@@ -184,7 +185,7 @@ TEST(FileTest, FreeFatalFile)
     TestFileCounters counters;
 
     {
-        testing::NiceMock<MockTestFile> file(&counters);
+        NiceMock<MockTestFile> file(&counters);
 
         // Open file
         ASSERT_TRUE(file.open());
@@ -198,12 +199,12 @@ TEST(FileTest, FreeFatalFile)
 
 TEST(FileTest, OpenReturnFailure)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     // Set open callback
     EXPECT_CALL(file, on_open())
             .Times(2)
-            .WillOnce(testing::Return(std::error_code{}))
+            .WillOnce(Return(std::error_code{}))
             .WillOnce(Invoke(&file, &MockTestFile::orig_on_open));
     EXPECT_CALL(file, on_close())
             .Times(1);
@@ -221,7 +222,7 @@ TEST(FileTest, OpenReturnFailure)
 
 TEST(FileTest, OpenFileTwice)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     EXPECT_CALL(file, on_open())
             .Times(1);
@@ -238,7 +239,7 @@ TEST(FileTest, OpenFileTwice)
 
 TEST(FileTest, CloseNewFile)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     EXPECT_CALL(file, on_close())
             .Times(0);
@@ -249,7 +250,7 @@ TEST(FileTest, CloseNewFile)
 
 TEST(FileTest, CloseFileTwice)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     EXPECT_CALL(file, on_close())
             .Times(1);
@@ -268,11 +269,11 @@ TEST(FileTest, CloseFileTwice)
 
 TEST(FileTest, CloseReturnFailure)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     EXPECT_CALL(file, on_close())
             .Times(1)
-            .WillOnce(testing::Return(std::error_code{}));
+            .WillOnce(Return(std::error_code{}));
 
     // Open file
     ASSERT_TRUE(file.open());
@@ -284,9 +285,9 @@ TEST(FileTest, CloseReturnFailure)
 
 TEST(FileTest, ReadCallbackCalled)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_read(testing::_, testing::_))
+    EXPECT_CALL(file, on_read(_, _))
             .Times(1);
 
     // Open file
@@ -302,9 +303,9 @@ TEST(FileTest, ReadCallbackCalled)
 
 TEST(FileTest, ReadInWrongState)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_read(testing::_, testing::_))
+    EXPECT_CALL(file, on_read(_, _))
             .Times(0);
 
     // Read from file
@@ -317,12 +318,12 @@ TEST(FileTest, ReadInWrongState)
 
 TEST(FileTest, ReadReturnFailure)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     // Set read callback
-    EXPECT_CALL(file, on_read(testing::_, testing::_))
+    EXPECT_CALL(file, on_read(_, _))
             .Times(1)
-            .WillOnce(testing::Return(std::error_code{}));
+            .WillOnce(Return(std::error_code{}));
 
     // Open file
     ASSERT_TRUE(file.open());
@@ -335,9 +336,9 @@ TEST(FileTest, ReadReturnFailure)
 
 TEST(FileTest, WriteCallbackCalled)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_write(testing::_, testing::_))
+    EXPECT_CALL(file, on_write(_, _))
             .Times(1);
 
     // Open file
@@ -354,9 +355,9 @@ TEST(FileTest, WriteCallbackCalled)
 
 TEST(FileTest, WriteInWrongState)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_write(testing::_, testing::_))
+    EXPECT_CALL(file, on_write(_, _))
             .Times(0);
 
     // Write to file
@@ -369,12 +370,12 @@ TEST(FileTest, WriteInWrongState)
 
 TEST(FileTest, WriteReturnFailure)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     // Set write callback
-    EXPECT_CALL(file, on_write(testing::_, testing::_))
+    EXPECT_CALL(file, on_write(_, _))
             .Times(1)
-            .WillOnce(testing::Return(std::error_code{}));
+            .WillOnce(Return(std::error_code{}));
 
     // Open file
     ASSERT_TRUE(file.open());
@@ -386,9 +387,9 @@ TEST(FileTest, WriteReturnFailure)
 
 TEST(FileTest, SeekCallbackCalled)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_seek(testing::_, testing::_))
+    EXPECT_CALL(file, on_seek(_, _))
             .Times(2);
 
     // Open file
@@ -406,9 +407,9 @@ TEST(FileTest, SeekCallbackCalled)
 
 TEST(FileTest, SeekInWrongState)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_seek(testing::_, testing::_))
+    EXPECT_CALL(file, on_seek(_, _))
             .Times(0);
 
     // Seek file
@@ -420,12 +421,12 @@ TEST(FileTest, SeekInWrongState)
 
 TEST(FileTest, SeekReturnFailure)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     // Set seek callback
-    EXPECT_CALL(file, on_seek(testing::_, testing::_))
+    EXPECT_CALL(file, on_seek(_, _))
             .Times(1)
-            .WillOnce(testing::Return(std::error_code{}));
+            .WillOnce(Return(std::error_code{}));
 
     // Open file
     ASSERT_TRUE(file.open());
@@ -437,9 +438,9 @@ TEST(FileTest, SeekReturnFailure)
 
 TEST(FileTest, TruncateCallbackCalled)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_truncate(testing::_))
+    EXPECT_CALL(file, on_truncate(_))
             .Times(1);
 
     // Open file
@@ -451,9 +452,9 @@ TEST(FileTest, TruncateCallbackCalled)
 
 TEST(FileTest, TruncateInWrongState)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_truncate(testing::_))
+    EXPECT_CALL(file, on_truncate(_))
             .Times(0);
 
     // Truncate file
@@ -465,12 +466,12 @@ TEST(FileTest, TruncateInWrongState)
 
 TEST(FileTest, TruncateReturnFailure)
 {
-    testing::NiceMock<MockTestFile> file;
+    NiceMock<MockTestFile> file;
 
     // Set truncate callback
-    EXPECT_CALL(file, on_truncate(testing::_))
+    EXPECT_CALL(file, on_truncate(_))
             .Times(1)
-            .WillOnce(testing::Return(std::error_code{}));
+            .WillOnce(Return(std::error_code{}));
 
     // Open file
     ASSERT_TRUE(file.open());

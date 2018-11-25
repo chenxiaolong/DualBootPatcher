@@ -28,6 +28,7 @@
 
 using namespace mb;
 using namespace mb::detail;
+using namespace testing;
 
 struct MockFdFileFuncs : public FdFileFuncs
 {
@@ -56,42 +57,42 @@ struct MockFdFileFuncs : public FdFileFuncs
 
         // Fail everything by default
 #ifdef _WIN32
-        ON_CALL(*this, fn_wopen(testing::_, testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_wopen(_, _, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
 #else
-        ON_CALL(*this, fn_open(testing::_, testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_open(_, _, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
 #endif
-        ON_CALL(*this, fn_fstat(testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
-        ON_CALL(*this, fn_close(testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
-        ON_CALL(*this, fn_ftruncate64(testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
-        ON_CALL(*this, fn_lseek64(testing::_, testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
-        ON_CALL(*this, fn_read(testing::_, testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
-        ON_CALL(*this, fn_write(testing::_, testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_fstat(_, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_close(_))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_ftruncate64(_, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_lseek64(_, _, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_read(_, _, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_write(_, _, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
     }
 
     void report_as_regular_file()
     {
-        ON_CALL(*this, fn_fstat(testing::_, testing::_))
-                .WillByDefault(testing::DoAll(
-                        testing::SetArgPointee<1>(_sb_regfile),
-                        testing::Return(0)));
+        ON_CALL(*this, fn_fstat(_, _))
+                .WillByDefault(DoAll(
+                        SetArgPointee<1>(_sb_regfile),
+                        Return(0)));
     }
 
     void open_with_success()
     {
 #ifdef _WIN32
-        ON_CALL(*this, fn_wopen(testing::_, testing::_, testing::_))
-                .WillByDefault(testing::Return(0));
+        ON_CALL(*this, fn_wopen(_, _, _))
+                .WillByDefault(Return(0));
 #else
-        ON_CALL(*this, fn_open(testing::_, testing::_, testing::_))
-                .WillByDefault(testing::Return(0));
+        ON_CALL(*this, fn_open(_, _, _))
+                .WillByDefault(Return(0));
 #endif
     }
 };
@@ -126,9 +127,9 @@ public:
     }
 };
 
-struct FileFdTest : testing::Test
+struct FileFdTest : Test
 {
-    testing::NiceMock<MockFdFileFuncs> _funcs;
+    NiceMock<MockFdFileFuncs> _funcs;
 };
 
 TEST_F(FileFdTest, OpenFilenameMbsSuccess)
@@ -137,10 +138,10 @@ TEST_F(FileFdTest, OpenFilenameMbsSuccess)
     _funcs.open_with_success();
 
 #ifdef _WIN32
-    EXPECT_CALL(_funcs, fn_wopen(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_wopen(_, _, _))
             .Times(1);
 #else
-    EXPECT_CALL(_funcs, fn_open(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_open(_, _, _))
             .Times(1);
 #endif
 
@@ -153,10 +154,10 @@ TEST_F(FileFdTest, OpenFilenameMbsFailure)
     _funcs.report_as_regular_file();
 
 #ifdef _WIN32
-    EXPECT_CALL(_funcs, fn_wopen(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_wopen(_, _, _))
             .Times(1);
 #else
-    EXPECT_CALL(_funcs, fn_open(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_open(_, _, _))
             .Times(1);
 #endif
 
@@ -182,10 +183,10 @@ TEST_F(FileFdTest, OpenFilenameWcsSuccess)
     _funcs.open_with_success();
 
 #ifdef _WIN32
-    EXPECT_CALL(_funcs, fn_wopen(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_wopen(_, _, _))
             .Times(1);
 #else
-    EXPECT_CALL(_funcs, fn_open(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_open(_, _, _))
             .Times(1);
 #endif
 
@@ -198,10 +199,10 @@ TEST_F(FileFdTest, OpenFilenameWcsFailure)
     _funcs.report_as_regular_file();
 
 #ifdef _WIN32
-    EXPECT_CALL(_funcs, fn_wopen(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_wopen(_, _, _))
             .Times(1);
 #else
-    EXPECT_CALL(_funcs, fn_open(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_open(_, _, _))
             .Times(1);
 #endif
 
@@ -223,7 +224,7 @@ TEST_F(FileFdTest, OpenFilenameWcsInvalidMode)
 
 TEST_F(FileFdTest, OpenFstatFailed)
 {
-    EXPECT_CALL(_funcs, fn_fstat(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fstat(_, _))
             .Times(1);
 
     TestableFdFile file(&_funcs);
@@ -237,10 +238,9 @@ TEST_F(FileFdTest, OpenDirectory)
     struct stat sb{};
     sb.st_mode = S_IFDIR | S_IRWXU | S_IRWXG | S_IRWXO;
 
-    EXPECT_CALL(_funcs, fn_fstat(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fstat(_, _))
             .Times(1)
-            .WillOnce(testing::DoAll(testing::SetArgPointee<1>(sb),
-                                     testing::Return(0)));
+            .WillOnce(DoAll(SetArgPointee<1>(sb), Return(0)));
 
     TestableFdFile file(&_funcs);
     auto result = file.open(0, false);
@@ -252,7 +252,7 @@ TEST_F(FileFdTest, OpenFile)
 {
     _funcs.report_as_regular_file();
 
-    EXPECT_CALL(_funcs, fn_fstat(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fstat(_, _))
             .Times(1);
 
     TestableFdFile file(&_funcs);
@@ -264,7 +264,7 @@ TEST_F(FileFdTest, CloseUnownedFile)
     _funcs.report_as_regular_file();
 
     // Ensure that the close callback is not called
-    EXPECT_CALL(_funcs, fn_close(testing::_))
+    EXPECT_CALL(_funcs, fn_close(_))
             .Times(0);
 
     TestableFdFile file(&_funcs, 0, false);
@@ -277,9 +277,9 @@ TEST_F(FileFdTest, CloseOwnedFile)
     _funcs.report_as_regular_file();
 
     // Ensure that the close callback is called
-    EXPECT_CALL(_funcs, fn_close(testing::_))
+    EXPECT_CALL(_funcs, fn_close(_))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -291,7 +291,7 @@ TEST_F(FileFdTest, CloseFailure)
     _funcs.report_as_regular_file();
 
     // Ensure that the close callback is called
-    EXPECT_CALL(_funcs, fn_close(testing::_))
+    EXPECT_CALL(_funcs, fn_close(_))
             .Times(1);
 
     TestableFdFile file(&_funcs, 0, true);
@@ -306,9 +306,9 @@ TEST_F(FileFdTest, ReadSuccess)
     _funcs.report_as_regular_file();
 
     // Ensure that the read callback is called
-    EXPECT_CALL(_funcs, fn_read(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_read(_, _, _))
             .Times(1)
-            .WillOnce(testing::ReturnArg<2>());
+            .WillOnce(ReturnArg<2>());
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -325,9 +325,9 @@ TEST_F(FileFdTest, ReadSuccessMaxSize)
     _funcs.report_as_regular_file();
 
     // Ensure that the read callback is called
-    EXPECT_CALL(_funcs, fn_read(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_read(_, _, _))
             .Times(1)
-            .WillOnce(testing::ReturnArg<2>());
+            .WillOnce(ReturnArg<2>());
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -343,9 +343,9 @@ TEST_F(FileFdTest, ReadEof)
     _funcs.report_as_regular_file();
 
     // Ensure that the read callback is called
-    EXPECT_CALL(_funcs, fn_read(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_read(_, _, _))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -361,7 +361,7 @@ TEST_F(FileFdTest, ReadFailure)
     _funcs.report_as_regular_file();
 
     // Ensure that the read callback is called
-    EXPECT_CALL(_funcs, fn_read(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_read(_, _, _))
             .Times(1);
 
     TestableFdFile file(&_funcs, 0, true);
@@ -378,9 +378,9 @@ TEST_F(FileFdTest, ReadFailureEINTR)
     _funcs.report_as_regular_file();
 
     // Ensure that the read callback is called
-    EXPECT_CALL(_funcs, fn_read(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_read(_, _, _))
             .Times(1)
-            .WillOnce(testing::SetErrnoAndReturn(EINTR, -1));
+            .WillOnce(SetErrnoAndReturn(EINTR, -1));
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -396,9 +396,9 @@ TEST_F(FileFdTest, WriteSuccess)
     _funcs.report_as_regular_file();
 
     // Ensure that the write callback is called
-    EXPECT_CALL(_funcs, fn_write(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_write(_, _, _))
             .Times(1)
-            .WillOnce(testing::ReturnArg<2>());
+            .WillOnce(ReturnArg<2>());
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -414,9 +414,9 @@ TEST_F(FileFdTest, WriteSuccessMaxSize)
     _funcs.report_as_regular_file();
 
     // Ensure that the write callback is called
-    EXPECT_CALL(_funcs, fn_write(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_write(_, _, _))
             .Times(1)
-            .WillOnce(testing::ReturnArg<2>());
+            .WillOnce(ReturnArg<2>());
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -432,9 +432,9 @@ TEST_F(FileFdTest, WriteEof)
     _funcs.report_as_regular_file();
 
     // Ensure that the write callback is called
-    EXPECT_CALL(_funcs, fn_write(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_write(_, _, _))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -449,7 +449,7 @@ TEST_F(FileFdTest, WriteFailure)
     _funcs.report_as_regular_file();
 
     // Ensure that the write callback is called
-    EXPECT_CALL(_funcs, fn_write(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_write(_, _, _))
             .Times(1);
 
     TestableFdFile file(&_funcs, 0, true);
@@ -465,9 +465,9 @@ TEST_F(FileFdTest, WriteFailureEINTR)
     _funcs.report_as_regular_file();
 
     // Ensure that the write callback is called
-    EXPECT_CALL(_funcs, fn_write(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_write(_, _, _))
             .Times(1)
-            .WillOnce(testing::SetErrnoAndReturn(EINTR, -1));
+            .WillOnce(SetErrnoAndReturn(EINTR, -1));
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -481,9 +481,9 @@ TEST_F(FileFdTest, SeekSuccess)
 {
     _funcs.report_as_regular_file();
 
-    EXPECT_CALL(_funcs, fn_lseek64(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_lseek64(_, _, _))
             .Times(1)
-            .WillOnce(testing::Return(10));
+            .WillOnce(Return(10));
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -498,9 +498,9 @@ TEST_F(FileFdTest, SeekSuccessLargeFile)
 {
     _funcs.report_as_regular_file();
 
-    EXPECT_CALL(_funcs, fn_lseek64(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_lseek64(_, _, _))
             .Times(1)
-            .WillOnce(testing::Return(LFS_SIZE));
+            .WillOnce(Return(LFS_SIZE));
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -516,7 +516,7 @@ TEST_F(FileFdTest, SeekFseekFailed)
 {
     _funcs.report_as_regular_file();
 
-    EXPECT_CALL(_funcs, fn_lseek64(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_lseek64(_, _, _))
             .Times(1);
 
     TestableFdFile file(&_funcs, 0, true);
@@ -531,9 +531,9 @@ TEST_F(FileFdTest, TruncateSuccess)
 {
     _funcs.report_as_regular_file();
 
-    EXPECT_CALL(_funcs, fn_ftruncate64(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_ftruncate64(_, _))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
@@ -545,7 +545,7 @@ TEST_F(FileFdTest, TruncateFailed)
 {
     _funcs.report_as_regular_file();
 
-    EXPECT_CALL(_funcs, fn_ftruncate64(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_ftruncate64(_, _))
             .Times(1);
 
     TestableFdFile file(&_funcs, 0, true);
