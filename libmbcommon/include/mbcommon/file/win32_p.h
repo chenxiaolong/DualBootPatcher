@@ -45,7 +45,10 @@ struct Win32FileFuncs
                              DWORD nNumberOfBytesToRead,
                              LPDWORD lpNumberOfBytesRead,
                              LPOVERLAPPED lpOverlapped) = 0;
-    virtual BOOL fn_SetEndOfFile(HANDLE hFile) = 0;
+    virtual BOOL fn_SetFileInformationByHandle(HANDLE hFile,
+                                               FILE_INFO_BY_HANDLE_CLASS FileInformationClass,
+                                               LPVOID lpFileInformation,
+                                               DWORD dwBufferSize) = 0;
     virtual BOOL fn_SetFilePointerEx(HANDLE hFile,
                                      LARGE_INTEGER liDistanceToMove,
                                      PLARGE_INTEGER lpNewFilePointer,
