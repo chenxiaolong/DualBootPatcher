@@ -53,8 +53,6 @@ public:
 
     // File state
     bool is_open();
-    bool is_fatal();
-    void set_fatal();
 
 protected:
     File(File &&other) noexcept;

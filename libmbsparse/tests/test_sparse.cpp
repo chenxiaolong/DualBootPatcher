@@ -344,7 +344,6 @@ TEST_F(SparseTest, CheckInvalidRawChunkFatal)
     auto n = _file.read(buf, sizeof(buf));
     ASSERT_FALSE(n);
     ASSERT_EQ(n.error(), SparseFileError::InvalidRawChunk);
-    ASSERT_TRUE(_file.is_fatal());
 }
 
 TEST_F(SparseTest, CheckInvalidFillChunkFatal)
@@ -378,7 +377,6 @@ TEST_F(SparseTest, CheckInvalidFillChunkFatal)
     auto n = _file.read(buf, sizeof(buf));
     ASSERT_FALSE(n);
     ASSERT_EQ(n.error(), SparseFileError::InvalidFillChunk);
-    ASSERT_TRUE(_file.is_fatal());
 }
 
 TEST_F(SparseTest, CheckInvalidSkipChunkFatal)
@@ -412,7 +410,6 @@ TEST_F(SparseTest, CheckInvalidSkipChunkFatal)
     auto n = _file.read(buf, sizeof(buf));
     ASSERT_FALSE(n);
     ASSERT_EQ(n.error(), SparseFileError::InvalidSkipChunk);
-    ASSERT_TRUE(_file.is_fatal());
 }
 
 TEST_F(SparseTest, CheckInvalidCrc32ChunkFatal)
@@ -446,7 +443,6 @@ TEST_F(SparseTest, CheckInvalidCrc32ChunkFatal)
     auto n = _file.read(buf, sizeof(buf));
     ASSERT_FALSE(n);
     ASSERT_EQ(n.error(), SparseFileError::InvalidCrc32Chunk);
-    ASSERT_TRUE(_file.is_fatal());
 }
 
 TEST_F(SparseTest, CheckInvalidChunkTotalSizeFatal)
@@ -480,7 +476,6 @@ TEST_F(SparseTest, CheckInvalidChunkTotalSizeFatal)
     auto n = _file.read(buf, sizeof(buf));
     ASSERT_FALSE(n);
     ASSERT_EQ(n.error(), SparseFileError::InvalidChunkSize);
-    ASSERT_TRUE(_file.is_fatal());
 }
 
 TEST_F(SparseTest, CheckInvalidChunkTypeFatal)
@@ -514,7 +509,6 @@ TEST_F(SparseTest, CheckInvalidChunkTypeFatal)
     auto n = _file.read(buf, sizeof(buf));
     ASSERT_FALSE(n);
     ASSERT_EQ(n.error(), SparseFileError::InvalidChunkType);
-    ASSERT_TRUE(_file.is_fatal());
 }
 
 TEST_F(SparseTest, CheckReadTruncatedChunkHeaderFatal)
@@ -548,7 +542,6 @@ TEST_F(SparseTest, CheckReadTruncatedChunkHeaderFatal)
     auto n = _file.read(buf, sizeof(buf));
     ASSERT_FALSE(n);
     ASSERT_EQ(n.error(), FileError::UnexpectedEof);
-    ASSERT_TRUE(_file.is_fatal());
 }
 
 TEST_F(SparseTest, CheckReadOversizedChunkDataFatal)
@@ -583,7 +576,6 @@ TEST_F(SparseTest, CheckReadOversizedChunkDataFatal)
     auto n = _file.read(buf, sizeof(buf));
     ASSERT_FALSE(n);
     ASSERT_EQ(n.error(), SparseFileError::InvalidChunkBounds);
-    ASSERT_TRUE(_file.is_fatal());
 }
 
 TEST_F(SparseTest, CheckReadUndersizedChunkDataFatal)
@@ -618,7 +610,6 @@ TEST_F(SparseTest, CheckReadUndersizedChunkDataFatal)
     auto n = _file.read(buf, sizeof(buf));
     ASSERT_FALSE(n);
     ASSERT_EQ(n.error(), SparseFileError::InvalidChunkBounds);
-    ASSERT_TRUE(_file.is_fatal());
 }
 
 // All further tests use a valid sparse file

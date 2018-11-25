@@ -122,20 +122,12 @@ oc::result<void> SonyElfFormatWriter::close(File &file)
             sony_elf_fix_phdr_byte_order(m_hdr_appsbl);
 
             // Seek back to beginning to write headers
-            auto seek_ret = file.seek(0, SEEK_SET);
-            if (!seek_ret) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return seek_ret.as_failure();
-            }
+            OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
             // Write headers
             for (auto const &header : headers) {
                 if (header.can_write) {
-                    auto ret = file_write_exact(file, header.ptr, header.size);
-                    if (!ret) {
-                        if (file.is_fatal()) { m_writer.set_fatal(); }
-                        return ret.as_failure();
-                    }
+                    OUTCOME_TRYV(file_write_exact(file, header.ptr, header.size));
                 }
             }
         }
@@ -259,11 +251,7 @@ oc::result<void> SonyElfFormatWriter::write_header(File &file,
     OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
     // Start writing at offset 4096
-    auto seek_ret = file.seek(4096, SEEK_SET);
-    if (!seek_ret) {
-        if (file.is_fatal()) { m_writer.set_fatal(); }
-        return seek_ret.as_failure();
-    }
+    OUTCOME_TRYV(file.seek(4096, SEEK_SET));
 
     return oc::success();
 }

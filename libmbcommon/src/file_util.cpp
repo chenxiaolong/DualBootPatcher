@@ -341,7 +341,6 @@ oc::result<void> file_search(File &file,
 
             if (discarded != offset) {
                 // Reached EOF before starting offset
-                file.set_fatal();
                 return FileError::ArgumentOutOfRange;
             }
         } else {

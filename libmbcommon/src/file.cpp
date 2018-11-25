@@ -297,34 +297,6 @@ bool File::is_open()
 }
 
 /*!
- * \brief Check whether file is fatal state
- *
- * If the file is in the fatal state, the only valid operation is to call
- * close().
- *
- * \return Whether file is in fatal state
- */
-bool File::is_fatal()
-{
-    return m_state == FileState::Fatal;
-}
-
-/*!
- * \brief Set whether file is fatal state
- *
- * This function only has an effect if the file is opened.
- *
- * If the file is in the fatal state, the only valid operation is to call
- * close().
- */
-void File::set_fatal()
-{
-    if (m_state == FileState::Opened) {
-        m_state = FileState::Fatal;
-    }
-}
-
-/*!
  * \brief Get current state of the File handle
  *
  * \return State of the File handle
@@ -378,7 +350,7 @@ oc::result<void> File::on_open()
  *
  *   * open() fails
  *   * close() is explicitly called, regardless if the file handle is in the
- *     opened or fatal state
+ *     opened state
  *   * the file handle is destroyed
  *
  * This method should return:

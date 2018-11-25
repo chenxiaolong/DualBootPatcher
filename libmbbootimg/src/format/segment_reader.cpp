@@ -75,11 +75,8 @@ oc::result<void> SegmentReader::move_to_entry(File &file, Entry &entry,
     uint64_t read_cur_offset = read_start_offset;
 
     if (m_read_cur_offset != srentry->offset) {
-        auto ret = file.seek(static_cast<int64_t>(read_start_offset), SEEK_SET);
-        if (!ret) {
-            if (file.is_fatal()) { reader.set_fatal(); }
-            return ret.as_failure();
-        }
+        OUTCOME_TRYV(file.seek(static_cast<int64_t>(read_start_offset),
+                               SEEK_SET));
     }
 
     entry.set_type(srentry->type);
@@ -154,16 +151,12 @@ oc::result<size_t> SegmentReader::read_data(File &file, void *buf,
     }
 
     // We allow truncation for certain things, so we can't use file_read_exact()
-    auto n = file_read_retry(file, buf, to_copy);
-    if (!n) {
-        if (file.is_fatal()) { reader.set_fatal(); }
-        return n.as_failure();
-    }
+    OUTCOME_TRY(n, file_read_retry(file, buf, to_copy));
 
-    m_read_cur_offset += n.value();
+    m_read_cur_offset += n;
 
     // Fail if we reach EOF early
-    if (n.value() < to_copy && m_read_cur_offset != m_read_end_offset
+    if (n < to_copy && m_read_cur_offset != m_read_end_offset
             && !m_entry->can_truncate) {
         //DEBUG("Entry is truncated (expected %" PRIu64 " more bytes)",
         //      m_read_end_offset - m_read_cur_offset);
@@ -171,7 +164,7 @@ oc::result<size_t> SegmentReader::read_data(File &file, void *buf,
         return FileError::UnexpectedEof;
     }
 
-    return n.value();
+    return n;
 }
 
 }

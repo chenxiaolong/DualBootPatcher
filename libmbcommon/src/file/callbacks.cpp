@@ -53,8 +53,7 @@ using namespace detail;
  * \brief File close callback
  *
  * This callback, if registered, will be called once and only once once to clean
- * up the resources, regardless of the current state. In other words, this
- * callback will be called even if is_fatal() returns true. If any memory, file
+ * up the resources, regardless of the current state. If any memory, file
  * handles, or other resources need to be freed, this callback is the place to
  * do so.
  *
