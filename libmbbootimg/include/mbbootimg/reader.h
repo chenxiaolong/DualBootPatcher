@@ -84,8 +84,6 @@ public:
 
     // Reader state
     bool is_open();
-    bool is_fatal();
-    void set_fatal();
 
 private:
     oc::result<void> register_format(std::unique_ptr<detail::FormatReader> format);

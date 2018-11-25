@@ -631,34 +631,6 @@ bool Writer::is_open()
 }
 
 /*!
- * \brief Check whether the writer is in a fatal state
- *
- * If the writer is in a fatal state, the only valid operation is to call
- * close().
- *
- * \return Whether writer is in a fatal state
- */
-bool Writer::is_fatal()
-{
-    return m_state == WriterState::Fatal;
-}
-
-/*!
- * \brief Set whether writer is in a fatal state
- *
- * This function only has an effect if the writer is opened.
- *
- * If the writer is in a fatal state, the only valid operation is to call
- * close().
- */
-void Writer::set_fatal()
-{
-    if (!(m_state & (WriterState::New | WriterState::Moved))) {
-        m_state = WriterState::Fatal;
-    }
-}
-
-/*!
  * \brief Register a format writer
  *
  * Register a format writer with a Writer. The Writer will take ownership of

@@ -53,7 +53,6 @@ _mtk_header_update_size(Writer &writer, File &file,
     uint32_t le32_size = mb_htole32(size);
 
     if (offset > SIZE_MAX - offsetof(MtkHeader, size)) {
-        writer.set_fatal();
         return MtkError::MtkHeaderOffsetTooLarge;
     }
 
@@ -329,12 +328,10 @@ oc::result<void> MtkFormatWriter::finish_entry(File &file)
     if ((swentry->type == ENTRY_TYPE_KERNEL
             || swentry->type == ENTRY_TYPE_RAMDISK)
             && *swentry->size == UINT32_MAX - sizeof(MtkHeader)) {
-        m_writer.set_fatal();
         return MtkError::EntryTooLargeToFitMtkHeader;
     } else if ((swentry->type == ENTRY_TYPE_MTK_KERNEL_HEADER
             || swentry->type == ENTRY_TYPE_MTK_RAMDISK_HEADER)
             && *swentry->size != sizeof(MtkHeader)) {
-        m_writer.set_fatal();
         return MtkError::InvalidEntrySizeForMtkHeader;
     }
 

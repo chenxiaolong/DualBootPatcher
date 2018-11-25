@@ -160,7 +160,6 @@ oc::result<size_t> SegmentReader::read_data(File &file, void *buf,
             && !m_entry->can_truncate) {
         //DEBUG("Entry is truncated (expected %" PRIu64 " more bytes)",
         //      m_read_end_offset - m_read_cur_offset);
-        reader.set_fatal();
         return FileError::UnexpectedEof;
     }
 

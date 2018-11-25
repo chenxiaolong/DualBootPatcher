@@ -104,7 +104,6 @@ oc::result<void> LokiFormatWriter::close(File &file)
             // Set ID
             unsigned char digest[SHA_DIGEST_LENGTH];
             if (!SHA1_Final(digest, &m_sha_ctx)) {
-                m_writer.set_fatal();
                 return android::AndroidError::Sha1UpdateError;
             }
             memcpy(m_hdr.id, digest, SHA_DIGEST_LENGTH);
@@ -228,7 +227,6 @@ oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
 
     if (swentry->type == ENTRY_TYPE_ABOOT) {
         if (buf_size > MAX_ABOOT_SIZE - m_aboot.size()) {
-            m_writer.set_fatal();
             return LokiError::AbootImageTooLarge;
         }
 
@@ -244,9 +242,6 @@ oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
         // We always include the image in the hash. The size is sometimes
         // included and is handled in finish_entry().
         if (!SHA1_Update(&m_sha_ctx, buf, n)) {
-            // This must be fatal as the write already happened and cannot be
-            // reattempted
-            m_writer.set_fatal();
             return android::AndroidError::Sha1UpdateError;
         }
 
@@ -266,7 +261,6 @@ oc::result<void> LokiFormatWriter::finish_entry(File &file)
     // Include fake 0 size for unsupported secondboot image
     if (swentry->type == ENTRY_TYPE_DEVICE_TREE
             && !SHA1_Update(&m_sha_ctx, "\x00\x00\x00\x00", 4)) {
-        m_writer.set_fatal();
         return android::AndroidError::Sha1UpdateError;
     }
 
@@ -274,7 +268,6 @@ oc::result<void> LokiFormatWriter::finish_entry(File &file)
     if (swentry->type != ENTRY_TYPE_ABOOT
             && (swentry->type != ENTRY_TYPE_DEVICE_TREE || *swentry->size > 0)
             && !SHA1_Update(&m_sha_ctx, &le32_size, sizeof(le32_size))) {
-        m_writer.set_fatal();
         return android::AndroidError::Sha1UpdateError;
     }
 
