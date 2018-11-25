@@ -484,12 +484,6 @@ oc::result<uint64_t> PosixFile::on_seek(int64_t offset, int whence)
         return FileError::UnsupportedSeek;
     }
 
-    // Get current file position
-    off_t old_pos = m_funcs->fn_ftello(m_fp);
-    if (old_pos < 0) {
-        return ec_from_errno();
-    }
-
     // Try to seek
     if (m_funcs->fn_fseeko(m_fp, static_cast<off_t>(offset), whence) < 0) {
         return ec_from_errno();
@@ -498,13 +492,7 @@ oc::result<uint64_t> PosixFile::on_seek(int64_t offset, int whence)
     // Get new position
     off_t new_pos = m_funcs->fn_ftello(m_fp);
     if (new_pos < 0) {
-        // Try to restore old position
-        int errno_to_report = errno;
-        if (m_funcs->fn_fseeko(m_fp, old_pos, SEEK_SET) != 0) {
-            errno_to_report = errno;
-            set_fatal();
-        }
-        return ec_from_errno(errno_to_report);
+        return ec_from_errno();
     }
 
     return static_cast<uint64_t>(new_pos);
