@@ -25,8 +25,9 @@
 #include "mbcommon/file/callbacks.h"
 
 using namespace mb;
+using namespace testing;
 
-struct FileCallbacksTest : testing::Test
+struct FileCallbacksTest : Test
 {
     unsigned int _n_open_cb = 0;
     unsigned int _n_close_cb = 0;

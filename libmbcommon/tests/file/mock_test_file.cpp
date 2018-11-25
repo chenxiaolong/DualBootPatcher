@@ -24,6 +24,7 @@
 #include "mbcommon/string.h"
 
 using namespace mb;
+using namespace testing;
 
 TestFile::TestFile() : TestFile(nullptr)
 {
@@ -179,17 +180,17 @@ MockTestFile::MockTestFile(TestFileCounters *counters) : TestFile(counters)
 {
     // Call original methods by default
     ON_CALL(*this, on_open())
-            .WillByDefault(testing::Invoke(this, &MockTestFile::orig_on_open));
+            .WillByDefault(Invoke(this, &MockTestFile::orig_on_open));
     ON_CALL(*this, on_close())
-            .WillByDefault(testing::Invoke(this, &MockTestFile::orig_on_close));
-    ON_CALL(*this, on_read(testing::_, testing::_))
-            .WillByDefault(testing::Invoke(this, &MockTestFile::orig_on_read));
-    ON_CALL(*this, on_write(testing::_, testing::_))
-            .WillByDefault(testing::Invoke(this, &MockTestFile::orig_on_write));
-    ON_CALL(*this, on_seek(testing::_, testing::_))
-            .WillByDefault(testing::Invoke(this, &MockTestFile::orig_on_seek));
-    ON_CALL(*this, on_truncate(testing::_))
-            .WillByDefault(testing::Invoke(this, &MockTestFile::orig_on_truncate));
+            .WillByDefault(Invoke(this, &MockTestFile::orig_on_close));
+    ON_CALL(*this, on_read(_, _))
+            .WillByDefault(Invoke(this, &MockTestFile::orig_on_read));
+    ON_CALL(*this, on_write(_, _))
+            .WillByDefault(Invoke(this, &MockTestFile::orig_on_write));
+    ON_CALL(*this, on_seek(_, _))
+            .WillByDefault(Invoke(this, &MockTestFile::orig_on_seek));
+    ON_CALL(*this, on_truncate(_))
+            .WillByDefault(Invoke(this, &MockTestFile::orig_on_truncate));
 }
 
 MockTestFile::~MockTestFile()
