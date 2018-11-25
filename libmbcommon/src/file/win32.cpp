@@ -72,9 +72,13 @@ struct RealWin32FileFuncs : public Win32FileFuncs
                         lpNumberOfBytesRead, lpOverlapped);
     }
 
-    virtual BOOL fn_SetEndOfFile(HANDLE hFile) override
+    virtual BOOL fn_SetFileInformationByHandle(HANDLE hFile,
+                                               FILE_INFO_BY_HANDLE_CLASS FileInformationClass,
+                                               LPVOID lpFileInformation,
+                                               DWORD dwBufferSize) override
     {
-        return SetEndOfFile(hFile);
+        return SetFileInformationByHandle(hFile, FileInformationClass,
+                                          lpFileInformation, dwBufferSize);
     }
 
     virtual BOOL fn_SetFilePointerEx(HANDLE hFile,
@@ -539,32 +543,15 @@ oc::result<uint64_t> Win32File::on_seek(int64_t offset, int whence)
 
 oc::result<void> Win32File::on_truncate(uint64_t size)
 {
-    // Get current position
-    OUTCOME_TRY(current_pos, on_seek(0, SEEK_CUR));
+    FILE_END_OF_FILE_INFO info;
+    info.EndOfFile.QuadPart = static_cast<int64_t>(size);
 
-    // Move to new position
-    OUTCOME_TRYV(on_seek(static_cast<int64_t>(size), SEEK_SET));
+    bool ret = m_funcs->fn_SetFileInformationByHandle(m_handle,
+                                                      FileEndOfFileInfo,
+                                                      &info, sizeof(info));
 
-    std::error_code error;
-
-    // Truncate
-    if (!m_funcs->fn_SetEndOfFile(m_handle)) {
-        error = ec_from_win32();
-    }
-
-    // Move back to initial position
-    auto temp = on_seek(static_cast<int64_t>(current_pos), SEEK_SET);
-    if (!temp) {
-        // We can't guarantee the file position so the handle shouldn't be used
-        // anymore
-        set_fatal();
-        if (!error) {
-            error = std::move(temp.error());
-        }
-    }
-
-    if (error) {
-        return error;
+    if (!ret) {
+        return ec_from_win32();
     }
 
     return oc::success();
