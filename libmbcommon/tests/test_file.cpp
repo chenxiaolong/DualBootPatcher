@@ -180,23 +180,6 @@ TEST(FileTest, FreeClosedFile)
     ASSERT_EQ(counters.n_close, 1u);
 }
 
-TEST(FileTest, FreeFatalFile)
-{
-    TestFileCounters counters;
-
-    {
-        NiceMock<MockTestFile> file(&counters);
-
-        // Open file
-        ASSERT_TRUE(file.open());
-
-        file.set_state(FileState::Fatal);
-    }
-
-    // Ensure that the close callback was called
-    ASSERT_EQ(counters.n_close, 1u);
-}
-
 TEST(FileTest, OpenReturnFailure)
 {
     NiceMock<MockTestFile> file;
@@ -478,6 +461,5 @@ TEST(FileTest, TruncateReturnFailure)
 
     // Truncate file
     ASSERT_FALSE(file.truncate(INITIAL_BUF_SIZE + 1));
-    ASSERT_FALSE(file.is_fatal());
     ASSERT_EQ(file.state(), FileState::Opened);
 }

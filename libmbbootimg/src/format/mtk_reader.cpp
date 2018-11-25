@@ -71,12 +71,7 @@ read_mtk_header(Reader &reader, File &file,
 {
     MtkHeader mtkhdr;
 
-    auto seek_ret = file.seek(static_cast<int64_t>(offset), SEEK_SET);
-    if (!seek_ret) {
-        //DEBUG("Failed to seek to MTK header at %" PRIu64, offset);
-        if (file.is_fatal()) { reader.set_fatal(); }
-        return seek_ret.as_failure();
-    }
+    OUTCOME_TRYV(file.seek(static_cast<int64_t>(offset), SEEK_SET));
 
     auto ret = file_read_exact(file, &mtkhdr, sizeof(mtkhdr));
     if (!ret) {
@@ -84,7 +79,6 @@ read_mtk_header(Reader &reader, File &file,
             //DEBUG("MTK header not found at %" PRIu64, offset);
             return MtkError::MtkHeaderNotFound;
         } else {
-            if (file.is_fatal()) { reader.set_fatal(); }
             return ret.as_failure();
         }
     }

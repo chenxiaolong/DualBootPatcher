@@ -381,11 +381,7 @@ oc::result<void> Reader::open(File *file)
     if (!m_format) {
         for (auto &f : m_formats) {
             // Seek to beginning
-            auto seek_ret = file->seek(0, SEEK_SET);
-            if (!seek_ret) {
-                if (file->is_fatal()) { set_fatal(); }
-                return seek_ret.as_failure();
-            }
+            OUTCOME_TRYV(file->seek(0, SEEK_SET));
 
             auto close_f = finally([&] {
                 (void) f->close(*file);
@@ -480,11 +476,7 @@ oc::result<void> Reader::read_header(Header &header)
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::Header);
 
     // Seek to beginning
-    auto seek_ret = m_file->seek(0, SEEK_SET);
-    if (!seek_ret) {
-        if (m_file->is_fatal()) { set_fatal(); }
-        return seek_ret.as_failure();
-    }
+    OUTCOME_TRYV(m_file->seek(0, SEEK_SET));
 
     header.clear();
 

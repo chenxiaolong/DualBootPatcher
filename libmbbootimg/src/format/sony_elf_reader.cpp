@@ -129,19 +129,9 @@ oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
     for (Elf32_Half i = 0; i < m_hdr.e_phnum; ++i) {
         Sony_Elf32_Phdr phdr;
 
-        auto seek_ret = file.seek(static_cast<int64_t>(pos), SEEK_SET);
-        if (!seek_ret) {
-            //DEBUG("Failed to seek to segment %" PRIu16 " at %" PRIu64, i, pos);
-            if (file.is_fatal()) { m_reader.set_fatal(); }
-            return seek_ret.as_failure();
-        }
+        OUTCOME_TRYV(file.seek(static_cast<int64_t>(pos), SEEK_SET));
 
-        auto ret = file_read_exact(file, &phdr, sizeof(phdr));
-        if (!ret) {
-            //DEBUG("Failed to read segment %" PRIu16, i);
-            if (file.is_fatal()) { m_reader.set_fatal(); }
-            return ret.as_failure();
-        }
+        OUTCOME_TRYV(file_read_exact(file, &phdr, sizeof(phdr)));
 
         // Account for program header
         pos += sizeof(phdr);
@@ -157,19 +147,9 @@ oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
                 return SonyElfError::KernelCmdlineTooLong;
             }
 
-            seek_ret = file.seek(phdr.p_offset, SEEK_SET);
-            if (!seek_ret) {
-                //DEBUG("Failed to seek to cmdline");
-                if (file.is_fatal()) { m_reader.set_fatal(); }
-                return seek_ret.as_failure();
-            }
+            OUTCOME_TRYV(file.seek(phdr.p_offset, SEEK_SET));
 
-            ret = file_read_exact(file, cmdline, phdr.p_memsz);
-            if (!ret) {
-                //DEBUG("Failed to read cmdline");
-                if (file.is_fatal()) { m_reader.set_fatal(); };
-                return ret.as_failure();
-            }
+            OUTCOME_TRYV(file_read_exact(file, cmdline, phdr.p_memsz));
 
             cmdline[phdr.p_memsz] = '\0';
 
@@ -268,18 +248,13 @@ SonyElfFormatReader::find_sony_elf_header(Reader &reader, File &file,
 {
     Sony_Elf32_Ehdr header;
 
-    auto seek_ret = file.seek(0, SEEK_SET);
-    if (!seek_ret) {
-        if (file.is_fatal()) { reader.set_fatal(); }
-        return seek_ret.as_failure();
-    }
+    OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
     auto ret = file_read_exact(file, &header, sizeof(header));
     if (!ret) {
         if (ret.error() == FileError::UnexpectedEof) {
             return SonyElfError::SonyElfHeaderTooSmall;
         } else {
-            if (file.is_fatal()) { reader.set_fatal(); }
             return ret.as_failure();
         }
     }

@@ -31,8 +31,7 @@ enum class FileState : uint8_t
 {
     New     = 1u << 0,
     Opened  = 1u << 1,
-    Fatal   = 1u << 2,
-    Moved   = 1u << 3,
+    Moved   = 1u << 2,
 };
 MB_DECLARE_FLAGS(FileStates, FileState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(FileStates)

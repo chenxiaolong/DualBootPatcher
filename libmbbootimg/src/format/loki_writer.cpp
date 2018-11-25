@@ -96,18 +96,10 @@ oc::result<void> LokiFormatWriter::close(File &file)
 
         // If successful, finish up the boot image
         if (swentry == m_seg->entries().end()) {
-            auto file_size = file.seek(0, SEEK_CUR);
-            if (!file_size) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return file_size.as_failure();
-            }
+            OUTCOME_TRY(file_size, file.seek(0, SEEK_CUR));
 
             // Truncate to set size
-            auto truncate_ret = file.truncate(file_size.value());
-            if (!truncate_ret) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return truncate_ret.as_failure();
-            }
+            OUTCOME_TRYV(file.truncate(file_size));
 
             // Set ID
             unsigned char digest[SHA_DIGEST_LENGTH];
@@ -121,18 +113,10 @@ oc::result<void> LokiFormatWriter::close(File &file)
             android_fix_header_byte_order(m_hdr);
 
             // Seek back to beginning to write header
-            auto seek_ret = file.seek(0, SEEK_SET);
-            if (!seek_ret) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return seek_ret.as_failure();
-            }
+            OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
             // Write header
-            auto ret = file_write_exact(file, &m_hdr, sizeof(m_hdr));
-            if (!ret) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return ret.as_failure();
-            }
+            OUTCOME_TRYV(file_write_exact(file, &m_hdr, sizeof(m_hdr)));
 
             // Patch with Loki
             OUTCOME_TRYV(_loki_patch_file(m_writer, file, m_aboot.data(),
@@ -222,11 +206,7 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
     OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
     // Start writing after first page
-    auto seek_ret = file.seek(m_hdr.page_size, SEEK_SET);
-    if (!seek_ret) {
-        if (file.is_fatal()) { m_writer.set_fatal(); }
-        return seek_ret.as_failure();
-    }
+    OUTCOME_TRYV(file.seek(m_hdr.page_size, SEEK_SET));
 
     return oc::success();
 }

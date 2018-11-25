@@ -57,18 +57,10 @@ _mtk_header_update_size(Writer &writer, File &file,
         return MtkError::MtkHeaderOffsetTooLarge;
     }
 
-    auto seek_ret = file.seek(
-            static_cast<int64_t>(offset + offsetof(MtkHeader, size)), SEEK_SET);
-    if (!seek_ret) {
-        if (file.is_fatal()) { writer.set_fatal(); }
-        return seek_ret.as_failure();
-    }
+    OUTCOME_TRYV(file.seek(
+            static_cast<int64_t>(offset + offsetof(MtkHeader, size)), SEEK_SET));
 
-    auto ret = file_write_exact(file, &le32_size, sizeof(le32_size));
-    if (!ret) {
-        if (file.is_fatal()) { writer.set_fatal(); }
-        return ret.as_failure();
-    }
+    OUTCOME_TRYV(file_write_exact(file, &le32_size, sizeof(le32_size)));
 
     return oc::success();
 }
@@ -90,22 +82,13 @@ _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
     for (auto const &entry : seg.entries()) {
         uint64_t remain = *entry.size;
 
-        auto seek_ret = file.seek(static_cast<int64_t>(entry.offset),
-                                  SEEK_SET);
-        if (!seek_ret) {
-            if (file.is_fatal()) { writer.set_fatal(); }
-            return seek_ret.as_failure();
-        }
+        OUTCOME_TRYV(file.seek(static_cast<int64_t>(entry.offset), SEEK_SET));
 
         // Update checksum with data
         while (remain > 0) {
             auto to_read = std::min<uint64_t>(remain, sizeof(buf));
 
-            auto ret = file_read_exact(file, buf, static_cast<size_t>(to_read));
-            if (!ret) {
-                if (writer.is_fatal()) { writer.set_fatal(); }
-                return ret.as_failure();
-            }
+            OUTCOME_TRYV(file_read_exact(file, buf, static_cast<size_t>(to_read)));
 
             if (!SHA1_Update(&sha_ctx, buf, static_cast<size_t>(to_read))) {
                 return android::AndroidError::Sha1UpdateError;
@@ -194,18 +177,10 @@ oc::result<void> MtkFormatWriter::close(File &file)
 
         // If successful, finish up the boot image
         if (swentry == m_seg->entries().end()) {
-            auto file_size = file.seek(0, SEEK_CUR);
-            if (!file_size) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return file_size.as_failure();
-            }
+            OUTCOME_TRY(file_size, file.seek(0, SEEK_CUR));
 
             // Truncate to set size
-            auto truncate_ret = file.truncate(file_size.value());
-            if (!truncate_ret) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return truncate_ret.as_failure();
-            }
+            OUTCOME_TRYV(file.truncate(file_size));
 
             // Update MTK header sizes
             for (auto const &entry : m_seg->entries()) {
@@ -234,18 +209,10 @@ oc::result<void> MtkFormatWriter::close(File &file)
             android_fix_header_byte_order(m_hdr);
 
             // Seek back to beginning to write header
-            auto seek_ret = file.seek(0, SEEK_SET);
-            if (!seek_ret) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return seek_ret.as_failure();
-            }
+            OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
             // Write header
-            auto ret = file_write_exact(file, &m_hdr, sizeof(m_hdr));
-            if (!ret) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return ret.as_failure();
-            }
+            OUTCOME_TRYV(file_write_exact(file, &m_hdr, sizeof(m_hdr)));
         }
     }
 
@@ -332,11 +299,7 @@ oc::result<void> MtkFormatWriter::write_header(File &file, const Header &header)
     OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
     // Start writing after first page
-    auto seek_ret = file.seek(m_hdr.page_size, SEEK_SET);
-    if (!seek_ret) {
-        if (file.is_fatal()) { m_writer.set_fatal(); }
-        return seek_ret.as_failure();
-    }
+    OUTCOME_TRYV(file.seek(m_hdr.page_size, SEEK_SET));
 
     return oc::success();
 }
