@@ -63,8 +63,8 @@ public:
 
     // Operations
     oc::result<void> read_header(Header &header);
-    oc::result<void> read_entry(Entry &entry);
-    oc::result<void> go_to_entry(Entry &entry, std::optional<EntryType> entry_type);
+    oc::result<Entry> read_entry();
+    oc::result<Entry> go_to_entry(std::optional<EntryType> entry_type);
     oc::result<size_t> read_data(void *buf, size_t size);
 
     // Format operations

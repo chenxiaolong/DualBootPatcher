@@ -50,7 +50,7 @@ MB_DECLARE_OPERATORS_FOR_FLAGS(EntryTypes)
 class MB_EXPORT Entry
 {
 public:
-    Entry();
+    Entry(EntryType type);
     ~Entry();
 
     MB_DEFAULT_COPY_CONSTRUCT_AND_ASSIGN(Entry)
@@ -59,16 +59,13 @@ public:
     bool operator==(const Entry &rhs) const;
     bool operator!=(const Entry &rhs) const;
 
-    void clear();
-
-    std::optional<EntryType> type() const;
-    void set_type(std::optional<EntryType> type);
+    EntryType type() const;
 
     std::optional<uint64_t> size() const;
     void set_size(std::optional<uint64_t> size);
 
 private:
-    std::optional<EntryType> m_type;
+    EntryType m_type;
     std::optional<uint64_t> m_size;
 };
 

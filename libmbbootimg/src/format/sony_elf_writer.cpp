@@ -246,25 +246,24 @@ oc::result<void> SonyElfFormatWriter::write_header(File &file,
     return oc::success();
 }
 
-oc::result<void> SonyElfFormatWriter::get_entry(File &file, Entry &entry)
+oc::result<Entry> SonyElfFormatWriter::get_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg->get_entry(file, entry));
+    OUTCOME_TRY(entry, m_seg->get_entry(file));
 
     auto swentry = m_seg->entry();
 
     // Silently handle cmdline entry
     if (swentry->type == EntryType::SonyCmdline) {
-        entry.clear();
-
         entry.set_size(m_cmdline.size());
 
         OUTCOME_TRYV(write_entry(file, entry));
         OUTCOME_TRYV(write_data(file, m_cmdline.data(), m_cmdline.size()));
         OUTCOME_TRYV(finish_entry(file));
-        OUTCOME_TRYV(get_entry(file, entry));
-    }
 
-    return oc::success();
+        return get_entry(file);
+    } else {
+        return std::move(entry);
+    }
 }
 
 oc::result<void> SonyElfFormatWriter::write_entry(File &file,

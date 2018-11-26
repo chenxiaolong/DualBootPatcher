@@ -202,9 +202,9 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
     return oc::success();
 }
 
-oc::result<void> LokiFormatWriter::get_entry(File &file, Entry &entry)
+oc::result<Entry> LokiFormatWriter::get_entry(File &file)
 {
-    return m_seg->get_entry(file, entry);
+    return m_seg->get_entry(file);
 }
 
 oc::result<void> LokiFormatWriter::write_entry(File &file, const Entry &entry)

@@ -70,7 +70,6 @@ protected:
         };
 
         Header header;
-        Entry entry;
 
         // Write dummy header
         ASSERT_TRUE(_writer.get_header(header));
@@ -79,15 +78,15 @@ protected:
 
         // Write specified dummy entries
         while (true) {
-            auto ret = _writer.get_entry(entry);
-            if (!ret) {
-                ASSERT_EQ(ret.error(), WriterError::EndOfEntries);
+            auto entry = _writer.get_entry();
+            if (!entry) {
+                ASSERT_EQ(entry.error(), WriterError::EndOfEntries);
                 break;
             }
 
-            ASSERT_TRUE(_writer.write_entry(entry));
+            ASSERT_TRUE(_writer.write_entry(entry.value()));
 
-            if (*entry.type() & types) {
+            if (entry.value().type() & types) {
                 auto n = _writer.write_data("hello", 5);
                 ASSERT_TRUE(n);
                 ASSERT_EQ(n.value(), 5u);

@@ -23,7 +23,10 @@
 namespace mb::bootimg
 {
 
-Entry::Entry() = default;
+Entry::Entry(EntryType type)
+    : m_type(type)
+{
+}
 
 Entry::~Entry() = default;
 
@@ -38,22 +41,11 @@ bool Entry::operator!=(const Entry &rhs) const
     return !(*this == rhs);
 }
 
-void Entry::clear()
-{
-    m_type = {};
-    m_size = {};
-}
-
 // Fields
 
-std::optional<EntryType> Entry::type() const
+EntryType Entry::type() const
 {
     return m_type;
-}
-
-void Entry::set_type(std::optional<EntryType> type)
-{
-    m_type = std::move(type);
 }
 
 std::optional<uint64_t> Entry::size() const

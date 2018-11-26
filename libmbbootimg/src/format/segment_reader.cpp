@@ -63,8 +63,9 @@ oc::result<void> SegmentReader::set_entries(std::vector<SegmentReaderEntry> entr
     return oc::success();
 }
 
-oc::result<void> SegmentReader::move_to_entry(File &file, Entry &entry,
-                                              std::vector<SegmentReaderEntry>::iterator srentry)
+oc::result<Entry>
+SegmentReader::move_to_entry(File &file,
+                             std::vector<SegmentReaderEntry>::iterator srentry)
 {
     if (srentry->offset > UINT64_MAX - srentry->size) {
         return SegmentError::EntryWouldOverflowOffset;
@@ -79,7 +80,7 @@ oc::result<void> SegmentReader::move_to_entry(File &file, Entry &entry,
                                SEEK_SET));
     }
 
-    entry.set_type(srentry->type);
+    Entry entry(srentry->type);
     entry.set_size(srentry->size);
 
     m_state = SegmentReaderState::Entries;
@@ -88,10 +89,10 @@ oc::result<void> SegmentReader::move_to_entry(File &file, Entry &entry,
     m_read_end_offset = read_end_offset;
     m_read_cur_offset = read_cur_offset;
 
-    return oc::success();
+    return std::move(entry);
 }
 
-oc::result<void> SegmentReader::read_entry(File &file, Entry &entry)
+oc::result<Entry> SegmentReader::read_entry(File &file)
 {
     auto srentry = m_entries.end();
 
@@ -108,11 +109,11 @@ oc::result<void> SegmentReader::read_entry(File &file, Entry &entry)
         return ReaderError::EndOfEntries;
     }
 
-    return move_to_entry(file, entry, srentry);
+    return move_to_entry(file, srentry);
 }
 
-oc::result<void> SegmentReader::go_to_entry(File &file, Entry &entry,
-                                            std::optional<EntryType> entry_type)
+oc::result<Entry>
+SegmentReader::go_to_entry(File &file, std::optional<EntryType> entry_type)
 {
     decltype(m_entries)::iterator srentry;
 
@@ -134,7 +135,7 @@ oc::result<void> SegmentReader::go_to_entry(File &file, Entry &entry,
         return ReaderError::EndOfEntries;
     }
 
-    return move_to_entry(file, entry, srentry);
+    return move_to_entry(file, srentry);
 }
 
 oc::result<size_t> SegmentReader::read_data(File &file, void *buf,

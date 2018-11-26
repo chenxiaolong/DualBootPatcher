@@ -75,7 +75,7 @@ void SegmentWriter::update_size_if_unset(uint32_t size)
     }
 }
 
-oc::result<void> SegmentWriter::get_entry(File &file, Entry &entry)
+oc::result<Entry> SegmentWriter::get_entry(File &file)
 {
     if (!m_pos) {
         OUTCOME_TRY(pos, file.seek(0, SEEK_CUR));
@@ -102,14 +102,13 @@ oc::result<void> SegmentWriter::get_entry(File &file, Entry &entry)
     // Update starting offset
     swentry->offset = *m_pos;
 
-    entry.clear();
-    entry.set_type(swentry->type);
+    Entry entry(swentry->type);
 
     m_entry_size = 0;
     m_state = SegmentWriterState::Entries;
     m_entry = swentry;
 
-    return oc::success();
+    return std::move(entry);
 }
 
 oc::result<void> SegmentWriter::write_entry(File &file, const Entry &entry)

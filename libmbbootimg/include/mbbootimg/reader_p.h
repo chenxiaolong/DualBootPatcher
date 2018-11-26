@@ -56,10 +56,10 @@ public:
     close(File &file);
     virtual oc::result<void>
     read_header(File &file, Header &header) = 0;
-    virtual oc::result<void>
-    read_entry(File &file, Entry &entry) = 0;
-    virtual oc::result<void>
-    go_to_entry(File &file, Entry &entry, std::optional<EntryType> entry_type);
+    virtual oc::result<Entry>
+    read_entry(File &file) = 0;
+    virtual oc::result<Entry>
+    go_to_entry(File &file, std::optional<EntryType> entry_type);
     virtual oc::result<size_t>
     read_data(File &file, void *buf, size_t buf_size) = 0;
 };

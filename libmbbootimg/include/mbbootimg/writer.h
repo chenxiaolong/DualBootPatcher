@@ -63,7 +63,7 @@ public:
     // Operations
     oc::result<void> get_header(Header &header);
     oc::result<void> write_header(const Header &header);
-    oc::result<void> get_entry(Entry &entry);
+    oc::result<Entry> get_entry();
     oc::result<void> write_entry(const Entry &entry);
     oc::result<size_t> write_data(const void *buf, size_t size);
 

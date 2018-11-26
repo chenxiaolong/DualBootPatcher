@@ -197,15 +197,15 @@ oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
     return m_seg->set_entries(std::move(entries));
 }
 
-oc::result<void> SonyElfFormatReader::read_entry(File &file, Entry &entry)
+oc::result<Entry> SonyElfFormatReader::read_entry(File &file)
 {
-    return m_seg->read_entry(file, entry);
+    return m_seg->read_entry(file);
 }
 
-oc::result<void> SonyElfFormatReader::go_to_entry(File &file, Entry &entry,
-                                                  std::optional<EntryType> entry_type)
+oc::result<Entry>
+SonyElfFormatReader::go_to_entry(File &file, std::optional<EntryType> entry_type)
 {
-    return m_seg->go_to_entry(file, entry, entry_type);
+    return m_seg->go_to_entry(file, entry_type);
 }
 
 oc::result<size_t> SonyElfFormatReader::read_data(File &file, void *buf,

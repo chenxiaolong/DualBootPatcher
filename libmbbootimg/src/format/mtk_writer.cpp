@@ -294,9 +294,9 @@ oc::result<void> MtkFormatWriter::write_header(File &file, const Header &header)
     return oc::success();
 }
 
-oc::result<void> MtkFormatWriter::get_entry(File &file, Entry &entry)
+oc::result<Entry> MtkFormatWriter::get_entry(File &file)
 {
-    return m_seg->get_entry(file, entry);
+    return m_seg->get_entry(file);
 }
 
 oc::result<void> MtkFormatWriter::write_entry(File &file, const Entry &entry)

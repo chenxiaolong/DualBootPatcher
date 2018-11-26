@@ -56,12 +56,11 @@ public:
     const std::vector<SegmentReaderEntry> & entries() const;
     oc::result<void> set_entries(std::vector<SegmentReaderEntry> entries);
 
-    oc::result<void> move_to_entry(File &file, Entry &entry,
-                                   std::vector<SegmentReaderEntry>::iterator srentry);
+    oc::result<Entry> move_to_entry(File &file,
+                                    std::vector<SegmentReaderEntry>::iterator srentry);
 
-    oc::result<void> read_entry(File &file, Entry &entry);
-    oc::result<void> go_to_entry(File &file, Entry &entry,
-                                 std::optional<EntryType> entry_type);
+    oc::result<Entry> read_entry(File &file);
+    oc::result<Entry> go_to_entry(File &file, std::optional<EntryType> entry_type);
     oc::result<size_t> read_data(File &file, void *buf, size_t buf_size);
 
 private:

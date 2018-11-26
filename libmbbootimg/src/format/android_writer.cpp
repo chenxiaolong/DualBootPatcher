@@ -203,9 +203,9 @@ oc::result<void> AndroidFormatWriter::write_header(File &file,
     return oc::success();
 }
 
-oc::result<void> AndroidFormatWriter::get_entry(File &file, Entry &entry)
+oc::result<Entry> AndroidFormatWriter::get_entry(File &file)
 {
-    return m_seg->get_entry(file, entry);
+    return m_seg->get_entry(file);
 }
 
 oc::result<void> AndroidFormatWriter::write_entry(File &file,

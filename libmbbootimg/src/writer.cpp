@@ -444,21 +444,17 @@ oc::result<void> Writer::write_header(const Header &header)
 }
 
 /*!
- * \brief Prepare boot image entry instance for the next entry.
- *
- * Prepare an Entry instance for the next entry.
+ * \brief Get next boot image entry instance.
  *
  * This function will return WriterError::EndOfEntries when there are no more
  * entries to write. It is strongly* recommended to check the return value of
  * Writer::close() when closing the boot image as additional steps for
  * finalizing the boot image could fail.
  *
- * \param[out] entry Entry instance to initialize
- *
- * \return Nothing if the next entry is successfully fetched. Otherwise, a
- *         specific error code.
+ * \return The next entry if it is successfully fetched. Otherwise, a specific
+ *         error code.
  */
-oc::result<void> Writer::get_entry(Entry &entry)
+oc::result<Entry> Writer::get_entry()
 {
     ENSURE_STATE_OR_RETURN_ERROR(WriterState::Entry | WriterState::Data);
 
@@ -469,12 +465,10 @@ oc::result<void> Writer::get_entry(Entry &entry)
         m_state = WriterState::Entry;
     }
 
-    entry.clear();
-
-    OUTCOME_TRYV(m_format->get_entry(*m_file, entry));
+    OUTCOME_TRY(entry, m_format->get_entry(*m_file));
 
     m_state = WriterState::Entry;
-    return oc::success();
+    return std::move(entry);
 }
 
 /*!

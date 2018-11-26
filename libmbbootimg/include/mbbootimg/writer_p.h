@@ -57,8 +57,8 @@ public:
     get_header(File &file, Header &header) = 0;
     virtual oc::result<void>
     write_header(File &file, const Header &header) = 0;
-    virtual oc::result<void>
-    get_entry(File &file, Entry &entry) = 0;
+    virtual oc::result<Entry>
+    get_entry(File &file) = 0;
     virtual oc::result<void>
     write_entry(File &file, const Entry &entry) = 0;
     virtual oc::result<size_t>

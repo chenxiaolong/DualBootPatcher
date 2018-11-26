@@ -203,11 +203,10 @@ oc::result<void> FormatReader::close(File &file)
     return oc::success();
 }
 
-oc::result<void> FormatReader::go_to_entry(File &file, Entry &entry,
-                                           std::optional<EntryType> entry_type)
+oc::result<Entry> FormatReader::go_to_entry(File &file,
+                                            std::optional<EntryType> entry_type)
 {
     (void) file;
-    (void) entry;
     (void) entry_type;
     return ReaderError::UnsupportedGoTo;
 }
@@ -461,54 +460,41 @@ oc::result<void> Reader::read_header(Header &header)
 /*!
  * \brief Read next boot image entry.
  *
- * Read the next entry from the boot image and store the entry values to an
- * Entry.
- *
- * \param[out] entry Reference to Entry for storing entry values
- *
- * \return Nothing if the boot image entry is successfully read. If there are no
- *         more entries, this function returns ReaderError::EndOfEntries. If any
- *         other error occurs, a specific error code will be returned.
+ * \return The next boot image entry if the boot image entry is successfully
+ *         read. If there are no more entries, this function returns
+ *         ReaderError::EndOfEntries. If any other error occurs, a specific
+ *         error code will be returned.
  */
-oc::result<void> Reader::read_entry(Entry &entry)
+oc::result<Entry> Reader::read_entry()
 {
     // Allow skipping to the next entry without reading the data
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::Entry | ReaderState::Data);
 
-    entry.clear();
-
-    OUTCOME_TRYV(m_format->read_entry(*m_file, entry));
+    OUTCOME_TRY(entry, m_format->read_entry(*m_file));
 
     m_state = ReaderState::Data;
-    return oc::success();
+    return std::move(entry);
 }
 
 /*!
  * \brief Seek to specific boot image entry.
  *
- * Seek to the specified entry in the boot image and store the entry values to
- * an Entry.
- *
- * \param[out] entry Reference to Entry for storing entry values
  * \param[in] entry_type Entry type to seek to (std::nullopt for first entry)
  *
- * \return Nothing if the boot image entry is successfully read. If the boot
- *         image entry is not found, this function returns
+ * \return The specified boot image entry if it exists and is successfully
+ *         read. If the boot image entry is not found, this function returns
  *         ReaderError::EndOfEntries. If any other error occurs, a specific
  *         error code will be returned.
  */
-oc::result<void> Reader::go_to_entry(Entry &entry,
-                                     std::optional<EntryType> entry_type)
+oc::result<Entry> Reader::go_to_entry(std::optional<EntryType> entry_type)
 {
     // Allow skipping to an entry without reading the data
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::Entry | ReaderState::Data);
 
-    entry.clear();
-
-    OUTCOME_TRYV(m_format->go_to_entry(*m_file, entry, entry_type));
+    OUTCOME_TRY(entry, m_format->go_to_entry(*m_file, entry_type));
 
     m_state = ReaderState::Data;
-    return oc::success();
+    return std::move(entry);
 }
 
 /*!

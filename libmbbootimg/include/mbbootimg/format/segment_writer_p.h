@@ -60,7 +60,7 @@ public:
 
     void update_size_if_unset(uint32_t size);
 
-    oc::result<void> get_entry(File &file, Entry &entry);
+    oc::result<Entry> get_entry(File &file);
     oc::result<void> write_entry(File &file, const Entry &entry);
     oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size);
     oc::result<void> finish_entry(File &file);
