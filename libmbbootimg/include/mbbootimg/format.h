@@ -36,11 +36,11 @@ enum class Format
     SonyElf,
 };
 
-std::string_view format_to_name(Format format);
+MB_EXPORT std::string_view format_to_name(Format format);
 
-std::optional<Format> name_to_format(std::string_view name);
+MB_EXPORT std::optional<Format> name_to_format(std::string_view name);
 
 // TODO: Switch to span eventually
-std::basic_string_view<Format> formats();
+MB_EXPORT std::basic_string_view<Format> formats();
 
 }
