@@ -47,8 +47,8 @@ namespace mb::bootimg
 namespace android
 {
 
-AndroidFormatWriter::AndroidFormatWriter(Writer &writer, bool is_bump)
-    : FormatWriter(writer)
+AndroidFormatWriter::AndroidFormatWriter(bool is_bump)
+    : FormatWriter()
     , m_is_bump(is_bump)
     , m_hdr()
     , m_sha_ctx()
@@ -96,7 +96,7 @@ oc::result<void> AndroidFormatWriter::close(File &file)
         m_seg = {};
     });
 
-    if (m_writer.is_open()) {
+    if (m_seg) {
         auto swentry = m_seg->entry();
 
         // If successful, finish up the boot image
@@ -283,7 +283,7 @@ oc::result<void> AndroidFormatWriter::finish_entry(File &file)
 oc::result<void> Writer::set_format_android()
 {
     return register_format(
-            std::make_unique<android::AndroidFormatWriter>(*this, false));
+            std::make_unique<android::AndroidFormatWriter>(false));
 }
 
 }

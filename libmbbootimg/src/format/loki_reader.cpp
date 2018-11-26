@@ -47,8 +47,8 @@ namespace mb::bootimg
 namespace loki
 {
 
-LokiFormatReader::LokiFormatReader(Reader &reader)
-    : FormatReader(reader)
+LokiFormatReader::LokiFormatReader()
+    : FormatReader()
     , m_hdr()
     , m_loki_hdr()
 {
@@ -715,7 +715,7 @@ LokiFormatReader::read_header_new(File &file,
  */
 oc::result<void> Reader::enable_format_loki()
 {
-    return register_format(std::make_unique<loki::LokiFormatReader>(*this));
+    return register_format(std::make_unique<loki::LokiFormatReader>());
 }
 
 }

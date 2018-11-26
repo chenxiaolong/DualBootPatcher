@@ -23,7 +23,6 @@
 
 #include "mbbootimg/format/segment_reader_p.h"
 #include "mbbootimg/format/sony_elf_p.h"
-#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 
@@ -33,7 +32,7 @@ namespace mb::bootimg::sonyelf
 class SonyElfFormatReader : public detail::FormatReader
 {
 public:
-    SonyElfFormatReader(Reader &reader);
+    SonyElfFormatReader();
     virtual ~SonyElfFormatReader();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SonyElfFormatReader)

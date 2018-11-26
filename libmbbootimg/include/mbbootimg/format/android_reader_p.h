@@ -25,7 +25,6 @@
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_reader_p.h"
-#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 
@@ -35,7 +34,7 @@ namespace mb::bootimg::android
 class AndroidFormatReader : public detail::FormatReader
 {
 public:
-    AndroidFormatReader(Reader &reader, bool is_bump);
+    AndroidFormatReader(bool is_bump);
     virtual ~AndroidFormatReader();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)

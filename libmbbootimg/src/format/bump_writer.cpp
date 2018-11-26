@@ -19,6 +19,7 @@
 
 #include "mbbootimg/format/android_writer_p.h"
 
+#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
 namespace mb::bootimg
@@ -32,7 +33,7 @@ namespace mb::bootimg
 oc::result<void> Writer::set_format_bump()
 {
     return register_format(
-            std::make_unique<android::AndroidFormatWriter>(*this, true));
+            std::make_unique<android::AndroidFormatWriter>(true));
 }
 
 }

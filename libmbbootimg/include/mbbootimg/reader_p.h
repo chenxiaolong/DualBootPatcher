@@ -32,17 +32,13 @@ namespace mb
 {
 class File;
 
-namespace bootimg
-{
-class Reader;
-
-namespace detail
+namespace bootimg::detail
 {
 
 class FormatReader
 {
 public:
-    FormatReader(Reader &reader);
+    FormatReader();
     virtual ~FormatReader();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatReader)
@@ -65,9 +61,6 @@ public:
     go_to_entry(File &file, Entry &entry, int entry_type);
     virtual oc::result<size_t>
     read_data(File &file, void *buf, size_t buf_size) = 0;
-
-protected:
-    Reader &m_reader;
 };
 
 enum class ReaderState : uint8_t
@@ -81,6 +74,5 @@ enum class ReaderState : uint8_t
 MB_DECLARE_FLAGS(ReaderStates, ReaderState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(ReaderStates)
 
-}
 }
 }

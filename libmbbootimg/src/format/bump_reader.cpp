@@ -19,6 +19,7 @@
 
 #include "mbbootimg/format/android_reader_p.h"
 
+#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 namespace mb::bootimg
@@ -33,7 +34,7 @@ namespace mb::bootimg
 oc::result<void> Reader::enable_format_bump()
 {
     return register_format(
-            std::make_unique<android::AndroidFormatReader>(*this, true));
+            std::make_unique<android::AndroidFormatReader>(true));
 }
 
 

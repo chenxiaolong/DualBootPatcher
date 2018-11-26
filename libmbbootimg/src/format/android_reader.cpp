@@ -57,8 +57,8 @@ namespace std2 = std::experimental;
 namespace std2 = std;
 #endif
 
-AndroidFormatReader::AndroidFormatReader(Reader &reader, bool is_bump)
-    : FormatReader(reader)
+AndroidFormatReader::AndroidFormatReader(bool is_bump)
+    : FormatReader()
     , m_is_bump(is_bump)
     , m_hdr()
     // Allow truncated device tree image by default
@@ -529,7 +529,7 @@ oc::result<int> AndroidFormatReader::open_bump(File &file, int best_bid)
 oc::result<void> Reader::enable_format_android()
 {
     return register_format(
-            std::make_unique<android::AndroidFormatReader>(*this, false));
+            std::make_unique<android::AndroidFormatReader>(false));
 }
 
 }

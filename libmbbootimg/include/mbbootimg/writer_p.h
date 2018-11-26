@@ -32,17 +32,13 @@ namespace mb
 {
 class File;
 
-namespace bootimg
-{
-class Writer;
-
-namespace detail
+namespace bootimg::detail
 {
 
 class FormatWriter
 {
 public:
-    FormatWriter(Writer &writer);
+    FormatWriter();
     virtual ~FormatWriter();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatWriter)
@@ -69,9 +65,6 @@ public:
     write_data(File &file, const void *buf, size_t buf_size) = 0;
     virtual oc::result<void>
     finish_entry(File &file);
-
-protected:
-    Writer &m_writer;
 };
 
 enum class WriterState : uint8_t
@@ -85,6 +78,5 @@ enum class WriterState : uint8_t
 MB_DECLARE_FLAGS(WriterStates, WriterState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(WriterStates)
 
-}
 }
 }

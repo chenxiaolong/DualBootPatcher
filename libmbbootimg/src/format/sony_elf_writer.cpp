@@ -46,8 +46,8 @@ namespace sonyelf
 
 constexpr int SONY_ELF_ENTRY_CMDLINE = -1;
 
-SonyElfFormatWriter::SonyElfFormatWriter(Writer &writer)
-    : FormatWriter(writer)
+SonyElfFormatWriter::SonyElfFormatWriter()
+    : FormatWriter()
     , m_hdr()
     , m_hdr_kernel()
     , m_hdr_ramdisk()
@@ -93,7 +93,7 @@ oc::result<void> SonyElfFormatWriter::close(File &file)
         m_seg = {};
     });
 
-    if (m_writer.is_open()) {
+    if (m_seg) {
         auto swentry = m_seg->entry();
 
         // If successful, finish up the boot image
@@ -345,7 +345,7 @@ oc::result<void> SonyElfFormatWriter::finish_entry(File &file)
 oc::result<void> Writer::set_format_sony_elf()
 {
     return register_format(
-            std::make_unique<sonyelf::SonyElfFormatWriter>(*this));
+            std::make_unique<sonyelf::SonyElfFormatWriter>());
 }
 
 }

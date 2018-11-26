@@ -26,7 +26,6 @@
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/loki_p.h"
 #include "mbbootimg/format/segment_reader_p.h"
-#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 
@@ -36,7 +35,7 @@ namespace mb::bootimg::loki
 class LokiFormatReader : public detail::FormatReader
 {
 public:
-    LokiFormatReader(Reader &reader);
+    LokiFormatReader();
     virtual ~LokiFormatReader();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(LokiFormatReader)

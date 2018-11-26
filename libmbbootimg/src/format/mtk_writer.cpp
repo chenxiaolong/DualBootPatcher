@@ -136,8 +136,8 @@ _mtk_compute_sha1(SegmentWriter &seg, File &file,
     return oc::success();
 }
 
-MtkFormatWriter::MtkFormatWriter(Writer &writer)
-    : FormatWriter(writer)
+MtkFormatWriter::MtkFormatWriter()
+    : FormatWriter()
     , m_hdr()
 {
 }
@@ -170,7 +170,7 @@ oc::result<void> MtkFormatWriter::close(File &file)
         m_seg = {};
     });
 
-    if (m_writer.is_open()) {
+    if (m_seg) {
         auto swentry = m_seg->entry();
 
         // If successful, finish up the boot image
@@ -363,7 +363,7 @@ oc::result<void> MtkFormatWriter::finish_entry(File &file)
  */
 oc::result<void> Writer::set_format_mtk()
 {
-    return register_format(std::make_unique<mtk::MtkFormatWriter>(*this));
+    return register_format(std::make_unique<mtk::MtkFormatWriter>());
 }
 
 }

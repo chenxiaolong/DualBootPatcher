@@ -219,10 +219,7 @@ static struct
     },
 };
 
-FormatWriter::FormatWriter(Writer &writer)
-    : m_writer(writer)
-{
-}
+FormatWriter::FormatWriter() = default;
 
 FormatWriter::~FormatWriter() = default;
 

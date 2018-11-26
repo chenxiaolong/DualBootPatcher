@@ -26,7 +26,6 @@
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/mtk_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
 
@@ -36,7 +35,7 @@ namespace mb::bootimg::mtk
 class MtkFormatWriter : public detail::FormatWriter
 {
 public:
-    MtkFormatWriter(Writer &writer);
+    MtkFormatWriter();
     virtual ~MtkFormatWriter();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MtkFormatWriter)

@@ -50,8 +50,8 @@ namespace loki
 
 constexpr size_t MAX_ABOOT_SIZE = 2 * 1024 * 1024;
 
-LokiFormatWriter::LokiFormatWriter(Writer &writer)
-    : FormatWriter(writer)
+LokiFormatWriter::LokiFormatWriter()
+    : FormatWriter()
     , m_hdr()
     , m_sha_ctx()
 {
@@ -91,7 +91,7 @@ oc::result<void> LokiFormatWriter::close(File &file)
         m_seg = {};
     });
 
-    if (m_writer.is_open()) {
+    if (m_seg) {
         auto swentry = m_seg->entry();
 
         // If successful, finish up the boot image
@@ -295,7 +295,7 @@ oc::result<void> LokiFormatWriter::finish_entry(File &file)
  */
 oc::result<void> Writer::set_format_loki()
 {
-    return register_format(std::make_unique<loki::LokiFormatWriter>(*this));
+    return register_format(std::make_unique<loki::LokiFormatWriter>());
 }
 
 }

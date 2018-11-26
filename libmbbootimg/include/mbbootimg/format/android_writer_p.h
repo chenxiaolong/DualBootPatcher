@@ -27,7 +27,6 @@
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
 
@@ -37,7 +36,7 @@ namespace mb::bootimg::android
 class AndroidFormatWriter : public detail::FormatWriter
 {
 public:
-    AndroidFormatWriter(Writer &writer, bool is_bump);
+    AndroidFormatWriter(bool is_bump);
     virtual ~AndroidFormatWriter();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)

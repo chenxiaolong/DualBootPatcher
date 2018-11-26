@@ -45,8 +45,8 @@ namespace mb::bootimg
 namespace sonyelf
 {
 
-SonyElfFormatReader::SonyElfFormatReader(Reader &reader)
-    : FormatReader(reader)
+SonyElfFormatReader::SonyElfFormatReader()
+    : FormatReader()
     , m_hdr()
 {
 }
@@ -279,7 +279,7 @@ SonyElfFormatReader::find_sony_elf_header(File &file,
 oc::result<void> Reader::enable_format_sony_elf()
 {
     return register_format(
-            std::make_unique<sonyelf::SonyElfFormatReader>(*this));
+            std::make_unique<sonyelf::SonyElfFormatReader>());
 }
 
 }

@@ -26,7 +26,6 @@
 
 #include "mbbootimg/format/sony_elf_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
 
@@ -36,7 +35,7 @@ namespace mb::bootimg::sonyelf
 class SonyElfFormatWriter : public detail::FormatWriter
 {
 public:
-    SonyElfFormatWriter(Writer &writer);
+    SonyElfFormatWriter();
     virtual ~SonyElfFormatWriter();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SonyElfFormatWriter)

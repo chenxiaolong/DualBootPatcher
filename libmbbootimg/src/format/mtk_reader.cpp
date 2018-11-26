@@ -148,8 +148,8 @@ find_mtk_headers(File &file,
     return oc::success();
 }
 
-MtkFormatReader::MtkFormatReader(Reader &reader)
-    : FormatReader(reader)
+MtkFormatReader::MtkFormatReader()
+    : FormatReader()
     , m_hdr()
     , m_mtk_kernel_hdr()
     , m_mtk_ramdisk_hdr()
@@ -350,7 +350,7 @@ oc::result<size_t> MtkFormatReader::read_data(File &file, void *buf,
  */
 oc::result<void> Reader::enable_format_mtk()
 {
-    return register_format(std::make_unique<mtk::MtkFormatReader>(*this));
+    return register_format(std::make_unique<mtk::MtkFormatReader>());
 }
 
 }

@@ -211,10 +211,7 @@ static struct
     },
 };
 
-FormatReader::FormatReader(Reader &reader)
-    : m_reader(reader)
-{
-}
+FormatReader::FormatReader() = default;
 
 FormatReader::~FormatReader() = default;
 

@@ -26,7 +26,6 @@
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/mtk_p.h"
 #include "mbbootimg/format/segment_reader_p.h"
-#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 
@@ -36,7 +35,7 @@ namespace mb::bootimg::mtk
 class MtkFormatReader : public detail::FormatReader
 {
 public:
-    MtkFormatReader(Reader &reader);
+    MtkFormatReader();
     virtual ~MtkFormatReader();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MtkFormatReader)

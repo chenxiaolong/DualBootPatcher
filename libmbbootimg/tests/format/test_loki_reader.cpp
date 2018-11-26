@@ -26,6 +26,7 @@
 
 #include "mbbootimg/format/loki_error.h"
 #include "mbbootimg/format/loki_reader_p.h"
+#include "mbbootimg/reader.h"
 
 using namespace mb;
 using namespace mb::bootimg;

@@ -28,7 +28,6 @@
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
 
@@ -38,7 +37,7 @@ namespace mb::bootimg::loki
 class LokiFormatWriter : public detail::FormatWriter
 {
 public:
-    LokiFormatWriter(Writer &writer);
+    LokiFormatWriter();
     virtual ~LokiFormatWriter();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(LokiFormatWriter)
