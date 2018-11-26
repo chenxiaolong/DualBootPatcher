@@ -54,8 +54,8 @@ public:
     open(File &file, int best_bid) = 0;
     virtual oc::result<void>
     close(File &file);
-    virtual oc::result<void>
-    read_header(File &file, Header &header) = 0;
+    virtual oc::result<Header>
+    read_header(File &file) = 0;
     virtual oc::result<Entry>
     read_entry(File &file) = 0;
     virtual oc::result<Entry>

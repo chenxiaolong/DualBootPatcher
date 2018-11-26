@@ -38,15 +38,10 @@ TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
-    AndroidHeader header;
-    uint64_t offset;
-
     MemoryFile file(&source, sizeof(source));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(AndroidFormatReader::find_header(file,
-                                                 MAX_HEADER_OFFSET,
-                                                 header, offset));
+    ASSERT_TRUE(AndroidFormatReader::find_header(file, MAX_HEADER_OFFSET));
 }
 
 TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
@@ -54,61 +49,41 @@ TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
-    AndroidHeader header;
-    uint64_t offset;
-
     MemoryFile file(&source, sizeof(source));
     ASSERT_TRUE(file.is_open());
 
     // Seek to bad location initially
     ASSERT_TRUE(file.seek(10, SEEK_SET));
 
-    ASSERT_TRUE(AndroidFormatReader::find_header(file,
-                                                 MAX_HEADER_OFFSET,
-                                                 header, offset));
+    ASSERT_TRUE(AndroidFormatReader::find_header(file, MAX_HEADER_OFFSET));
 }
 
 TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldFail)
 {
-    AndroidHeader header;
-    uint64_t offset;
-
     MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    auto ret = AndroidFormatReader::find_header(file,
-                                                MAX_HEADER_OFFSET + 1, header,
-                                                offset);
+    auto ret = AndroidFormatReader::find_header(file, MAX_HEADER_OFFSET + 1);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), AndroidError::InvalidArgument);
 }
 
 TEST(FindAndroidHeaderTest, MissingMagicShouldFail)
 {
-    AndroidHeader header;
-    uint64_t offset;
-
     MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    auto ret = AndroidFormatReader::find_header(file,
-                                                MAX_HEADER_OFFSET,
-                                                header, offset);
+    auto ret = AndroidFormatReader::find_header(file, MAX_HEADER_OFFSET);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), AndroidError::HeaderNotFound);
 }
 
 TEST(FindAndroidHeaderTest, TruncatedHeaderShouldFail)
 {
-    AndroidHeader header;
-    uint64_t offset;
-
     MemoryFile file(const_cast<unsigned char *>(BOOT_MAGIC), BOOT_MAGIC_SIZE);
     ASSERT_TRUE(file.is_open());
 
-    auto ret = AndroidFormatReader::find_header(file,
-                                                MAX_HEADER_OFFSET,
-                                                header, offset);
+    auto ret = AndroidFormatReader::find_header(file, MAX_HEADER_OFFSET);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), AndroidError::HeaderOutOfBounds);
 }
@@ -125,8 +100,6 @@ TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
     source.dt_size = 0;
     source.page_size = 2048;
 
-    uint64_t offset;
-
     std::vector<unsigned char> data;
     data.insert(data.end(),
                 reinterpret_cast<unsigned char *>(&source),
@@ -139,7 +112,7 @@ TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(AndroidFormatReader::find_samsung_seandroid_magic(
-            file, source, offset));
+            file, source));
 }
 
 TEST(FindSEAndroidMagicTest, UndersizedImageShouldFail)
@@ -152,13 +125,11 @@ TEST(FindSEAndroidMagicTest, UndersizedImageShouldFail)
     source.dt_size = 0;
     source.page_size = 2048;
 
-    uint64_t offset;
-
     MemoryFile file(static_cast<void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_samsung_seandroid_magic(
-            file, source, offset);
+            file, source);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), AndroidError::SamsungMagicNotFound);
 }
@@ -173,8 +144,6 @@ TEST(FindSEAndroidMagicTest, InvalidMagicShouldFail)
     source.dt_size = 0;
     source.page_size = 2048;
 
-    uint64_t offset;
-
     std::vector<unsigned char> data;
     data.insert(data.end(),
                 reinterpret_cast<unsigned char *>(&source),
@@ -188,7 +157,7 @@ TEST(FindSEAndroidMagicTest, InvalidMagicShouldFail)
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_samsung_seandroid_magic(
-            file, source, offset);
+            file, source);
     ASSERT_FALSE(ret);
     ASSERT_EQ(ret.error(), AndroidError::SamsungMagicNotFound);
 }
@@ -197,8 +166,6 @@ TEST(FindSEAndroidMagicTest, InvalidMagicShouldFail)
 
 TEST(AndroidSetHeaderTest, ValuesShouldMatch)
 {
-    Header header;
-
     AndroidHeader ahdr = {};
     memcpy(ahdr.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
     ahdr.kernel_size = 1234;
@@ -217,7 +184,7 @@ TEST(AndroidSetHeaderTest, ValuesShouldMatch)
              "Test cmdline");
     std::fill(std::begin(ahdr.id), std::end(ahdr.id), 0xff);
 
-    ASSERT_TRUE(AndroidFormatReader::convert_header(ahdr, header));
+    auto header = AndroidFormatReader::convert_header(ahdr);
 
     ASSERT_EQ(header.supported_fields(), SUPPORTED_FIELDS);
 
@@ -292,7 +259,9 @@ struct AndroidReaderGoToEntryTest : testing::Test
 
         ASSERT_TRUE(_reader.open(&_file));
 
-        ASSERT_TRUE(_reader.read_header(_header));
+        auto header = _reader.read_header();
+        ASSERT_TRUE(header);
+        _header = std::move(header.value());
     }
 };
 

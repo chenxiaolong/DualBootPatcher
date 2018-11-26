@@ -126,17 +126,18 @@ oc::result<void> SonyElfFormatWriter::close(File &file)
     return oc::success();
 }
 
-oc::result<void> SonyElfFormatWriter::get_header(File &file, Header &header)
+oc::result<Header> SonyElfFormatWriter::get_header(File &file)
 {
     (void) file;
 
+    Header header;
     header.set_supported_fields(SUPPORTED_FIELDS);
 
-    return oc::success();
+    return std::move(header);
 }
 
-oc::result<void> SonyElfFormatWriter::write_header(File &file,
-                                                   const Header &header)
+oc::result<void>
+SonyElfFormatWriter::write_header(File &file, const Header &header)
 {
     m_cmdline.clear();
 
@@ -266,14 +267,14 @@ oc::result<Entry> SonyElfFormatWriter::get_entry(File &file)
     }
 }
 
-oc::result<void> SonyElfFormatWriter::write_entry(File &file,
-                                                  const Entry &entry)
+oc::result<void>
+SonyElfFormatWriter::write_entry(File &file, const Entry &entry)
 {
     return m_seg->write_entry(file, entry);
 }
 
-oc::result<size_t> SonyElfFormatWriter::write_data(File &file, const void *buf,
-                                                   size_t buf_size)
+oc::result<size_t>
+SonyElfFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
 {
     return m_seg->write_data(file, buf, buf_size);
 }

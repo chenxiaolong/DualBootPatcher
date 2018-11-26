@@ -77,34 +77,6 @@ bool Header::operator!=(const Header &rhs) const
     return !(*this == rhs);
 }
 
-void Header::clear()
-{
-    m_fields_supported = ALL_FIELDS;
-
-    m_kernel_addr = {};
-    m_ramdisk_addr = {};
-    m_second_addr = {};
-    m_tags_addr = {};
-    m_ipl_addr = {};
-    m_rpm_addr = {};
-    m_appsbl_addr = {};
-    m_page_size = {};
-    m_board_name = {};
-    m_cmdline = {};
-
-    m_hdr_kernel_size = {};
-    m_hdr_ramdisk_size = {};
-    m_hdr_second_size = {};
-    m_hdr_dt_size = {};
-    m_hdr_unused = {};
-
-    for (auto &id : m_hdr_id) {
-        id = {};
-    }
-
-    m_hdr_entrypoint = {};
-}
-
 // Supported fields
 
 HeaderFields Header::supported_fields() const

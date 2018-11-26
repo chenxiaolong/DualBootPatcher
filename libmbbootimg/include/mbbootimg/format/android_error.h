@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -33,11 +33,10 @@ enum class AndroidError
     // Android header errors
     HeaderNotFound          = 10,
     HeaderOutOfBounds       = 11,
-    HeaderSetFieldsFailed   = 12,
-    InvalidPageSize         = 13,
-    MissingPageSize         = 14,
-    BoardNameTooLong        = 15,
-    KernelCmdlineTooLong    = 16,
+    InvalidPageSize         = 12,
+    MissingPageSize         = 13,
+    BoardNameTooLong        = 14,
+    KernelCmdlineTooLong    = 15,
 
     // Bump errors
     BumpMagicNotFound       = 20,

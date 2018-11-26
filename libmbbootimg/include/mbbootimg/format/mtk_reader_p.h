@@ -43,7 +43,7 @@ public:
 
     oc::result<int> open(File &file, int best_bid) override;
     oc::result<void> close(File &file) override;
-    oc::result<void> read_header(File &file, Header &header) override;
+    oc::result<Header> read_header(File &file) override;
     oc::result<Entry> read_entry(File &file) override;
     oc::result<Entry> go_to_entry(File &file,
                                   std::optional<EntryType> entry_type) override;
@@ -56,7 +56,7 @@ private:
     MtkHeader m_mtk_ramdisk_hdr;
 
     // Offsets
-    std::optional<uint64_t> m_header_offset;
+    std::optional<uint64_t> m_hdr_offset;
     std::optional<uint64_t> m_mtk_kernel_offset;
     std::optional<uint64_t> m_mtk_ramdisk_offset;
 

@@ -506,34 +506,3 @@ TEST(BootImgHeaderTest, CheckEquality)
     header2.set_board_name({"foobar"});
     ASSERT_NE(header, header2);
 }
-
-TEST(BootImgHeaderTest, CheckClear)
-{
-    Header header;
-
-    header.set_board_name({"test"});
-    header.set_kernel_cmdline({"test2"});
-    header.set_page_size(2048);
-    header.set_kernel_address(0x1000);
-    header.set_ramdisk_address(0x2000);
-    header.set_secondboot_address(0x3000);
-    header.set_kernel_tags_address(0x4000);
-    header.set_sony_ipl_address(0x5000);
-    header.set_sony_rpm_address(0x6000);
-    header.set_sony_appsbl_address(0x7000);
-    header.set_entrypoint_address(0x8000);
-
-    header.clear();
-
-    ASSERT_FALSE(header.board_name());
-    ASSERT_FALSE(header.kernel_cmdline());
-    ASSERT_FALSE(header.page_size());
-    ASSERT_FALSE(header.kernel_address());
-    ASSERT_FALSE(header.ramdisk_address());
-    ASSERT_FALSE(header.secondboot_address());
-    ASSERT_FALSE(header.kernel_tags_address());
-    ASSERT_FALSE(header.sony_ipl_address());
-    ASSERT_FALSE(header.sony_rpm_address());
-    ASSERT_FALSE(header.sony_appsbl_address());
-    ASSERT_FALSE(header.entrypoint_address());
-}

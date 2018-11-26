@@ -111,11 +111,10 @@
  *
  * \brief Format writer callback to get Header instance
  *
- * \param[in] file Reference to file handle
- * \param[out] header Pointer to store Header instance
+ * \param file Reference to file handle
  *
  * \return
- *   * Return nothing if successful
+ *   * Return a Header instance if successful
  *   * Return a specific error code if an error occurs
  */
 
@@ -137,11 +136,10 @@
  *
  * \brief Format writer callback to get Entry instance
  *
- * \param[in] file Reference to file handle
- * \param[out] entry Pointer to store Entry instance
+ * \param file Reference to file handle
  *
  * \return
- *   * Return nothing if successful
+ *   * Return an Entry instance if successful
  *   * Return a specific error code if an error occurs
  */
 
@@ -401,23 +399,20 @@ oc::result<void> Writer::close()
 }
 
 /*!
- * \brief Prepare boot image header instance.
+ * \brief Get prepared boot image header instance.
  *
- * Prepare a Header instance for use with Writer::write_header().
+ * Get a prepared Header instance for use with Writer::write_header(). The
+ * instance will prevent setting fields not supported by the boot image format.
  *
- * \param[out] header Header instance to initialize
- *
- * \return Nothing if the header instance is successfully fetched. Otherwise, a
- *         specific error code.
+ * \return Get prepared Header instance if it is successfully fetched.
+ *         Otherwise, a specific error code.
  */
-oc::result<void> Writer::get_header(Header &header)
+oc::result<Header> Writer::get_header()
 {
     ENSURE_STATE_OR_RETURN_ERROR(WriterState::Header);
 
-    header.clear();
-
     // Don't alter state
-    return m_format->get_header(*m_file, header);
+    return m_format->get_header(*m_file);
 }
 
 /*!

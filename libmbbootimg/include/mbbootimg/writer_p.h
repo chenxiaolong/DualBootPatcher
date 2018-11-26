@@ -53,8 +53,8 @@ public:
     open(File &file);
     virtual oc::result<void>
     close(File &file);
-    virtual oc::result<void>
-    get_header(File &file, Header &header) = 0;
+    virtual oc::result<Header>
+    get_header(File &file) = 0;
     virtual oc::result<void>
     write_header(File &file, const Header &header) = 0;
     virtual oc::result<Entry>

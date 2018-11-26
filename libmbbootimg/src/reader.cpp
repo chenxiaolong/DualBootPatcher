@@ -123,11 +123,10 @@
  * The file position is guaranteed to be set to the beginning of the file before
  * this function is called.
  *
- * \param[in] file Reference to file handle
- * \param[out] header Header instance to write header values
+ * \param file Reference to file handle
  *
  * \return
- *   * Return nothing if the header is successfully read
+ *   * Return a Header instance if it is successfully read
  *   * Return a specific error code if an error occurs
  */
 
@@ -139,11 +138,10 @@
  * \note This callback *must* be able to skip to the next entry if the user does
  *       not read or finish reading the entry data with Reader::read_data().
  *
- * \param[in] file Reference to file handle
- * \param[out] entry Entry instance to write entry values
+ * \param file Reference to file handle
  *
  * \return
- *   * Return nothing if the entry is successfully read
+ *   * Return an Entry instance if it is successfully read
  *   * Return ReaderError::EndOfEntries if there are no more entries
  *   * Return a specific error code if an error occurs
  */
@@ -153,12 +151,11 @@
  *
  * \brief Format reader callback to seek to a specific entry
  *
- * \param[in] file Reference to file handle
- * \param[out] entry Entry instance to write entry values
- * \param[in] entry_type Entry type to seek to
+ * \param file Reference to file handle
+ * \param entry_type Entry type to seek to
  *
  * \return
- *   * Return nothing if the entry is successfully read
+ *   * Return an Entry instance if it is successfully read
  *   * Return ReaderError::EndOfEntries if the entry cannot be found
  *   * Return a specific error code if an error occurs
  */
@@ -435,26 +432,20 @@ oc::result<void> Reader::close()
 /*!
  * \brief Read boot image header.
  *
- * Read the header from the boot image and store the header values to a Header.
- *
- * \param[out] header Reference to Header for storing header values
- *
- * \return Nothing if the boot image header is successfully read. Otherwise, a
- *         specific error code.
+ * \return Header instance if the boot image header is successfully read.
+ *         Otherwise, a specific error code.
  */
-oc::result<void> Reader::read_header(Header &header)
+oc::result<Header> Reader::read_header()
 {
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::Header);
 
     // Seek to beginning
     OUTCOME_TRYV(m_file->seek(0, SEEK_SET));
 
-    header.clear();
-
-    OUTCOME_TRYV(m_format->read_header(*m_file, header));
+    OUTCOME_TRY(header, m_format->read_header(*m_file));
 
     m_state = ReaderState::Entry;
-    return oc::success();
+    return std::move(header);
 }
 
 /*!
@@ -479,7 +470,7 @@ oc::result<Entry> Reader::read_entry()
 /*!
  * \brief Seek to specific boot image entry.
  *
- * \param[in] entry_type Entry type to seek to (std::nullopt for first entry)
+ * \param entry_type Entry type to seek to (std::nullopt for first entry)
  *
  * \return The specified boot image entry if it exists and is successfully
  *         read. If the boot image entry is not found, this function returns

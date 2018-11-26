@@ -119,17 +119,18 @@ oc::result<void> AndroidFormatWriter::close(File &file)
     return oc::success();
 }
 
-oc::result<void> AndroidFormatWriter::get_header(File &file, Header &header)
+oc::result<Header> AndroidFormatWriter::get_header(File &file)
 {
     (void) file;
 
+    Header header;
     header.set_supported_fields(SUPPORTED_FIELDS);
 
-    return oc::success();
+    return std::move(header);
 }
 
-oc::result<void> AndroidFormatWriter::write_header(File &file,
-                                                   const Header &header)
+oc::result<void>
+AndroidFormatWriter::write_header(File &file, const Header &header)
 {
     // Construct header
     m_hdr = {};
@@ -214,8 +215,8 @@ oc::result<void> AndroidFormatWriter::write_entry(File &file,
     return m_seg->write_entry(file, entry);
 }
 
-oc::result<size_t> AndroidFormatWriter::write_data(File &file, const void *buf,
-                                                   size_t buf_size)
+oc::result<size_t>
+AndroidFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
 {
     OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size));
 

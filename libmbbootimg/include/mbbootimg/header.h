@@ -87,8 +87,6 @@ public:
     bool operator==(const Header &rhs) const;
     bool operator!=(const Header &rhs) const;
 
-    void clear();
-
     HeaderFields supported_fields() const;
     void set_supported_fields(HeaderFields fields);
 

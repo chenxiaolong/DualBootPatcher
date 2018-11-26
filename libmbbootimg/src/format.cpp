@@ -22,6 +22,12 @@
 #include <array>
 
 /*!
+ * \namespace mb::bootimg
+ *
+ * \brief libmbbootimg namespace
+ */
+
+/*!
  * \file mbbootimg/format.h
  * \brief Boot image formats
  */

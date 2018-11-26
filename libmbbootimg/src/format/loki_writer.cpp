@@ -118,17 +118,18 @@ oc::result<void> LokiFormatWriter::close(File &file)
     return oc::success();
 }
 
-oc::result<void> LokiFormatWriter::get_header(File &file, Header &header)
+oc::result<Header> LokiFormatWriter::get_header(File &file)
 {
     (void) file;
 
+    Header header;
     header.set_supported_fields(NEW_SUPPORTED_FIELDS);
 
-    return oc::success();
+    return std::move(header);
 }
 
-oc::result<void> LokiFormatWriter::write_header(File &file,
-                                                const Header &header)
+oc::result<void>
+LokiFormatWriter::write_header(File &file, const Header &header)
 {
     // Construct header
     m_hdr = {};
@@ -159,7 +160,7 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
             break;
         default:
             //DEBUG("Invalid page size: %" PRIu32, *page_size);
-            return android::AndroidError::MissingPageSize;
+            return android::AndroidError::InvalidPageSize;
         }
     } else {
         return android::AndroidError::MissingPageSize;
@@ -212,8 +213,8 @@ oc::result<void> LokiFormatWriter::write_entry(File &file, const Entry &entry)
     return m_seg->write_entry(file, entry);
 }
 
-oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
-                                                size_t buf_size)
+oc::result<size_t>
+LokiFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
 {
     auto swentry = m_seg->entry();
 

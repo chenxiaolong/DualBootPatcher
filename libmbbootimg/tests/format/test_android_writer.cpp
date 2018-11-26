@@ -69,12 +69,11 @@ protected:
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         };
 
-        Header header;
-
         // Write dummy header
-        ASSERT_TRUE(_writer.get_header(header));
-        ASSERT_TRUE(header.set_page_size(2048));
-        ASSERT_TRUE(_writer.write_header(header));
+        auto header = _writer.get_header();
+        ASSERT_TRUE(header);
+        ASSERT_TRUE(header.value().set_page_size(2048));
+        ASSERT_TRUE(_writer.write_header(header.value()));
 
         // Write specified dummy entries
         while (true) {

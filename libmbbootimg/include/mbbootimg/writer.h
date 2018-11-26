@@ -28,7 +28,9 @@
 #include "mbcommon/common.h"
 #include "mbcommon/outcome.h"
 
+#include "mbbootimg/entry.h"
 #include "mbbootimg/format.h"
+#include "mbbootimg/header.h"
 #include "mbbootimg/writer_error.h"
 #include "mbbootimg/writer_p.h"
 
@@ -38,9 +40,6 @@ class File;
 
 namespace bootimg
 {
-
-class Entry;
-class Header;
 
 class MB_EXPORT Writer
 {
@@ -61,7 +60,7 @@ public:
     oc::result<void> close();
 
     // Operations
-    oc::result<void> get_header(Header &header);
+    oc::result<Header> get_header();
     oc::result<void> write_header(const Header &header);
     oc::result<Entry> get_entry();
     oc::result<void> write_entry(const Entry &entry);

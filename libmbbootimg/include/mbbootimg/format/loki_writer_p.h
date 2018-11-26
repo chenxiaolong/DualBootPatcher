@@ -47,7 +47,7 @@ public:
 
     oc::result<void> open(File &file) override;
     oc::result<void> close(File &file) override;
-    oc::result<void> get_header(File &file, Header &header) override;
+    oc::result<Header> get_header(File &file) override;
     oc::result<void> write_header(File &file, const Header &header) override;
     oc::result<Entry> get_entry(File &file) override;
     oc::result<void> write_entry(File &file, const Entry &entry) override;

@@ -42,14 +42,14 @@ public:
 
     oc::result<int> open(File &file, int best_bid) override;
     oc::result<void> close(File &file) override;
-    oc::result<void> read_header(File &file, Header &header) override;
+    oc::result<Header> read_header(File &file) override;
     oc::result<Entry> read_entry(File &file) override;
     oc::result<Entry> go_to_entry(File &file,
                                   std::optional<EntryType> entry_type) override;
     oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
 
-    static oc::result<void>
-    find_sony_elf_header(File &file, Sony_Elf32_Ehdr &header_out);
+    static oc::result<Sony_Elf32_Ehdr>
+    find_sony_elf_header(File &file);
 
 private:
     // Header values
