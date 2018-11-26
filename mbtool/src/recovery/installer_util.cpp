@@ -328,9 +328,6 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
 
     Reader reader;
     Writer writer;
-    Header header;
-    Entry in_entry;
-    Entry out_entry;
 
     // Debug
     LOGD("Patching boot image");
@@ -338,76 +335,70 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     LOGD("- Output: %s", output_file.c_str());
 
     // Open input boot image
-    auto ret = reader.enable_format_all();
-    if (!ret) {
+    if (auto r = reader.enable_format_all(); !r) {
         LOGE("Failed to enable input boot image formats: %s",
-             ret.error().message().c_str());
+             r.error().message().c_str());
         return false;
     }
-    ret = reader.open_filename(input_file);
-    if (!ret) {
+    if (auto r = reader.open_filename(input_file); !r) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             input_file.c_str(), ret.error().message().c_str());
+             input_file.c_str(), r.error().message().c_str());
         return false;
     }
 
     // Open output boot image
-    ret = writer.set_format_by_code(reader.format_code());
-    if (!ret) {
+    if (auto r = writer.set_format(*reader.format()); !r) {
         LOGE("Failed to set output boot image format: %s",
-             ret.error().message().c_str());
+             r.error().message().c_str());
         return false;
     }
-    ret = writer.open_filename(output_file);
-    if (!ret) {
+    if (auto r = writer.open_filename(output_file); !r) {
         LOGE("%s: Failed to open boot image for writing: %s",
-             output_file.c_str(), ret.error().message().c_str());
+             output_file.c_str(), r.error().message().c_str());
         return false;
     }
 
     // Debug
-    LOGD("- Format: %s", reader.format_name().c_str());
+    LOGD("- Format: %s", std::string(format_to_name(*reader.format())).c_str());
 
     // Copy header
-    ret = reader.read_header(header);
-    if (!ret) {
+    auto header = reader.read_header();
+    if (!header) {
         LOGE("%s: Failed to read header: %s",
-             input_file.c_str(), ret.error().message().c_str());
+             input_file.c_str(), header.error().message().c_str());
         return false;
     }
-    ret = writer.write_header(header);
-    if (!ret) {
+    if (auto r = writer.write_header(header.value()); !r) {
         LOGE("%s: Failed to write header: %s",
-             output_file.c_str(), ret.error().message().c_str());
+             output_file.c_str(), r.error().message().c_str());
         return false;
     }
 
     // Write entries
     while (true) {
-        ret = writer.get_entry(out_entry);
-        if (!ret) {
-            if (ret.error() == WriterError::EndOfEntries) {
+        auto out_entry = writer.get_entry();
+        if (!out_entry) {
+            if (out_entry.error() == WriterError::EndOfEntries) {
                 break;
             }
             LOGE("%s: Failed to get entry: %s",
-                 output_file.c_str(), ret.error().message().c_str());
+                 output_file.c_str(), out_entry.error().message().c_str());
             return false;
         }
 
-        auto type = out_entry.type();
+        auto type = out_entry.value().type();
         LOGD("%s: Writer is requesting entry type: %d",
-             output_file.c_str(), *type);
+             output_file.c_str(), type);
 
         // Write entry metadata
-        ret = writer.write_entry(out_entry);
-        if (!ret) {
+        if (auto r = writer.write_entry(out_entry.value()); !r) {
             LOGE("%s: Failed to write entry: %s",
-                 output_file.c_str(), ret.error().message().c_str());
+                 output_file.c_str(), r.error().message().c_str());
             return false;
         }
 
         // Special case for loki aboot
-        if (*type == ENTRY_TYPE_ABOOT) {
+        if (type == EntryType::Aboot) {
             LOGD("%s: Copying aboot partition: %s",
                  output_file.c_str(), ABOOT_PARTITION);
 
@@ -415,21 +406,21 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 return false;
             }
         } else {
-            ret = reader.go_to_entry(in_entry, *type);
-            if (!ret) {
-                if (ret.error() == ReaderError::EndOfEntries) {
+            auto in_entry = reader.go_to_entry(type);
+            if (!in_entry) {
+                if (in_entry.error() == ReaderError::EndOfEntries) {
                     LOGV("%s: Skipping non-existent boot image entry: %d",
-                         input_file.c_str(), *type);
+                         input_file.c_str(), type);
                     continue;
                 } else {
                     LOGE("%s: Failed to go to entry: %d: %s",
-                         input_file.c_str(), *type,
-                         ret.error().message().c_str());
+                         input_file.c_str(), type,
+                         in_entry.error().message().c_str());
                     return false;
                 }
             }
 
-            if (type == ENTRY_TYPE_RAMDISK) {
+            if (type == EntryType::Ramdisk) {
                 LOGD("%s: Writing patched ramdisk", output_file.c_str());
 
                 std::string ramdisk_in(tmpdir);
@@ -453,7 +444,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 if (!bi_copy_file_to_data(ramdisk_out, writer)) {
                     return false;
                 }
-            } else if (type == ENTRY_TYPE_KERNEL) {
+            } else if (type == EntryType::Kernel) {
                 LOGD("%s: Writing patched kernel", output_file.c_str());
 
                 std::string kernel_in(tmpdir);
@@ -488,10 +479,9 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         }
     }
 
-    ret = writer.close();
-    if (!ret) {
+    if (auto r = writer.close(); !r) {
         LOGE("%s: Failed to close boot image: %s",
-             output_file.c_str(), ret.error().message().c_str());
+             output_file.c_str(), r.error().message().c_str());
         return false;
     }
 
