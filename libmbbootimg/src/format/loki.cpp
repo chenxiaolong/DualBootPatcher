@@ -141,42 +141,39 @@ static bool _patch_shellcode(uint32_t header, uint32_t ramdisk,
     return found_header && found_ramdisk;
 }
 
-static oc::result<void>
-_loki_read_android_header(File &file, android::AndroidHeader &ahdr)
+static oc::result<android::AndroidHeader>
+_loki_read_android_header(File &file)
 {
     OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
+    android::AndroidHeader ahdr;
     OUTCOME_TRYV(file_read_exact(file, &ahdr, sizeof(ahdr)));
 
     android_fix_header_byte_order(ahdr);
 
-    return oc::success();
+    return std::move(ahdr);
 }
 
 static oc::result<void>
-_loki_write_android_header(File &file, const android::AndroidHeader &ahdr)
+_loki_write_android_header(File &file, android::AndroidHeader ahdr)
 {
-    android::AndroidHeader dup = ahdr;
-
-    android_fix_header_byte_order(dup);
+    android_fix_header_byte_order(ahdr);
 
     OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
-    OUTCOME_TRYV(file_write_exact(file, &dup, sizeof(dup)));
+    OUTCOME_TRYV(file_write_exact(file, &ahdr, sizeof(ahdr)));
 
     return oc::success();
 }
 
 static oc::result<void>
-_loki_write_loki_header(File &file, const LokiHeader &lhdr)
+_loki_write_loki_header(File &file, LokiHeader lhdr)
 {
-    LokiHeader dup = lhdr;
-
-    loki_fix_header_byte_order(dup);
+    loki_fix_header_byte_order(lhdr);
 
     OUTCOME_TRYV(file.seek(LOKI_MAGIC_OFFSET, SEEK_SET));
 
-    OUTCOME_TRYV(file_write_exact(file, &dup, sizeof(dup)));
+    OUTCOME_TRYV(file_write_exact(file, &lhdr, sizeof(lhdr)));
 
     return oc::success();
 }
@@ -241,26 +238,14 @@ _loki_write_shellcode(File &file,
 oc::result<void> _loki_patch_file(File &file,
                                   const void *aboot, size_t aboot_size)
 {
-    auto aboot_ptr = reinterpret_cast<const unsigned char *>(aboot);
-    unsigned char patch[LOKI_SHELLCODE_SIZE];
-    uint32_t target = 0;
-    uint32_t aboot_base;
-    int offset;
-    int fake_size;
-    size_t aboot_func_offset;
-    uint64_t aboot_offset;
-    LokiTarget *tgt = nullptr;
-    android::AndroidHeader ahdr;
-    LokiHeader lhdr = {};
-
-    memcpy(patch, LOKI_SHELLCODE, LOKI_SHELLCODE_SIZE);
-
     if (aboot_size < MIN_ABOOT_SIZE) {
         return LokiError::AbootImageTooSmall;
     }
 
-    aboot_base = mb_le32toh(*reinterpret_cast<const uint32_t *>(
+    auto aboot_ptr = reinterpret_cast<const unsigned char *>(aboot);
+    uint32_t aboot_base = mb_le32toh(*reinterpret_cast<const uint32_t *>(
             aboot_ptr + 12)) - 0x28;
+    uint32_t target = 0;
 
     // Find the signature checking function via pattern matching
     for (const unsigned char *ptr = aboot_ptr;
@@ -295,6 +280,8 @@ oc::result<void> _loki_patch_file(File &file,
         return LokiError::AbootFunctionNotFound;
     }
 
+    LokiTarget *tgt = nullptr;
+
     for (auto &t : targets) {
         if (t.check_sigs == target) {
             tgt = &t;
@@ -306,9 +293,10 @@ oc::result<void> _loki_patch_file(File &file,
         return LokiError::UnsupportedAbootImage;
     }
 
-    OUTCOME_TRYV(_loki_read_android_header(file, ahdr));
+    OUTCOME_TRY(ahdr, _loki_read_android_header(file));
 
     // Set up Loki header
+    LokiHeader lhdr = {};
     memcpy(lhdr.magic, LOKI_MAGIC, LOKI_MAGIC_SIZE);
     lhdr.recovery = 0;
     strncpy(lhdr.build, tgt->build, sizeof(lhdr.build) - 1);
@@ -318,6 +306,9 @@ oc::result<void> _loki_patch_file(File &file,
     lhdr.orig_ramdisk_size = ahdr.ramdisk_size;
     lhdr.ramdisk_addr = ahdr.kernel_addr + ahdr.kernel_size
             + align_page_size<uint32_t>(ahdr.kernel_size, ahdr.page_size);
+
+    unsigned char patch[LOKI_SHELLCODE_SIZE];
+    memcpy(patch, LOKI_SHELLCODE, LOKI_SHELLCODE_SIZE);
 
     if (!_patch_shellcode(tgt->hdr, ahdr.ramdisk_addr, patch)) {
         return LokiError::ShellcodePatchFailed;
@@ -329,19 +320,20 @@ oc::result<void> _loki_patch_file(File &file,
             + ahdr.ramdisk_size;
 
     // Guarantee 16-byte alignment
-    offset = tgt->check_sigs & 0xf;
-    ahdr.ramdisk_addr = tgt->check_sigs - static_cast<uint32_t>(offset);
+    uint32_t offset = tgt->check_sigs & 0xf;
+    ahdr.ramdisk_addr = tgt->check_sigs - offset;
+
+    uint32_t fake_size;
 
     if (tgt->lg) {
-        fake_size = static_cast<int>(ahdr.page_size);
+        fake_size = ahdr.page_size;
         ahdr.ramdisk_size = ahdr.page_size;
     } else {
         fake_size = 0x200;
         ahdr.ramdisk_size = 0;
     }
 
-    aboot_func_offset = tgt->check_sigs - aboot_base
-            - static_cast<uint32_t>(offset);
+    size_t aboot_func_offset = tgt->check_sigs - aboot_base - offset;
 
     // Write Android header
     OUTCOME_TRYV(_loki_write_android_header(file, ahdr));
@@ -349,25 +341,22 @@ oc::result<void> _loki_patch_file(File &file,
     // Write Loki header
     OUTCOME_TRYV(_loki_write_loki_header(file, lhdr));
 
-    aboot_offset = static_cast<uint64_t>(ahdr.page_size)
+    uint64_t aboot_offset = static_cast<uint64_t>(ahdr.page_size)
             + lhdr.orig_kernel_size
             + align_page_size<uint32_t>(lhdr.orig_kernel_size, ahdr.page_size)
             + lhdr.orig_ramdisk_size
             + align_page_size<uint32_t>(lhdr.orig_ramdisk_size, ahdr.page_size);
 
     // Move DT image
-    OUTCOME_TRYV(_loki_move_dt_image(file, aboot_offset,
-                                     static_cast<uint32_t>(fake_size),
+    OUTCOME_TRYV(_loki_move_dt_image(file, aboot_offset, fake_size,
                                      ahdr.dt_size));
 
     // Write aboot
-    OUTCOME_TRYV(_loki_write_aboot(file, aboot_ptr, aboot_size,
-                                   aboot_offset, aboot_func_offset,
-                                   static_cast<uint32_t>(fake_size)));
+    OUTCOME_TRYV(_loki_write_aboot(file, aboot_ptr, aboot_size, aboot_offset,
+                                   aboot_func_offset, fake_size));
 
     // Write shellcode
-    OUTCOME_TRYV(_loki_write_shellcode(file, aboot_offset,
-                                       static_cast<uint32_t>(offset), patch));
+    OUTCOME_TRYV(_loki_write_shellcode(file, aboot_offset, offset, patch));
 
     return oc::success();
 }
