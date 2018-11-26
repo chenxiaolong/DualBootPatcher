@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -285,7 +285,7 @@ struct AndroidReaderGoToEntryTest : testing::Test
         // Write secondboot
         memcpy(_data.data() + 3 * ahdr.page_size, "secondboot", 10);
 
-        ASSERT_TRUE(_reader.enable_format_android());
+        ASSERT_TRUE(_reader.enable_format(Format::Android));
 
         (void) _file.open(_data.data(), _data.size());
         ASSERT_TRUE(_file.is_open());

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -26,6 +26,7 @@
 #include "mbcommon/common.h"
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/format.h"
 #include "mbbootimg/header.h"
 
 namespace mb
@@ -44,8 +45,7 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FormatWriter)
 
-    virtual int type() = 0;
-    virtual std::string name() = 0;
+    virtual Format type() = 0;
 
     virtual oc::result<void>
     set_option(const char *key, const char *value);

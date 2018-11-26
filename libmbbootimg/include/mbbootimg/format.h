@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,23 +17,30 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mbbootimg/format/android_writer_p.h"
+#pragma once
 
-#include "mbbootimg/writer.h"
-#include "mbbootimg/writer_p.h"
+#include <optional>
+#include <string_view>
+
+#include "mbcommon/common.h"
 
 namespace mb::bootimg
 {
 
-/*!
- * \brief Set Bump boot image output format
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Writer::set_format_bump()
+enum class Format
 {
-    return register_format(
-            std::make_unique<android::AndroidFormatWriter>(true));
-}
+    Android,
+    Bump,
+    Loki,
+    Mtk,
+    SonyElf,
+};
+
+std::string_view format_to_name(Format format);
+
+std::optional<Format> name_to_format(std::string_view name);
+
+// TODO: Switch to span eventually
+std::basic_string_view<Format> formats();
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -40,12 +40,9 @@
 #include "mbbootimg/format/loki_error.h"
 #include "mbbootimg/format/loki_p.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
-namespace mb::bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 constexpr size_t MAX_ABOOT_SIZE = 2 * 1024 * 1024;
@@ -59,14 +56,9 @@ LokiFormatWriter::LokiFormatWriter()
 
 LokiFormatWriter::~LokiFormatWriter() = default;
 
-int LokiFormatWriter::type()
+Format LokiFormatWriter::type()
 {
-    return FORMAT_LOKI;
-}
-
-std::string LokiFormatWriter::name()
-{
-    return FORMAT_NAME_LOKI;
+    return Format::Loki;
 }
 
 oc::result<void> LokiFormatWriter::open(File &file)
@@ -284,18 +276,6 @@ oc::result<void> LokiFormatWriter::finish_entry(File &file)
     }
 
     return oc::success();
-}
-
-}
-
-/*!
- * \brief Set Loki boot image output format
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Writer::set_format_loki()
-{
-    return register_format(std::make_unique<loki::LokiFormatWriter>());
 }
 
 }

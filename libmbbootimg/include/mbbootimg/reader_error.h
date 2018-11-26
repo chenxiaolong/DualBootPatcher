@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -33,12 +33,9 @@ enum class ReaderError
     UnknownOption           = 20,
 
     // Format errors
-    InvalidFormatCode       = 30,
-    InvalidFormatName       = 31,
-    NoFormatSelected        = 32,
-    FormatAlreadyEnabled    = 33,
-    NoFormatsRegistered     = 34,
-    UnknownFileFormat       = 35,
+    FormatAlreadyEnabled    = 30,
+    NoFormatsRegistered     = 31,
+    UnknownFileFormat       = 32,
 
     EndOfEntries            = 40,
 

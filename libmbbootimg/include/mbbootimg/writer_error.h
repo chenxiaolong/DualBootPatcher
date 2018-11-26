@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -33,10 +33,7 @@ enum class WriterError
     UnknownOption           = 20,
 
     // Format errors
-    InvalidFormatCode       = 30,
-    InvalidFormatName       = 31,
-    NoFormatSelected        = 32,
-    NoFormatRegistered      = 33,
+    NoFormatRegistered      = 30,
 
     EndOfEntries            = 40,
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -30,6 +30,10 @@
 #include "mbcommon/finally.h"
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/format/android_writer_p.h"
+#include "mbbootimg/format/loki_writer_p.h"
+#include "mbbootimg/format/mtk_writer_p.h"
+#include "mbbootimg/format/sony_elf_writer_p.h"
 #include "mbbootimg/header.h"
 
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
@@ -189,35 +193,6 @@ namespace mb::bootimg
 {
 
 using namespace detail;
-
-static struct
-{
-    int code;
-    const char *name;
-    oc::result<void> (Writer::*func)();
-} g_writer_formats[] = {
-    {
-        FORMAT_ANDROID,
-        FORMAT_NAME_ANDROID,
-        &Writer::set_format_android
-    }, {
-        FORMAT_BUMP,
-        FORMAT_NAME_BUMP,
-        &Writer::set_format_bump
-    }, {
-        FORMAT_LOKI,
-        FORMAT_NAME_LOKI,
-        &Writer::set_format_loki
-    }, {
-        FORMAT_MTK,
-        FORMAT_NAME_MTK,
-        &Writer::set_format_mtk
-    }, {
-        FORMAT_SONY_ELF,
-        FORMAT_NAME_SONY_ELF,
-        &Writer::set_format_sony_elf
-    },
-};
 
 FormatWriter::FormatWriter() = default;
 
@@ -546,75 +521,51 @@ oc::result<size_t> Writer::write_data(const void *buf, size_t size)
 /*!
  * \brief Get selected boot image format code.
  *
- * \return Boot image format code or -1 if no format is selected
+ * \return Boot image format code
  */
-int Writer::format_code()
+std::optional<Format> Writer::format()
 {
-    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), -1);
+    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), std::nullopt);
 
     if (!m_format) {
-        // WriterError::NoFormatSelected
-        return -1;
+        return std::nullopt;
     }
 
     return m_format->type();
 }
 
-/*!
- * \brief Get selected boot image format name.
- *
- * \return Boot image format name or empty string if no format is selected
- */
-std::string Writer::format_name()
+static std::unique_ptr<FormatWriter> _construct_format(Format format)
 {
-    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), {});
-
-    if (!m_format) {
-        // WriterError::NoFormatSelected
-        return {};
+    switch (format) {
+        case Format::Android:
+            return std::make_unique<android::AndroidFormatWriter>(false);
+        case Format::Bump:
+            return std::make_unique<android::AndroidFormatWriter>(true);
+        case Format::Loki:
+            return std::make_unique<loki::LokiFormatWriter>();
+        case Format::Mtk:
+            return std::make_unique<mtk::MtkFormatWriter>();
+        case Format::SonyElf:
+            return std::make_unique<sonyelf::SonyElfFormatWriter>();
+        default:
+            MB_UNREACHABLE("Invalid format");
     }
-
-    return m_format->name();
 }
 
 /*!
  * \brief Set boot image output format by its code.
  *
- * \param code Boot image format code (\ref MB_BI_FORMAT_CODES)
+ * \param format Boot image format
  *
  * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-oc::result<void> Writer::set_format_by_code(int code)
+oc::result<void> Writer::set_format(Format format)
 {
     ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
 
-    for (auto const &format : g_writer_formats) {
-        if ((code & FORMAT_BASE_MASK) == (format.code & FORMAT_BASE_MASK)) {
-            return (this->*format.func)();
-        }
-    }
+    m_format = _construct_format(format);
 
-    return WriterError::InvalidFormatCode;
-}
-
-/*!
- * \brief Set boot image output format by its name.
- *
- * \param name Boot image format name (\ref MB_BI_FORMAT_NAMES)
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Writer::set_format_by_name(const std::string &name)
-{
-    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
-
-    for (auto const &format : g_writer_formats) {
-        if (name == format.name) {
-            return (this->*format.func)();
-        }
-    }
-
-    return WriterError::InvalidFormatName;
+    return oc::success();
 }
 
 /*!
@@ -625,25 +576,6 @@ oc::result<void> Writer::set_format_by_name(const std::string &name)
 bool Writer::is_open()
 {
     return m_state != WriterState::New;
-}
-
-/*!
- * \brief Register a format writer
- *
- * Register a format writer with a Writer. The Writer will take ownership of
- * \p format.
- *
- * \param format FormatWriter to register
- *
- * \return Nothing if the format is successfully registered. Otherwise, the
- *         error code.
- */
-oc::result<void> Writer::register_format(std::unique_ptr<FormatWriter> format)
-{
-    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
-
-    m_format = std::move(format);
-    return oc::success();
 }
 
 }

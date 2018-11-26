@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -54,12 +54,6 @@ std::string WriterErrorCategory::message(int ev) const
         return "invalid state";
     case WriterError::UnknownOption:
         return "unknown option";
-    case WriterError::InvalidFormatCode:
-        return "invalid format code";
-    case WriterError::InvalidFormatName:
-        return "invalid format name";
-    case WriterError::NoFormatSelected:
-        return "no format selected";
     case WriterError::NoFormatRegistered:
         return "no format registered";
     case WriterError::EndOfEntries:

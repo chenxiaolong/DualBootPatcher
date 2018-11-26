@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -55,7 +55,7 @@ protected:
     {
         ASSERT_TRUE(_file.is_open());
 
-        ASSERT_TRUE(_writer.set_format_android());
+        ASSERT_TRUE(_writer.set_format(Format::Android));
         ASSERT_TRUE(_writer.open(&_file));
     }
 

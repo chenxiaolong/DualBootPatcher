@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -36,13 +36,10 @@
 #include "mbbootimg/format/sony_elf_defs.h"
 #include "mbbootimg/format/sony_elf_error.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb::bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
 SonyElfFormatReader::SonyElfFormatReader()
@@ -53,14 +50,9 @@ SonyElfFormatReader::SonyElfFormatReader()
 
 SonyElfFormatReader::~SonyElfFormatReader() = default;
 
-int SonyElfFormatReader::type()
+Format SonyElfFormatReader::type()
 {
-    return FORMAT_SONY_ELF;
-}
-
-std::string SonyElfFormatReader::name()
-{
-    return FORMAT_NAME_SONY_ELF;
+    return Format::SonyElf;
 }
 
 /*!
@@ -266,20 +258,6 @@ SonyElfFormatReader::find_sony_elf_header(File &file,
     header_out = header;
 
     return oc::success();
-}
-
-}
-
-/*!
- * \brief Enable support for Sony ELF boot image format
- *
- * \return Nothing if the format is successfully enabled. Otherwise, the error
- *         code.
- */
-oc::result<void> Reader::enable_format_sony_elf()
-{
-    return register_format(
-            std::make_unique<sonyelf::SonyElfFormatReader>());
 }
 
 }

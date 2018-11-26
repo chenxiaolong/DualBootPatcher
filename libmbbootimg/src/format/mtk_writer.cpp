@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -37,13 +37,10 @@
 #include "mbbootimg/format/android_error.h"
 #include "mbbootimg/format/mtk_error.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb::bootimg
-{
-namespace mtk
+namespace mb::bootimg::mtk
 {
 
 static oc::result<void>
@@ -144,14 +141,9 @@ MtkFormatWriter::MtkFormatWriter()
 
 MtkFormatWriter::~MtkFormatWriter() = default;
 
-int MtkFormatWriter::type()
+Format MtkFormatWriter::type()
 {
-    return FORMAT_MTK;
-}
-
-std::string MtkFormatWriter::name()
-{
-    return FORMAT_NAME_MTK;
+    return Format::Mtk;
 }
 
 oc::result<void> MtkFormatWriter::open(File &file)
@@ -352,18 +344,6 @@ oc::result<void> MtkFormatWriter::finish_entry(File &file)
     }
 
     return oc::success();
-}
-
-}
-
-/*!
- * \brief Set MTK boot image output format
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Writer::set_format_mtk()
-{
-    return register_format(std::make_unique<mtk::MtkFormatWriter>());
 }
 
 }

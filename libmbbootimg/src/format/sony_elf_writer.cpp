@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -36,12 +36,9 @@
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/sony_elf_defs.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
-namespace mb::bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
 constexpr int SONY_ELF_ENTRY_CMDLINE = -1;
@@ -60,14 +57,9 @@ SonyElfFormatWriter::SonyElfFormatWriter()
 
 SonyElfFormatWriter::~SonyElfFormatWriter() = default;
 
-int SonyElfFormatWriter::type()
+Format SonyElfFormatWriter::type()
 {
-    return FORMAT_SONY_ELF;
-}
-
-std::string SonyElfFormatWriter::name()
-{
-    return FORMAT_NAME_SONY_ELF;
+    return Format::SonyElf;
 }
 
 oc::result<void> SonyElfFormatWriter::open(File &file)
@@ -333,19 +325,6 @@ oc::result<void> SonyElfFormatWriter::finish_entry(File &file)
     }
 
     return oc::success();
-}
-
-}
-
-/*!
- * \brief Set Sony ELF boot image output format
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Writer::set_format_sony_elf()
-{
-    return register_format(
-            std::make_unique<sonyelf::SonyElfFormatWriter>());
 }
 
 }

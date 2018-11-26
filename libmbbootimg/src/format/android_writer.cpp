@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -38,13 +38,10 @@
 #include "mbbootimg/format/android_error.h"
 #include "mbbootimg/format/bump_defs.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb::bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
 AndroidFormatWriter::AndroidFormatWriter(bool is_bump)
@@ -57,21 +54,12 @@ AndroidFormatWriter::AndroidFormatWriter(bool is_bump)
 
 AndroidFormatWriter::~AndroidFormatWriter() = default;
 
-int AndroidFormatWriter::type()
+Format AndroidFormatWriter::type()
 {
     if (m_is_bump) {
-        return FORMAT_BUMP;
+        return Format::Bump;
     } else {
-        return FORMAT_ANDROID;
-    }
-}
-
-std::string AndroidFormatWriter::name()
-{
-    if (m_is_bump) {
-        return FORMAT_NAME_BUMP;
-    } else {
-        return FORMAT_NAME_ANDROID;
+        return Format::Android;
     }
 }
 
@@ -271,19 +259,6 @@ oc::result<void> AndroidFormatWriter::finish_entry(File &file)
     }
 
     return oc::success();
-}
-
-}
-
-/*!
- * \brief Set Android boot image output format
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Writer::set_format_android()
-{
-    return register_format(
-            std::make_unique<android::AndroidFormatWriter>(false));
 }
 
 }

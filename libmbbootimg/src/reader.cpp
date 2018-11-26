@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -31,6 +31,10 @@
 #include "mbcommon/finally.h"
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/format/android_reader_p.h"
+#include "mbbootimg/format/loki_reader_p.h"
+#include "mbbootimg/format/mtk_reader_p.h"
+#include "mbbootimg/format/sony_elf_reader_p.h"
 #include "mbbootimg/header.h"
 
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
@@ -181,35 +185,6 @@ namespace mb::bootimg
 {
 
 using namespace detail;
-
-static struct
-{
-    int code;
-    const char *name;
-    oc::result<void> (Reader::*func)();
-} g_reader_formats[] = {
-    {
-        FORMAT_ANDROID,
-        FORMAT_NAME_ANDROID,
-        &Reader::enable_format_android
-    }, {
-        FORMAT_BUMP,
-        FORMAT_NAME_BUMP,
-        &Reader::enable_format_bump
-    }, {
-        FORMAT_LOKI,
-        FORMAT_NAME_LOKI,
-        &Reader::enable_format_loki
-    }, {
-        FORMAT_MTK,
-        FORMAT_NAME_MTK,
-        &Reader::enable_format_mtk
-    }, {
-        FORMAT_SONY_ELF,
-        FORMAT_NAME_SONY_ELF,
-        &Reader::enable_format_sony_elf
-    },
-};
 
 FormatReader::FormatReader() = default;
 
@@ -556,120 +531,64 @@ oc::result<size_t> Reader::read_data(void *buf, size_t size)
 /*!
  * \brief Get detected or forced boot image format code.
  *
- * * If enable_format_*() was used, then the detected boot image format code is
+ * * If enable_format() was used, then the detected boot image format code is
  *   returned.
- * * If set_format_*() was used, then the forced boot image format code is
+ * * If set_format() was used, then the forced boot image format code is
  *   returned.
  *
  * \note The return value is meaningful only after the boot image has been
- *       successfully opened. Otherwise, an error will be returned.
+ *       successfully opened.
  *
- * \return Boot image format code or -1 if the boot image is not open
+ * \return Boot image format code
  */
-int Reader::format_code()
+std::optional<Format> Reader::format()
 {
-    ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), -1);
+    ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), std::nullopt);
 
     if (!m_format) {
-        // ReaderError::NoFormatSelected
-        return -1;
+        return std::nullopt;
     }
 
     return m_format->type();
 }
 
-/*!
- * \brief Get detected or forced boot image format name.
- *
- * * If enable_format_*() was used, then the detected boot image format name is
- *   returned.
- * * If set_format_*() was used, then the forced boot image format name is
- *   returned.
- *
- * \note The return value is meaningful only after the boot image has been
- *       successfully opened. Otherwise, an error will be returned.
- *
- * \return Boot image format name or empty string if the boot image is not open
- */
-std::string Reader::format_name()
+static std::unique_ptr<FormatReader> _construct_format(Format format)
 {
-    ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), {});
-
-    if (!m_format) {
-        // ReaderError::NoFormatSelected
-        return {};
+    switch (format) {
+        case Format::Android:
+            return std::make_unique<android::AndroidFormatReader>(false);
+        case Format::Bump:
+            return std::make_unique<android::AndroidFormatReader>(true);
+        case Format::Loki:
+            return std::make_unique<loki::LokiFormatReader>();
+        case Format::Mtk:
+            return std::make_unique<mtk::MtkFormatReader>();
+        case Format::SonyElf:
+            return std::make_unique<sonyelf::SonyElfFormatReader>();
+        default:
+            MB_UNREACHABLE("Invalid format");
     }
-
-    return m_format->name();
 }
 
 /*!
- * \brief Force support for a boot image format by its code.
+ * \brief Enable support for a boot image format.
  *
- * Calling this function causes the bidding process to be skipped. The chosen
- * format will be used regardless of which formats are enabled.
+ * \param format Format to enable
  *
- * \param code Boot image format code (\ref MB_BI_FORMAT_CODES)
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
+ * \return Nothing if the format is successfully enabled. Otherwise, the error
+ *         code.
  */
-oc::result<void> Reader::set_format_by_code(int code)
+oc::result<void> Reader::enable_format(Format format)
 {
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
-    FormatReader *format = nullptr;
 
-    auto ret = enable_format_by_code(code);
-    if (!ret && ret.error() != ReaderError::FormatAlreadyEnabled) {
-        return ret.as_failure();
-    }
-
-    for (auto &f : m_formats) {
-        if ((FORMAT_BASE_MASK & f->type() & code)
-                == (FORMAT_BASE_MASK & code)) {
-            format = f.get();
-            break;
+    for (auto const &f : m_formats) {
+        if (f->type() == format) {
+            return ReaderError::FormatAlreadyEnabled;
         }
     }
 
-    assert(format);
-
-    m_format = format;
-    m_format_user_set = true;
-
-    return oc::success();
-}
-
-/*!
- * \brief Force support for a boot image format by its name.
- *
- * Calling this function causes the bidding process to be skipped. The chosen
- * format will be used regardless of which formats are enabled.
- *
- * \param name Boot image format name (\ref MB_BI_FORMAT_NAMES)
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Reader::set_format_by_name(const std::string &name)
-{
-    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
-    FormatReader *format = nullptr;
-
-    auto ret = enable_format_by_name(name);
-    if (!ret && ret.error() != ReaderError::FormatAlreadyEnabled) {
-        return ret.as_failure();
-    }
-
-    for (auto &f : m_formats) {
-        if (f->name() == name) {
-            format = f.get();
-            break;
-        }
-    }
-
-    assert(format);
-
-    m_format = format;
-    m_format_user_set = true;
+    m_formats.push_back(_construct_format(format));
 
     return oc::success();
 }
@@ -684,8 +603,8 @@ oc::result<void> Reader::enable_format_all()
 {
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
-    for (auto const &format : g_reader_formats) {
-        auto ret = (this->*format.func)();
+    for (auto const &format : formats()) {
+        auto ret = enable_format(format);
         if (!ret && ret.error() != ReaderError::FormatAlreadyEnabled) {
             return ret.as_failure();
         }
@@ -695,45 +614,34 @@ oc::result<void> Reader::enable_format_all()
 }
 
 /*!
- * \brief Enable support for a boot image format by its code.
+ * \brief Force parsing as a specific boot image format.
  *
- * \param code Boot image format code (\ref MB_BI_FORMAT_CODES)
+ * Calling this function causes the bidding process to be skipped. The chosen
+ * format will be used regardless of which formats are enabled.
  *
- * \return Nothing if the format is successfully enabled. Otherwise, the error
- *         code.
+ * \param format Boot image format
+ *
+ * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-oc::result<void> Reader::enable_format_by_code(int code)
+oc::result<void> Reader::set_format(Format format)
 {
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
-    for (auto const &format : g_reader_formats) {
-        if ((code & FORMAT_BASE_MASK) == (format.code & FORMAT_BASE_MASK)) {
-            return (this->*format.func)();
+    auto ret = enable_format(format);
+    if (!ret && ret.error() != ReaderError::FormatAlreadyEnabled) {
+        return ret.as_failure();
+    }
+
+    for (auto &f : m_formats) {
+        if (f->type() == format) {
+            m_format = f.get();
+            m_format_user_set = true;
+
+            return oc::success();
         }
     }
 
-    return ReaderError::InvalidFormatCode;
-}
-
-/*!
- * \brief Enable support for a boot image format by its name.
- *
- * \param name Boot image format name (\ref MB_BI_FORMAT_NAMES)
- *
- * \return Nothing if the format is successfully enabled. Otherwise, the error
- *         code.
- */
-oc::result<void> Reader::enable_format_by_name(const std::string &name)
-{
-    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
-
-    for (auto const &format : g_reader_formats) {
-        if (name == format.name) {
-            return (this->*format.func)();
-        }
-    }
-
-    return ReaderError::InvalidFormatName;
+    MB_UNREACHABLE("Enabled format not found");
 }
 
 /*!
@@ -744,21 +652,6 @@ oc::result<void> Reader::enable_format_by_name(const std::string &name)
 bool Reader::is_open()
 {
     return m_state != ReaderState::New;
-}
-
-oc::result<void> Reader::register_format(std::unique_ptr<FormatReader> format)
-{
-    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
-
-    for (auto const &f : m_formats) {
-        if ((FORMAT_BASE_MASK & f->type())
-                == (FORMAT_BASE_MASK & format->type())) {
-            return ReaderError::FormatAlreadyEnabled;
-        }
-    }
-
-    m_formats.push_back(std::move(format));
-    return oc::success();
 }
 
 }

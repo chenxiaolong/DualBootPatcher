@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -40,8 +40,7 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
 
-    int type() override;
-    std::string name() override;
+    Format type() override;
 
     oc::result<void> set_option(const char *key, const char *value) override;
     oc::result<int> open(File &file, int best_bid) override;

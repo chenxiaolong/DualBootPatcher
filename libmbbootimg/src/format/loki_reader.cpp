@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -38,13 +38,10 @@
 #include "mbbootimg/format/android_reader_p.h"
 #include "mbbootimg/format/loki_error.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb::bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 LokiFormatReader::LokiFormatReader()
@@ -56,14 +53,9 @@ LokiFormatReader::LokiFormatReader()
 
 LokiFormatReader::~LokiFormatReader() = default;
 
-int LokiFormatReader::type()
+Format LokiFormatReader::type()
 {
-    return FORMAT_LOKI;
-}
-
-std::string LokiFormatReader::name()
-{
-    return FORMAT_NAME_LOKI;
+    return Format::Loki;
 }
 
 /*!
@@ -703,19 +695,6 @@ LokiFormatReader::read_header_new(File &file,
     pos += align_page_size<uint64_t>(pos, hdr.page_size);
 
     return oc::success();
-}
-
-}
-
-/*!
- * \brief Enable support for Loki boot image format
- *
- * \return Nothing if the format is successfully enabled. Otherwise, the error
- *         code.
- */
-oc::result<void> Reader::enable_format_loki()
-{
-    return register_format(std::make_unique<loki::LokiFormatReader>());
 }
 
 }

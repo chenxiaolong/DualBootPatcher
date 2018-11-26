@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,6 +20,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -28,7 +29,7 @@
 #include "mbcommon/common.h"
 #include "mbcommon/outcome.h"
 
-#include "mbbootimg/defs.h"
+#include "mbbootimg/format.h"
 #include "mbbootimg/reader_error.h"
 #include "mbbootimg/reader_p.h"
 
@@ -67,27 +68,15 @@ public:
     oc::result<size_t> read_data(void *buf, size_t size);
 
     // Format operations
-    int format_code();
-    std::string format_name();
-    oc::result<void> set_format_by_code(int code);
-    oc::result<void> set_format_by_name(const std::string &name);
+    std::optional<Format> format();
+    oc::result<void> enable_format(Format format);
     oc::result<void> enable_format_all();
-    oc::result<void> enable_format_by_code(int code);
-    oc::result<void> enable_format_by_name(const std::string &name);
-
-    // Specific formats
-    oc::result<void> enable_format_android();
-    oc::result<void> enable_format_bump();
-    oc::result<void> enable_format_loki();
-    oc::result<void> enable_format_mtk();
-    oc::result<void> enable_format_sony_elf();
+    oc::result<void> set_format(Format format);
 
     // Reader state
     bool is_open();
 
 private:
-    oc::result<void> register_format(std::unique_ptr<detail::FormatReader> format);
-
     // Global state
     detail::ReaderState m_state;
 

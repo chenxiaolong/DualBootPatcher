@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -38,13 +38,10 @@
 #include "mbbootimg/format/android_reader_p.h"
 #include "mbbootimg/format/mtk_error.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb::bootimg
-{
-namespace mtk
+namespace mb::bootimg::mtk
 {
 
 /*!
@@ -158,14 +155,9 @@ MtkFormatReader::MtkFormatReader()
 
 MtkFormatReader::~MtkFormatReader() = default;
 
-int MtkFormatReader::type()
+Format MtkFormatReader::type()
 {
-    return FORMAT_MTK;
-}
-
-std::string MtkFormatReader::name()
-{
-    return FORMAT_NAME_MTK;
+    return Format::Mtk;
 }
 
 /*!
@@ -338,19 +330,6 @@ oc::result<size_t> MtkFormatReader::read_data(File &file, void *buf,
                                               size_t buf_size)
 {
     return m_seg->read_data(file, buf, buf_size);
-}
-
-}
-
-/*!
- * \brief Enable support for MTK boot image format
- *
- * \return Nothing if the format is successfully enabled. Otherwise, the error
- *         code.
- */
-oc::result<void> Reader::enable_format_mtk()
-{
-    return register_format(std::make_unique<mtk::MtkFormatReader>());
 }
 
 }

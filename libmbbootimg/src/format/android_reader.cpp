@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -42,13 +42,10 @@
 #include "mbbootimg/format/android_error.h"
 #include "mbbootimg/format/bump_defs.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb::bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
 #ifdef __ANDROID__
@@ -68,21 +65,12 @@ AndroidFormatReader::AndroidFormatReader(bool is_bump)
 
 AndroidFormatReader::~AndroidFormatReader() = default;
 
-int AndroidFormatReader::type()
+Format AndroidFormatReader::type()
 {
     if (m_is_bump) {
-        return FORMAT_BUMP;
+        return Format::Bump;
     } else {
-        return FORMAT_ANDROID;
-    }
-}
-
-std::string AndroidFormatReader::name()
-{
-    if (m_is_bump) {
-        return FORMAT_NAME_BUMP;
-    } else {
-        return FORMAT_NAME_ANDROID;
+        return Format::Android;
     }
 }
 
@@ -516,20 +504,6 @@ oc::result<int> AndroidFormatReader::open_bump(File &file, int best_bid)
     m_seg = SegmentReader();
 
     return bid;
-}
-
-}
-
-/*!
- * \brief Enable support for Android boot image format
- *
- * \return Nothing if the format is successfully enabled. Otherwise, the error
- *         code.
- */
-oc::result<void> Reader::enable_format_android()
-{
-    return register_format(
-            std::make_unique<android::AndroidFormatReader>(false));
 }
 
 }
