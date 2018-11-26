@@ -29,6 +29,7 @@
 #include "mbcommon/common.h"
 #include "mbcommon/outcome.h"
 
+#include "mbbootimg/entry.h"
 #include "mbbootimg/format.h"
 #include "mbbootimg/reader_error.h"
 #include "mbbootimg/reader_p.h"
@@ -40,7 +41,6 @@ class File;
 namespace bootimg
 {
 
-class Entry;
 class Header;
 
 class MB_EXPORT Reader
@@ -64,7 +64,7 @@ public:
     // Operations
     oc::result<void> read_header(Header &header);
     oc::result<void> read_entry(Entry &entry);
-    oc::result<void> go_to_entry(Entry &entry, int entry_type);
+    oc::result<void> go_to_entry(Entry &entry, std::optional<EntryType> entry_type);
     oc::result<size_t> read_data(void *buf, size_t size);
 
     // Format operations

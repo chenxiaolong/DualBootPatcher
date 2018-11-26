@@ -96,22 +96,22 @@ _mtk_compute_sha1(SegmentWriter &seg, File &file,
 
         // Update checksum with size
         switch (entry.type) {
-        case ENTRY_TYPE_MTK_KERNEL_HEADER:
+        case EntryType::MtkKernelHeader:
             kernel_mtkhdr_size = *entry.size;
             continue;
-        case ENTRY_TYPE_MTK_RAMDISK_HEADER:
+        case EntryType::MtkRamdiskHeader:
             ramdisk_mtkhdr_size = *entry.size;
             continue;
-        case ENTRY_TYPE_KERNEL:
+        case EntryType::Kernel:
             le32_size = mb_htole32(*entry.size + kernel_mtkhdr_size);
             break;
-        case ENTRY_TYPE_RAMDISK:
+        case EntryType::Ramdisk:
             le32_size = mb_htole32(*entry.size + ramdisk_mtkhdr_size);
             break;
-        case ENTRY_TYPE_SECONDBOOT:
+        case EntryType::SecondBoot:
             le32_size = mb_htole32(*entry.size);
             break;
-        case ENTRY_TYPE_DEVICE_TREE:
+        case EntryType::DeviceTree:
             if (*entry.size == 0) {
                 continue;
             }
@@ -174,12 +174,12 @@ oc::result<void> MtkFormatWriter::close(File &file)
 
             // Update MTK header sizes
             for (auto const &entry : m_seg->entries()) {
-                if (entry.type == ENTRY_TYPE_MTK_KERNEL_HEADER) {
+                if (entry.type == EntryType::MtkKernelHeader) {
                     OUTCOME_TRYV(_mtk_header_update_size(
                             file, entry.offset,
                             static_cast<uint32_t>(
                                     m_hdr.kernel_size - sizeof(MtkHeader))));
-                } else if (entry.type == ENTRY_TYPE_MTK_RAMDISK_HEADER) {
+                } else if (entry.type == EntryType::MtkRamdiskHeader) {
                     OUTCOME_TRYV(_mtk_header_update_size(
                             file, entry.offset,
                             static_cast<uint32_t>(
@@ -279,12 +279,12 @@ oc::result<void> MtkFormatWriter::write_header(File &file, const Header &header)
 
     std::vector<SegmentWriterEntry> entries;
 
-    entries.push_back({ ENTRY_TYPE_MTK_KERNEL_HEADER, 0, {}, 0 });
-    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_MTK_RAMDISK_HEADER, 0, {}, 0 });
-    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_SECONDBOOT, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::MtkKernelHeader, 0, {}, 0 });
+    entries.push_back({ EntryType::Kernel, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::MtkRamdiskHeader, 0, {}, 0 });
+    entries.push_back({ EntryType::Ramdisk, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::SecondBoot, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::DeviceTree, 0, {}, m_hdr.page_size });
 
     OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
@@ -316,30 +316,32 @@ oc::result<void> MtkFormatWriter::finish_entry(File &file)
 
     auto swentry = m_seg->entry();
 
-    if ((swentry->type == ENTRY_TYPE_KERNEL
-            || swentry->type == ENTRY_TYPE_RAMDISK)
+    if ((swentry->type == EntryType::Kernel
+            || swentry->type == EntryType::Ramdisk)
             && *swentry->size == UINT32_MAX - sizeof(MtkHeader)) {
         return MtkError::EntryTooLargeToFitMtkHeader;
-    } else if ((swentry->type == ENTRY_TYPE_MTK_KERNEL_HEADER
-            || swentry->type == ENTRY_TYPE_MTK_RAMDISK_HEADER)
+    } else if ((swentry->type == EntryType::MtkKernelHeader
+            || swentry->type == EntryType::MtkRamdiskHeader)
             && *swentry->size != sizeof(MtkHeader)) {
         return MtkError::InvalidEntrySizeForMtkHeader;
     }
 
     switch (swentry->type) {
-    case ENTRY_TYPE_KERNEL:
+    case EntryType::Kernel:
         m_hdr.kernel_size = static_cast<uint32_t>(
                 *swentry->size + sizeof(MtkHeader));
         break;
-    case ENTRY_TYPE_RAMDISK:
+    case EntryType::Ramdisk:
         m_hdr.ramdisk_size = static_cast<uint32_t>(
                 *swentry->size + sizeof(MtkHeader));
         break;
-    case ENTRY_TYPE_SECONDBOOT:
+    case EntryType::SecondBoot:
         m_hdr.second_size = *swentry->size;
         break;
-    case ENTRY_TYPE_DEVICE_TREE:
+    case EntryType::DeviceTree:
         m_hdr.dt_size = *swentry->size;
+        break;
+    default:
         break;
     }
 

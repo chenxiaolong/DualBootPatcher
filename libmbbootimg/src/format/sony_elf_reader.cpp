@@ -149,35 +149,35 @@ oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
         } else if (phdr.p_type == SONY_E_TYPE_KERNEL
                 && phdr.p_flags == SONY_E_FLAGS_KERNEL) {
             entries.push_back({
-                ENTRY_TYPE_KERNEL, phdr.p_offset, phdr.p_memsz, false
+                EntryType::Kernel, phdr.p_offset, phdr.p_memsz, false
             });
 
             header.set_kernel_address(phdr.p_vaddr);
         } else if (phdr.p_type == SONY_E_TYPE_RAMDISK
                 && phdr.p_flags == SONY_E_FLAGS_RAMDISK) {
             entries.push_back({
-                ENTRY_TYPE_RAMDISK, phdr.p_offset, phdr.p_memsz, false
+                EntryType::Ramdisk, phdr.p_offset, phdr.p_memsz, false
             });
 
             header.set_ramdisk_address(phdr.p_vaddr);
         } else if (phdr.p_type == SONY_E_TYPE_IPL
                 && phdr.p_flags == SONY_E_FLAGS_IPL) {
             entries.push_back({
-                ENTRY_TYPE_SONY_IPL, phdr.p_offset, phdr.p_memsz, false
+                EntryType::SonyIpl, phdr.p_offset, phdr.p_memsz, false
             });
 
             header.set_sony_ipl_address(phdr.p_vaddr);
         } else if (phdr.p_type == SONY_E_TYPE_RPM
                 && phdr.p_flags == SONY_E_FLAGS_RPM) {
             entries.push_back({
-                ENTRY_TYPE_SONY_RPM, phdr.p_offset, phdr.p_memsz, false
+                EntryType::SonyRpm, phdr.p_offset, phdr.p_memsz, false
             });
 
             header.set_sony_rpm_address(phdr.p_vaddr);
         } else if (phdr.p_type == SONY_E_TYPE_APPSBL
                 && phdr.p_flags == SONY_E_FLAGS_APPSBL) {
             entries.push_back({
-                ENTRY_TYPE_SONY_APPSBL, phdr.p_offset, phdr.p_memsz, false
+                EntryType::SonyAppsbl, phdr.p_offset, phdr.p_memsz, false
             });
 
             header.set_sony_appsbl_address(phdr.p_vaddr);
@@ -203,7 +203,7 @@ oc::result<void> SonyElfFormatReader::read_entry(File &file, Entry &entry)
 }
 
 oc::result<void> SonyElfFormatReader::go_to_entry(File &file, Entry &entry,
-                                                  int entry_type)
+                                                  std::optional<EntryType> entry_type)
 {
     return m_seg->go_to_entry(file, entry, entry_type);
 }

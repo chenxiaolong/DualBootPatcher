@@ -42,7 +42,7 @@ enum class SegmentWriterState
 
 struct SegmentWriterEntry
 {
-    int type;
+    EntryType type;
     uint64_t offset;
     std::optional<uint32_t> size;
     uint64_t align;

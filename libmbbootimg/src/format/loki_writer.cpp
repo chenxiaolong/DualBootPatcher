@@ -189,10 +189,10 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
 
     std::vector<SegmentWriterEntry> entries;
 
-    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_ABOOT, 0, 0, 0 });
+    entries.push_back({ EntryType::Kernel, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::Ramdisk, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::DeviceTree, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::Aboot, 0, 0, 0 });
 
     OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
@@ -217,7 +217,7 @@ oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
 {
     auto swentry = m_seg->entry();
 
-    if (swentry->type == ENTRY_TYPE_ABOOT) {
+    if (swentry->type == EntryType::Aboot) {
         if (buf_size > MAX_ABOOT_SIZE - m_aboot.size()) {
             return LokiError::AbootImageTooLarge;
         }
@@ -251,27 +251,29 @@ oc::result<void> LokiFormatWriter::finish_entry(File &file)
     uint32_t le32_size = mb_htole32(*swentry->size);
 
     // Include fake 0 size for unsupported secondboot image
-    if (swentry->type == ENTRY_TYPE_DEVICE_TREE
+    if (swentry->type == EntryType::DeviceTree
             && !SHA1_Update(&m_sha_ctx, "\x00\x00\x00\x00", 4)) {
         return android::AndroidError::Sha1UpdateError;
     }
 
     // Include size for everything except empty DT images
-    if (swentry->type != ENTRY_TYPE_ABOOT
-            && (swentry->type != ENTRY_TYPE_DEVICE_TREE || *swentry->size > 0)
+    if (swentry->type != EntryType::Aboot
+            && (swentry->type != EntryType::DeviceTree || *swentry->size > 0)
             && !SHA1_Update(&m_sha_ctx, &le32_size, sizeof(le32_size))) {
         return android::AndroidError::Sha1UpdateError;
     }
 
     switch (swentry->type) {
-    case ENTRY_TYPE_KERNEL:
+    case EntryType::Kernel:
         m_hdr.kernel_size = *swentry->size;
         break;
-    case ENTRY_TYPE_RAMDISK:
+    case EntryType::Ramdisk:
         m_hdr.ramdisk_size = *swentry->size;
         break;
-    case ENTRY_TYPE_DEVICE_TREE:
+    case EntryType::DeviceTree:
         m_hdr.dt_size = *swentry->size;
+        break;
+    default:
         break;
     }
 

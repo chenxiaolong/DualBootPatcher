@@ -204,7 +204,7 @@ oc::result<void> FormatReader::close(File &file)
 }
 
 oc::result<void> FormatReader::go_to_entry(File &file, Entry &entry,
-                                           int entry_type)
+                                           std::optional<EntryType> entry_type)
 {
     (void) file;
     (void) entry;
@@ -490,14 +490,15 @@ oc::result<void> Reader::read_entry(Entry &entry)
  * an Entry.
  *
  * \param[out] entry Reference to Entry for storing entry values
- * \param[in] entry_type Entry type to seek to (0 for first entry)
+ * \param[in] entry_type Entry type to seek to (std::nullopt for first entry)
  *
  * \return Nothing if the boot image entry is successfully read. If the boot
  *         image entry is not found, this function returns
  *         ReaderError::EndOfEntries. If any other error occurs, a specific
  *         error code will be returned.
  */
-oc::result<void> Reader::go_to_entry(Entry &entry, int entry_type)
+oc::result<void> Reader::go_to_entry(Entry &entry,
+                                     std::optional<EntryType> entry_type)
 {
     // Allow skipping to an entry without reading the data
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::Entry | ReaderState::Data);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -112,18 +112,18 @@ oc::result<void> SegmentReader::read_entry(File &file, Entry &entry)
 }
 
 oc::result<void> SegmentReader::go_to_entry(File &file, Entry &entry,
-                                            int entry_type)
+                                            std::optional<EntryType> entry_type)
 {
     decltype(m_entries)::iterator srentry;
 
-    if (entry_type == 0) {
+    if (!entry_type) {
         srentry = m_entries.begin();
     } else {
         srentry = std::find_if(
             m_entries.begin(),
             m_entries.end(),
             [&](const SegmentReaderEntry &sre) {
-                return sre.type == entry_type;
+                return sre.type == *entry_type;
             }
         );
     }

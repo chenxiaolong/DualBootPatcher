@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
 #include <cstddef>
@@ -58,7 +59,7 @@ public:
     virtual oc::result<void>
     read_entry(File &file, Entry &entry) = 0;
     virtual oc::result<void>
-    go_to_entry(File &file, Entry &entry, int entry_type);
+    go_to_entry(File &file, Entry &entry, std::optional<EntryType> entry_type);
     virtual oc::result<size_t>
     read_data(File &file, void *buf, size_t buf_size) = 0;
 };

@@ -190,10 +190,10 @@ oc::result<void> AndroidFormatWriter::write_header(File &file,
 
     std::vector<SegmentWriterEntry> entries;
 
-    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_SECONDBOOT, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::Kernel, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::Ramdisk, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::SecondBoot, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::DeviceTree, 0, {}, m_hdr.page_size });
 
     OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
@@ -238,23 +238,25 @@ oc::result<void> AndroidFormatWriter::finish_entry(File &file)
     uint32_t le32_size = mb_htole32(*swentry->size);
 
     // Include size for everything except empty DT images
-    if ((swentry->type != ENTRY_TYPE_DEVICE_TREE || *swentry->size > 0)
+    if ((swentry->type != EntryType::DeviceTree || *swentry->size > 0)
             && !SHA1_Update(&m_sha_ctx, &le32_size, sizeof(le32_size))) {
         return AndroidError::Sha1UpdateError;
     }
 
     switch (swentry->type) {
-    case ENTRY_TYPE_KERNEL:
+    case EntryType::Kernel:
         m_hdr.kernel_size = *swentry->size;
         break;
-    case ENTRY_TYPE_RAMDISK:
+    case EntryType::Ramdisk:
         m_hdr.ramdisk_size = *swentry->size;
         break;
-    case ENTRY_TYPE_SECONDBOOT:
+    case EntryType::SecondBoot:
         m_hdr.second_size = *swentry->size;
         break;
-    case ENTRY_TYPE_DEVICE_TREE:
+    case EntryType::DeviceTree:
         m_hdr.dt_size = *swentry->size;
+        break;
+    default:
         break;
     }
 

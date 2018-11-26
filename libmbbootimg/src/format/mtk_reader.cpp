@@ -290,25 +290,25 @@ oc::result<void> MtkFormatReader::read_header(File &file, Header &header)
     std::vector<SegmentReaderEntry> entries;
 
     entries.push_back({
-        ENTRY_TYPE_MTK_KERNEL_HEADER, kernel_offset, sizeof(MtkHeader), false
+        EntryType::MtkKernelHeader, kernel_offset, sizeof(MtkHeader), false
     });
     entries.push_back({
-        ENTRY_TYPE_KERNEL, *m_mtk_kernel_offset, m_mtk_kernel_hdr.size, false
+        EntryType::Kernel, *m_mtk_kernel_offset, m_mtk_kernel_hdr.size, false
     });
     entries.push_back({
-        ENTRY_TYPE_MTK_RAMDISK_HEADER, ramdisk_offset, sizeof(MtkHeader), false
+        EntryType::MtkRamdiskHeader, ramdisk_offset, sizeof(MtkHeader), false
     });
     entries.push_back({
-        ENTRY_TYPE_RAMDISK, *m_mtk_ramdisk_offset, m_mtk_ramdisk_hdr.size, false
+        EntryType::Ramdisk, *m_mtk_ramdisk_offset, m_mtk_ramdisk_hdr.size, false
     });
     if (m_hdr.second_size > 0) {
         entries.push_back({
-            ENTRY_TYPE_SECONDBOOT, second_offset, m_hdr.second_size, false
+            EntryType::SecondBoot, second_offset, m_hdr.second_size, false
         });
     }
     if (m_hdr.dt_size > 0) {
         entries.push_back({
-            ENTRY_TYPE_DEVICE_TREE, dt_offset, m_hdr.dt_size, false
+            EntryType::DeviceTree, dt_offset, m_hdr.dt_size, false
         });
     }
 
@@ -321,7 +321,7 @@ oc::result<void> MtkFormatReader::read_entry(File &file, Entry &entry)
 }
 
 oc::result<void> MtkFormatReader::go_to_entry(File &file, Entry &entry,
-                                              int entry_type)
+                                              std::optional<EntryType> entry_type)
 {
     return m_seg->go_to_entry(file, entry, entry_type);
 }

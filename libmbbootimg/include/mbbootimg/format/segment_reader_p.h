@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,6 +21,7 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <optional>
 #include <vector>
 
 #include <cstdint>
@@ -41,7 +42,7 @@ enum class SegmentReaderState
 
 struct SegmentReaderEntry
 {
-    int type;
+    EntryType type;
     uint64_t offset;
     uint32_t size;
     bool can_truncate;
@@ -59,7 +60,8 @@ public:
                                    std::vector<SegmentReaderEntry>::iterator srentry);
 
     oc::result<void> read_entry(File &file, Entry &entry);
-    oc::result<void> go_to_entry(File &file, Entry &entry, int entry_type);
+    oc::result<void> go_to_entry(File &file, Entry &entry,
+                                 std::optional<EntryType> entry_type);
     oc::result<size_t> read_data(File &file, void *buf, size_t buf_size);
 
 private:

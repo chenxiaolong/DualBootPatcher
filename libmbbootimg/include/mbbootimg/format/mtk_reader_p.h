@@ -21,8 +21,6 @@
 
 #include "mbbootimg/guard_p.h"
 
-#include <optional>
-
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/mtk_p.h"
 #include "mbbootimg/format/segment_reader_p.h"
@@ -47,7 +45,8 @@ public:
     oc::result<void> close(File &file) override;
     oc::result<void> read_header(File &file, Header &header) override;
     oc::result<void> read_entry(File &file, Entry &entry) override;
-    oc::result<void> go_to_entry(File &file, Entry &entry, int entry_type) override;
+    oc::result<void> go_to_entry(File &file, Entry &entry,
+                                 std::optional<EntryType> entry_type) override;
     oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
 
 private:

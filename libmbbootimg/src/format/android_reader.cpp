@@ -158,19 +158,19 @@ oc::result<void> AndroidFormatReader::read_header(File &file, Header &header)
     std::vector<SegmentReaderEntry> entries;
 
     entries.push_back({
-        ENTRY_TYPE_KERNEL, kernel_offset, m_hdr.kernel_size, false
+        EntryType::Kernel, kernel_offset, m_hdr.kernel_size, false
     });
     entries.push_back({
-        ENTRY_TYPE_RAMDISK, ramdisk_offset, m_hdr.ramdisk_size, false
+        EntryType::Ramdisk, ramdisk_offset, m_hdr.ramdisk_size, false
     });
     if (m_hdr.second_size > 0) {
         entries.push_back({
-            ENTRY_TYPE_SECONDBOOT, second_offset, m_hdr.second_size, false
+            EntryType::SecondBoot, second_offset, m_hdr.second_size, false
         });
     }
     if (m_hdr.dt_size > 0) {
         entries.push_back({
-            ENTRY_TYPE_DEVICE_TREE, dt_offset, m_hdr.dt_size,
+            EntryType::DeviceTree, dt_offset, m_hdr.dt_size,
             m_allow_truncated_dt
         });
     }
@@ -184,7 +184,7 @@ oc::result<void> AndroidFormatReader::read_entry(File &file, Entry &entry)
 }
 
 oc::result<void> AndroidFormatReader::go_to_entry(File &file, Entry &entry,
-                                                  int entry_type)
+                                                  std::optional<EntryType> entry_type)
 {
     return m_seg->go_to_entry(file, entry, entry_type);
 }

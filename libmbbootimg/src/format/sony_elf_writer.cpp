@@ -41,8 +41,6 @@
 namespace mb::bootimg::sonyelf
 {
 
-constexpr int SONY_ELF_ENTRY_CMDLINE = -1;
-
 SonyElfFormatWriter::SonyElfFormatWriter()
     : FormatWriter()
     , m_hdr()
@@ -233,12 +231,12 @@ oc::result<void> SonyElfFormatWriter::write_header(File &file,
 
     std::vector<SegmentWriterEntry> entries;
 
-    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, 0 });
-    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, 0 });
-    entries.push_back({ SONY_ELF_ENTRY_CMDLINE, 0, {}, 0 });
-    entries.push_back({ ENTRY_TYPE_SONY_IPL, 0, {}, 0 });
-    entries.push_back({ ENTRY_TYPE_SONY_RPM, 0, {}, 0 });
-    entries.push_back({ ENTRY_TYPE_SONY_APPSBL, 0, {}, 0 });
+    entries.push_back({ EntryType::Kernel, 0, {}, 0 });
+    entries.push_back({ EntryType::Ramdisk, 0, {}, 0 });
+    entries.push_back({ EntryType::SonyCmdline, 0, {}, 0 });
+    entries.push_back({ EntryType::SonyIpl, 0, {}, 0 });
+    entries.push_back({ EntryType::SonyRpm, 0, {}, 0 });
+    entries.push_back({ EntryType::SonyAppsbl, 0, {}, 0 });
 
     OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
@@ -255,7 +253,7 @@ oc::result<void> SonyElfFormatWriter::get_entry(File &file, Entry &entry)
     auto swentry = m_seg->entry();
 
     // Silently handle cmdline entry
-    if (swentry->type == SONY_ELF_ENTRY_CMDLINE) {
+    if (swentry->type == EntryType::SonyCmdline) {
         entry.clear();
 
         entry.set_size(m_cmdline.size());
@@ -288,35 +286,37 @@ oc::result<void> SonyElfFormatWriter::finish_entry(File &file)
     auto swentry = m_seg->entry();
 
     switch (swentry->type) {
-    case ENTRY_TYPE_KERNEL:
+    case EntryType::Kernel:
         m_hdr_kernel.p_offset = static_cast<Elf32_Off>(swentry->offset);
         m_hdr_kernel.p_filesz = *swentry->size;
         m_hdr_kernel.p_memsz = *swentry->size;
         break;
-    case ENTRY_TYPE_RAMDISK:
+    case EntryType::Ramdisk:
         m_hdr_ramdisk.p_offset = static_cast<Elf32_Off>(swentry->offset);
         m_hdr_ramdisk.p_filesz = *swentry->size;
         m_hdr_ramdisk.p_memsz = *swentry->size;
         break;
-    case ENTRY_TYPE_SONY_IPL:
+    case EntryType::SonyCmdline:
+        m_hdr_cmdline.p_offset = static_cast<Elf32_Off>(swentry->offset);
+        m_hdr_cmdline.p_filesz = *swentry->size;
+        m_hdr_cmdline.p_memsz = *swentry->size;
+        break;
+    case EntryType::SonyIpl:
         m_hdr_ipl.p_offset = static_cast<Elf32_Off>(swentry->offset);
         m_hdr_ipl.p_filesz = *swentry->size;
         m_hdr_ipl.p_memsz = *swentry->size;
         break;
-    case ENTRY_TYPE_SONY_RPM:
+    case EntryType::SonyRpm:
         m_hdr_rpm.p_offset = static_cast<Elf32_Off>(swentry->offset);
         m_hdr_rpm.p_filesz = *swentry->size;
         m_hdr_rpm.p_memsz = *swentry->size;
         break;
-    case ENTRY_TYPE_SONY_APPSBL:
+    case EntryType::SonyAppsbl:
         m_hdr_appsbl.p_offset = static_cast<Elf32_Off>(swentry->offset);
         m_hdr_appsbl.p_filesz = *swentry->size;
         m_hdr_appsbl.p_memsz = *swentry->size;
         break;
-    case SONY_ELF_ENTRY_CMDLINE:
-        m_hdr_cmdline.p_offset = static_cast<Elf32_Off>(swentry->offset);
-        m_hdr_cmdline.p_filesz = *swentry->size;
-        m_hdr_cmdline.p_memsz = *swentry->size;
+    default:
         break;
     }
 

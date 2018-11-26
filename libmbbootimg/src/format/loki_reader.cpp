@@ -150,14 +150,14 @@ oc::result<void> LokiFormatReader::read_header(File &file, Header &header)
     std::vector<SegmentReaderEntry> entries;
 
     entries.push_back({
-        ENTRY_TYPE_KERNEL, kernel_offset, kernel_size, false
+        EntryType::Kernel, kernel_offset, kernel_size, false
     });
     entries.push_back({
-        ENTRY_TYPE_RAMDISK, ramdisk_offset, ramdisk_size, false
+        EntryType::Ramdisk, ramdisk_offset, ramdisk_size, false
     });
     if (m_hdr.dt_size > 0 && dt_offset != 0) {
         entries.push_back({
-            ENTRY_TYPE_DEVICE_TREE, dt_offset, m_hdr.dt_size, false
+            EntryType::DeviceTree, dt_offset, m_hdr.dt_size, false
         });
     }
 
@@ -170,7 +170,7 @@ oc::result<void> LokiFormatReader::read_entry(File &file, Entry &entry)
 }
 
 oc::result<void> LokiFormatReader::go_to_entry(File &file, Entry &entry,
-                                               int entry_type)
+                                               std::optional<EntryType> entry_type)
 {
     return m_seg->go_to_entry(file, entry, entry_type);
 }
