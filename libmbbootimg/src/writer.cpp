@@ -245,24 +245,24 @@ Writer::~Writer()
 }
 
 Writer::Writer(Writer &&other) noexcept
-    : m_state(other.m_state)
-    , m_owned_file(std::move(other.m_owned_file))
-    , m_file(other.m_file)
-    , m_format(std::move(other.m_format))
+    : Writer()
 {
-    other.m_state = WriterState::Moved;
+    *this = std::move(other);
 }
 
 Writer & Writer::operator=(Writer &&rhs) noexcept
 {
-    (void) close();
+    if (this != &rhs) {
+        (void) close();
 
-    m_state = rhs.m_state;
-    m_owned_file.swap(rhs.m_owned_file);
-    m_file = rhs.m_file;
-    m_format.swap(rhs.m_format);
+        // close() keeps the selected format
+        m_format.reset();
 
-    rhs.m_state = WriterState::Moved;
+        std::swap(m_state, rhs.m_state);
+        std::swap(m_owned_file, rhs.m_owned_file);
+        std::swap(m_file, rhs.m_file);
+        std::swap(m_format, rhs.m_format);
+    }
 
     return *this;
 }
@@ -373,8 +373,6 @@ oc::result<void> Writer::open(File *file)
  */
 oc::result<void> Writer::close()
 {
-    ENSURE_STATE_OR_RETURN_ERROR(~WriterStates(WriterState::Moved));
-
     auto reset_state = finally([&] {
         m_state = WriterState::New;
 
@@ -514,8 +512,6 @@ oc::result<size_t> Writer::write_data(const void *buf, size_t size)
  */
 std::optional<Format> Writer::format()
 {
-    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), std::nullopt);
-
     if (!m_format) {
         return std::nullopt;
     }

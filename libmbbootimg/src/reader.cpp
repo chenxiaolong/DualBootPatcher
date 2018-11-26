@@ -233,28 +233,32 @@ Reader::~Reader()
 }
 
 Reader::Reader(Reader &&other) noexcept
-    : m_state(other.m_state)
-    , m_owned_file(std::move(other.m_owned_file))
-    , m_file(other.m_file)
-    , m_formats(std::move(other.m_formats))
-    , m_format(other.m_format)
-    , m_format_user_set(other.m_format_user_set)
+    : Reader()
 {
-    other.m_state = ReaderState::Moved;
+    std::swap(m_state, other.m_state);
+    std::swap(m_owned_file, other.m_owned_file);
+    std::swap(m_file, other.m_file);
+    std::swap(m_formats, other.m_formats);
+    std::swap(m_format, other.m_format);
+    std::swap(m_format_user_set, other.m_format_user_set);
 }
 
 Reader & Reader::operator=(Reader &&rhs) noexcept
 {
-    (void) close();
+    if (this != &rhs) {
+        (void) close();
 
-    m_state = rhs.m_state;
-    m_owned_file.swap(rhs.m_owned_file);
-    m_file = rhs.m_file;
-    m_formats.swap(rhs.m_formats);
-    m_format = rhs.m_format;
-    m_format_user_set = rhs.m_format_user_set;
+        // close() only resets the autodetected format
+        m_formats.clear();
+        m_format = nullptr;
 
-    rhs.m_state = ReaderState::Moved;
+        std::swap(m_state, rhs.m_state);
+        std::swap(m_owned_file, rhs.m_owned_file);
+        std::swap(m_file, rhs.m_file);
+        std::swap(m_formats, rhs.m_formats);
+        std::swap(m_format, rhs.m_format);
+        std::swap(m_format_user_set, rhs.m_format_user_set);
+    }
 
     return *this;
 }
@@ -399,8 +403,6 @@ oc::result<void> Reader::open(File *file)
  */
 oc::result<void> Reader::close()
 {
-    ENSURE_STATE_OR_RETURN_ERROR(~ReaderStates(ReaderState::Moved));
-
     auto reset_state = finally([&] {
         m_state = ReaderState::New;
 
@@ -521,8 +523,6 @@ oc::result<size_t> Reader::read_data(void *buf, size_t size)
  */
 std::optional<Format> Reader::format()
 {
-    ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), std::nullopt);
-
     if (!m_format) {
         return std::nullopt;
     }
