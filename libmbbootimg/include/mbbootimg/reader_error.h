@@ -33,9 +33,8 @@ enum class ReaderError
     UnknownOption           = 20,
 
     // Format errors
-    FormatAlreadyEnabled    = 30,
-    NoFormatsRegistered     = 31,
-    UnknownFileFormat       = 32,
+    NoFormatsRegistered     = 30,
+    UnknownFileFormat       = 31,
 
     EndOfEntries            = 40,
 

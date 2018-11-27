@@ -23,24 +23,31 @@
 #include <string_view>
 
 #include "mbcommon/common.h"
+#include "mbcommon/flags.h"
 
 namespace mb::bootimg
 {
 
-enum class Format
+enum class Format : uint8_t
 {
-    Android,
-    Bump,
-    Loki,
-    Mtk,
-    SonyElf,
+    Android = 1 << 0,
+    Bump    = 1 << 1,
+    Loki    = 1 << 2,
+    Mtk     = 1 << 3,
+    SonyElf = 1 << 4,
 };
+MB_DECLARE_FLAGS(Formats, Format)
+MB_DECLARE_OPERATORS_FOR_FLAGS(Formats)
+
+constexpr Formats ALL_FORMATS =
+        Format::Android
+        | Format::Bump
+        | Format::Loki
+        | Format::Mtk
+        | Format::SonyElf;
 
 MB_EXPORT std::string_view format_to_name(Format format);
 
 MB_EXPORT std::optional<Format> name_to_format(std::string_view name);
-
-// TODO: Switch to span eventually
-MB_EXPORT std::basic_string_view<Format> formats();
 
 }

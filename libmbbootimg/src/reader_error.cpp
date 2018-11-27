@@ -54,8 +54,6 @@ std::string ReaderErrorCategory::message(int ev) const
         return "invalid state";
     case ReaderError::UnknownOption:
         return "unknown option";
-    case ReaderError::FormatAlreadyEnabled:
-        return "format already enabled";
     case ReaderError::NoFormatsRegistered:
         return "no formats registered";
     case ReaderError::UnknownFileFormat:

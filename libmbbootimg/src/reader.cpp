@@ -216,7 +216,6 @@ Reader::Reader()
     , m_owned_file()
     , m_file()
     , m_format()
-    , m_format_user_set(false)
 {
 }
 
@@ -240,7 +239,6 @@ Reader::Reader(Reader &&other) noexcept
     std::swap(m_file, other.m_file);
     std::swap(m_formats, other.m_formats);
     std::swap(m_format, other.m_format);
-    std::swap(m_format_user_set, other.m_format_user_set);
 }
 
 Reader & Reader::operator=(Reader &&rhs) noexcept
@@ -248,16 +246,14 @@ Reader & Reader::operator=(Reader &&rhs) noexcept
     if (this != &rhs) {
         (void) close();
 
-        // close() only resets the autodetected format
+        // close() doesn't reset enabled formats
         m_formats.clear();
-        m_format = nullptr;
 
         std::swap(m_state, rhs.m_state);
         std::swap(m_owned_file, rhs.m_owned_file);
         std::swap(m_file, rhs.m_file);
         std::swap(m_formats, rhs.m_formats);
         std::swap(m_format, rhs.m_format);
-        std::swap(m_format_user_set, rhs.m_format_user_set);
     }
 
     return *this;
@@ -349,42 +345,40 @@ oc::result<void> Reader::open(File *file)
         }
     });
 
-    // Perform bid if a format wasn't explicitly chosen
-    if (!m_format) {
-        for (auto &f : m_formats) {
-            // Seek to beginning
-            OUTCOME_TRYV(file->seek(0, SEEK_SET));
+    // Perform bid for autodetection
+    for (auto &f : m_formats) {
+        // Seek to beginning
+        OUTCOME_TRYV(file->seek(0, SEEK_SET));
 
-            auto close_f = finally([&] {
-                (void) f->close(*file);
-            });
+        auto close_f = finally([&] {
+            (void) f->close(*file);
+        });
 
-            // Call bidder
-            OUTCOME_TRY(bid, f->open(*file, best_bid));
+        // Call bidder
+        OUTCOME_TRY(bid, f->open(*file, best_bid));
 
-            if (bid > best_bid) {
-                // Close previous best format
-                if (format) {
-                    (void) format->close(*file);
-                }
-
-                // Don't close this format
-                close_f.dismiss();
-
-                best_bid = bid;
-                format = f.get();
+        if (bid > best_bid) {
+            // Close previous best format
+            if (format) {
+                (void) format->close(*file);
             }
+
+            // Don't close this format
+            close_f.dismiss();
+
+            best_bid = bid;
+            format = f.get();
         }
-
-        if (!format) {
-            return ReaderError::UnknownFileFormat;
-        }
-
-        // We've found a matching format, so don't close it
-        close_format.dismiss();
-
-        m_format = format;
     }
+
+    if (!format) {
+        return ReaderError::UnknownFileFormat;
+    }
+
+    // We've found a matching format, so don't close it
+    close_format.dismiss();
+
+    m_format = format;
 
     m_state = ReaderState::Header;
     m_file = file;
@@ -409,10 +403,7 @@ oc::result<void> Reader::close()
         m_owned_file.reset();
         m_file = nullptr;
 
-        // Reset auto-detected format
-        if (!m_format_user_set) {
-            m_format = nullptr;
-        }
+        m_format = nullptr;
     });
 
     oc::result<void> ret = oc::success();
@@ -509,12 +500,7 @@ oc::result<size_t> Reader::read_data(void *buf, size_t size)
 }
 
 /*!
- * \brief Get detected or forced boot image format code.
- *
- * * If enable_format() was used, then the detected boot image format code is
- *   returned.
- * * If set_format() was used, then the forced boot image format code is
- *   returned.
+ * \brief Get detected boot image format code.
  *
  * \note The return value is meaningful only after the boot image has been
  *       successfully opened.
@@ -549,24 +535,39 @@ static std::unique_ptr<FormatReader> _construct_format(Format format)
 }
 
 /*!
- * \brief Enable support for a boot image format.
+ * \brief Enable support for boot image formats.
  *
- * \param format Format to enable
+ * \note Calling this function replaces previously enabled formats. It is not
+ *       cumulative.
  *
- * \return Nothing if the format is successfully enabled. Otherwise, the error
+ * \param formats Formats to enable
+ *
+ * \return Nothing if the formats are successfully enabled. Otherwise, the error
  *         code.
  */
-oc::result<void> Reader::enable_format(Format format)
+oc::result<void> Reader::enable_formats(Formats formats)
 {
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
-    for (auto const &f : m_formats) {
-        if (f->type() == format) {
-            return ReaderError::FormatAlreadyEnabled;
+    if (formats != (formats & ALL_FORMATS)) {
+        return std::errc::invalid_argument;
+    }
+
+    // Remove formats that shouldn't be enabled
+    for (auto it = m_formats.begin(); it != m_formats.end();) {
+        auto format = (*it)->type();
+        if (formats & format) {
+            formats.set_flag(format, false);
+            ++it;
+        } else {
+            it = m_formats.erase(it);
         }
     }
 
-    m_formats.push_back(_construct_format(format));
+    // Enable what's left to be enabled
+    for (auto const &format : formats) {
+        m_formats.push_back(_construct_format(format));
+    }
 
     return oc::success();
 }
@@ -574,52 +575,14 @@ oc::result<void> Reader::enable_format(Format format)
 /*!
  * \brief Enable support for all boot image formats.
  *
+ * This is equivalent to calling `enable_formats(ALL_FORMATS)`.
+ *
  * \return Nothing if all formats are successfully enabled. Otherwise, the error
  *         code.
  */
-oc::result<void> Reader::enable_format_all()
+oc::result<void> Reader::enable_formats_all()
 {
-    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
-
-    for (auto const &format : formats()) {
-        auto ret = enable_format(format);
-        if (!ret && ret.error() != ReaderError::FormatAlreadyEnabled) {
-            return ret.as_failure();
-        }
-    }
-
-    return oc::success();
-}
-
-/*!
- * \brief Force parsing as a specific boot image format.
- *
- * Calling this function causes the bidding process to be skipped. The chosen
- * format will be used regardless of which formats are enabled.
- *
- * \param format Boot image format
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Reader::set_format(Format format)
-{
-    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
-
-    auto ret = enable_format(format);
-    if (!ret && ret.error() != ReaderError::FormatAlreadyEnabled) {
-        return ret.as_failure();
-    }
-
-    for (auto &f : m_formats) {
-        if (f->type() == format) {
-            m_format = f.get();
-            m_format_user_set = true;
-
-            return oc::success();
-        }
-    }
-
-    MB_UNREACHABLE("Enabled format not found");
+    return enable_formats(ALL_FORMATS);
 }
 
 /*!

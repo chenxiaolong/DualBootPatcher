@@ -256,7 +256,7 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     });
 
     // Open input boot image
-    if (auto r = reader.enable_format_all(); !r) {
+    if (auto r = reader.enable_formats_all(); !r) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
                         r.error().message().c_str());
@@ -397,13 +397,13 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
     });
 
     // Set up reader formats
-    if (auto r = reader1.enable_format_all(); !r) {
+    if (auto r = reader1.enable_formats_all(); !r) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
                         r.error().message().c_str());
         return false;
     }
-    if (auto r = reader2.enable_format_all(); !r) {
+    if (auto r = reader2.enable_formats_all(); !r) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
                         r.error().message().c_str());

@@ -73,13 +73,20 @@ namespace mb::bootimg
  * \brief Format code for Sony ELF boot images
  */
 
-static std::array<Format, 5> g_formats{{
-    Format::Android,
-    Format::Bump,
-    Format::Loki,
-    Format::Mtk,
-    Format::SonyElf,
-}};
+/*!
+ * \class Formats
+ *
+ * \brief Bitmask of Format variants
+ */
+
+/*!
+ * \var ALL_FORMATS
+ *
+ * \brief Bitmask of all supported formats
+ *
+ * Note that this Formats object can be iterated over to get each supported
+ * \ref Format variant.
+ */
 
 /*!
  * \brief Convert format to string
@@ -128,16 +135,6 @@ std::optional<Format> name_to_format(std::string_view name)
     } else {
         return std::nullopt;
     }
-}
-
-/*!
- * \brief Get list of supported formats
- *
- * \return View to static list of supported formats
- */
-std::basic_string_view<Format> formats()
-{
-    return {g_formats.data(), g_formats.size()};
 }
 
 }

@@ -292,7 +292,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
     Reader reader;
 
     // Open input boot image
-    if (auto r = reader.enable_format_all(); !r) {
+    if (auto r = reader.enable_formats_all(); !r) {
         LOGE("Failed to enable input boot image formats: %s",
              r.error().message().c_str());
         return false;

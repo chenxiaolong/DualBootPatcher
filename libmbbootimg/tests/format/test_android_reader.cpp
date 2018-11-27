@@ -252,7 +252,7 @@ struct AndroidReaderGoToEntryTest : testing::Test
         // Write secondboot
         memcpy(_data.data() + 3 * ahdr.page_size, "secondboot", 10);
 
-        ASSERT_TRUE(_reader.enable_format(Format::Android));
+        ASSERT_TRUE(_reader.enable_formats(Format::Android));
 
         (void) _file.open(_data.data(), _data.size());
         ASSERT_TRUE(_file.is_open());

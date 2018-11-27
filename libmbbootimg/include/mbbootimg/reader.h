@@ -68,9 +68,8 @@ public:
 
     // Format operations
     std::optional<Format> format();
-    oc::result<void> enable_format(Format format);
-    oc::result<void> enable_format_all();
-    oc::result<void> set_format(Format format);
+    oc::result<void> enable_formats(Formats formats);
+    oc::result<void> enable_formats_all();
 
     // Reader state
     bool is_open();
@@ -85,7 +84,6 @@ private:
 
     std::vector<std::unique_ptr<detail::FormatReader>> m_formats;
     detail::FormatReader *m_format;
-    bool m_format_user_set;
 };
 
 }

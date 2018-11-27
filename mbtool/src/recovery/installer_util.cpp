@@ -335,7 +335,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     LOGD("- Output: %s", output_file.c_str());
 
     // Open input boot image
-    if (auto r = reader.enable_format_all(); !r) {
+    if (auto r = reader.enable_formats_all(); !r) {
         LOGE("Failed to enable input boot image formats: %s",
              r.error().message().c_str());
         return false;

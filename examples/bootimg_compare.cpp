@@ -79,12 +79,12 @@ int main(int argc, char *argv[])
     size_t entries = 0;
 
     // Set up reader formats
-    if (auto r = reader1.enable_format_all(); !r) {
+    if (auto r = reader1.enable_formats_all(); !r) {
         fprintf(stderr, "Failed to enable all boot image formats: %s\n",
                 r.error().message().c_str());
         return EXIT_FAILURE;
     }
-    if (auto r = reader2.enable_format_all(); !r) {
+    if (auto r = reader2.enable_formats_all(); !r) {
         fprintf(stderr, "Failed to enable all boot image formats: %s\n",
                 r.error().message().c_str());
         return EXIT_FAILURE;

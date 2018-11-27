@@ -829,13 +829,13 @@ static bool unpack_main(int argc, char *argv[])
             return false;
         }
 
-        if (auto r = reader.enable_format(*format); !r) {
+        if (auto r = reader.enable_formats(*format); !r) {
             fprintf(stderr, "Failed to enable format '%s': %s\n",
                     type, r.error().message().c_str());
             return false;
         }
     } else {
-        if (auto r = reader.enable_format_all(); !r) {
+        if (auto r = reader.enable_formats_all(); !r) {
             fprintf(stderr, "Failed to enable all formats: %s\n",
                     r.error().message().c_str());
             return false;
