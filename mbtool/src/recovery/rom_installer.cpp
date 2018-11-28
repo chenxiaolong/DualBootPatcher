@@ -290,39 +290,34 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
                                    const std::string &output_dir, bool nested)
 {
     Reader reader;
-    Header header;
-    Entry entry;
 
     // Open input boot image
-    auto ret = reader.enable_format_all();
-    if (!ret) {
+    if (auto r = reader.enable_formats_all(); !r) {
         LOGE("Failed to enable input boot image formats: %s",
-             ret.error().message().c_str());
+             r.error().message().c_str());
         return false;
     }
-    ret = reader.open_filename(boot_image_file);
-    if (!ret) {
+    if (auto r = reader.open_filename(boot_image_file); !r) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             boot_image_file.c_str(), ret.error().message().c_str());
+             boot_image_file.c_str(), r.error().message().c_str());
         return false;
     }
 
     // Read header
-    ret = reader.read_header(header);
-    if (!ret) {
+    if (auto header = reader.read_header(); !header) {
         LOGE("%s: Failed to read header: %s",
-             boot_image_file.c_str(), ret.error().message().c_str());
+             boot_image_file.c_str(), header.error().message().c_str());
         return false;
     }
 
     // Go to ramdisk
-    ret = reader.go_to_entry(entry, ENTRY_TYPE_RAMDISK);
-    if (!ret) {
-        if (ret.error() == ReaderError::EndOfEntries) {
+    auto entry = reader.go_to_entry(EntryType::Ramdisk);
+    if (!entry) {
+        if (entry.error() == ReaderError::EndOfEntries) {
             LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
         } else {
             LOGE("%s: Failed to find ramdisk entry: %s",
-                 boot_image_file.c_str(), ret.error().message().c_str());
+                 boot_image_file.c_str(), entry.error().message().c_str());
         }
         return false;
     }

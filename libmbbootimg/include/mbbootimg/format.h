@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,22 +19,35 @@
 
 #pragma once
 
+#include <optional>
+#include <string_view>
+
+#include "mbcommon/common.h"
+#include "mbcommon/flags.h"
+
 namespace mb::bootimg
 {
 
-// Formats
+enum class Format : uint8_t
+{
+    Android = 1 << 0,
+    Bump    = 1 << 1,
+    Loki    = 1 << 2,
+    Mtk     = 1 << 3,
+    SonyElf = 1 << 4,
+};
+MB_DECLARE_FLAGS(Formats, Format)
+MB_DECLARE_OPERATORS_FOR_FLAGS(Formats)
 
-constexpr int FORMAT_BASE_MASK          = 0xff0000;
-constexpr int FORMAT_ANDROID            = 0x010000;
-constexpr int FORMAT_BUMP               = 0x020000;
-constexpr int FORMAT_LOKI               = 0x030000;
-constexpr int FORMAT_MTK                = 0x040000;
-constexpr int FORMAT_SONY_ELF           = 0x050000;
+constexpr Formats ALL_FORMATS =
+        Format::Android
+        | Format::Bump
+        | Format::Loki
+        | Format::Mtk
+        | Format::SonyElf;
 
-constexpr char FORMAT_NAME_ANDROID[]    = "android";
-constexpr char FORMAT_NAME_BUMP[]       = "bump";
-constexpr char FORMAT_NAME_LOKI[]       = "loki";
-constexpr char FORMAT_NAME_MTK[]        = "mtk";
-constexpr char FORMAT_NAME_SONY_ELF[]   = "sony_elf";
+MB_EXPORT std::string_view format_to_name(Format format);
+
+MB_EXPORT std::optional<Format> name_to_format(std::string_view name);
 
 }

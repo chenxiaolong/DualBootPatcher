@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,6 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <string>
@@ -67,17 +68,6 @@
 #define FIELD_APPSBL_ADDRESS            "appsbl_address"
 #define FIELD_ENTRYPOINT                "entrypoint"
 #define FIELD_PAGE_SIZE                 "page_size"
-
-#define IMAGE_KERNEL                    "kernel"
-#define IMAGE_RAMDISK                   "ramdisk"
-#define IMAGE_SECOND                    "second"
-#define IMAGE_DT                        "dt"
-#define IMAGE_ABOOT                     "aboot"
-#define IMAGE_KERNEL_MTKHDR             "kernel_mtkhdr"
-#define IMAGE_RAMDISK_MTKHDR            "ramdisk_mtkhdr"
-#define IMAGE_IPL                       "ipl"
-#define IMAGE_RPM                       "rpm"
-#define IMAGE_APPSBL                    "appsbl"
 
 #ifdef _WIN32
 #  define CLOEXEC_FLAG "N"
@@ -151,8 +141,9 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     "                  (defaults to \"<input file>-\")\n" \
     "  -n, --noprefix  Do not prepend a prefix to the item filenames\n" \
     "  -t, --type <type>\n" \
-    "                  Input type of the boot image (autodetect if unspecified)\n" \
+    "                  Enable input format (all enabled if unspecified)\n" \
     "                  (one of: android, bump, loki, mtk, sony_elf)\n" \
+    "                  (can be specified multiple times)\n" \
     "  --output-<item> <item path>\n" \
     "                  Custom path for a particular item\n" \
     "\n" \
@@ -203,7 +194,7 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     "                  (defaults to \"<output file>-\")\n" \
     "  -n, --noprefix  Do not prepend a prefix to the item filenames\n" \
     "  -t, --type <type>\n" \
-    "                  Output type of the boot image (use header.json if unspecified)\n" \
+    "                  Output type of the boot image (default: android)\n" \
     "                  (one of: android, bump, loki, mtk, sony_elf)\n" \
     "  --input-<item> <item path>\n" \
     "                  Custom path for a particular item\n" \
@@ -246,46 +237,68 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     "        bootimgtool pack boot.img -i /tmp/android --input-kernel /tmp/newkernel\n" \
     "\n"
 
-struct Paths
+enum class SourceType
 {
-    std::string header;
-    std::string kernel;
-    std::string ramdisk;
-    std::string second;
-    std::string dt;
-    std::string aboot;
-    std::string kernel_mtkhdr;
-    std::string ramdisk_mtkhdr;
-    std::string ipl;
-    std::string rpm;
-    std::string appsbl;
+    Header,
+    Kernel,
+    Ramdisk,
+    SecondBoot,
+    DeviceTree,
+    Aboot,
+    MtkKernelHeader,
+    MtkRamdiskHeader,
+    SonyIpl,
+    SonyRpm,
+    SonyAppsbl,
 };
 
-static void prepend_if_empty(Paths &paths, const std::string &dir,
-                             const std::string &prefix)
+using PathMap = std::unordered_map<SourceType, std::string>;
+
+static std::string_view source_type_to_string(SourceType type)
 {
-    if (paths.header.empty())
-        paths.header = mb::io::path_join({dir, prefix + "header.json"});
-    if (paths.kernel.empty())
-        paths.kernel = mb::io::path_join({dir, prefix + IMAGE_KERNEL});
-    if (paths.ramdisk.empty())
-        paths.ramdisk = mb::io::path_join({dir, prefix + IMAGE_RAMDISK});
-    if (paths.second.empty())
-        paths.second = mb::io::path_join({dir, prefix + IMAGE_SECOND});
-    if (paths.dt.empty())
-        paths.dt = mb::io::path_join({dir, prefix + IMAGE_DT});
-    if (paths.aboot.empty())
-        paths.aboot = mb::io::path_join({dir, prefix + IMAGE_ABOOT});
-    if (paths.kernel_mtkhdr.empty())
-        paths.kernel_mtkhdr = mb::io::path_join({dir, prefix + IMAGE_KERNEL_MTKHDR});
-    if (paths.ramdisk_mtkhdr.empty())
-        paths.ramdisk_mtkhdr = mb::io::path_join({dir, prefix + IMAGE_RAMDISK_MTKHDR});
-    if (paths.ipl.empty())
-        paths.ipl = mb::io::path_join({dir, prefix + IMAGE_IPL});
-    if (paths.rpm.empty())
-        paths.rpm = mb::io::path_join({dir, prefix + IMAGE_RPM});
-    if (paths.appsbl.empty())
-        paths.appsbl = mb::io::path_join({dir, prefix + IMAGE_APPSBL});
+    switch (type) {
+        case SourceType::Header: return "header";
+        case SourceType::Kernel: return "kernel";
+        case SourceType::Ramdisk: return "ramdisk";
+        case SourceType::SecondBoot: return "second";
+        case SourceType::DeviceTree: return "dt";
+        case SourceType::Aboot: return "aboot";
+        case SourceType::MtkKernelHeader: return "kernel_mtkhdr";
+        case SourceType::MtkRamdiskHeader: return "ramdisk_mtkhdr";
+        case SourceType::SonyIpl: return "ipl";
+        case SourceType::SonyRpm: return "rpm";
+        case SourceType::SonyAppsbl: return "appsbl";
+        default: MB_UNREACHABLE("Invalid source type");
+    }
+}
+
+static std::string_view get_default_filename(SourceType type)
+{
+    switch (type) {
+        case SourceType::Header:
+            return "header.json";
+        default:
+            return source_type_to_string(type);
+    }
+}
+
+static SourceType entry_type_to_source_type(EntryType type)
+{
+    switch (type) {
+        case EntryType::Kernel: return SourceType::Kernel;
+        case EntryType::Ramdisk: return SourceType::Ramdisk;
+        case EntryType::SecondBoot: return SourceType::SecondBoot;
+        case EntryType::DeviceTree: return SourceType::DeviceTree;
+        case EntryType::Aboot: return SourceType::Aboot;
+        case EntryType::MtkKernelHeader: return SourceType::MtkKernelHeader;
+        case EntryType::MtkRamdiskHeader: return SourceType::MtkRamdiskHeader;
+        case EntryType::SonyCmdline: break;
+        case EntryType::SonyIpl: return SourceType::SonyIpl;
+        case EntryType::SonyRpm: return SourceType::SonyRpm;
+        case EntryType::SonyAppsbl: return SourceType::SonyAppsbl;
+    }
+
+    MB_UNREACHABLE("Unsupported entry type");
 }
 
 static void absolute_to_offset(std::optional<uint32_t> &base,
@@ -653,53 +666,10 @@ static bool write_data_entry_to_file(const std::string &path, Reader &reader)
     return true;
 }
 
-static bool write_file_to_entry(const Paths &paths, Writer &writer,
+static bool write_file_to_entry(const PathMap &paths, Writer &writer,
                                 const Entry &entry)
 {
-    std::string path;
-
-    auto type = entry.type();
-
-    if (!type) {
-        fprintf(stderr, "No entry type set!\n");
-        return false;
-    }
-
-    switch (*type) {
-    case ENTRY_TYPE_KERNEL:
-        path = paths.kernel;
-        break;
-    case ENTRY_TYPE_RAMDISK:
-        path = paths.ramdisk;
-        break;
-    case ENTRY_TYPE_SECONDBOOT:
-        path = paths.second;
-        break;
-    case ENTRY_TYPE_DEVICE_TREE:
-        path = paths.dt;
-        break;
-    case ENTRY_TYPE_ABOOT:
-        path = paths.aboot;
-        break;
-    case ENTRY_TYPE_MTK_KERNEL_HEADER:
-        path = paths.kernel_mtkhdr;
-        break;
-    case ENTRY_TYPE_MTK_RAMDISK_HEADER:
-        path = paths.ramdisk_mtkhdr;
-        break;
-    case ENTRY_TYPE_SONY_IPL:
-        path = paths.ipl;
-        break;
-    case ENTRY_TYPE_SONY_RPM:
-        path = paths.rpm;
-        break;
-    case ENTRY_TYPE_SONY_APPSBL:
-        path = paths.appsbl;
-        break;
-    default:
-        fprintf(stderr, "Unknown entry type: %d\n", *type);
-        return false;
-    }
+    auto const &path = paths.at(entry_type_to_source_type(entry.type()));
 
     auto ret = writer.write_entry(entry);
     if (!ret) {
@@ -711,56 +681,28 @@ static bool write_file_to_entry(const Paths &paths, Writer &writer,
     return write_data_file_to_entry(path, writer);
 }
 
-static bool write_entry_to_file(const Paths &paths, Reader &reader,
+static bool write_entry_to_file(const PathMap &paths, Reader &reader,
                                 const Entry &entry)
 {
-    std::string path;
-
-    auto type = entry.type();
-
-    if (!type) {
-        fprintf(stderr, "No entry type set!\n");
-        return false;
-    }
-
-    switch (*type) {
-    case ENTRY_TYPE_KERNEL:
-        path = paths.kernel;
-        break;
-    case ENTRY_TYPE_RAMDISK:
-        path = paths.ramdisk;
-        break;
-    case ENTRY_TYPE_SECONDBOOT:
-        path = paths.second;
-        break;
-    case ENTRY_TYPE_DEVICE_TREE:
-        path = paths.dt;
-        break;
-    case ENTRY_TYPE_ABOOT:
-        path = paths.aboot;
-        break;
-    case ENTRY_TYPE_MTK_KERNEL_HEADER:
-        path = paths.kernel_mtkhdr;
-        break;
-    case ENTRY_TYPE_MTK_RAMDISK_HEADER:
-        path = paths.ramdisk_mtkhdr;
-        break;
-    case ENTRY_TYPE_SONY_IPL:
-        path = paths.ipl;
-        break;
-    case ENTRY_TYPE_SONY_RPM:
-        path = paths.rpm;
-        break;
-    case ENTRY_TYPE_SONY_APPSBL:
-        path = paths.appsbl;
-        break;
-    default:
-        fprintf(stderr, "Unknown entry type: %d\n", *type);
-        return false;
-    }
+    auto const &path = paths.at(entry_type_to_source_type(entry.type()));
 
     return write_data_entry_to_file(path, reader);
 }
+
+struct SourceTypeArg
+{
+    SourceType type;
+    std::string arg_name;
+    int arg_index;
+
+    SourceTypeArg(SourceType type, std::string_view prefix)
+        : type(type)
+        , arg_name(prefix)
+        , arg_index(10000 + static_cast<int>(type))
+    {
+        arg_name += source_type_to_string(type);
+    }
+};
 
 static bool unpack_main(int argc, char *argv[])
 {
@@ -769,79 +711,81 @@ static bool unpack_main(int argc, char *argv[])
     std::string input_file;
     std::string output_dir;
     std::string prefix;
-    const char *type = nullptr;
-    Paths paths;
+    Formats formats;
+    PathMap paths;
 
-    // Arguments with no short options
-    enum unpack_options : int
-    {
-        OPT_OUTPUT_HEADER         = 10000 + 1,
-        OPT_OUTPUT_KERNEL         = 10000 + 2,
-        OPT_OUTPUT_RAMDISK        = 10000 + 3,
-        OPT_OUTPUT_SECOND         = 10000 + 4,
-        OPT_OUTPUT_DT             = 10000 + 5,
-        OPT_OUTPUT_KERNEL_MTKHDR  = 10000 + 6,
-        OPT_OUTPUT_RAMDISK_MTKHDR = 10000 + 7,
-        OPT_OUTPUT_IPL            = 10000 + 8,
-        OPT_OUTPUT_RPM            = 10000 + 9,
-        OPT_OUTPUT_APPSBL         = 10000 + 10,
+    constexpr char source_arg_prefix[] = "input-";
+
+    auto sources = {
+        SourceTypeArg(SourceType::Header, source_arg_prefix),
+        SourceTypeArg(SourceType::Kernel, source_arg_prefix),
+        SourceTypeArg(SourceType::Ramdisk, source_arg_prefix),
+        SourceTypeArg(SourceType::SecondBoot, source_arg_prefix),
+        SourceTypeArg(SourceType::DeviceTree, source_arg_prefix),
+        SourceTypeArg(SourceType::MtkKernelHeader, source_arg_prefix),
+        SourceTypeArg(SourceType::MtkRamdiskHeader, source_arg_prefix),
+        SourceTypeArg(SourceType::SonyIpl, source_arg_prefix),
+        SourceTypeArg(SourceType::SonyRpm, source_arg_prefix),
+        SourceTypeArg(SourceType::SonyAppsbl, source_arg_prefix),
     };
 
-    static const char short_options[] = "o:p:n" "h";
+    static const char short_options[] = "o:p:nt:" "h";
 
-    static struct option long_options[] = {
-        // Arguments with short versions
-        {"output",                required_argument, nullptr, 'o'},
-        {"prefix",                required_argument, nullptr, 'p'},
-        {"noprefix",              required_argument, nullptr, 'n'},
-        {"type",                  required_argument, nullptr, 't'},
-        // Arguments without short versions
-        {"output-header",         required_argument, nullptr, OPT_OUTPUT_HEADER},
-        {"output-kernel",         required_argument, nullptr, OPT_OUTPUT_KERNEL},
-        {"output-ramdisk",        required_argument, nullptr, OPT_OUTPUT_RAMDISK},
-        {"output-second",         required_argument, nullptr, OPT_OUTPUT_SECOND},
-        {"output-dt",             required_argument, nullptr, OPT_OUTPUT_DT},
-        {"output-kernel_mtkhdr",  required_argument, nullptr, OPT_OUTPUT_KERNEL_MTKHDR},
-        {"output-ramdisk_mtkhdr", required_argument, nullptr, OPT_OUTPUT_RAMDISK_MTKHDR},
-        {"output-ipl",            required_argument, nullptr, OPT_OUTPUT_IPL},
-        {"output-rpm",            required_argument, nullptr, OPT_OUTPUT_RPM},
-        {"output-appsbl",         required_argument, nullptr, OPT_OUTPUT_APPSBL},
-        // Misc
-        {"help",                  no_argument,       nullptr, 'h'},
-        {nullptr,                 0,                 nullptr, 0},
+    std::vector<option> long_options{
+        {"output",   required_argument, nullptr, 'o'},
+        {"prefix",   required_argument, nullptr, 'p'},
+        {"noprefix", required_argument, nullptr, 'n'},
+        {"type",     required_argument, nullptr, 't'},
+        {"help",     no_argument,       nullptr, 'h'},
     };
+
+    for (auto const &s : sources) {
+        long_options.push_back({s.arg_name.c_str(), required_argument, nullptr,
+                                s.arg_index});
+    }
+
+    long_options.push_back({nullptr, 0, nullptr, 0});
 
     int long_index = 0;
 
     while ((opt = getopt_long(argc, argv, short_options,
-                              long_options, &long_index)) != -1) {
-        switch (opt) {
-        case 'o':                       output_dir = optarg;           break;
-        case 'p':                       prefix = optarg;               break;
-        case 'n':                       no_prefix = true;              break;
-        case 't':                       type = optarg;                 break;
-        case OPT_OUTPUT_HEADER:         paths.header = optarg;         break;
-        case OPT_OUTPUT_KERNEL:         paths.kernel = optarg;         break;
-        case OPT_OUTPUT_RAMDISK:        paths.ramdisk = optarg;        break;
-        case OPT_OUTPUT_SECOND:         paths.second = optarg;         break;
-        case OPT_OUTPUT_DT:             paths.dt = optarg;             break;
-        case OPT_OUTPUT_KERNEL_MTKHDR:  paths.kernel_mtkhdr = optarg;  break;
-        case OPT_OUTPUT_RAMDISK_MTKHDR: paths.ramdisk_mtkhdr = optarg; break;
-        case OPT_OUTPUT_IPL:            paths.ipl = optarg;            break;
-        case OPT_OUTPUT_RPM:            paths.rpm = optarg;            break;
-        case OPT_OUTPUT_APPSBL:         paths.appsbl = optarg;         break;
+                              long_options.data(), &long_index)) != -1) {
+        auto it = std::find_if(
+            sources.begin(), sources.end(),
+            [&opt](auto const &s) {
+                return s.arg_index == opt;
+            }
+        );
 
+        if (it != sources.end()) {
+            paths[it->type] = optarg;
+            continue;
+        }
+
+
+        switch (opt) {
+        case 'o': output_dir = optarg; break;
+        case 'p': prefix = optarg;     break;
+        case 'n': no_prefix = true;    break;
+        case 't': {
+            if (auto f = name_to_format(optarg)) {
+                formats |= *f;
+            } else {
+                fprintf(stderr, "Invalid format '%s'\n", optarg);
+                return false;
+            }
+            break;
+        }
         case 'h':
             fputs(HELP_UNPACK_USAGE, stdout);
             return true;
-
         default:
             fputs(HELP_UNPACK_USAGE, stderr);
             return false;
         }
     }
 
-    // There should be one other arguments
+    // There should be one other argument
     if (argc - optind != 1) {
         fputs(HELP_UNPACK_USAGE, stderr);
         return false;
@@ -860,7 +804,12 @@ static bool unpack_main(int argc, char *argv[])
         output_dir = ".";
     }
 
-    prepend_if_empty(paths, output_dir, prefix);
+    for (auto const &s : sources) {
+        if (paths.find(s.type) == paths.end()) {
+            paths[s.type] = mb::io::path_join({output_dir,
+                    prefix + std::string(get_default_filename(s.type))});
+        }
+    }
 
     if (auto r = mb::io::create_directories(output_dir); !r) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
@@ -870,55 +819,46 @@ static bool unpack_main(int argc, char *argv[])
 
     // Load the boot image
     Reader reader;
-    Header header;
-    Entry entry;
 
-    if (type) {
-        auto ret = reader.enable_format_by_name(type);
-        if (!ret) {
-            fprintf(stderr, "Failed to enable format '%s': %s\n",
-                    type, ret.error().message().c_str());
-            return false;
-        }
-    } else {
-        auto ret = reader.enable_format_all();
-        if (!ret) {
-            fprintf(stderr, "Failed to enable all formats: %s\n",
-                    ret.error().message().c_str());
-            return false;
-        }
+    if (!formats) {
+        formats = ALL_FORMATS;
     }
 
-    auto ret = reader.open_filename(input_file);
-    if (!ret) {
+    if (auto r = reader.enable_formats(formats); !r) {
+        fprintf(stderr, "Failed to enable formats: %s\n",
+                r.error().message().c_str());
+        return false;
+    }
+
+    if (auto r = reader.open_filename(input_file); !r) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
-                input_file.c_str(), ret.error().message().c_str());
+                input_file.c_str(), r.error().message().c_str());
         return false;
     }
 
-    ret = reader.read_header(header);
-    if (!ret) {
+    auto header = reader.read_header();
+    if (!header) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                input_file.c_str(), ret.error().message().c_str());
+                input_file.c_str(), header.error().message().c_str());
         return false;
     }
 
-    if (!write_header(paths.header, header)) {
+    if (!write_header(paths[SourceType::Header], header.value())) {
         return false;
     }
 
     while (true) {
-        ret = reader.read_entry(entry);
-        if (!ret) {
-            if (ret.error() == ReaderError::EndOfEntries) {
+        auto entry = reader.read_entry();
+        if (!entry) {
+            if (entry.error() == ReaderError::EndOfEntries) {
                 break;
             }
             fprintf(stderr, "Failed to read entry: %s\n",
-                    ret.error().message().c_str());
+                    entry.error().message().c_str());
             return false;
         }
 
-        if (!write_entry_to_file(paths, reader, entry)) {
+        if (!write_entry_to_file(paths, reader, entry.value())) {
             return false;
         }
     }
@@ -933,76 +873,75 @@ static bool pack_main(int argc, char *argv[])
     std::string output_file;
     std::string input_dir;
     std::string prefix;
-    const char *type = FORMAT_NAME_ANDROID;
-    Paths paths;
+    Format format = Format::Android;
+    PathMap paths;
 
-    // Arguments with no short options
-    enum pack_options : int
-    {
-        // Paths
-        OPT_INPUT_HEADER         = 10000 + 1,
-        OPT_INPUT_KERNEL         = 10000 + 2,
-        OPT_INPUT_RAMDISK        = 10000 + 3,
-        OPT_INPUT_SECOND         = 10000 + 4,
-        OPT_INPUT_DT             = 10000 + 5,
-        OPT_INPUT_ABOOT          = 10000 + 6,
-        OPT_INPUT_KERNEL_MTKHDR  = 10000 + 7,
-        OPT_INPUT_RAMDISK_MTKHDR = 10000 + 8,
-        OPT_INPUT_IPL            = 10000 + 9,
-        OPT_INPUT_RPM            = 10000 + 10,
-        OPT_INPUT_APPSBL         = 10000 + 11,
+    constexpr char source_arg_prefix[] = "input-";
+
+    auto sources = {
+        SourceTypeArg(SourceType::Header, source_arg_prefix),
+        SourceTypeArg(SourceType::Kernel, source_arg_prefix),
+        SourceTypeArg(SourceType::Ramdisk, source_arg_prefix),
+        SourceTypeArg(SourceType::SecondBoot, source_arg_prefix),
+        SourceTypeArg(SourceType::DeviceTree, source_arg_prefix),
+        SourceTypeArg(SourceType::Aboot, source_arg_prefix),
+        SourceTypeArg(SourceType::MtkKernelHeader, source_arg_prefix),
+        SourceTypeArg(SourceType::MtkRamdiskHeader, source_arg_prefix),
+        SourceTypeArg(SourceType::SonyIpl, source_arg_prefix),
+        SourceTypeArg(SourceType::SonyRpm, source_arg_prefix),
+        SourceTypeArg(SourceType::SonyAppsbl, source_arg_prefix),
     };
 
     static const char short_options[] = "i:p:nt:" "h";
 
-    static struct option long_options[] = {
-        // Arguments with short versions
-        {"input",                required_argument, nullptr, 'i'},
-        {"prefix",               required_argument, nullptr, 'p'},
-        {"noprefix",             required_argument, nullptr, 'n'},
-        {"type",                 required_argument, nullptr, 't'},
-        // Arguments without short versions
-        {"input-header",         required_argument, nullptr, OPT_INPUT_HEADER},
-        {"input-kernel",         required_argument, nullptr, OPT_INPUT_KERNEL},
-        {"input-ramdisk",        required_argument, nullptr, OPT_INPUT_RAMDISK},
-        {"input-second",         required_argument, nullptr, OPT_INPUT_SECOND},
-        {"input-dt",             required_argument, nullptr, OPT_INPUT_DT},
-        {"input-aboot",          required_argument, nullptr, OPT_INPUT_ABOOT},
-        {"input-kernel_mtkhdr",  required_argument, nullptr, OPT_INPUT_KERNEL_MTKHDR},
-        {"input-ramdisk_mtkhdr", required_argument, nullptr, OPT_INPUT_RAMDISK_MTKHDR},
-        {"input-ipl",            required_argument, nullptr, OPT_INPUT_IPL},
-        {"input-rpm",            required_argument, nullptr, OPT_INPUT_RPM},
-        {"input-appsbl",         required_argument, nullptr, OPT_INPUT_APPSBL},
-        // Misc
-        {"help",                 no_argument,       nullptr, 'h'},
-        {nullptr,                0,                 nullptr, 0},
+    std::vector<option> long_options{
+        {"input",    required_argument, nullptr, 'i'},
+        {"prefix",   required_argument, nullptr, 'p'},
+        {"noprefix", required_argument, nullptr, 'n'},
+        {"type",     required_argument, nullptr, 't'},
+        {"help",     no_argument,       nullptr, 'h'},
     };
+
+    for (auto const &s : sources) {
+        long_options.push_back({s.arg_name.c_str(), required_argument,
+                                nullptr, s.arg_index});
+    }
+
+    long_options.push_back({nullptr, 0, nullptr, 0});
 
     int long_index = 0;
 
     while ((opt = getopt_long(argc, argv, short_options,
-                              long_options, &long_index)) != -1) {
-        switch (opt) {
-        case 'i':                      input_dir = optarg;            break;
-        case 'p':                      prefix = optarg;               break;
-        case 'n':                      no_prefix = true;              break;
-        case 't':                      type = optarg;                 break;
-        case OPT_INPUT_HEADER:         paths.header = optarg;         break;
-        case OPT_INPUT_KERNEL:         paths.kernel = optarg;         break;
-        case OPT_INPUT_RAMDISK:        paths.ramdisk = optarg;        break;
-        case OPT_INPUT_SECOND:         paths.second = optarg;         break;
-        case OPT_INPUT_DT:             paths.dt = optarg;             break;
-        case OPT_INPUT_ABOOT:          paths.aboot = optarg;          break;
-        case OPT_INPUT_KERNEL_MTKHDR:  paths.kernel_mtkhdr = optarg;  break;
-        case OPT_INPUT_RAMDISK_MTKHDR: paths.ramdisk_mtkhdr = optarg; break;
-        case OPT_INPUT_IPL:            paths.ipl = optarg;            break;
-        case OPT_INPUT_RPM:            paths.rpm = optarg;            break;
-        case OPT_INPUT_APPSBL:         paths.appsbl = optarg;         break;
+                              long_options.data(), &long_index)) != -1) {
+        auto it = std::find_if(
+            sources.begin(), sources.end(),
+            [&opt](auto const &s) {
+                return s.arg_index == opt;
+            }
+        );
 
+        if (it != sources.end()) {
+            paths[it->type] = optarg;
+            continue;
+        }
+
+
+        switch (opt) {
+        case 'i': input_dir = optarg; break;
+        case 'p': prefix = optarg;    break;
+        case 'n': no_prefix = true;   break;
+        case 't': {
+            if (auto f = name_to_format(optarg)) {
+                format = *f;
+            } else {
+                fprintf(stderr, "Invalid format '%s'\n", optarg);
+                return false;
+            }
+            break;
+        }
         case 'h':
             fputs(HELP_PACK_USAGE, stdout);
             return true;
-
         default:
             fputs(HELP_PACK_USAGE, stderr);
             return false;
@@ -1028,63 +967,64 @@ static bool pack_main(int argc, char *argv[])
         input_dir = ".";
     }
 
-    prepend_if_empty(paths, input_dir, prefix);
+    for (auto const &s : sources) {
+        if (paths.find(s.type) == paths.end()) {
+            paths[s.type] = mb::io::path_join({input_dir,
+                    prefix + std::string(get_default_filename(s.type))});
+        }
+    }
 
     // Load the boot image
     Writer writer;
-    Header header;
-    Entry entry;
 
-    if (!writer.set_format_by_name(type)) {
-        fprintf(stderr, "Invalid boot image type: %s\n", type);
+    if (auto r = writer.set_format(format); !r) {
+        fprintf(stderr, "Failed to set format: %s\n",
+                r.error().message().c_str());
         return false;
     }
 
-    auto ret = writer.open_filename(output_file);
-    if (!ret) {
+    if (auto r = writer.open_filename(output_file); !r) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
-                output_file.c_str(), ret.error().message().c_str());
+                output_file.c_str(), r.error().message().c_str());
         return false;
     }
 
-    ret = writer.get_header(header);
-    if (!ret) {
+    auto header = writer.get_header();
+    if (!header) {
         fprintf(stderr, "Failed to get header instance: %s\n",
-                ret.error().message().c_str());
+                header.error().message().c_str());
         return false;
     }
 
-    if (!read_header(paths.header, header)) {
+    if (!read_header(paths[SourceType::Header], header.value())) {
         return false;
     }
 
-    ret = writer.write_header(header);
-    if (!ret) {
+    if (auto r = writer.write_header(header.value()); !r) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                output_file.c_str(), ret.error().message().c_str());
+                output_file.c_str(), r.error().message().c_str());
         return false;
     }
 
     while (true) {
-        ret = writer.get_entry(entry);
-        if (!ret) {
-            if (ret.error() == WriterError::EndOfEntries) {
+        auto entry = writer.get_entry();
+        if (!entry) {
+            if (entry.error() == WriterError::EndOfEntries) {
                 break;
             }
             fprintf(stderr, "Failed to get next entry: %s\n",
-                    ret.error().message().c_str());
+                    entry.error().message().c_str());
             return false;
         }
 
-        if (!write_file_to_entry(paths, writer, entry)) {
+        if (!write_file_to_entry(paths, writer, entry.value())) {
             return false;
         }
     }
 
-    ret = writer.close();
-    if (!ret) {
+    if (auto r = writer.close(); !r) {
         fprintf(stderr, "Failed to close boot image: %s\n",
-                ret.error().message().c_str());
+                r.error().message().c_str());
         return false;
     }
 

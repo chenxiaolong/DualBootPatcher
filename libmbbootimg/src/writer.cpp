@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -30,6 +30,10 @@
 #include "mbcommon/finally.h"
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/format/android_writer_p.h"
+#include "mbbootimg/format/loki_writer_p.h"
+#include "mbbootimg/format/mtk_writer_p.h"
+#include "mbbootimg/format/sony_elf_writer_p.h"
 #include "mbbootimg/header.h"
 
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
@@ -107,11 +111,10 @@
  *
  * \brief Format writer callback to get Header instance
  *
- * \param[in] file Reference to file handle
- * \param[out] header Pointer to store Header instance
+ * \param file Reference to file handle
  *
  * \return
- *   * Return nothing if successful
+ *   * Return a Header instance if successful
  *   * Return a specific error code if an error occurs
  */
 
@@ -133,11 +136,10 @@
  *
  * \brief Format writer callback to get Entry instance
  *
- * \param[in] file Reference to file handle
- * \param[out] entry Pointer to store Entry instance
+ * \param file Reference to file handle
  *
  * \return
- *   * Return nothing if successful
+ *   * Return an Entry instance if successful
  *   * Return a specific error code if an error occurs
  */
 
@@ -190,41 +192,9 @@ namespace mb::bootimg
 
 using namespace detail;
 
-static struct
-{
-    int code;
-    const char *name;
-    oc::result<void> (Writer::*func)();
-} g_writer_formats[] = {
-    {
-        FORMAT_ANDROID,
-        FORMAT_NAME_ANDROID,
-        &Writer::set_format_android
-    }, {
-        FORMAT_BUMP,
-        FORMAT_NAME_BUMP,
-        &Writer::set_format_bump
-    }, {
-        FORMAT_LOKI,
-        FORMAT_NAME_LOKI,
-        &Writer::set_format_loki
-    }, {
-        FORMAT_MTK,
-        FORMAT_NAME_MTK,
-        &Writer::set_format_mtk
-    }, {
-        FORMAT_SONY_ELF,
-        FORMAT_NAME_SONY_ELF,
-        &Writer::set_format_sony_elf
-    },
-};
+FormatWriter::FormatWriter() noexcept = default;
 
-FormatWriter::FormatWriter(Writer &writer)
-    : m_writer(writer)
-{
-}
-
-FormatWriter::~FormatWriter() = default;
+FormatWriter::~FormatWriter() noexcept = default;
 
 oc::result<void> FormatWriter::set_option(const char *key, const char *value)
 {
@@ -254,7 +224,7 @@ oc::result<void> FormatWriter::finish_entry(File &file)
 /*!
  * \brief Construct new Writer.
  */
-Writer::Writer()
+Writer::Writer() noexcept
     : m_state(WriterState::New)
     , m_owned_file()
     , m_file()
@@ -269,30 +239,30 @@ Writer::Writer()
  * destructor, it is not possible to get the result of the close operation. To
  * get the result of the close operation, call Writer::close() manually.
  */
-Writer::~Writer()
+Writer::~Writer() noexcept
 {
     (void) close();
 }
 
 Writer::Writer(Writer &&other) noexcept
-    : m_state(other.m_state)
-    , m_owned_file(std::move(other.m_owned_file))
-    , m_file(other.m_file)
-    , m_format(std::move(other.m_format))
+    : Writer()
 {
-    other.m_state = WriterState::Moved;
+    *this = std::move(other);
 }
 
 Writer & Writer::operator=(Writer &&rhs) noexcept
 {
-    (void) close();
+    if (this != &rhs) {
+        (void) close();
 
-    m_state = rhs.m_state;
-    m_owned_file.swap(rhs.m_owned_file);
-    m_file = rhs.m_file;
-    m_format.swap(rhs.m_format);
+        // close() keeps the selected format
+        m_format.reset();
 
-    rhs.m_state = WriterState::Moved;
+        std::swap(m_state, rhs.m_state);
+        std::swap(m_owned_file, rhs.m_owned_file);
+        std::swap(m_file, rhs.m_file);
+        std::swap(m_format, rhs.m_format);
+    }
 
     return *this;
 }
@@ -403,8 +373,6 @@ oc::result<void> Writer::open(File *file)
  */
 oc::result<void> Writer::close()
 {
-    ENSURE_STATE_OR_RETURN_ERROR(~WriterStates(WriterState::Moved));
-
     auto reset_state = finally([&] {
         m_state = WriterState::New;
 
@@ -429,23 +397,20 @@ oc::result<void> Writer::close()
 }
 
 /*!
- * \brief Prepare boot image header instance.
+ * \brief Get prepared boot image header instance.
  *
- * Prepare a Header instance for use with Writer::write_header().
+ * Get a prepared Header instance for use with Writer::write_header(). The
+ * instance will prevent setting fields not supported by the boot image format.
  *
- * \param[out] header Header instance to initialize
- *
- * \return Nothing if the header instance is successfully fetched. Otherwise, a
- *         specific error code.
+ * \return Get prepared Header instance if it is successfully fetched.
+ *         Otherwise, a specific error code.
  */
-oc::result<void> Writer::get_header(Header &header)
+oc::result<Header> Writer::get_header()
 {
     ENSURE_STATE_OR_RETURN_ERROR(WriterState::Header);
 
-    header.clear();
-
     // Don't alter state
-    return m_format->get_header(*m_file, header);
+    return m_format->get_header(*m_file);
 }
 
 /*!
@@ -472,21 +437,17 @@ oc::result<void> Writer::write_header(const Header &header)
 }
 
 /*!
- * \brief Prepare boot image entry instance for the next entry.
- *
- * Prepare an Entry instance for the next entry.
+ * \brief Get next boot image entry instance.
  *
  * This function will return WriterError::EndOfEntries when there are no more
  * entries to write. It is strongly* recommended to check the return value of
  * Writer::close() when closing the boot image as additional steps for
  * finalizing the boot image could fail.
  *
- * \param[out] entry Entry instance to initialize
- *
- * \return Nothing if the next entry is successfully fetched. Otherwise, a
- *         specific error code.
+ * \return The next entry if it is successfully fetched. Otherwise, a specific
+ *         error code.
  */
-oc::result<void> Writer::get_entry(Entry &entry)
+oc::result<Entry> Writer::get_entry()
 {
     ENSURE_STATE_OR_RETURN_ERROR(WriterState::Entry | WriterState::Data);
 
@@ -497,12 +458,10 @@ oc::result<void> Writer::get_entry(Entry &entry)
         m_state = WriterState::Entry;
     }
 
-    entry.clear();
-
-    OUTCOME_TRYV(m_format->get_entry(*m_file, entry));
+    OUTCOME_TRY(entry, m_format->get_entry(*m_file));
 
     m_state = WriterState::Entry;
-    return oc::success();
+    return std::move(entry);
 }
 
 /*!
@@ -549,75 +508,49 @@ oc::result<size_t> Writer::write_data(const void *buf, size_t size)
 /*!
  * \brief Get selected boot image format code.
  *
- * \return Boot image format code or -1 if no format is selected
+ * \return Boot image format code
  */
-int Writer::format_code()
+std::optional<Format> Writer::format()
 {
-    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), -1);
-
     if (!m_format) {
-        // WriterError::NoFormatSelected
-        return -1;
+        return std::nullopt;
     }
 
     return m_format->type();
 }
 
-/*!
- * \brief Get selected boot image format name.
- *
- * \return Boot image format name or empty string if no format is selected
- */
-std::string Writer::format_name()
+static std::unique_ptr<FormatWriter> _construct_format(Format format)
 {
-    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), {});
-
-    if (!m_format) {
-        // WriterError::NoFormatSelected
-        return {};
+    switch (format) {
+        case Format::Android:
+            return std::make_unique<android::AndroidFormatWriter>(false);
+        case Format::Bump:
+            return std::make_unique<android::AndroidFormatWriter>(true);
+        case Format::Loki:
+            return std::make_unique<loki::LokiFormatWriter>();
+        case Format::Mtk:
+            return std::make_unique<mtk::MtkFormatWriter>();
+        case Format::SonyElf:
+            return std::make_unique<sonyelf::SonyElfFormatWriter>();
+        default:
+            MB_UNREACHABLE("Invalid format");
     }
-
-    return m_format->name();
 }
 
 /*!
  * \brief Set boot image output format by its code.
  *
- * \param code Boot image format code (\ref MB_BI_FORMAT_CODES)
+ * \param format Boot image format
  *
  * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-oc::result<void> Writer::set_format_by_code(int code)
+oc::result<void> Writer::set_format(Format format)
 {
     ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
 
-    for (auto const &format : g_writer_formats) {
-        if ((code & FORMAT_BASE_MASK) == (format.code & FORMAT_BASE_MASK)) {
-            return (this->*format.func)();
-        }
-    }
+    m_format = _construct_format(format);
 
-    return WriterError::InvalidFormatCode;
-}
-
-/*!
- * \brief Set boot image output format by its name.
- *
- * \param name Boot image format name (\ref MB_BI_FORMAT_NAMES)
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Writer::set_format_by_name(const std::string &name)
-{
-    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
-
-    for (auto const &format : g_writer_formats) {
-        if (name == format.name) {
-            return (this->*format.func)();
-        }
-    }
-
-    return WriterError::InvalidFormatName;
+    return oc::success();
 }
 
 /*!
@@ -628,25 +561,6 @@ oc::result<void> Writer::set_format_by_name(const std::string &name)
 bool Writer::is_open()
 {
     return m_state != WriterState::New;
-}
-
-/*!
- * \brief Register a format writer
- *
- * Register a format writer with a Writer. The Writer will take ownership of
- * \p format.
- *
- * \param format FormatWriter to register
- *
- * \return Nothing if the format is successfully registered. Otherwise, the
- *         error code.
- */
-oc::result<void> Writer::register_format(std::unique_ptr<FormatWriter> format)
-{
-    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
-
-    m_format = std::move(format);
-    return oc::success();
 }
 
 }

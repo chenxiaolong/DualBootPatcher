@@ -20,6 +20,7 @@ foreach(variant ${variants})
         ${uvariant}
         # Core
         src/entry.cpp
+        src/format.cpp
         src/header.cpp
         src/reader.cpp
         src/reader_error.cpp
@@ -29,8 +30,6 @@ foreach(variant ${variants})
         src/format/android_error.cpp
         src/format/android_reader.cpp
         src/format/android_writer.cpp
-        src/format/bump_reader.cpp
-        src/format/bump_writer.cpp
         src/format/loki.cpp
         src/format/loki_error.cpp
         src/format/loki_reader.cpp

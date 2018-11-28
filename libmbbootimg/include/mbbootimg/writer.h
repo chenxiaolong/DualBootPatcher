@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,6 +20,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <cstddef>
@@ -27,7 +28,9 @@
 #include "mbcommon/common.h"
 #include "mbcommon/outcome.h"
 
-#include "mbbootimg/defs.h"
+#include "mbbootimg/entry.h"
+#include "mbbootimg/format.h"
+#include "mbbootimg/header.h"
 #include "mbbootimg/writer_error.h"
 #include "mbbootimg/writer_p.h"
 
@@ -38,14 +41,11 @@ class File;
 namespace bootimg
 {
 
-class Entry;
-class Header;
-
 class MB_EXPORT Writer
 {
 public:
-    Writer();
-    ~Writer();
+    Writer() noexcept;
+    ~Writer() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Writer)
 
@@ -60,31 +60,20 @@ public:
     oc::result<void> close();
 
     // Operations
-    oc::result<void> get_header(Header &header);
+    oc::result<Header> get_header();
     oc::result<void> write_header(const Header &header);
-    oc::result<void> get_entry(Entry &entry);
+    oc::result<Entry> get_entry();
     oc::result<void> write_entry(const Entry &entry);
     oc::result<size_t> write_data(const void *buf, size_t size);
 
     // Format operations
-    int format_code();
-    std::string format_name();
-    oc::result<void> set_format_by_code(int code);
-    oc::result<void> set_format_by_name(const std::string &name);
-
-    // Specific formats
-    oc::result<void> set_format_android();
-    oc::result<void> set_format_bump();
-    oc::result<void> set_format_loki();
-    oc::result<void> set_format_mtk();
-    oc::result<void> set_format_sony_elf();
+    std::optional<Format> format();
+    oc::result<void> set_format(Format format);
 
     // Writer state
     bool is_open();
 
 private:
-    oc::result<void> register_format(std::unique_ptr<detail::FormatWriter> format);
-
     // Global state
     detail::WriterState m_state;
 

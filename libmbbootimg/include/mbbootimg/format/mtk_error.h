@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -28,14 +28,12 @@ namespace mb::bootimg::mtk
 
 enum class MtkError
 {
-    HeaderSetFieldsFailed           = 10,
-
-    MtkHeaderNotFound               = 20,
-    MismatchedKernelSizeInHeaders   = 21,
-    MismatchedRamdiskSizeInHeaders  = 22,
-    EntryTooLargeToFitMtkHeader     = 23,
-    InvalidEntrySizeForMtkHeader    = 24,
-    MtkHeaderOffsetTooLarge         = 25,
+    MtkHeaderNotFound               = 10,
+    MismatchedKernelSizeInHeaders   = 11,
+    MismatchedRamdiskSizeInHeaders  = 12,
+    EntryTooLargeToFitMtkHeader     = 13,
+    InvalidEntrySizeForMtkHeader    = 14,
+    MtkHeaderOffsetTooLarge         = 15,
 };
 
 MB_EXPORT std::error_code make_error_code(MtkError e);

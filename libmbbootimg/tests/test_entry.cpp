@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -28,36 +28,18 @@ using namespace mb::bootimg;
 
 TEST(BootImgEntryTest, CheckDefaultValues)
 {
-    Entry entry;
+    Entry entry(EntryType::Kernel);
 
-    ASSERT_FALSE(entry.type());
-    ASSERT_FALSE(entry.name());
     ASSERT_FALSE(entry.size());
 }
 
 TEST(BootImgEntryTest, CheckGettersSetters)
 {
-    Entry entry;
+    Entry entry(EntryType::Kernel);
 
     // Type field
 
-    entry.set_type(1234);
-    auto type = entry.type();
-    ASSERT_TRUE(type);
-    ASSERT_EQ(*type, 1234);
-
-    entry.set_type({});
-    ASSERT_FALSE(entry.type());
-
-    // Name field
-
-    entry.set_name({"Hello, world!"});
-    auto name = entry.name();
-    ASSERT_TRUE(name);
-    ASSERT_EQ(*name, "Hello, world!");
-
-    entry.set_name({});
-    ASSERT_FALSE(entry.name());
+    ASSERT_EQ(entry.type(), EntryType::Kernel);
 
     // Size field
 
@@ -72,36 +54,24 @@ TEST(BootImgEntryTest, CheckGettersSetters)
 
 TEST(BootImgEntryTest, CheckCopyConstructAndAssign)
 {
-    Entry entry;
+    Entry entry(EntryType::Ramdisk);
 
-    entry.set_type(1);
-    entry.set_name({"test"});
     entry.set_size(1024);
 
     {
         Entry entry2{entry};
 
-        auto type = entry2.type();
-        ASSERT_TRUE(type);
-        ASSERT_EQ(*type, 1);
-        auto name = entry2.name();
-        ASSERT_TRUE(name);
-        ASSERT_EQ(*name, "test");
+        ASSERT_EQ(entry2.type(), EntryType::Ramdisk);
         auto size = entry2.size();
         ASSERT_TRUE(size);
         ASSERT_EQ(*size, 1024u);
     }
 
     {
-        Entry entry2;
+        Entry entry2(EntryType::Kernel);
         entry2 = entry;
 
-        auto type = entry2.type();
-        ASSERT_TRUE(type);
-        ASSERT_EQ(*type, 1);
-        auto name = entry2.name();
-        ASSERT_TRUE(name);
-        ASSERT_EQ(*name, "test");
+        ASSERT_EQ(entry2.type(), EntryType::Ramdisk);
         auto size = entry2.size();
         ASSERT_TRUE(size);
         ASSERT_EQ(*size, 1024u);
@@ -110,40 +80,27 @@ TEST(BootImgEntryTest, CheckCopyConstructAndAssign)
 
 TEST(BootImgEntryTest, CheckMoveConstructAndAssign)
 {
-    Entry entry;
+    Entry entry(EntryType::Ramdisk);
 
     {
-        entry.set_type(1);
-        entry.set_name({"test"});
         entry.set_size(1024);
 
         Entry entry2{std::move(entry)};
 
-        auto type = entry2.type();
-        ASSERT_TRUE(type);
-        ASSERT_EQ(*type, 1);
-        auto name = entry2.name();
-        ASSERT_TRUE(name);
-        ASSERT_EQ(*name, "test");
+        ASSERT_EQ(entry2.type(), EntryType::Ramdisk);
         auto size = entry2.size();
         ASSERT_TRUE(size);
         ASSERT_EQ(*size, 1024u);
     }
 
     {
-        entry.set_type(1);
-        entry.set_name({"test"});
+        entry = Entry(EntryType::Ramdisk);
         entry.set_size(1024);
 
-        Entry entry2;
+        Entry entry2(EntryType::Kernel);
         entry2 = std::move(entry);
 
-        auto type = entry2.type();
-        ASSERT_TRUE(type);
-        ASSERT_EQ(*type, 1);
-        auto name = entry2.name();
-        ASSERT_TRUE(name);
-        ASSERT_EQ(*name, "test");
+        ASSERT_EQ(entry2.type(), EntryType::Ramdisk);
         auto size = entry2.size();
         ASSERT_TRUE(size);
         ASSERT_EQ(*size, 1024u);
@@ -152,34 +109,15 @@ TEST(BootImgEntryTest, CheckMoveConstructAndAssign)
 
 TEST(BootImgEntryTest, CheckEquality)
 {
-    Entry entry;
+    Entry entry(EntryType::Ramdisk);
 
-    entry.set_type(1);
-    entry.set_name({"test"});
     entry.set_size(1024);
 
-    Entry entry2;
+    Entry entry2(EntryType::Ramdisk);
 
-    entry2.set_type(1);
-    entry2.set_name({"test"});
     entry2.set_size(1024);
 
     ASSERT_EQ(entry, entry2);
-    entry2.set_type(2);
+    entry2.set_size(2048);
     ASSERT_NE(entry, entry2);
-}
-
-TEST(BootImgEntryTest, CheckClear)
-{
-    Entry entry;
-
-    entry.set_type(1);
-    entry.set_name({"test"});
-    entry.set_size(1024);
-
-    entry.clear();
-
-    ASSERT_FALSE(entry.type());
-    ASSERT_FALSE(entry.name());
-    ASSERT_FALSE(entry.size());
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,6 +20,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -28,7 +29,9 @@
 #include "mbcommon/common.h"
 #include "mbcommon/outcome.h"
 
-#include "mbbootimg/defs.h"
+#include "mbbootimg/entry.h"
+#include "mbbootimg/format.h"
+#include "mbbootimg/header.h"
 #include "mbbootimg/reader_error.h"
 #include "mbbootimg/reader_p.h"
 
@@ -39,14 +42,11 @@ class File;
 namespace bootimg
 {
 
-class Entry;
-class Header;
-
 class MB_EXPORT Reader
 {
 public:
-    Reader();
-    ~Reader();
+    Reader() noexcept;
+    ~Reader() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Reader)
 
@@ -61,33 +61,20 @@ public:
     oc::result<void> close();
 
     // Operations
-    oc::result<void> read_header(Header &header);
-    oc::result<void> read_entry(Entry &entry);
-    oc::result<void> go_to_entry(Entry &entry, int entry_type);
+    oc::result<Header> read_header();
+    oc::result<Entry> read_entry();
+    oc::result<Entry> go_to_entry(std::optional<EntryType> entry_type);
     oc::result<size_t> read_data(void *buf, size_t size);
 
     // Format operations
-    int format_code();
-    std::string format_name();
-    oc::result<void> set_format_by_code(int code);
-    oc::result<void> set_format_by_name(const std::string &name);
-    oc::result<void> enable_format_all();
-    oc::result<void> enable_format_by_code(int code);
-    oc::result<void> enable_format_by_name(const std::string &name);
-
-    // Specific formats
-    oc::result<void> enable_format_android();
-    oc::result<void> enable_format_bump();
-    oc::result<void> enable_format_loki();
-    oc::result<void> enable_format_mtk();
-    oc::result<void> enable_format_sony_elf();
+    std::optional<Format> format();
+    oc::result<void> enable_formats(Formats formats);
+    oc::result<void> enable_formats_all();
 
     // Reader state
     bool is_open();
 
 private:
-    oc::result<void> register_format(std::unique_ptr<detail::FormatReader> format);
-
     // Global state
     detail::ReaderState m_state;
 
@@ -97,7 +84,6 @@ private:
 
     std::vector<std::unique_ptr<detail::FormatReader>> m_formats;
     detail::FormatReader *m_format;
-    bool m_format_user_set;
 };
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
 #include <cstddef>
@@ -26,30 +27,26 @@
 #include "mbcommon/common.h"
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/format.h"
 #include "mbbootimg/header.h"
 
 namespace mb
 {
 class File;
 
-namespace bootimg
-{
-class Reader;
-
-namespace detail
+namespace bootimg::detail
 {
 
 class FormatReader
 {
 public:
-    FormatReader(Reader &reader);
-    virtual ~FormatReader();
+    FormatReader() noexcept;
+    virtual ~FormatReader() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FormatReader)
 
-    virtual int type() = 0;
-    virtual std::string name() = 0;
+    virtual Format type() = 0;
 
     virtual oc::result<void>
     set_option(const char *key, const char *value);
@@ -57,17 +54,14 @@ public:
     open(File &file, int best_bid) = 0;
     virtual oc::result<void>
     close(File &file);
-    virtual oc::result<void>
-    read_header(File &file, Header &header) = 0;
-    virtual oc::result<void>
-    read_entry(File &file, Entry &entry) = 0;
-    virtual oc::result<void>
-    go_to_entry(File &file, Entry &entry, int entry_type);
+    virtual oc::result<Header>
+    read_header(File &file) = 0;
+    virtual oc::result<Entry>
+    read_entry(File &file) = 0;
+    virtual oc::result<Entry>
+    go_to_entry(File &file, std::optional<EntryType> entry_type);
     virtual oc::result<size_t>
     read_data(File &file, void *buf, size_t buf_size) = 0;
-
-protected:
-    Reader &m_reader;
 };
 
 enum class ReaderState : uint8_t
@@ -76,11 +70,9 @@ enum class ReaderState : uint8_t
     Header  = 1u << 2,
     Entry   = 1u << 3,
     Data    = 1u << 4,
-    Moved   = 1u << 5,
 };
 MB_DECLARE_FLAGS(ReaderStates, ReaderState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(ReaderStates)
 
-}
 }
 }

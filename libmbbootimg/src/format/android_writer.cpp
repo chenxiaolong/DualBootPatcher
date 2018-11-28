@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -38,40 +38,28 @@
 #include "mbbootimg/format/android_error.h"
 #include "mbbootimg/format/bump_defs.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb::bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
-AndroidFormatWriter::AndroidFormatWriter(Writer &writer, bool is_bump)
-    : FormatWriter(writer)
+AndroidFormatWriter::AndroidFormatWriter(bool is_bump) noexcept
+    : FormatWriter()
     , m_is_bump(is_bump)
     , m_hdr()
     , m_sha_ctx()
 {
 }
 
-AndroidFormatWriter::~AndroidFormatWriter() = default;
+AndroidFormatWriter::~AndroidFormatWriter() noexcept = default;
 
-int AndroidFormatWriter::type()
+Format AndroidFormatWriter::type()
 {
     if (m_is_bump) {
-        return FORMAT_BUMP;
+        return Format::Bump;
     } else {
-        return FORMAT_ANDROID;
-    }
-}
-
-std::string AndroidFormatWriter::name()
-{
-    if (m_is_bump) {
-        return FORMAT_NAME_BUMP;
-    } else {
-        return FORMAT_NAME_ANDROID;
+        return Format::Android;
     }
 }
 
@@ -96,7 +84,7 @@ oc::result<void> AndroidFormatWriter::close(File &file)
         m_seg = {};
     });
 
-    if (m_writer.is_open()) {
+    if (m_seg) {
         auto swentry = m_seg->entry();
 
         // If successful, finish up the boot image
@@ -131,17 +119,18 @@ oc::result<void> AndroidFormatWriter::close(File &file)
     return oc::success();
 }
 
-oc::result<void> AndroidFormatWriter::get_header(File &file, Header &header)
+oc::result<Header> AndroidFormatWriter::get_header(File &file)
 {
     (void) file;
 
+    Header header;
     header.set_supported_fields(SUPPORTED_FIELDS);
 
-    return oc::success();
+    return std::move(header);
 }
 
-oc::result<void> AndroidFormatWriter::write_header(File &file,
-                                                   const Header &header)
+oc::result<void>
+AndroidFormatWriter::write_header(File &file, const Header &header)
 {
     // Construct header
     m_hdr = {};
@@ -202,10 +191,10 @@ oc::result<void> AndroidFormatWriter::write_header(File &file,
 
     std::vector<SegmentWriterEntry> entries;
 
-    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_SECONDBOOT, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::Kernel, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::Ramdisk, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::SecondBoot, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::DeviceTree, 0, {}, m_hdr.page_size });
 
     OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
@@ -215,21 +204,21 @@ oc::result<void> AndroidFormatWriter::write_header(File &file,
     return oc::success();
 }
 
-oc::result<void> AndroidFormatWriter::get_entry(File &file, Entry &entry)
+oc::result<Entry> AndroidFormatWriter::get_entry(File &file)
 {
-    return m_seg->get_entry(file, entry, m_writer);
+    return m_seg->get_entry(file);
 }
 
 oc::result<void> AndroidFormatWriter::write_entry(File &file,
                                                   const Entry &entry)
 {
-    return m_seg->write_entry(file, entry, m_writer);
+    return m_seg->write_entry(file, entry);
 }
 
-oc::result<size_t> AndroidFormatWriter::write_data(File &file, const void *buf,
-                                                   size_t buf_size)
+oc::result<size_t>
+AndroidFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
 {
-    OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size, m_writer));
+    OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size));
 
     // We always include the image in the hash. The size is sometimes included
     // and is handled in finish_entry().
@@ -242,7 +231,7 @@ oc::result<size_t> AndroidFormatWriter::write_data(File &file, const void *buf,
 
 oc::result<void> AndroidFormatWriter::finish_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
+    OUTCOME_TRYV(m_seg->finish_entry(file));
 
     auto swentry = m_seg->entry();
 
@@ -250,40 +239,29 @@ oc::result<void> AndroidFormatWriter::finish_entry(File &file)
     uint32_t le32_size = mb_htole32(*swentry->size);
 
     // Include size for everything except empty DT images
-    if ((swentry->type != ENTRY_TYPE_DEVICE_TREE || *swentry->size > 0)
+    if ((swentry->type != EntryType::DeviceTree || *swentry->size > 0)
             && !SHA1_Update(&m_sha_ctx, &le32_size, sizeof(le32_size))) {
         return AndroidError::Sha1UpdateError;
     }
 
     switch (swentry->type) {
-    case ENTRY_TYPE_KERNEL:
+    case EntryType::Kernel:
         m_hdr.kernel_size = *swentry->size;
         break;
-    case ENTRY_TYPE_RAMDISK:
+    case EntryType::Ramdisk:
         m_hdr.ramdisk_size = *swentry->size;
         break;
-    case ENTRY_TYPE_SECONDBOOT:
+    case EntryType::SecondBoot:
         m_hdr.second_size = *swentry->size;
         break;
-    case ENTRY_TYPE_DEVICE_TREE:
+    case EntryType::DeviceTree:
         m_hdr.dt_size = *swentry->size;
+        break;
+    default:
         break;
     }
 
     return oc::success();
-}
-
-}
-
-/*!
- * \brief Set Android boot image output format
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Writer::set_format_android()
-{
-    return register_format(
-            std::make_unique<android::AndroidFormatWriter>(*this, false));
 }
 
 }

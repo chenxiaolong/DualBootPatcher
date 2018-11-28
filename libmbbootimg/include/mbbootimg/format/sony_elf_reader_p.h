@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,7 +23,6 @@
 
 #include "mbbootimg/format/segment_reader_p.h"
 #include "mbbootimg/format/sony_elf_p.h"
-#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 
@@ -33,25 +32,24 @@ namespace mb::bootimg::sonyelf
 class SonyElfFormatReader : public detail::FormatReader
 {
 public:
-    SonyElfFormatReader(Reader &reader);
-    virtual ~SonyElfFormatReader();
+    SonyElfFormatReader() noexcept;
+    virtual ~SonyElfFormatReader() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SonyElfFormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(SonyElfFormatReader)
 
-    int type() override;
-    std::string name() override;
+    Format type() override;
 
     oc::result<int> open(File &file, int best_bid) override;
     oc::result<void> close(File &file) override;
-    oc::result<void> read_header(File &file, Header &header) override;
-    oc::result<void> read_entry(File &file, Entry &entry) override;
-    oc::result<void> go_to_entry(File &file, Entry &entry, int entry_type) override;
+    oc::result<Header> read_header(File &file) override;
+    oc::result<Entry> read_entry(File &file) override;
+    oc::result<Entry> go_to_entry(File &file,
+                                  std::optional<EntryType> entry_type) override;
     oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
 
-    static oc::result<void>
-    find_sony_elf_header(Reader &reader, File &file,
-                         Sony_Elf32_Ehdr &header_out);
+    static oc::result<Sony_Elf32_Ehdr>
+    find_sony_elf_header(File &file);
 
 private:
     // Header values

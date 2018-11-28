@@ -26,7 +26,9 @@
 
 #include <cstdint>
 
-#include "mbbootimg/writer.h"
+#include "mbcommon/file.h"
+
+#include "mbbootimg/entry.h"
 
 namespace mb::bootimg
 {
@@ -40,7 +42,7 @@ enum class SegmentWriterState
 
 struct SegmentWriterEntry
 {
-    int type;
+    EntryType type;
     uint64_t offset;
     std::optional<uint32_t> size;
     uint64_t align;
@@ -49,7 +51,7 @@ struct SegmentWriterEntry
 struct SegmentWriter
 {
 public:
-    SegmentWriter();
+    SegmentWriter() noexcept;
 
     const std::vector<SegmentWriterEntry> & entries() const;
     oc::result<void> set_entries(std::vector<SegmentWriterEntry> entries);
@@ -58,12 +60,10 @@ public:
 
     void update_size_if_unset(uint32_t size);
 
-    oc::result<void> get_entry(File &file, Entry &entry, Writer &writer);
-    oc::result<void> write_entry(File &file, const Entry &entry,
-                                 Writer &writer);
-    oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size,
-                                  Writer &writer);
-    oc::result<void> finish_entry(File &file, Writer &writer);
+    oc::result<Entry> get_entry(File &file);
+    oc::result<void> write_entry(File &file, const Entry &entry);
+    oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size);
+    oc::result<void> finish_entry(File &file);
 
 private:
     SegmentWriterState m_state;

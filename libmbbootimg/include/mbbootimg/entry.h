@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,52 +21,51 @@
 
 #include <memory>
 #include <optional>
-#include <string>
 
 #include <cstdint>
 
 #include "mbcommon/common.h"
+#include "mbcommon/flags.h"
 
 namespace mb::bootimg
 {
 
-constexpr int ENTRY_TYPE_KERNEL             = 1 << 0;
-constexpr int ENTRY_TYPE_RAMDISK            = 1 << 1;
-constexpr int ENTRY_TYPE_SECONDBOOT         = 1 << 2;
-constexpr int ENTRY_TYPE_DEVICE_TREE        = 1 << 3;
-constexpr int ENTRY_TYPE_ABOOT              = 1 << 4;
-constexpr int ENTRY_TYPE_MTK_KERNEL_HEADER  = 1 << 5;
-constexpr int ENTRY_TYPE_MTK_RAMDISK_HEADER = 1 << 6;
-constexpr int ENTRY_TYPE_SONY_IPL           = 1 << 7;
-constexpr int ENTRY_TYPE_SONY_RPM           = 1 << 8;
-constexpr int ENTRY_TYPE_SONY_APPSBL        = 1 << 9;
+enum class EntryType
+{
+    Kernel           = 1 << 0,
+    Ramdisk          = 1 << 1,
+    SecondBoot       = 1 << 2,
+    DeviceTree       = 1 << 3,
+    Aboot            = 1 << 4,
+    MtkKernelHeader  = 1 << 5,
+    MtkRamdiskHeader = 1 << 6,
+    SonyCmdline      = 1 << 7,
+    SonyIpl          = 1 << 8,
+    SonyRpm          = 1 << 9,
+    SonyAppsbl       = 1 << 10,
+};
+MB_DECLARE_FLAGS(EntryTypes, EntryType)
+MB_DECLARE_OPERATORS_FOR_FLAGS(EntryTypes)
 
 class MB_EXPORT Entry
 {
 public:
-    Entry();
-    ~Entry();
+    Entry(EntryType type) noexcept;
+    ~Entry() noexcept;
 
     MB_DEFAULT_COPY_CONSTRUCT_AND_ASSIGN(Entry)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Entry)
 
-    bool operator==(const Entry &rhs) const;
-    bool operator!=(const Entry &rhs) const;
+    bool operator==(const Entry &rhs) const noexcept;
+    bool operator!=(const Entry &rhs) const noexcept;
 
-    void clear();
-
-    std::optional<int> type() const;
-    void set_type(std::optional<int> type);
-
-    std::optional<std::string> name() const;
-    void set_name(std::optional<std::string> name);
+    EntryType type() const;
 
     std::optional<uint64_t> size() const;
     void set_size(std::optional<uint64_t> size);
 
 private:
-    std::optional<int> m_type;
-    std::optional<std::string> m_name;
+    EntryType m_type;
     std::optional<uint64_t> m_size;
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -26,30 +26,26 @@
 #include "mbcommon/common.h"
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/format.h"
 #include "mbbootimg/header.h"
 
 namespace mb
 {
 class File;
 
-namespace bootimg
-{
-class Writer;
-
-namespace detail
+namespace bootimg::detail
 {
 
 class FormatWriter
 {
 public:
-    FormatWriter(Writer &writer);
-    virtual ~FormatWriter();
+    FormatWriter() noexcept;
+    virtual ~FormatWriter() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FormatWriter)
 
-    virtual int type() = 0;
-    virtual std::string name() = 0;
+    virtual Format type() = 0;
 
     virtual oc::result<void>
     set_option(const char *key, const char *value);
@@ -57,21 +53,18 @@ public:
     open(File &file);
     virtual oc::result<void>
     close(File &file);
-    virtual oc::result<void>
-    get_header(File &file, Header &header) = 0;
+    virtual oc::result<Header>
+    get_header(File &file) = 0;
     virtual oc::result<void>
     write_header(File &file, const Header &header) = 0;
-    virtual oc::result<void>
-    get_entry(File &file, Entry &entry) = 0;
+    virtual oc::result<Entry>
+    get_entry(File &file) = 0;
     virtual oc::result<void>
     write_entry(File &file, const Entry &entry) = 0;
     virtual oc::result<size_t>
     write_data(File &file, const void *buf, size_t buf_size) = 0;
     virtual oc::result<void>
     finish_entry(File &file);
-
-protected:
-    Writer &m_writer;
 };
 
 enum class WriterState : uint8_t
@@ -80,11 +73,9 @@ enum class WriterState : uint8_t
     Header  = 1u << 2,
     Entry   = 1u << 3,
     Data    = 1u << 4,
-    Moved   = 1u << 5,
 };
 MB_DECLARE_FLAGS(WriterStates, WriterState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(WriterStates)
 
-}
 }
 }

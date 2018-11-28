@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -40,33 +40,25 @@
 #include "mbbootimg/format/loki_error.h"
 #include "mbbootimg/format/loki_p.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
-namespace mb::bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 constexpr size_t MAX_ABOOT_SIZE = 2 * 1024 * 1024;
 
-LokiFormatWriter::LokiFormatWriter(Writer &writer)
-    : FormatWriter(writer)
+LokiFormatWriter::LokiFormatWriter() noexcept
+    : FormatWriter()
     , m_hdr()
     , m_sha_ctx()
 {
 }
 
-LokiFormatWriter::~LokiFormatWriter() = default;
+LokiFormatWriter::~LokiFormatWriter() noexcept = default;
 
-int LokiFormatWriter::type()
+Format LokiFormatWriter::type()
 {
-    return FORMAT_LOKI;
-}
-
-std::string LokiFormatWriter::name()
-{
-    return FORMAT_NAME_LOKI;
+    return Format::Loki;
 }
 
 oc::result<void> LokiFormatWriter::open(File &file)
@@ -91,7 +83,7 @@ oc::result<void> LokiFormatWriter::close(File &file)
         m_seg = {};
     });
 
-    if (m_writer.is_open()) {
+    if (m_seg) {
         auto swentry = m_seg->entry();
 
         // If successful, finish up the boot image
@@ -118,7 +110,7 @@ oc::result<void> LokiFormatWriter::close(File &file)
             OUTCOME_TRYV(file_write_exact(file, &m_hdr, sizeof(m_hdr)));
 
             // Patch with Loki
-            OUTCOME_TRYV(_loki_patch_file(m_writer, file, m_aboot.data(),
+            OUTCOME_TRYV(_loki_patch_file(file, m_aboot.data(),
                                           m_aboot.size()));
         }
     }
@@ -126,17 +118,18 @@ oc::result<void> LokiFormatWriter::close(File &file)
     return oc::success();
 }
 
-oc::result<void> LokiFormatWriter::get_header(File &file, Header &header)
+oc::result<Header> LokiFormatWriter::get_header(File &file)
 {
     (void) file;
 
+    Header header;
     header.set_supported_fields(NEW_SUPPORTED_FIELDS);
 
-    return oc::success();
+    return std::move(header);
 }
 
-oc::result<void> LokiFormatWriter::write_header(File &file,
-                                                const Header &header)
+oc::result<void>
+LokiFormatWriter::write_header(File &file, const Header &header)
 {
     // Construct header
     m_hdr = {};
@@ -167,7 +160,7 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
             break;
         default:
             //DEBUG("Invalid page size: %" PRIu32, *page_size);
-            return android::AndroidError::MissingPageSize;
+            return android::AndroidError::InvalidPageSize;
         }
     } else {
         return android::AndroidError::MissingPageSize;
@@ -197,10 +190,10 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
 
     std::vector<SegmentWriterEntry> entries;
 
-    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, m_hdr.page_size });
-    entries.push_back({ ENTRY_TYPE_ABOOT, 0, 0, 0 });
+    entries.push_back({ EntryType::Kernel, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::Ramdisk, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::DeviceTree, 0, {}, m_hdr.page_size });
+    entries.push_back({ EntryType::Aboot, 0, 0, 0 });
 
     OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
@@ -210,22 +203,22 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
     return oc::success();
 }
 
-oc::result<void> LokiFormatWriter::get_entry(File &file, Entry &entry)
+oc::result<Entry> LokiFormatWriter::get_entry(File &file)
 {
-    return m_seg->get_entry(file, entry, m_writer);
+    return m_seg->get_entry(file);
 }
 
 oc::result<void> LokiFormatWriter::write_entry(File &file, const Entry &entry)
 {
-    return m_seg->write_entry(file, entry, m_writer);
+    return m_seg->write_entry(file, entry);
 }
 
-oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
-                                                size_t buf_size)
+oc::result<size_t>
+LokiFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
 {
     auto swentry = m_seg->entry();
 
-    if (swentry->type == ENTRY_TYPE_ABOOT) {
+    if (swentry->type == EntryType::Aboot) {
         if (buf_size > MAX_ABOOT_SIZE - m_aboot.size()) {
             return LokiError::AbootImageTooLarge;
         }
@@ -237,7 +230,7 @@ oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
 
         return buf_size;
     } else {
-        OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size, m_writer));
+        OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size));
 
         // We always include the image in the hash. The size is sometimes
         // included and is handled in finish_entry().
@@ -251,7 +244,7 @@ oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
 
 oc::result<void> LokiFormatWriter::finish_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
+    OUTCOME_TRYV(m_seg->finish_entry(file));
 
     auto swentry = m_seg->entry();
 
@@ -259,43 +252,33 @@ oc::result<void> LokiFormatWriter::finish_entry(File &file)
     uint32_t le32_size = mb_htole32(*swentry->size);
 
     // Include fake 0 size for unsupported secondboot image
-    if (swentry->type == ENTRY_TYPE_DEVICE_TREE
+    if (swentry->type == EntryType::DeviceTree
             && !SHA1_Update(&m_sha_ctx, "\x00\x00\x00\x00", 4)) {
         return android::AndroidError::Sha1UpdateError;
     }
 
     // Include size for everything except empty DT images
-    if (swentry->type != ENTRY_TYPE_ABOOT
-            && (swentry->type != ENTRY_TYPE_DEVICE_TREE || *swentry->size > 0)
+    if (swentry->type != EntryType::Aboot
+            && (swentry->type != EntryType::DeviceTree || *swentry->size > 0)
             && !SHA1_Update(&m_sha_ctx, &le32_size, sizeof(le32_size))) {
         return android::AndroidError::Sha1UpdateError;
     }
 
     switch (swentry->type) {
-    case ENTRY_TYPE_KERNEL:
+    case EntryType::Kernel:
         m_hdr.kernel_size = *swentry->size;
         break;
-    case ENTRY_TYPE_RAMDISK:
+    case EntryType::Ramdisk:
         m_hdr.ramdisk_size = *swentry->size;
         break;
-    case ENTRY_TYPE_DEVICE_TREE:
+    case EntryType::DeviceTree:
         m_hdr.dt_size = *swentry->size;
+        break;
+    default:
         break;
     }
 
     return oc::success();
-}
-
-}
-
-/*!
- * \brief Set Loki boot image output format
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Writer::set_format_loki()
-{
-    return register_format(std::make_unique<loki::LokiFormatWriter>(*this));
 }
 
 }

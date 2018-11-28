@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -55,7 +55,7 @@ protected:
     {
         ASSERT_TRUE(_file.is_open());
 
-        ASSERT_TRUE(_writer.set_format_android());
+        ASSERT_TRUE(_writer.set_format(Format::Android));
         ASSERT_TRUE(_writer.open(&_file));
     }
 
@@ -63,31 +63,29 @@ protected:
     {
     }
 
-    void TestChecksum(const unsigned char expected[20], int types)
+    void TestChecksum(const unsigned char expected[20], EntryTypes types)
     {
         static const unsigned char padding[] = {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         };
 
-        Header header;
-        Entry entry;
-
         // Write dummy header
-        ASSERT_TRUE(_writer.get_header(header));
-        ASSERT_TRUE(header.set_page_size(2048));
-        ASSERT_TRUE(_writer.write_header(header));
+        auto header = _writer.get_header();
+        ASSERT_TRUE(header);
+        ASSERT_TRUE(header.value().set_page_size(2048));
+        ASSERT_TRUE(_writer.write_header(header.value()));
 
         // Write specified dummy entries
         while (true) {
-            auto ret = _writer.get_entry(entry);
-            if (!ret) {
-                ASSERT_EQ(ret.error(), WriterError::EndOfEntries);
+            auto entry = _writer.get_entry();
+            if (!entry) {
+                ASSERT_EQ(entry.error(), WriterError::EndOfEntries);
                 break;
             }
 
-            ASSERT_TRUE(_writer.write_entry(entry));
+            ASSERT_TRUE(_writer.write_entry(entry.value()));
 
-            if (*entry.type() & types) {
+            if (entry.value().type() & types) {
                 auto n = _writer.write_data("hello", 5);
                 ASSERT_TRUE(n);
                 ASSERT_EQ(n.value(), 5u);
@@ -113,7 +111,7 @@ TEST_F(AndroidWriterSHA1Test, HandlesNothing)
         0xc1, 0xd3, 0x7a, 0xee, 0x9b, 0xea, 0xbc, 0x4b, 0x4b, 0xbf,
     };
 
-    TestChecksum(expected, 0);
+    TestChecksum(expected, {});
 }
 
 TEST_F(AndroidWriterSHA1Test, HandlesKernel)
@@ -123,7 +121,7 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernel)
         0xf7, 0x89, 0x8c, 0x5f, 0xea, 0x7f, 0x47, 0xbc, 0x68, 0x69,
     };
 
-    TestChecksum(expected, ENTRY_TYPE_KERNEL);
+    TestChecksum(expected, EntryType::Kernel);
 }
 
 TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdisk)
@@ -133,7 +131,7 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdisk)
         0x1e, 0xfb, 0xec, 0x44, 0x65, 0xf9, 0xc1, 0x62, 0x11, 0xfd,
     };
 
-    TestChecksum(expected, ENTRY_TYPE_KERNEL | ENTRY_TYPE_RAMDISK);
+    TestChecksum(expected, EntryType::Kernel | EntryType::Ramdisk);
 }
 
 TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondboot)
@@ -143,8 +141,8 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondboot)
         0x42, 0xe1, 0xaf, 0xe5, 0x4d, 0xa7, 0xc3, 0x16, 0x8f, 0x5e,
     };
 
-    TestChecksum(expected, ENTRY_TYPE_KERNEL | ENTRY_TYPE_RAMDISK
-            | ENTRY_TYPE_SECONDBOOT);
+    TestChecksum(expected, EntryType::Kernel | EntryType::Ramdisk
+            | EntryType::SecondBoot);
 }
 
 TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondbootDT)
@@ -154,6 +152,6 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondbootDT)
         0x09, 0x35, 0x85, 0x26, 0x06, 0x36, 0x17, 0xbb, 0x05, 0x20,
     };
 
-    TestChecksum(expected, ENTRY_TYPE_KERNEL | ENTRY_TYPE_RAMDISK
-            | ENTRY_TYPE_SECONDBOOT | ENTRY_TYPE_DEVICE_TREE);
+    TestChecksum(expected, EntryType::Kernel | EntryType::Ramdisk
+            | EntryType::SecondBoot | EntryType::DeviceTree);
 }

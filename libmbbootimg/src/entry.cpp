@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,57 +19,33 @@
 
 #include "mbbootimg/entry.h"
 
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-
 
 namespace mb::bootimg
 {
 
-Entry::Entry() = default;
+Entry::Entry(EntryType type) noexcept
+    : m_type(type)
+{
+}
 
-Entry::~Entry() = default;
+Entry::~Entry() noexcept = default;
 
-bool Entry::operator==(const Entry &rhs) const
+bool Entry::operator==(const Entry &rhs) const noexcept
 {
     return m_type == rhs.m_type
-            && m_name == rhs.m_name
             && m_size == rhs.m_size;
 }
 
-bool Entry::operator!=(const Entry &rhs) const
+bool Entry::operator!=(const Entry &rhs) const noexcept
 {
     return !(*this == rhs);
 }
 
-void Entry::clear()
-{
-    m_type = {};
-    m_name = {};
-    m_size = {};
-}
-
 // Fields
 
-std::optional<int> Entry::type() const
+EntryType Entry::type() const
 {
     return m_type;
-}
-
-void Entry::set_type(std::optional<int> type)
-{
-    m_type = std::move(type);
-}
-
-std::optional<std::string> Entry::name() const
-{
-    return m_name;
-}
-
-void Entry::set_name(std::optional<std::string> name)
-{
-    m_name = std::move(name);
 }
 
 std::optional<uint64_t> Entry::size() const

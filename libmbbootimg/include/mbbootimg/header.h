@@ -78,16 +78,14 @@ constexpr HeaderFields ALL_FIELDS =
 class MB_EXPORT Header
 {
 public:
-    Header();
-    ~Header();
+    Header() noexcept;
+    ~Header() noexcept;
 
     MB_DEFAULT_COPY_CONSTRUCT_AND_ASSIGN(Header)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Header)
 
-    bool operator==(const Header &rhs) const;
-    bool operator!=(const Header &rhs) const;
-
-    void clear();
+    bool operator==(const Header &rhs) const noexcept;
+    bool operator!=(const Header &rhs) const noexcept;
 
     HeaderFields supported_fields() const;
     void set_supported_fields(HeaderFields fields);

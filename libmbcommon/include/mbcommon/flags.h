@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  * Copyright (C) 2016  The Qt Company Ltd.
  *
  * This file is part of DualBootPatcher
@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <iterator>
 #include <type_traits>
 
 #include <cstdio>
@@ -29,6 +30,55 @@
 /*! \cond INTERNAL */
 namespace mb
 {
+
+template<typename Enum>
+class FlagsIterator
+{
+    using Underlying = std::underlying_type_t<Enum>;
+
+public:
+    using difference_type = void;
+    using value_type = Enum;
+    using pointer = void;
+    using reference = value_type;
+    using iterator_category = std::input_iterator_tag;
+
+    constexpr inline FlagsIterator(Underlying remain) noexcept
+        : _remain(remain)
+    {
+    }
+
+    constexpr inline FlagsIterator & operator++() noexcept
+    {
+        _remain &= static_cast<Underlying>(_remain - 1);
+        return *this;
+    }
+
+    constexpr inline FlagsIterator operator++(int) noexcept
+    {
+        FlagsIterator tmp(*this);
+        operator++();
+        return tmp;
+    }
+
+    constexpr inline bool operator==(FlagsIterator other) const noexcept
+    {
+        return _remain == other._remain;
+    }
+
+    constexpr inline bool operator!=(FlagsIterator other) const noexcept
+    {
+        return !(*this == other);
+    }
+
+    constexpr inline reference operator*() const noexcept
+    {
+        return static_cast<Enum>(_remain & -_remain);
+    }
+
+private:
+    Underlying _remain;
+};
 
 template<typename Enum>
 class Flags
@@ -145,6 +195,16 @@ public:
     {
         return on ? (*this |= f)
                 : (*this &= static_cast<Enum>(~static_cast<Underlying>(f)));
+    }
+
+    constexpr inline FlagsIterator<Enum> begin() const noexcept
+    {
+        return FlagsIterator<Enum>(_value);
+    }
+
+    constexpr inline FlagsIterator<Enum> end() const noexcept
+    {
+        return FlagsIterator<Enum>(static_cast<Underlying>(0));
     }
 
 private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -36,18 +36,13 @@
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/sony_elf_defs.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
-namespace mb::bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
-constexpr int SONY_ELF_ENTRY_CMDLINE = -1;
-
-SonyElfFormatWriter::SonyElfFormatWriter(Writer &writer)
-    : FormatWriter(writer)
+SonyElfFormatWriter::SonyElfFormatWriter() noexcept
+    : FormatWriter()
     , m_hdr()
     , m_hdr_kernel()
     , m_hdr_ramdisk()
@@ -58,16 +53,11 @@ SonyElfFormatWriter::SonyElfFormatWriter(Writer &writer)
 {
 }
 
-SonyElfFormatWriter::~SonyElfFormatWriter() = default;
+SonyElfFormatWriter::~SonyElfFormatWriter() noexcept = default;
 
-int SonyElfFormatWriter::type()
+Format SonyElfFormatWriter::type()
 {
-    return FORMAT_SONY_ELF;
-}
-
-std::string SonyElfFormatWriter::name()
-{
-    return FORMAT_NAME_SONY_ELF;
+    return Format::SonyElf;
 }
 
 oc::result<void> SonyElfFormatWriter::open(File &file)
@@ -93,7 +83,7 @@ oc::result<void> SonyElfFormatWriter::close(File &file)
         m_seg = {};
     });
 
-    if (m_writer.is_open()) {
+    if (m_seg) {
         auto swentry = m_seg->entry();
 
         // If successful, finish up the boot image
@@ -136,17 +126,18 @@ oc::result<void> SonyElfFormatWriter::close(File &file)
     return oc::success();
 }
 
-oc::result<void> SonyElfFormatWriter::get_header(File &file, Header &header)
+oc::result<Header> SonyElfFormatWriter::get_header(File &file)
 {
     (void) file;
 
+    Header header;
     header.set_supported_fields(SUPPORTED_FIELDS);
 
-    return oc::success();
+    return std::move(header);
 }
 
-oc::result<void> SonyElfFormatWriter::write_header(File &file,
-                                                   const Header &header)
+oc::result<void>
+SonyElfFormatWriter::write_header(File &file, const Header &header)
 {
     m_cmdline.clear();
 
@@ -241,12 +232,12 @@ oc::result<void> SonyElfFormatWriter::write_header(File &file,
 
     std::vector<SegmentWriterEntry> entries;
 
-    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, 0 });
-    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, 0 });
-    entries.push_back({ SONY_ELF_ENTRY_CMDLINE, 0, {}, 0 });
-    entries.push_back({ ENTRY_TYPE_SONY_IPL, 0, {}, 0 });
-    entries.push_back({ ENTRY_TYPE_SONY_RPM, 0, {}, 0 });
-    entries.push_back({ ENTRY_TYPE_SONY_APPSBL, 0, {}, 0 });
+    entries.push_back({ EntryType::Kernel, 0, {}, 0 });
+    entries.push_back({ EntryType::Ramdisk, 0, {}, 0 });
+    entries.push_back({ EntryType::SonyCmdline, 0, {}, 0 });
+    entries.push_back({ EntryType::SonyIpl, 0, {}, 0 });
+    entries.push_back({ EntryType::SonyRpm, 0, {}, 0 });
+    entries.push_back({ EntryType::SonyAppsbl, 0, {}, 0 });
 
     OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
@@ -256,75 +247,76 @@ oc::result<void> SonyElfFormatWriter::write_header(File &file,
     return oc::success();
 }
 
-oc::result<void> SonyElfFormatWriter::get_entry(File &file, Entry &entry)
+oc::result<Entry> SonyElfFormatWriter::get_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg->get_entry(file, entry, m_writer));
+    OUTCOME_TRY(entry, m_seg->get_entry(file));
 
     auto swentry = m_seg->entry();
 
     // Silently handle cmdline entry
-    if (swentry->type == SONY_ELF_ENTRY_CMDLINE) {
-        entry.clear();
-
+    if (swentry->type == EntryType::SonyCmdline) {
         entry.set_size(m_cmdline.size());
 
         OUTCOME_TRYV(write_entry(file, entry));
         OUTCOME_TRYV(write_data(file, m_cmdline.data(), m_cmdline.size()));
         OUTCOME_TRYV(finish_entry(file));
-        OUTCOME_TRYV(get_entry(file, entry));
+
+        return get_entry(file);
+    } else {
+        return std::move(entry);
     }
-
-    return oc::success();
 }
 
-oc::result<void> SonyElfFormatWriter::write_entry(File &file,
-                                                  const Entry &entry)
+oc::result<void>
+SonyElfFormatWriter::write_entry(File &file, const Entry &entry)
 {
-    return m_seg->write_entry(file, entry, m_writer);
+    return m_seg->write_entry(file, entry);
 }
 
-oc::result<size_t> SonyElfFormatWriter::write_data(File &file, const void *buf,
-                                                   size_t buf_size)
+oc::result<size_t>
+SonyElfFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
 {
-    return m_seg->write_data(file, buf, buf_size, m_writer);
+    return m_seg->write_data(file, buf, buf_size);
 }
 
 oc::result<void> SonyElfFormatWriter::finish_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
+    OUTCOME_TRYV(m_seg->finish_entry(file));
 
     auto swentry = m_seg->entry();
 
     switch (swentry->type) {
-    case ENTRY_TYPE_KERNEL:
+    case EntryType::Kernel:
         m_hdr_kernel.p_offset = static_cast<Elf32_Off>(swentry->offset);
         m_hdr_kernel.p_filesz = *swentry->size;
         m_hdr_kernel.p_memsz = *swentry->size;
         break;
-    case ENTRY_TYPE_RAMDISK:
+    case EntryType::Ramdisk:
         m_hdr_ramdisk.p_offset = static_cast<Elf32_Off>(swentry->offset);
         m_hdr_ramdisk.p_filesz = *swentry->size;
         m_hdr_ramdisk.p_memsz = *swentry->size;
         break;
-    case ENTRY_TYPE_SONY_IPL:
+    case EntryType::SonyCmdline:
+        m_hdr_cmdline.p_offset = static_cast<Elf32_Off>(swentry->offset);
+        m_hdr_cmdline.p_filesz = *swentry->size;
+        m_hdr_cmdline.p_memsz = *swentry->size;
+        break;
+    case EntryType::SonyIpl:
         m_hdr_ipl.p_offset = static_cast<Elf32_Off>(swentry->offset);
         m_hdr_ipl.p_filesz = *swentry->size;
         m_hdr_ipl.p_memsz = *swentry->size;
         break;
-    case ENTRY_TYPE_SONY_RPM:
+    case EntryType::SonyRpm:
         m_hdr_rpm.p_offset = static_cast<Elf32_Off>(swentry->offset);
         m_hdr_rpm.p_filesz = *swentry->size;
         m_hdr_rpm.p_memsz = *swentry->size;
         break;
-    case ENTRY_TYPE_SONY_APPSBL:
+    case EntryType::SonyAppsbl:
         m_hdr_appsbl.p_offset = static_cast<Elf32_Off>(swentry->offset);
         m_hdr_appsbl.p_filesz = *swentry->size;
         m_hdr_appsbl.p_memsz = *swentry->size;
         break;
-    case SONY_ELF_ENTRY_CMDLINE:
-        m_hdr_cmdline.p_offset = static_cast<Elf32_Off>(swentry->offset);
-        m_hdr_cmdline.p_filesz = *swentry->size;
-        m_hdr_cmdline.p_memsz = *swentry->size;
+    default:
         break;
     }
 
@@ -333,19 +325,6 @@ oc::result<void> SonyElfFormatWriter::finish_entry(File &file)
     }
 
     return oc::success();
-}
-
-}
-
-/*!
- * \brief Set Sony ELF boot image output format
- *
- * \return Nothing if the format is successfully set. Otherwise, the error code.
- */
-oc::result<void> Writer::set_format_sony_elf()
-{
-    return register_format(
-            std::make_unique<sonyelf::SonyElfFormatWriter>(*this));
 }
 
 }

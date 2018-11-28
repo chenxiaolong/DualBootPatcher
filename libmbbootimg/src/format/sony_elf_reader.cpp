@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -36,31 +36,23 @@
 #include "mbbootimg/format/sony_elf_defs.h"
 #include "mbbootimg/format/sony_elf_error.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb::bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
-SonyElfFormatReader::SonyElfFormatReader(Reader &reader)
-    : FormatReader(reader)
+SonyElfFormatReader::SonyElfFormatReader() noexcept
+    : FormatReader()
     , m_hdr()
 {
 }
 
-SonyElfFormatReader::~SonyElfFormatReader() = default;
+SonyElfFormatReader::~SonyElfFormatReader() noexcept = default;
 
-int SonyElfFormatReader::type()
+Format SonyElfFormatReader::type()
 {
-    return FORMAT_SONY_ELF;
-}
-
-std::string SonyElfFormatReader::name()
-{
-    return FORMAT_NAME_SONY_ELF;
+    return Format::SonyElf;
 }
 
 /*!
@@ -81,15 +73,16 @@ oc::result<int> SonyElfFormatReader::open(File &file, int best_bid)
     }
 
     // Find the Sony ELF header
-    auto ret = find_sony_elf_header(m_reader, file, m_hdr);
-    if (ret) {
+    auto ehdr = find_sony_elf_header(file);
+    if (ehdr) {
         // Update bid to account for matched bits
+        m_hdr = std::move(ehdr.value());
         bid += static_cast<int>(SONY_EI_NIDENT * 8);
-    } else if (ret.error().category() == sony_elf_error_category()) {
+    } else if (ehdr.error().category() == sony_elf_error_category()) {
         // Header not found. This can't be a Sony ELF boot image.
         return 0;
     } else {
-        return ret.as_failure();
+        return ehdr.as_failure();
     }
 
     m_seg = SegmentReader();
@@ -107,8 +100,10 @@ oc::result<void> SonyElfFormatReader::close(File &file)
     return oc::success();
 }
 
-oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
+oc::result<Header> SonyElfFormatReader::read_header(File &file)
 {
+    Header header;
+
     header.set_supported_fields(SUPPORTED_FIELDS);
     header.set_entrypoint_address(m_hdr.e_entry);
 
@@ -151,41 +146,42 @@ oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
 
             OUTCOME_TRYV(file_read_exact(file, cmdline, phdr.p_memsz));
 
+            // cmdline section may or may not contain null bytes
             cmdline[phdr.p_memsz] = '\0';
 
             header.set_kernel_cmdline({cmdline});
         } else if (phdr.p_type == SONY_E_TYPE_KERNEL
                 && phdr.p_flags == SONY_E_FLAGS_KERNEL) {
             entries.push_back({
-                ENTRY_TYPE_KERNEL, phdr.p_offset, phdr.p_memsz, false
+                EntryType::Kernel, phdr.p_offset, phdr.p_memsz, false,
             });
 
             header.set_kernel_address(phdr.p_vaddr);
         } else if (phdr.p_type == SONY_E_TYPE_RAMDISK
                 && phdr.p_flags == SONY_E_FLAGS_RAMDISK) {
             entries.push_back({
-                ENTRY_TYPE_RAMDISK, phdr.p_offset, phdr.p_memsz, false
+                EntryType::Ramdisk, phdr.p_offset, phdr.p_memsz, false,
             });
 
             header.set_ramdisk_address(phdr.p_vaddr);
         } else if (phdr.p_type == SONY_E_TYPE_IPL
                 && phdr.p_flags == SONY_E_FLAGS_IPL) {
             entries.push_back({
-                ENTRY_TYPE_SONY_IPL, phdr.p_offset, phdr.p_memsz, false
+                EntryType::SonyIpl, phdr.p_offset, phdr.p_memsz, false,
             });
 
             header.set_sony_ipl_address(phdr.p_vaddr);
         } else if (phdr.p_type == SONY_E_TYPE_RPM
                 && phdr.p_flags == SONY_E_FLAGS_RPM) {
             entries.push_back({
-                ENTRY_TYPE_SONY_RPM, phdr.p_offset, phdr.p_memsz, false
+                EntryType::SonyRpm, phdr.p_offset, phdr.p_memsz, false,
             });
 
             header.set_sony_rpm_address(phdr.p_vaddr);
         } else if (phdr.p_type == SONY_E_TYPE_APPSBL
                 && phdr.p_flags == SONY_E_FLAGS_APPSBL) {
             entries.push_back({
-                ENTRY_TYPE_SONY_APPSBL, phdr.p_offset, phdr.p_memsz, false
+                EntryType::SonyAppsbl, phdr.p_offset, phdr.p_memsz, false,
             });
 
             header.set_sony_appsbl_address(phdr.p_vaddr);
@@ -202,24 +198,26 @@ oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
         }
     }
 
-    return m_seg->set_entries(std::move(entries));
+    OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
+
+    return std::move(header);
 }
 
-oc::result<void> SonyElfFormatReader::read_entry(File &file, Entry &entry)
+oc::result<Entry> SonyElfFormatReader::read_entry(File &file)
 {
-    return m_seg->read_entry(file, entry, m_reader);
+    return m_seg->read_entry(file);
 }
 
-oc::result<void> SonyElfFormatReader::go_to_entry(File &file, Entry &entry,
-                                                  int entry_type)
+oc::result<Entry>
+SonyElfFormatReader::go_to_entry(File &file, std::optional<EntryType> entry_type)
 {
-    return m_seg->go_to_entry(file, entry, entry_type, m_reader);
+    return m_seg->go_to_entry(file, entry_type);
 }
 
-oc::result<size_t> SonyElfFormatReader::read_data(File &file, void *buf,
-                                                  size_t buf_size)
+oc::result<size_t>
+SonyElfFormatReader::read_data(File &file, void *buf, size_t buf_size)
 {
-    return m_seg->read_data(file, buf, buf_size, m_reader);
+    return m_seg->read_data(file, buf, buf_size);
 }
 
 /*!
@@ -233,24 +231,21 @@ oc::result<size_t> SonyElfFormatReader::read_data(File &file, void *buf,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] reader Reader for setting error messages
- * \param[in] file File handle
- * \param[out] header_out Pointer to store header
+ * \param file File handle
  *
  * \return
- *   * Nothing if the header is found
+ *   * The Sony ELF ehdr if it is found
  *   * A SonyElfError if the header is not found
  *   * A specific error code if any file operation fails
  */
-oc::result<void>
-SonyElfFormatReader::find_sony_elf_header(Reader &reader, File &file,
-                                          Sony_Elf32_Ehdr &header_out)
+oc::result<Sony_Elf32_Ehdr>
+SonyElfFormatReader::find_sony_elf_header(File &file)
 {
-    Sony_Elf32_Ehdr header;
-
     OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
-    auto ret = file_read_exact(file, &header, sizeof(header));
+    Sony_Elf32_Ehdr ehdr;
+
+    auto ret = file_read_exact(file, &ehdr, sizeof(ehdr));
     if (!ret) {
         if (ret.error() == FileError::UnexpectedEof) {
             return SonyElfError::SonyElfHeaderTooSmall;
@@ -259,28 +254,13 @@ SonyElfFormatReader::find_sony_elf_header(Reader &reader, File &file,
         }
     }
 
-    if (memcmp(header.e_ident, SONY_E_IDENT, SONY_EI_NIDENT) != 0) {
+    if (memcmp(ehdr.e_ident, SONY_E_IDENT, SONY_EI_NIDENT) != 0) {
         return SonyElfError::InvalidElfMagic;
     }
 
-    sony_elf_fix_ehdr_byte_order(header);
-    header_out = header;
+    sony_elf_fix_ehdr_byte_order(ehdr);
 
-    return oc::success();
-}
-
-}
-
-/*!
- * \brief Enable support for Sony ELF boot image format
- *
- * \return Nothing if the format is successfully enabled. Otherwise, the error
- *         code.
- */
-oc::result<void> Reader::enable_format_sony_elf()
-{
-    return register_format(
-            std::make_unique<sonyelf::SonyElfFormatReader>(*this));
+    return std::move(ehdr);
 }
 
 }

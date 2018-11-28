@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -27,7 +27,6 @@
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
-#include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
 
@@ -37,20 +36,19 @@ namespace mb::bootimg::android
 class AndroidFormatWriter : public detail::FormatWriter
 {
 public:
-    AndroidFormatWriter(Writer &writer, bool is_bump);
-    virtual ~AndroidFormatWriter();
+    AndroidFormatWriter(bool is_bump) noexcept;
+    virtual ~AndroidFormatWriter() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)
 
-    int type() override;
-    std::string name() override;
+    Format type() override;
 
     oc::result<void> open(File &file) override;
     oc::result<void> close(File &file) override;
-    oc::result<void> get_header(File &file, Header &header) override;
+    oc::result<Header> get_header(File &file) override;
     oc::result<void> write_header(File &file, const Header &header) override;
-    oc::result<void> get_entry(File &file, Entry &entry) override;
+    oc::result<Entry> get_entry(File &file) override;
     oc::result<void> write_entry(File &file, const Entry &entry) override;
     oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size) override;
     oc::result<void> finish_entry(File &file) override;
