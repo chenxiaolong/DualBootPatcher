@@ -69,17 +69,6 @@
 #define FIELD_ENTRYPOINT                "entrypoint"
 #define FIELD_PAGE_SIZE                 "page_size"
 
-#define IMAGE_KERNEL                    "kernel"
-#define IMAGE_RAMDISK                   "ramdisk"
-#define IMAGE_SECOND                    "second"
-#define IMAGE_DT                        "dt"
-#define IMAGE_ABOOT                     "aboot"
-#define IMAGE_KERNEL_MTKHDR             "kernel_mtkhdr"
-#define IMAGE_RAMDISK_MTKHDR            "ramdisk_mtkhdr"
-#define IMAGE_IPL                       "ipl"
-#define IMAGE_RPM                       "rpm"
-#define IMAGE_APPSBL                    "appsbl"
-
 #ifdef _WIN32
 #  define CLOEXEC_FLAG "N"
 #else
@@ -152,8 +141,9 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     "                  (defaults to \"<input file>-\")\n" \
     "  -n, --noprefix  Do not prepend a prefix to the item filenames\n" \
     "  -t, --type <type>\n" \
-    "                  Input type of the boot image (autodetect if unspecified)\n" \
+    "                  Enable input format (all enabled if unspecified)\n" \
     "                  (one of: android, bump, loki, mtk, sony_elf)\n" \
+    "                  (can be specified multiple times)\n" \
     "  --output-<item> <item path>\n" \
     "                  Custom path for a particular item\n" \
     "\n" \
@@ -721,7 +711,7 @@ static bool unpack_main(int argc, char *argv[])
     std::string input_file;
     std::string output_dir;
     std::string prefix;
-    const char *type = nullptr;
+    Formats formats;
     PathMap paths;
 
     constexpr char source_arg_prefix[] = "input-";
@@ -739,7 +729,7 @@ static bool unpack_main(int argc, char *argv[])
         SourceTypeArg(SourceType::SonyAppsbl, source_arg_prefix),
     };
 
-    static const char short_options[] = "o:p:n" "h";
+    static const char short_options[] = "o:p:nt:" "h";
 
     std::vector<option> long_options{
         {"output",   required_argument, nullptr, 'o'},
@@ -777,7 +767,15 @@ static bool unpack_main(int argc, char *argv[])
         case 'o': output_dir = optarg; break;
         case 'p': prefix = optarg;     break;
         case 'n': no_prefix = true;    break;
-        case 't': type = optarg;       break;
+        case 't': {
+            if (auto f = name_to_format(optarg)) {
+                formats |= *f;
+            } else {
+                fprintf(stderr, "Invalid format '%s'\n", optarg);
+                return false;
+            }
+            break;
+        }
         case 'h':
             fputs(HELP_UNPACK_USAGE, stdout);
             return true;
@@ -822,24 +820,14 @@ static bool unpack_main(int argc, char *argv[])
     // Load the boot image
     Reader reader;
 
-    if (type) {
-        auto format = name_to_format(type);
-        if (!format) {
-            fprintf(stderr, "Invalid format '%s'\n", type);
-            return false;
-        }
+    if (!formats) {
+        formats = ALL_FORMATS;
+    }
 
-        if (auto r = reader.enable_formats(*format); !r) {
-            fprintf(stderr, "Failed to enable format '%s': %s\n",
-                    type, r.error().message().c_str());
-            return false;
-        }
-    } else {
-        if (auto r = reader.enable_formats_all(); !r) {
-            fprintf(stderr, "Failed to enable all formats: %s\n",
-                    r.error().message().c_str());
-            return false;
-        }
+    if (auto r = reader.enable_formats(formats); !r) {
+        fprintf(stderr, "Failed to enable formats: %s\n",
+                r.error().message().c_str());
+        return false;
     }
 
     if (auto r = reader.open_filename(input_file); !r) {
@@ -885,7 +873,7 @@ static bool pack_main(int argc, char *argv[])
     std::string output_file;
     std::string input_dir;
     std::string prefix;
-    std::string_view type = format_to_name(Format::Android);
+    Format format = Format::Android;
     PathMap paths;
 
     constexpr char source_arg_prefix[] = "input-";
@@ -942,7 +930,15 @@ static bool pack_main(int argc, char *argv[])
         case 'i': input_dir = optarg; break;
         case 'p': prefix = optarg;    break;
         case 'n': no_prefix = true;   break;
-        case 't': type = optarg;      break;
+        case 't': {
+            if (auto f = name_to_format(optarg)) {
+                format = *f;
+            } else {
+                fprintf(stderr, "Invalid format '%s'\n", optarg);
+                return false;
+            }
+            break;
+        }
         case 'h':
             fputs(HELP_PACK_USAGE, stdout);
             return true;
@@ -981,15 +977,9 @@ static bool pack_main(int argc, char *argv[])
     // Load the boot image
     Writer writer;
 
-    auto format = name_to_format(type);
-    if (!format) {
-        fprintf(stderr, "Invalid format '%s'\n", std::string(type).c_str());
-        return false;
-    }
-
-    if (!writer.set_format(*format)) {
-        fprintf(stderr, "Failed to set format '%s'\n",
-                std::string(type).c_str());
+    if (auto r = writer.set_format(format); !r) {
+        fprintf(stderr, "Failed to set format: %s\n",
+                r.error().message().c_str());
         return false;
     }
 
