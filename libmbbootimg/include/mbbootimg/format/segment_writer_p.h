@@ -51,7 +51,7 @@ struct SegmentWriterEntry
 struct SegmentWriter
 {
 public:
-    SegmentWriter();
+    SegmentWriter() noexcept;
 
     const std::vector<SegmentWriterEntry> & entries() const;
     oc::result<void> set_entries(std::vector<SegmentWriterEntry> entries);

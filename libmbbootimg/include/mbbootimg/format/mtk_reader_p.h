@@ -33,8 +33,8 @@ namespace mb::bootimg::mtk
 class MtkFormatReader : public detail::FormatReader
 {
 public:
-    MtkFormatReader();
-    virtual ~MtkFormatReader();
+    MtkFormatReader() noexcept;
+    virtual ~MtkFormatReader() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MtkFormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(MtkFormatReader)

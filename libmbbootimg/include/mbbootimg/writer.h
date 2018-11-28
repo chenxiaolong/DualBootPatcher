@@ -44,8 +44,8 @@ namespace bootimg
 class MB_EXPORT Writer
 {
 public:
-    Writer();
-    ~Writer();
+    Writer() noexcept;
+    ~Writer() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Writer)
 

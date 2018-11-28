@@ -39,8 +39,8 @@ namespace bootimg::detail
 class FormatWriter
 {
 public:
-    FormatWriter();
-    virtual ~FormatWriter();
+    FormatWriter() noexcept;
+    virtual ~FormatWriter() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FormatWriter)

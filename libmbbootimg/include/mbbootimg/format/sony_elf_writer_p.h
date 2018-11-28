@@ -35,8 +35,8 @@ namespace mb::bootimg::sonyelf
 class SonyElfFormatWriter : public detail::FormatWriter
 {
 public:
-    SonyElfFormatWriter();
-    virtual ~SonyElfFormatWriter();
+    SonyElfFormatWriter() noexcept;
+    virtual ~SonyElfFormatWriter() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SonyElfFormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(SonyElfFormatWriter)

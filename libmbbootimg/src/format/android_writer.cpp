@@ -44,7 +44,7 @@
 namespace mb::bootimg::android
 {
 
-AndroidFormatWriter::AndroidFormatWriter(bool is_bump)
+AndroidFormatWriter::AndroidFormatWriter(bool is_bump) noexcept
     : FormatWriter()
     , m_is_bump(is_bump)
     , m_hdr()
@@ -52,7 +52,7 @@ AndroidFormatWriter::AndroidFormatWriter(bool is_bump)
 {
 }
 
-AndroidFormatWriter::~AndroidFormatWriter() = default;
+AndroidFormatWriter::~AndroidFormatWriter() noexcept = default;
 
 Format AndroidFormatWriter::type()
 {

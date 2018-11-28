@@ -37,14 +37,14 @@
 namespace mb::bootimg
 {
 
-Header::Header()
+Header::Header() noexcept
     : m_fields_supported(ALL_FIELDS)
 {
 }
 
-Header::~Header() = default;
+Header::~Header() noexcept = default;
 
-bool Header::operator==(const Header &rhs) const
+bool Header::operator==(const Header &rhs) const noexcept
 {
     return m_kernel_addr == rhs.m_kernel_addr
             && m_ramdisk_addr == rhs.m_ramdisk_addr
@@ -72,7 +72,7 @@ bool Header::operator==(const Header &rhs) const
             && m_hdr_entrypoint == rhs.m_hdr_entrypoint;
 }
 
-bool Header::operator!=(const Header &rhs) const
+bool Header::operator!=(const Header &rhs) const noexcept
 {
     return !(*this == rhs);
 }

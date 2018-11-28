@@ -37,7 +37,7 @@
 namespace mb::bootimg
 {
 
-SegmentWriter::SegmentWriter()
+SegmentWriter::SegmentWriter() noexcept
     : m_state(SegmentWriterState::Begin)
     , m_entries()
     , m_entry()

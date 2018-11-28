@@ -50,14 +50,14 @@ MB_DECLARE_OPERATORS_FOR_FLAGS(EntryTypes)
 class MB_EXPORT Entry
 {
 public:
-    Entry(EntryType type);
-    ~Entry();
+    Entry(EntryType type) noexcept;
+    ~Entry() noexcept;
 
     MB_DEFAULT_COPY_CONSTRUCT_AND_ASSIGN(Entry)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Entry)
 
-    bool operator==(const Entry &rhs) const;
-    bool operator!=(const Entry &rhs) const;
+    bool operator==(const Entry &rhs) const noexcept;
+    bool operator!=(const Entry &rhs) const noexcept;
 
     EntryType type() const;
 

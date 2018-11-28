@@ -43,8 +43,8 @@ struct ReadHeaderResult
 class LokiFormatReader : public detail::FormatReader
 {
 public:
-    LokiFormatReader();
-    virtual ~LokiFormatReader();
+    LokiFormatReader() noexcept;
+    virtual ~LokiFormatReader() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(LokiFormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(LokiFormatReader)

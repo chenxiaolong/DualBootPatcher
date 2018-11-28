@@ -45,8 +45,8 @@ namespace bootimg
 class MB_EXPORT Reader
 {
 public:
-    Reader();
-    ~Reader();
+    Reader() noexcept;
+    ~Reader() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Reader)
 

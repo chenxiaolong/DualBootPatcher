@@ -132,7 +132,7 @@ find_mtk_headers(File &file, const android::AndroidHeader &ahdr)
     };
 }
 
-MtkFormatReader::MtkFormatReader()
+MtkFormatReader::MtkFormatReader() noexcept
     : FormatReader()
     , m_hdr()
     , m_mtk_kernel_hdr()
@@ -140,7 +140,7 @@ MtkFormatReader::MtkFormatReader()
 {
 }
 
-MtkFormatReader::~MtkFormatReader() = default;
+MtkFormatReader::~MtkFormatReader() noexcept = default;
 
 Format MtkFormatReader::type()
 {

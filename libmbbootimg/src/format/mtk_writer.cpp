@@ -133,13 +133,13 @@ _mtk_compute_sha1(SegmentWriter &seg, File &file,
     return oc::success();
 }
 
-MtkFormatWriter::MtkFormatWriter()
+MtkFormatWriter::MtkFormatWriter() noexcept
     : FormatWriter()
     , m_hdr()
 {
 }
 
-MtkFormatWriter::~MtkFormatWriter() = default;
+MtkFormatWriter::~MtkFormatWriter() noexcept = default;
 
 Format MtkFormatWriter::type()
 {

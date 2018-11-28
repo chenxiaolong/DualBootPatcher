@@ -40,8 +40,8 @@ namespace bootimg::detail
 class FormatReader
 {
 public:
-    FormatReader();
-    virtual ~FormatReader();
+    FormatReader() noexcept;
+    virtual ~FormatReader() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FormatReader)

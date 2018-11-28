@@ -32,8 +32,8 @@ namespace mb::bootimg::sonyelf
 class SonyElfFormatReader : public detail::FormatReader
 {
 public:
-    SonyElfFormatReader();
-    virtual ~SonyElfFormatReader();
+    SonyElfFormatReader() noexcept;
+    virtual ~SonyElfFormatReader() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SonyElfFormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(SonyElfFormatReader)

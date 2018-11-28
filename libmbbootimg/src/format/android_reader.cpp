@@ -54,7 +54,7 @@ namespace std2 = std::experimental;
 namespace std2 = std;
 #endif
 
-AndroidFormatReader::AndroidFormatReader(bool is_bump)
+AndroidFormatReader::AndroidFormatReader(bool is_bump) noexcept
     : FormatReader()
     , m_is_bump(is_bump)
     , m_hdr()
@@ -63,7 +63,7 @@ AndroidFormatReader::AndroidFormatReader(bool is_bump)
 {
 }
 
-AndroidFormatReader::~AndroidFormatReader() = default;
+AndroidFormatReader::~AndroidFormatReader() noexcept = default;
 
 Format AndroidFormatReader::type()
 {

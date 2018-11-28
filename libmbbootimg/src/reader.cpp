@@ -183,9 +183,9 @@ namespace mb::bootimg
 
 using namespace detail;
 
-FormatReader::FormatReader() = default;
+FormatReader::FormatReader() noexcept = default;
 
-FormatReader::~FormatReader() = default;
+FormatReader::~FormatReader() noexcept = default;
 
 oc::result<void> FormatReader::set_option(const char *key, const char *value)
 {
@@ -211,7 +211,7 @@ oc::result<Entry> FormatReader::go_to_entry(File &file,
 /*!
  * \brief Construct new Reader.
  */
-Reader::Reader()
+Reader::Reader() noexcept
     : m_state(ReaderState::New)
     , m_owned_file()
     , m_file()
@@ -226,7 +226,7 @@ Reader::Reader()
  * destructor, it is not possible to get the result of the close operation. To
  * get the result of the close operation, call Reader::close() manually.
  */
-Reader::~Reader()
+Reader::~Reader() noexcept
 {
     (void) close();
 }

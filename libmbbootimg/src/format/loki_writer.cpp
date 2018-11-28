@@ -47,14 +47,14 @@ namespace mb::bootimg::loki
 
 constexpr size_t MAX_ABOOT_SIZE = 2 * 1024 * 1024;
 
-LokiFormatWriter::LokiFormatWriter()
+LokiFormatWriter::LokiFormatWriter() noexcept
     : FormatWriter()
     , m_hdr()
     , m_sha_ctx()
 {
 }
 
-LokiFormatWriter::~LokiFormatWriter() = default;
+LokiFormatWriter::~LokiFormatWriter() noexcept = default;
 
 Format LokiFormatWriter::type()
 {

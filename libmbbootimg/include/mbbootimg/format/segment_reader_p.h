@@ -51,7 +51,7 @@ struct SegmentReaderEntry
 class SegmentReader
 {
 public:
-    SegmentReader();
+    SegmentReader() noexcept;
 
     const std::vector<SegmentReaderEntry> & entries() const;
     oc::result<void> set_entries(std::vector<SegmentReaderEntry> entries);

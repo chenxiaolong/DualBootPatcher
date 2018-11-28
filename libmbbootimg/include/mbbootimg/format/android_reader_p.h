@@ -32,8 +32,8 @@ namespace mb::bootimg::android
 class AndroidFormatReader : public detail::FormatReader
 {
 public:
-    AndroidFormatReader(bool is_bump);
-    virtual ~AndroidFormatReader();
+    AndroidFormatReader(bool is_bump) noexcept;
+    virtual ~AndroidFormatReader() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)

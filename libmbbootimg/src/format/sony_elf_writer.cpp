@@ -41,7 +41,7 @@
 namespace mb::bootimg::sonyelf
 {
 
-SonyElfFormatWriter::SonyElfFormatWriter()
+SonyElfFormatWriter::SonyElfFormatWriter() noexcept
     : FormatWriter()
     , m_hdr()
     , m_hdr_kernel()
@@ -53,7 +53,7 @@ SonyElfFormatWriter::SonyElfFormatWriter()
 {
 }
 
-SonyElfFormatWriter::~SonyElfFormatWriter() = default;
+SonyElfFormatWriter::~SonyElfFormatWriter() noexcept = default;
 
 Format SonyElfFormatWriter::type()
 {

@@ -36,7 +36,7 @@
 namespace mb::bootimg
 {
 
-SegmentReader::SegmentReader()
+SegmentReader::SegmentReader() noexcept
     : m_state(SegmentReaderState::Begin)
     , m_entries()
     , m_entry(m_entries.end())

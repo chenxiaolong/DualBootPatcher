@@ -42,13 +42,13 @@
 namespace mb::bootimg::sonyelf
 {
 
-SonyElfFormatReader::SonyElfFormatReader()
+SonyElfFormatReader::SonyElfFormatReader() noexcept
     : FormatReader()
     , m_hdr()
 {
 }
 
-SonyElfFormatReader::~SonyElfFormatReader() = default;
+SonyElfFormatReader::~SonyElfFormatReader() noexcept = default;
 
 Format SonyElfFormatReader::type()
 {

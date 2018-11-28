@@ -36,8 +36,8 @@ namespace mb::bootimg::android
 class AndroidFormatWriter : public detail::FormatWriter
 {
 public:
-    AndroidFormatWriter(bool is_bump);
-    virtual ~AndroidFormatWriter();
+    AndroidFormatWriter(bool is_bump) noexcept;
+    virtual ~AndroidFormatWriter() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)

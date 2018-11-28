@@ -192,9 +192,9 @@ namespace mb::bootimg
 
 using namespace detail;
 
-FormatWriter::FormatWriter() = default;
+FormatWriter::FormatWriter() noexcept = default;
 
-FormatWriter::~FormatWriter() = default;
+FormatWriter::~FormatWriter() noexcept = default;
 
 oc::result<void> FormatWriter::set_option(const char *key, const char *value)
 {
@@ -224,7 +224,7 @@ oc::result<void> FormatWriter::finish_entry(File &file)
 /*!
  * \brief Construct new Writer.
  */
-Writer::Writer()
+Writer::Writer() noexcept
     : m_state(WriterState::New)
     , m_owned_file()
     , m_file()
@@ -239,7 +239,7 @@ Writer::Writer()
  * destructor, it is not possible to get the result of the close operation. To
  * get the result of the close operation, call Writer::close() manually.
  */
-Writer::~Writer()
+Writer::~Writer() noexcept
 {
     (void) close();
 }

@@ -44,14 +44,14 @@
 namespace mb::bootimg::loki
 {
 
-LokiFormatReader::LokiFormatReader()
+LokiFormatReader::LokiFormatReader() noexcept
     : FormatReader()
     , m_ahdr()
     , m_lhdr()
 {
 }
 
-LokiFormatReader::~LokiFormatReader() = default;
+LokiFormatReader::~LokiFormatReader() noexcept = default;
 
 Format LokiFormatReader::type()
 {

@@ -23,20 +23,20 @@
 namespace mb::bootimg
 {
 
-Entry::Entry(EntryType type)
+Entry::Entry(EntryType type) noexcept
     : m_type(type)
 {
 }
 
-Entry::~Entry() = default;
+Entry::~Entry() noexcept = default;
 
-bool Entry::operator==(const Entry &rhs) const
+bool Entry::operator==(const Entry &rhs) const noexcept
 {
     return m_type == rhs.m_type
             && m_size == rhs.m_size;
 }
 
-bool Entry::operator!=(const Entry &rhs) const
+bool Entry::operator!=(const Entry &rhs) const noexcept
 {
     return !(*this == rhs);
 }

@@ -35,8 +35,8 @@ namespace mb::bootimg::mtk
 class MtkFormatWriter : public detail::FormatWriter
 {
 public:
-    MtkFormatWriter();
-    virtual ~MtkFormatWriter();
+    MtkFormatWriter() noexcept;
+    virtual ~MtkFormatWriter() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MtkFormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(MtkFormatWriter)

@@ -37,8 +37,8 @@ namespace mb::bootimg::loki
 class LokiFormatWriter : public detail::FormatWriter
 {
 public:
-    LokiFormatWriter();
-    virtual ~LokiFormatWriter();
+    LokiFormatWriter() noexcept;
+    virtual ~LokiFormatWriter() noexcept;
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(LokiFormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(LokiFormatWriter)
