@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -47,6 +47,15 @@ public:
     oc::result<void> open(const std::string &filename, FileOpenMode mode);
     oc::result<void> open(const std::wstring &filename, FileOpenMode mode);
 
+    oc::result<void> close() override;
+
+    oc::result<size_t> read(void *buf, size_t size) override;
+    oc::result<size_t> write(const void *buf, size_t size) override;
+    oc::result<uint64_t> seek(int64_t offset, int whence) override;
+    oc::result<void> truncate(uint64_t size) override;
+
+    bool is_open() override;
+
 protected:
     /*! \cond INTERNAL */
     PosixFile(detail::PosixFileFuncs *funcs);
@@ -58,16 +67,11 @@ protected:
               const std::wstring &filename, FileOpenMode mode);
     /*! \endcond */
 
-    oc::result<void> on_open() override;
-    oc::result<void> on_close() override;
-    oc::result<size_t> on_read(void *buf, size_t size) override;
-    oc::result<size_t> on_write(const void *buf, size_t size) override;
-    oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
-    oc::result<void> on_truncate(uint64_t size) override;
-
 private:
     /*! \cond INTERNAL */
-    void clear();
+    oc::result<void> open();
+
+    void clear() noexcept;
 
     detail::PosixFileFuncs *m_funcs;
 

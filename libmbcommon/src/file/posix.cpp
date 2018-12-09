@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -131,7 +131,7 @@ static const wchar_t * convert_mode(FileOpenMode mode)
     case FileOpenMode::ReadAppend:
         return L"a+bN";
     default:
-        return nullptr;
+        MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
     }
 }
 #else
@@ -151,7 +151,7 @@ static const char * convert_mode(FileOpenMode mode)
     case FileOpenMode::ReadAppend:
         return "a+be";
     default:
-        return nullptr;
+        MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
     }
 }
 #endif
@@ -263,30 +263,47 @@ PosixFile::~PosixFile()
     (void) close();
 }
 
+/*!
+ * \brief Move construct new File handle.
+ *
+ * \p other will be left in a state as if it was newly constructed with the
+ * default constructor.
+ *
+ * \param other File handle to move from
+ */
 PosixFile::PosixFile(PosixFile &&other) noexcept
-    : File(std::move(other))
-    , m_funcs(other.m_funcs)
-    , m_fp(other.m_fp)
-    , m_owned(other.m_owned)
-    , m_filename(std::move(other.m_filename))
-    , m_mode(other.m_mode)
-    , m_can_seek(other.m_can_seek)
 {
-    other.clear();
+    clear();
+
+    std::swap(m_funcs, other.m_funcs);
+    std::swap(m_fp, other.m_fp);
+    std::swap(m_owned, other.m_owned);
+    std::swap(m_filename, other.m_filename);
+    std::swap(m_mode, other.m_mode);
+    std::swap(m_can_seek, other.m_can_seek);
 }
 
+/*!
+ * \brief Move assign a File handle
+ *
+ * This file handle will be closed and then \p rhs will be moved into this
+ * object. \p rhs will be left in a state as if it was newly constructed with
+ * the default constructor.
+ *
+ * \param rhs File handle to move from
+ */
 PosixFile & PosixFile::operator=(PosixFile &&rhs) noexcept
 {
-    File::operator=(std::move(rhs));
+    if (this != &rhs) {
+        (void) close();
 
-    m_funcs = rhs.m_funcs;
-    m_fp = rhs.m_fp;
-    m_owned = rhs.m_owned;
-    m_filename.swap(rhs.m_filename);
-    m_mode = rhs.m_mode;
-    m_can_seek = rhs.m_can_seek;
-
-    rhs.clear();
+        std::swap(m_funcs, rhs.m_funcs);
+        std::swap(m_fp, rhs.m_fp);
+        std::swap(m_owned, rhs.m_owned);
+        std::swap(m_filename, rhs.m_filename);
+        std::swap(m_mode, rhs.m_mode);
+        std::swap(m_can_seek, rhs.m_can_seek);
+    }
 
     return *this;
 }
@@ -307,12 +324,12 @@ PosixFile & PosixFile::operator=(PosixFile &&rhs) noexcept
  */
 oc::result<void> PosixFile::open(FILE *fp, bool owned)
 {
-    if (state() == FileState::New) {
-        m_fp = fp;
-        m_owned = owned;
-    }
+    if (is_open()) return FileError::InvalidState;
 
-    return File::open();
+    m_fp = fp;
+    m_owned = owned;
+
+    return open();
 }
 
 /*!
@@ -330,31 +347,25 @@ oc::result<void> PosixFile::open(FILE *fp, bool owned)
  */
 oc::result<void> PosixFile::open(const std::string &filename, FileOpenMode mode)
 {
-    if (state() == FileState::New) {
-        // Convert filename to platform-native encoding
+    if (is_open()) return FileError::InvalidState;
+
+    // Convert filename to platform-native encoding
 #ifdef _WIN32
-        auto converted = mbs_to_wcs(filename);
-        if (!converted) {
-            return FileError::CannotConvertEncoding;
-        }
-        auto &&native_filename = converted.value();
+    auto converted = mbs_to_wcs(filename);
+    if (!converted) {
+        return FileError::CannotConvertEncoding;
+    }
+    auto &&native_filename = converted.value();
 #else
-        auto &&native_filename = filename;
+    auto &&native_filename = filename;
 #endif
 
-        // Convert mode to fopen-compatible mode string
-        auto mode_str = convert_mode(mode);
-        if (!mode_str) {
-            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
-        }
+    m_fp = nullptr;
+    m_owned = true;
+    m_filename = std::move(native_filename);
+    m_mode = convert_mode(mode);
 
-        m_fp = nullptr;
-        m_owned = true;
-        m_filename = std::move(native_filename);
-        m_mode = mode_str;
-    }
-
-    return File::open();
+    return open();
 }
 
 /*!
@@ -372,35 +383,33 @@ oc::result<void> PosixFile::open(const std::string &filename, FileOpenMode mode)
  */
 oc::result<void> PosixFile::open(const std::wstring &filename, FileOpenMode mode)
 {
-    if (state() == FileState::New) {
-        // Convert filename to platform-native encoding
+    if (is_open()) return FileError::InvalidState;
+
+    // Convert filename to platform-native encoding
 #ifdef _WIN32
-        auto &&native_filename = filename;
+    auto &&native_filename = filename;
 #else
-        auto converted = wcs_to_mbs(filename);
-        if (!converted) {
-            return FileError::CannotConvertEncoding;
-        }
-        auto &&native_filename = converted.value();
+    auto converted = wcs_to_mbs(filename);
+    if (!converted) {
+        return FileError::CannotConvertEncoding;
+    }
+    auto &&native_filename = converted.value();
 #endif
 
-        // Convert mode to fopen-compatible mode string
-        auto mode_str = convert_mode(mode);
-        if (!mode_str) {
-            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
-        }
+    m_fp = nullptr;
+    m_owned = true;
+    m_filename = std::move(native_filename);
+    m_mode = convert_mode(mode);
 
-        m_fp = nullptr;
-        m_owned = true;
-        m_filename = std::move(native_filename);
-        m_mode = mode_str;
-    }
-
-    return File::open();
+    return open();
 }
 
-oc::result<void> PosixFile::on_open()
+oc::result<void> PosixFile::open()
 {
+    auto reset = finally([&] {
+        (void) close();
+    });
+
     if (!m_filename.empty()) {
 #ifdef _WIN32
         m_fp = m_funcs->fn_wfopen(
@@ -439,11 +448,15 @@ oc::result<void> PosixFile::on_open()
         }
     }
 
+    reset.dismiss();
+
     return oc::success();
 }
 
-oc::result<void> PosixFile::on_close()
+oc::result<void> PosixFile::close()
 {
+    if (!is_open()) return FileError::InvalidState;
+
     // Reset to allow opening another file
     auto reset = finally([&] {
         clear();
@@ -456,8 +469,10 @@ oc::result<void> PosixFile::on_close()
     return oc::success();
 }
 
-oc::result<size_t> PosixFile::on_read(void *buf, size_t size)
+oc::result<size_t> PosixFile::read(void *buf, size_t size)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     size_t n = m_funcs->fn_fread(buf, 1, size, m_fp);
 
     if (n < size && m_funcs->fn_ferror(m_fp)) {
@@ -467,8 +482,10 @@ oc::result<size_t> PosixFile::on_read(void *buf, size_t size)
     return n;
 }
 
-oc::result<size_t> PosixFile::on_write(const void *buf, size_t size)
+oc::result<size_t> PosixFile::write(const void *buf, size_t size)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     size_t n = m_funcs->fn_fwrite(buf, 1, size, m_fp);
 
     if (n < size && m_funcs->fn_ferror(m_fp)) {
@@ -478,8 +495,10 @@ oc::result<size_t> PosixFile::on_write(const void *buf, size_t size)
     return n;
 }
 
-oc::result<uint64_t> PosixFile::on_seek(int64_t offset, int whence)
+oc::result<uint64_t> PosixFile::seek(int64_t offset, int whence)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     if (!m_can_seek) {
         return FileError::UnsupportedSeek;
     }
@@ -498,8 +517,10 @@ oc::result<uint64_t> PosixFile::on_seek(int64_t offset, int whence)
     return static_cast<uint64_t>(new_pos);
 }
 
-oc::result<void> PosixFile::on_truncate(uint64_t size)
+oc::result<void> PosixFile::truncate(uint64_t size)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     int fd = m_funcs->fn_fileno(m_fp);
     if (fd < 0) {
         // fileno() not supported for fp
@@ -513,7 +534,12 @@ oc::result<void> PosixFile::on_truncate(uint64_t size)
     return oc::success();
 }
 
-void PosixFile::clear()
+bool PosixFile::is_open()
+{
+    return m_fp;
+}
+
+void PosixFile::clear() noexcept
 {
     m_fp = nullptr;
     m_owned = false;

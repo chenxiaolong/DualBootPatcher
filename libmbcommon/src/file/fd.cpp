@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -128,8 +128,7 @@ static int convert_mode(FileOpenMode mode)
         ret |= O_RDWR | O_CREAT | O_APPEND;
         break;
     default:
-        ret = -1;
-        break;
+        MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
     }
 
     return ret;
@@ -241,28 +240,45 @@ FdFile::~FdFile()
     (void) close();
 }
 
+/*!
+ * \brief Move construct new File handle.
+ *
+ * \p other will be left in a state as if it was newly constructed with the
+ * default constructor.
+ *
+ * \param other File handle to move from
+ */
 FdFile::FdFile(FdFile &&other) noexcept
-    : File(std::move(other))
-    , m_funcs(other.m_funcs)
-    , m_fd(other.m_fd)
-    , m_owned(other.m_owned)
-    , m_filename(std::move(other.m_filename))
-    , m_flags(other.m_flags)
 {
-    other.clear();
+    clear();
+
+    std::swap(m_funcs, other.m_funcs);
+    std::swap(m_fd, other.m_fd);
+    std::swap(m_owned, other.m_owned);
+    std::swap(m_filename, other.m_filename);
+    std::swap(m_flags, other.m_flags);
 }
 
+/*!
+ * \brief Move assign a File handle
+ *
+ * This file handle will be closed and then \p rhs will be moved into this
+ * object. \p rhs will be left in a state as if it was newly constructed with
+ * the default constructor.
+ *
+ * \param rhs File handle to move from
+ */
 FdFile & FdFile::operator=(FdFile &&rhs) noexcept
 {
-    File::operator=(std::move(rhs));
+    if (this != &rhs) {
+        (void) close();
 
-    m_funcs = rhs.m_funcs;
-    m_fd = rhs.m_fd;
-    m_owned = rhs.m_owned;
-    m_filename.swap(rhs.m_filename);
-    m_flags = rhs.m_flags;
-
-    rhs.clear();
+        std::swap(m_funcs, rhs.m_funcs);
+        std::swap(m_fd, rhs.m_fd);
+        std::swap(m_owned, rhs.m_owned);
+        std::swap(m_filename, rhs.m_filename);
+        std::swap(m_flags, rhs.m_flags);
+    }
 
     return *this;
 }
@@ -282,12 +298,12 @@ FdFile & FdFile::operator=(FdFile &&rhs) noexcept
  */
 oc::result<void> FdFile::open(int fd, bool owned)
 {
-    if (state() == FileState::New) {
-        m_fd = fd;
-        m_owned = owned;
-    }
+    if (is_open()) return FileError::InvalidState;
 
-    return File::open();
+    m_fd = fd;
+    m_owned = owned;
+
+    return open();
 }
 
 /*!
@@ -305,31 +321,25 @@ oc::result<void> FdFile::open(int fd, bool owned)
  */
 oc::result<void> FdFile::open(const std::string &filename, FileOpenMode mode)
 {
-    if (state() == FileState::New) {
-        // Convert filename to platform-native encoding
+    if (is_open()) return FileError::InvalidState;
+
+    // Convert filename to platform-native encoding
 #ifdef _WIN32
-        auto converted = mbs_to_wcs(filename);
-        if (!converted) {
-            return FileError::CannotConvertEncoding;
-        }
-        auto &&native_filename = converted.value();
+    auto converted = mbs_to_wcs(filename);
+    if (!converted) {
+        return FileError::CannotConvertEncoding;
+    }
+    auto &&native_filename = converted.value();
 #else
-        auto &&native_filename = filename;
+    auto &&native_filename = filename;
 #endif
 
-        // Convert mode to flags
-        int flags = convert_mode(mode);
-        if (flags < 0) {
-            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
-        }
+    m_fd = -1;
+    m_owned = true;
+    m_filename = std::move(native_filename);
+    m_flags = convert_mode(mode);
 
-        m_fd = -1;
-        m_owned = true;
-        m_filename = std::move(native_filename);
-        m_flags = flags;
-    }
-
-    return File::open();
+    return open();
 }
 
 /*!
@@ -347,35 +357,33 @@ oc::result<void> FdFile::open(const std::string &filename, FileOpenMode mode)
  */
 oc::result<void> FdFile::open(const std::wstring &filename, FileOpenMode mode)
 {
-    if (state() == FileState::New) {
-        // Convert filename to platform-native encoding
+    if (is_open()) return FileError::InvalidState;
+
+    // Convert filename to platform-native encoding
 #ifdef _WIN32
-        auto &&native_filename = filename;
+    auto &&native_filename = filename;
 #else
-        auto converted = wcs_to_mbs(filename);
-        if (!converted) {
-            return FileError::CannotConvertEncoding;
-        }
-        auto &&native_filename = converted.value();
+    auto converted = wcs_to_mbs(filename);
+    if (!converted) {
+        return FileError::CannotConvertEncoding;
+    }
+    auto &&native_filename = converted.value();
 #endif
 
-        // Convert mode to flags
-        int flags = convert_mode(mode);
-        if (flags < 0) {
-            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
-        }
+    m_fd = -1;
+    m_owned = true;
+    m_filename = std::move(native_filename);
+    m_flags = convert_mode(mode);
 
-        m_fd = -1;
-        m_owned = true;
-        m_filename = std::move(native_filename);
-        m_flags = flags;
-    }
-
-    return File::open();
+    return open();
 }
 
-oc::result<void> FdFile::on_open()
+oc::result<void> FdFile::open()
 {
+    auto reset = finally([&] {
+        (void) close();
+    });
+
     if (!m_filename.empty()) {
 #ifdef _WIN32
         m_fd = m_funcs->fn_wopen(
@@ -398,11 +406,15 @@ oc::result<void> FdFile::on_open()
         return std::make_error_code(std::errc::is_a_directory);
     }
 
+    reset.dismiss();
+
     return oc::success();
 }
 
-oc::result<void> FdFile::on_close()
+oc::result<void> FdFile::close()
 {
+    if (!is_open()) return FileError::InvalidState;
+
     // Reset to allow opening another file
     auto reset = finally([&] {
         clear();
@@ -415,8 +427,10 @@ oc::result<void> FdFile::on_close()
     return oc::success();
 }
 
-oc::result<size_t> FdFile::on_read(void *buf, size_t size)
+oc::result<size_t> FdFile::read(void *buf, size_t size)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     if (size > SSIZE_MAX) {
         size = SSIZE_MAX;
     }
@@ -429,8 +443,10 @@ oc::result<size_t> FdFile::on_read(void *buf, size_t size)
     return static_cast<size_t>(n);
 }
 
-oc::result<size_t> FdFile::on_write(const void *buf, size_t size)
+oc::result<size_t> FdFile::write(const void *buf, size_t size)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     if (size > SSIZE_MAX) {
         size = SSIZE_MAX;
     }
@@ -443,8 +459,10 @@ oc::result<size_t> FdFile::on_write(const void *buf, size_t size)
     return static_cast<size_t>(n);
 }
 
-oc::result<uint64_t> FdFile::on_seek(int64_t offset, int whence)
+oc::result<uint64_t> FdFile::seek(int64_t offset, int whence)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     off64_t ret = m_funcs->fn_lseek64(m_fd, offset, whence);
     if (ret < 0) {
         return ec_from_errno();
@@ -453,8 +471,10 @@ oc::result<uint64_t> FdFile::on_seek(int64_t offset, int whence)
     return static_cast<uint64_t>(ret);
 }
 
-oc::result<void> FdFile::on_truncate(uint64_t size)
+oc::result<void> FdFile::truncate(uint64_t size)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     if (m_funcs->fn_ftruncate64(m_fd, static_cast<off64_t>(size)) < 0) {
         return ec_from_errno();
     }
@@ -462,7 +482,12 @@ oc::result<void> FdFile::on_truncate(uint64_t size)
     return oc::success();
 }
 
-void FdFile::clear()
+bool FdFile::is_open()
+{
+    return m_fd >= 0;
+}
+
+void FdFile::clear() noexcept
 {
     m_fd = -1;
     m_owned = false;

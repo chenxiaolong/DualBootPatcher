@@ -35,10 +35,8 @@
 namespace mb
 {
 
-class MB_EXPORT StandardFile : public STANDARD_FILE_IMPL
+class MB_EXPORT StandardFile : public File
 {
-    using Base = STANDARD_FILE_IMPL;
-
 public:
     StandardFile();
     StandardFile(const std::string &filename, FileOpenMode mode);
@@ -48,16 +46,20 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(StandardFile)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(StandardFile)
 
-    using Base::open;
+    oc::result<void> open(const std::string &filename, FileOpenMode mode);
+    oc::result<void> open(const std::wstring &filename, FileOpenMode mode);
+
+    oc::result<void> close() override;
+
+    oc::result<size_t> read(void *buf, size_t size) override;
+    oc::result<size_t> write(const void *buf, size_t size) override;
+    oc::result<uint64_t> seek(int64_t offset, int whence) override;
+    oc::result<void> truncate(uint64_t size) override;
+
+    bool is_open() override;
 
 private:
-#if defined(_WIN32)
-    oc::result<void> open(HANDLE handle, bool owned, bool append) = delete;
-#elif defined(__ANDROID__)
-    oc::result<void> open(int fd, bool owned) = delete;
-#else
-    oc::result<void> open(FILE *fp, bool owned) = delete;
-#endif
+    STANDARD_FILE_IMPL m_file;
 };
 
 }

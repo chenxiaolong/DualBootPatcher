@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -25,6 +25,26 @@
 #include "mbcommon/file/memory.h"
 
 using namespace mb;
+
+TEST(FileMemoryTest, CheckInvalidStates)
+{
+    MemoryFile file;
+
+    auto error = oc::failure(FileError::InvalidState);
+
+    ASSERT_EQ(file.close(), error);
+    ASSERT_EQ(file.read(nullptr, 0), error);
+    ASSERT_EQ(file.write(nullptr, 0), error);
+    ASSERT_EQ(file.seek(0, SEEK_SET), error);
+    ASSERT_EQ(file.truncate(1024), error);
+
+    void *in = nullptr;
+    size_t in_size = 0;
+
+    ASSERT_TRUE(file.open(in, in_size));
+    ASSERT_EQ(file.open(in, in_size), error);
+    ASSERT_EQ(file.open(&in, &in_size), error);
+}
 
 TEST(FileStaticMemoryTest, OpenFile)
 {
@@ -55,9 +75,7 @@ TEST(FileStaticMemoryTest, ReadInBounds)
     MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto out_size = file.read(out, sizeof(out));
-    ASSERT_TRUE(out_size);
-    ASSERT_EQ(out_size.value(), 1u);
+    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(1u));
     ASSERT_EQ(out[0], 'x');
 }
 
@@ -71,9 +89,7 @@ TEST(FileStaticMemoryTest, ReadOutOfBounds)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
-    auto out_size = file.read(out, sizeof(out));
-    ASSERT_TRUE(out_size);
-    ASSERT_EQ(out_size.value(), 0u);
+    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(0u));
 }
 
 TEST(FileStaticMemoryTest, ReadEmpty)
@@ -85,9 +101,7 @@ TEST(FileStaticMemoryTest, ReadEmpty)
     MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto out_size = file.read(out, sizeof(out));
-    ASSERT_TRUE(out_size);
-    ASSERT_EQ(out_size.value(), 0u);
+    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(0u));
 }
 
 TEST(FileStaticMemoryTest, ReadTooLarge)
@@ -99,9 +113,7 @@ TEST(FileStaticMemoryTest, ReadTooLarge)
     MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto out_size = file.read(out, sizeof(out));
-    ASSERT_TRUE(out_size);
-    ASSERT_EQ(out_size.value(), 1u);
+    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(1u));
     ASSERT_EQ(out[0], 'x');
 }
 
@@ -113,9 +125,7 @@ TEST(FileStaticMemoryTest, WriteInBounds)
     MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write("y", 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 1u);
+    ASSERT_EQ(file.write("y", 1), oc::success(1u));
     ASSERT_EQ(in[0], 'y');
 }
 
@@ -128,9 +138,7 @@ TEST(FileStaticMemoryTest, WriteOutOfBounds)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
-    auto n = file.write("y", 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 0u);
+    ASSERT_EQ(file.write("y", 1), oc::success(0u));
 }
 
 TEST(FileStaticMemoryTest, WriteTooLarge)
@@ -141,9 +149,7 @@ TEST(FileStaticMemoryTest, WriteTooLarge)
     MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write("yz", 2);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 1u);
+    ASSERT_EQ(file.write("yz", 2), oc::success(1u));
     ASSERT_EQ(in[0], 'y');
 }
 
@@ -156,29 +162,19 @@ TEST(FileStaticMemoryTest, SeekNormal)
     ASSERT_TRUE(file.is_open());
 
     // SEEK_SET
-    auto pos = file.seek(10, SEEK_SET);
-    ASSERT_TRUE(pos);
-    ASSERT_EQ(pos.value(), 10u);
+    ASSERT_EQ(file.seek(10, SEEK_SET), oc::success(10u));
 
     // Positive SEEK_CUR
-    pos = file.seek(10, SEEK_CUR);
-    ASSERT_TRUE(pos);
-    ASSERT_EQ(pos.value(), 20u);
+    ASSERT_EQ(file.seek(10, SEEK_CUR), oc::success(20u));
 
     // Negative SEEK_CUR
-    pos = file.seek(-8, SEEK_CUR);
-    ASSERT_TRUE(pos);
-    ASSERT_EQ(pos.value(), 12u);
+    ASSERT_EQ(file.seek(-8, SEEK_CUR), oc::success(12u));
 
     // Positive SEEK_END (out of bounds)
-    pos = file.seek(10, SEEK_END);
-    ASSERT_TRUE(pos);
-    ASSERT_EQ(pos.value(), 36u);
+    ASSERT_EQ(file.seek(10, SEEK_END), oc::success(36u));
 
     // Negative SEEK_END
-    pos = file.seek(-18, SEEK_END);
-    ASSERT_TRUE(pos);
-    ASSERT_EQ(pos.value(), 8u);
+    ASSERT_EQ(file.seek(-18, SEEK_END), oc::success(8u));
 }
 
 TEST(FileStaticMemoryTest, SeekInvalid)
@@ -190,39 +186,33 @@ TEST(FileStaticMemoryTest, SeekInvalid)
     ASSERT_TRUE(file.is_open());
 
     // Negative SEEK_SET
-    auto pos = file.seek(-10, SEEK_SET);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(-10, SEEK_SET),
+              oc::failure(FileError::ArgumentOutOfRange));
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_SET
-    pos = file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_SET);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_SET),
+              oc::failure(FileError::ArgumentOutOfRange));
 #endif
 
     // Negative out of range SEEK_CUR
-    pos = file.seek(-100, SEEK_CUR);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(-100, SEEK_CUR),
+              oc::failure(FileError::ArgumentOutOfRange));
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_CUR
-    pos = file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_CUR);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_CUR),
+              oc::failure(FileError::ArgumentOutOfRange));
 #endif
 
     // Negative out of range SEEK_END
-    pos = file.seek(-100, SEEK_END);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(-100, SEEK_END),
+              oc::failure(FileError::ArgumentOutOfRange));
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_END
-    pos = file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_END);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_END),
+              oc::failure(FileError::ArgumentOutOfRange));
 #endif
 }
 
@@ -234,9 +224,7 @@ TEST(FileStaticMemoryTest, CheckTruncateUnsupported)
     MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto result = file.truncate(10);
-    ASSERT_FALSE(result);
-    ASSERT_EQ(result.error(), FileError::UnsupportedTruncate);
+    ASSERT_EQ(file.truncate(10), oc::failure(FileError::UnsupportedTruncate));
 }
 
 TEST(FileDynamicMemoryTest, OpenFile)
@@ -274,9 +262,7 @@ TEST(FileDynamicMemoryTest, ReadInBounds)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto out_size = file.read(out, sizeof(out));
-    ASSERT_TRUE(out_size);
-    ASSERT_EQ(out_size.value(), 1u);
+    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(1u));
     ASSERT_EQ(out[0], 'x');
 
     free(in);
@@ -295,9 +281,7 @@ TEST(FileDynamicMemoryTest, ReadOutOfBounds)
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
 
-    auto out_size = file.read(out, sizeof(out));
-    ASSERT_TRUE(out_size);
-    ASSERT_EQ(out_size.value(), 0u);
+    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(0u));
 
     free(in);
 }
@@ -311,9 +295,7 @@ TEST(FileDynamicMemoryTest, ReadEmpty)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto out_size = file.read(out, sizeof(out));
-    ASSERT_TRUE(out_size);
-    ASSERT_EQ(out_size.value(), 0u);
+    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(0u));
 
     free(in);
 }
@@ -329,9 +311,7 @@ TEST(FileDynamicMemoryTest, ReadTooLarge)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto out_size = file.read(out, sizeof(out));
-    ASSERT_TRUE(out_size);
-    ASSERT_EQ(out_size.value(), 1u);
+    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(1u));
     ASSERT_EQ(out[0], 'x');
 
     free(in);
@@ -347,9 +327,7 @@ TEST(FileDynamicMemoryTest, WriteInBounds)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write("y", 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 1u);
+    ASSERT_EQ(file.write("y", 1), oc::success(1u));
     ASSERT_EQ(static_cast<char *>(in)[0], 'y');
 
     free(in);
@@ -367,9 +345,7 @@ TEST(FileDynamicMemoryTest, WriteOutOfBounds)
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
 
-    auto n = file.write("y", 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 1u);
+    ASSERT_EQ(file.write("y", 1), oc::success(1u));
     ASSERT_EQ(in_size, 11u);
     ASSERT_NE(in, nullptr);
     ASSERT_EQ(static_cast<char *>(in)[10], 'y');
@@ -385,9 +361,7 @@ TEST(FileDynamicMemoryTest, WriteEmpty)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write("x", 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 1u);
+    ASSERT_EQ(file.write("x", 1), oc::success(1u));
     ASSERT_EQ(in_size, 1u);
     ASSERT_NE(in, nullptr);
     ASSERT_EQ(static_cast<char *>(in)[0], 'x');
@@ -405,9 +379,7 @@ TEST(FileDynamicMemoryTest, WriteTooLarge)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write("yz", 2);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 2u);
+    ASSERT_EQ(file.write("yz", 2), oc::success(2u));
     ASSERT_EQ(in_size, 2u);
     ASSERT_NE(in, nullptr);
     ASSERT_EQ(memcmp(in, "yz", 2), 0);
@@ -426,29 +398,19 @@ TEST(FileDynamicMemoryTest, SeekNormal)
     ASSERT_TRUE(file.is_open());
 
     // SEEK_SET
-    auto pos = file.seek(10, SEEK_SET);
-    ASSERT_TRUE(pos);
-    ASSERT_EQ(pos.value(), 10u);
+    ASSERT_EQ(file.seek(10, SEEK_SET), oc::success(10u));
 
     // Positive SEEK_CUR
-    pos = file.seek(10, SEEK_CUR);
-    ASSERT_TRUE(pos);
-    ASSERT_EQ(pos.value(), 20u);
+    ASSERT_EQ(file.seek(10, SEEK_CUR), oc::success(20u));
 
     // Negative SEEK_CUR
-    pos = file.seek(-8, SEEK_CUR);
-    ASSERT_TRUE(pos);
-    ASSERT_EQ(pos.value(), 12u);
+    ASSERT_EQ(file.seek(-8, SEEK_CUR), oc::success(12u));
 
     // Positive SEEK_END (out of bounds)
-    pos = file.seek(10, SEEK_END);
-    ASSERT_TRUE(pos);
-    ASSERT_EQ(pos.value(), 36u);
+    ASSERT_EQ(file.seek(10, SEEK_END), oc::success(36u));
 
     // Negative SEEK_END
-    pos = file.seek(-18, SEEK_END);
-    ASSERT_TRUE(pos);
-    ASSERT_EQ(pos.value(), 8u);
+    ASSERT_EQ(file.seek(-18, SEEK_END), oc::success(8u));
 
     free(in);
 }
@@ -464,39 +426,33 @@ TEST(FileDynamicMemoryTest, SeekInvalid)
     ASSERT_TRUE(file.is_open());
 
     // Negative SEEK_SET
-    auto pos = file.seek(-10, SEEK_SET);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(-10, SEEK_SET),
+              oc::failure(FileError::ArgumentOutOfRange));
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_SET
-    pos = file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_SET);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_SET),
+              oc::failure(FileError::ArgumentOutOfRange));
 #endif
 
     // Negative out of range SEEK_CUR
-    pos = file.seek(-100, SEEK_CUR);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(-100, SEEK_CUR),
+              oc::failure(FileError::ArgumentOutOfRange));
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_CUR
-    pos = file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_CUR);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_CUR),
+              oc::failure(FileError::ArgumentOutOfRange));
 #endif
 
     // Negative out of range SEEK_END
-    pos = file.seek(-100, SEEK_END);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(-100, SEEK_END),
+              oc::failure(FileError::ArgumentOutOfRange));
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_END
-    pos = file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_END);
-    ASSERT_FALSE(pos);
-    ASSERT_EQ(pos.error(), FileError::ArgumentOutOfRange);
+    ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_END),
+              oc::failure(FileError::ArgumentOutOfRange));
 #endif
 
     free(in);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -28,7 +28,6 @@
 #include <cstdint>
 
 #include "mbcommon/file_error.h"
-#include "mbcommon/file_p.h"
 #include "mbcommon/outcome.h"
 
 namespace mb
@@ -43,38 +42,16 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(File)
 
     // File close
-    oc::result<void> close();
+    virtual oc::result<void> close() = 0;
 
     // File operations
-    oc::result<size_t> read(void *buf, size_t size);
-    oc::result<size_t> write(const void *buf, size_t size);
-    oc::result<uint64_t> seek(int64_t offset, int whence);
-    oc::result<void> truncate(uint64_t size);
+    virtual oc::result<size_t> read(void *buf, size_t size) = 0;
+    virtual oc::result<size_t> write(const void *buf, size_t size) = 0;
+    virtual oc::result<uint64_t> seek(int64_t offset, int whence) = 0;
+    virtual oc::result<void> truncate(uint64_t size) = 0;
 
     // File state
-    bool is_open();
-
-protected:
-    File(File &&other) noexcept;
-    File & operator=(File &&rhs) noexcept;
-
-    // File open
-    oc::result<void> open();
-
-    detail::FileState state();
-    void set_state(detail::FileState state);
-
-    virtual oc::result<void> on_open();
-    virtual oc::result<void> on_close();
-    virtual oc::result<size_t> on_read(void *buf, size_t size);
-    virtual oc::result<size_t> on_write(const void *buf, size_t size);
-    virtual oc::result<uint64_t> on_seek(int64_t offset, int whence);
-    virtual oc::result<void> on_truncate(uint64_t size);
-
-private:
-    /*! \cond INTERNAL */
-    detail::FileState m_state;
-    /*! \endcond */
+    virtual bool is_open() = 0;
 };
 
 }
