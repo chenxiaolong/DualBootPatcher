@@ -565,7 +565,7 @@ oc::result<void> Reader::enable_formats(Formats formats)
     }
 
     // Enable what's left to be enabled
-    for (auto const &format : formats) {
+    for (auto const format : formats) {
         m_formats.push_back(_construct_format(format));
     }
 
