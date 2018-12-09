@@ -21,6 +21,7 @@
 
 #include <climits>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file/win32.h"
 
@@ -151,6 +152,28 @@ struct FileWin32Test : Test
     NiceMock<MockWin32FileFuncs> _funcs;
 };
 
+TEST_F(FileWin32Test, CheckInvalidStates)
+{
+    TestableWin32File file(&_funcs);
+
+    auto error = oc::failure(FileError::InvalidState);
+
+    ASSERT_EQ(file.close(), error);
+    ASSERT_EQ(file.read(nullptr, 0), error);
+    ASSERT_EQ(file.write(nullptr, 0), error);
+    ASSERT_EQ(file.seek(0, SEEK_SET), error);
+    ASSERT_EQ(file.truncate(1024), error);
+
+    EXPECT_CALL(_funcs, fn_CreateFileW(_, _, _, _, _, _, _))
+            .Times(1)
+            .WillOnce(Return(reinterpret_cast<HANDLE>(1)));
+
+    ASSERT_TRUE(file.open("x", FileOpenMode::ReadOnly));
+    ASSERT_EQ(file.open("x", FileOpenMode::ReadOnly), error);
+    ASSERT_EQ(file.open(L"x", FileOpenMode::ReadOnly), error);
+    ASSERT_EQ(file.open(nullptr, false, false), error);
+}
+
 TEST_F(FileWin32Test, OpenFilenameMbsSuccess)
 {
     EXPECT_CALL(_funcs, fn_CreateFileW(_, _, _, _, _, _, _))
@@ -167,9 +190,8 @@ TEST_F(FileWin32Test, OpenFilenameMbsFailure)
             .Times(1);
 
     TestableWin32File file(&_funcs);
-    auto result = file.open("x", FileOpenMode::ReadOnly);
-    ASSERT_FALSE(result);
-    ASSERT_EQ(result.error().value(), ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.open("x", FileOpenMode::ReadOnly),
+              oc::failure(ec_from_win32(ERROR_INVALID_HANDLE)));
 }
 
 #ifndef NDEBUG
@@ -198,9 +220,8 @@ TEST_F(FileWin32Test, OpenFilenameWcsFailure)
             .Times(1);
 
     TestableWin32File file(&_funcs);
-    auto result = file.open(L"x", FileOpenMode::ReadOnly);
-    ASSERT_FALSE(result);
-    ASSERT_EQ(result.error().value(), ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.open(L"x", FileOpenMode::ReadOnly),
+              oc::failure(ec_from_win32(ERROR_INVALID_HANDLE)));
 }
 
 #ifndef NDEBUG
@@ -247,9 +268,7 @@ TEST_F(FileWin32Test, CloseFailure)
     TestableWin32File file(&_funcs, nullptr, true, false);
     ASSERT_TRUE(file.is_open());
 
-    auto result = file.close();
-    ASSERT_FALSE(result);
-    ASSERT_EQ(result.error().value(), ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.close(), oc::failure(ec_from_win32(ERROR_INVALID_HANDLE)));
 }
 
 TEST_F(FileWin32Test, ReadSuccess)
@@ -263,9 +282,7 @@ TEST_F(FileWin32Test, ReadSuccess)
     ASSERT_TRUE(file.is_open());
 
     char c;
-    auto n = file.read(&c, 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 1u);
+    ASSERT_EQ(file.read(&c, 1), oc::success(1u));
 }
 
 #if SIZE_MAX > UINT_MAX
@@ -279,9 +296,8 @@ TEST_F(FileWin32Test, ReadSuccessMaxSize)
     TestableWin32File file(&_funcs, nullptr, true, false);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.read(nullptr, static_cast<size_t>(UINT_MAX) + 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), UINT_MAX);
+    ASSERT_EQ(file.read(nullptr, static_cast<size_t>(UINT_MAX) + 1),
+              oc::success(UINT_MAX));
 }
 #endif
 
@@ -296,9 +312,7 @@ TEST_F(FileWin32Test, ReadEof)
     ASSERT_TRUE(file.is_open());
 
     char c;
-    auto n = file.read(&c, 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 0u);
+    ASSERT_EQ(file.read(&c, 1), oc::success(0u));
 }
 
 TEST_F(FileWin32Test, ReadFailure)
@@ -311,9 +325,8 @@ TEST_F(FileWin32Test, ReadFailure)
     ASSERT_TRUE(file.is_open());
 
     char c;
-    auto n = file.read(&c, 1);
-    ASSERT_FALSE(n);
-    ASSERT_EQ(n.error().value(), ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.read(&c, 1),
+              oc::failure(ec_from_win32(ERROR_INVALID_HANDLE)));
 }
 
 TEST_F(FileWin32Test, WriteSuccess)
@@ -326,9 +339,7 @@ TEST_F(FileWin32Test, WriteSuccess)
     TestableWin32File file(&_funcs, nullptr, true, false);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write("x", 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 1u);
+    ASSERT_EQ(file.write("x", 1), oc::success(1u));
 }
 
 #if SIZE_MAX > UINT_MAX
@@ -342,9 +353,8 @@ TEST_F(FileWin32Test, WriteSuccessMaxSize)
     TestableWin32File file(&_funcs, nullptr, true, false);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write(nullptr, static_cast<size_t>(UINT_MAX) + 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), UINT_MAX);
+    ASSERT_EQ(file.write(nullptr, static_cast<size_t>(UINT_MAX) + 1),
+              oc::success(UINT_MAX));
 }
 #endif
 
@@ -358,9 +368,7 @@ TEST_F(FileWin32Test, WriteEof)
     TestableWin32File file(&_funcs, nullptr, true, false);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write("x", 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 0u);
+    ASSERT_EQ(file.write("x", 1), oc::success(0u));
 }
 
 TEST_F(FileWin32Test, WriteFailure)
@@ -372,9 +380,8 @@ TEST_F(FileWin32Test, WriteFailure)
     TestableWin32File file(&_funcs, nullptr, true, false);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write("x", 1);
-    ASSERT_FALSE(n);
-    ASSERT_EQ(n.error().value(), ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.write("x", 1),
+              oc::failure(ec_from_win32(ERROR_INVALID_HANDLE)));
 }
 
 TEST_F(FileWin32Test, WriteAppendSuccess)
@@ -393,9 +400,7 @@ TEST_F(FileWin32Test, WriteAppendSuccess)
     TestableWin32File file(&_funcs, nullptr, true, true);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write("x", 1);
-    ASSERT_TRUE(n);
-    ASSERT_EQ(n.value(), 1u);
+    ASSERT_EQ(file.write("x", 1), oc::success(1u));
 }
 
 TEST_F(FileWin32Test, WriteAppendSeekFailure)
@@ -409,9 +414,8 @@ TEST_F(FileWin32Test, WriteAppendSeekFailure)
     TestableWin32File file(&_funcs, nullptr, true, true);
     ASSERT_TRUE(file.is_open());
 
-    auto n = file.write("x", 1);
-    ASSERT_FALSE(n);
-    ASSERT_EQ(n.error().value(), ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.write("x", 1),
+              oc::failure(ec_from_win32(ERROR_INVALID_HANDLE)));
 }
 
 TEST_F(FileWin32Test, SeekSuccess)
@@ -426,9 +430,7 @@ TEST_F(FileWin32Test, SeekSuccess)
     TestableWin32File file(&_funcs, nullptr, true, false);
     ASSERT_TRUE(file.is_open());
 
-    auto new_offset = file.seek(10, SEEK_SET);
-    ASSERT_TRUE(new_offset);
-    ASSERT_EQ(new_offset.value(), 10u);
+    ASSERT_EQ(file.seek(10, SEEK_SET), oc::success(10u));
 }
 
 #define LFS_SIZE (10ULL * 1024 * 1024 * 1024)
@@ -445,9 +447,7 @@ TEST_F(FileWin32Test, SeekSuccessLargeFile)
     ASSERT_TRUE(file.is_open());
 
     // Ensure that the types (off_t, etc.) are large enough for LFS
-    auto new_offset = file.seek(LFS_SIZE, SEEK_SET);
-    ASSERT_TRUE(new_offset);
-    ASSERT_EQ(new_offset.value(), LFS_SIZE);
+    ASSERT_EQ(file.seek(LFS_SIZE, SEEK_SET), oc::success(LFS_SIZE));
 }
 #undef LFS_SIZE
 
@@ -459,9 +459,8 @@ TEST_F(FileWin32Test, SeekFailed)
     TestableWin32File file(&_funcs, nullptr, true, false);
     ASSERT_TRUE(file.is_open());
 
-    auto offset = file.seek(10, SEEK_SET);
-    ASSERT_FALSE(offset);
-    ASSERT_EQ(offset.error().value(), ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.seek(10, SEEK_SET),
+              oc::failure(ec_from_win32(ERROR_INVALID_HANDLE)));
 }
 
 TEST_F(FileWin32Test, TruncateSuccess)
@@ -484,7 +483,6 @@ TEST_F(FileWin32Test, TruncateFailed)
     TestableWin32File file(&_funcs, nullptr, true, false);
     ASSERT_TRUE(file.is_open());
 
-    auto result = file.truncate(1024);
-    ASSERT_FALSE(result);
-    ASSERT_EQ(result.error().value(), ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.truncate(1024),
+              oc::failure(ec_from_win32(ERROR_INVALID_HANDLE)));
 }

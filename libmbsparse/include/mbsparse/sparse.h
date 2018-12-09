@@ -44,37 +44,46 @@ public:
     // File open
     oc::result<void> open(File *file);
 
-    // File size
-    uint64_t size();
+    oc::result<void> close() override;
 
-protected:
-    oc::result<void> on_open() override;
-    oc::result<void> on_close() override;
-    oc::result<size_t> on_read(void *buf, size_t size) override;
-    oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
+    oc::result<size_t> read(void *buf, size_t size) override;
+    oc::result<size_t> write(const void *buf, size_t size) override;
+    oc::result<uint64_t> seek(int64_t offset, int whence) override;
+    oc::result<void> truncate(uint64_t size) override;
+
+    bool is_open() override;
+
+    // File size
+    uint64_t size() noexcept;
 
 private:
-    void clear();
+    void clear() noexcept;
 
-    oc::result<void> wread(void *buf, size_t size);
-    oc::result<void> wseek(int64_t offset);
-    oc::result<void> skip_bytes(uint64_t bytes);
+    oc::result<void> wread(void *buf, size_t size) noexcept;
+    oc::result<void> wseek(int64_t offset) noexcept;
+    oc::result<void> skip_bytes(uint64_t bytes) noexcept;
 
-    oc::result<void> process_sparse_header(const void *preread_data,
-                                           size_t preread_size);
+    oc::result<void>
+    process_sparse_header(const void *preread_data, size_t preread_size)
+        noexcept;
 
     oc::result<detail::ChunkInfo>
-    process_raw_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset);
+    process_raw_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset)
+        noexcept;
     oc::result<detail::ChunkInfo>
-    process_fill_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset);
+    process_fill_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset)
+        noexcept;
     oc::result<detail::ChunkInfo>
-    process_skip_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset);
+    process_skip_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset)
+        noexcept;
     oc::result<detail::ChunkInfo>
-    process_crc32_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset);
+    process_crc32_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset)
+        noexcept;
     oc::result<detail::ChunkInfo>
-    process_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset);
+    process_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset)
+        noexcept;
 
-    oc::result<void> move_to_chunk(uint64_t offset);
+    oc::result<void> move_to_chunk(uint64_t offset) noexcept;
 
     File *m_file;
     detail::Seekability m_seekability;

@@ -66,7 +66,7 @@ StandardFile::StandardFile() = default;
  * \param mode Open mode (\ref FileOpenMode)
  */
 StandardFile::StandardFile(const std::string &filename, FileOpenMode mode)
-    : Base(filename, mode)
+    : m_file(filename, mode)
 {
 }
 
@@ -82,10 +82,70 @@ StandardFile::StandardFile(const std::string &filename, FileOpenMode mode)
  * \param mode Open mode (\ref FileOpenMode)
  */
 StandardFile::StandardFile(const std::wstring &filename, FileOpenMode mode)
-    : Base(filename, mode)
+    : m_file(filename, mode)
 {
 }
 
 StandardFile::~StandardFile() = default;
+
+/*!
+ * \brief Open from a multi-byte filename.
+ *
+ * \param filename MBS filename
+ * \param mode Open mode (\ref FileOpenMode)
+ *
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
+ */
+oc::result<void>
+StandardFile::open(const std::string &filename, FileOpenMode mode)
+{
+    return m_file.open(filename, mode);
+}
+
+/*!
+ * \brief Open from a wide-character filename.
+ *
+ * \param filename WCS filename
+ * \param mode Open mode (\ref FileOpenMode)
+ *
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
+ */
+oc::result<void>
+StandardFile::open(const std::wstring &filename, FileOpenMode mode)
+{
+    return m_file.open(filename, mode);
+}
+
+oc::result<void> StandardFile::close()
+{
+    return m_file.close();
+}
+
+oc::result<size_t> StandardFile::read(void *buf, size_t size)
+{
+    return m_file.read(buf, size);
+}
+
+oc::result<size_t> StandardFile::write(const void *buf, size_t size)
+{
+    return m_file.write(buf, size);
+}
+
+oc::result<uint64_t> StandardFile::seek(int64_t offset, int whence)
+{
+    return m_file.seek(offset, whence);
+}
+
+oc::result<void> StandardFile::truncate(uint64_t size)
+{
+    return m_file.truncate(size);
+}
+
+bool StandardFile::is_open()
+{
+    return m_file.is_open();
+}
 
 }

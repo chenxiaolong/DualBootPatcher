@@ -56,7 +56,6 @@ foreach(variant ${variants})
         src/common.cpp
         src/error.cpp
         src/error_code.cpp
-        src/file/callbacks.cpp
         src/file/fd.cpp
         src/file/memory.cpp
         src/file/open_mode.cpp
@@ -138,15 +137,12 @@ if(variants AND MBP_ENABLE_TESTS)
         mbcommon_tests
         # Helpers
         tests/main.cpp
-        tests/file/mock_test_file.cpp
         # Tests
-        tests/file/test_callbacks.cpp
         tests/file/test_fd.cpp
         tests/file/test_memory.cpp
         tests/file/test_posix.cpp
         tests/test_endian.cpp
         tests/test_error_code.cpp
-        tests/test_file.cpp
         tests/test_file_error.cpp
         tests/test_file_util.cpp
         tests/test_flags.cpp

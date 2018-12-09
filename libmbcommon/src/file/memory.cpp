@@ -38,8 +38,6 @@
 namespace mb
 {
 
-using namespace detail;
-
 /*!
  * \class MemoryFile
  *
@@ -97,30 +95,49 @@ MemoryFile::~MemoryFile()
     (void) close();
 }
 
+/*!
+ * \brief Move construct new File handle.
+ *
+ * \p other will be left in a state as if it was newly constructed with the
+ * default constructor.
+ *
+ * \param other File handle to move from
+ */
 MemoryFile::MemoryFile(MemoryFile &&other) noexcept
-    : File(std::move(other))
-    , m_data(other.m_data)
-    , m_size(other.m_size)
-    , m_data_ptr(other.m_data_ptr)
-    , m_size_ptr(other.m_size_ptr)
-    , m_pos(other.m_pos)
-    , m_fixed_size(other.m_fixed_size)
 {
-    other.clear();
+    clear();
+
+    std::swap(m_is_open, other.m_is_open);
+    std::swap(m_data, other.m_data);
+    std::swap(m_size, other.m_size);
+    std::swap(m_data_ptr, other.m_data_ptr);
+    std::swap(m_size_ptr, other.m_size_ptr);
+    std::swap(m_pos, other.m_pos);
+    std::swap(m_fixed_size, other.m_fixed_size);
 }
 
+/*!
+ * \brief Move assign a File handle
+ *
+ * This file handle will be closed and then \p rhs will be moved into this
+ * object. \p rhs will be left in a state as if it was newly constructed with
+ * the default constructor.
+ *
+ * \param rhs File handle to move from
+ */
 MemoryFile & MemoryFile::operator=(MemoryFile &&rhs) noexcept
 {
-    File::operator=(std::move(rhs));
+    if (this != &rhs) {
+        clear();
 
-    m_data = rhs.m_data;;
-    m_size = rhs.m_size;
-    m_data_ptr = rhs.m_data_ptr;
-    m_size_ptr = rhs.m_size_ptr;
-    m_pos = rhs.m_pos;
-    m_fixed_size = rhs.m_fixed_size;
-
-    rhs.clear();
+        std::swap(m_is_open, rhs.m_is_open);
+        std::swap(m_data, rhs.m_data);
+        std::swap(m_size, rhs.m_size);
+        std::swap(m_data_ptr, rhs.m_data_ptr);
+        std::swap(m_size_ptr, rhs.m_size_ptr);
+        std::swap(m_pos, rhs.m_pos);
+        std::swap(m_fixed_size, rhs.m_fixed_size);
+    }
 
     return *this;
 }
@@ -136,16 +153,17 @@ MemoryFile & MemoryFile::operator=(MemoryFile &&rhs) noexcept
  */
 oc::result<void> MemoryFile::open(void *buf, size_t size)
 {
-    if (state() == FileState::New) {
-        m_data = buf;
-        m_size = size;
-        m_data_ptr = nullptr;
-        m_size_ptr = nullptr;
-        m_pos = 0;
-        m_fixed_size = true;
-    }
+    if (is_open()) return FileError::InvalidState;
 
-    return File::open();
+    m_is_open = true;
+    m_data = buf;
+    m_size = size;
+    m_data_ptr = nullptr;
+    m_size_ptr = nullptr;
+    m_pos = 0;
+    m_fixed_size = true;
+
+    return oc::success();
 }
 
 /*!
@@ -159,28 +177,33 @@ oc::result<void> MemoryFile::open(void *buf, size_t size)
  */
 oc::result<void> MemoryFile::open(void **buf_ptr, size_t *size_ptr)
 {
-    if (state() == FileState::New) {
-        m_data = *buf_ptr;
-        m_size = *size_ptr;
-        m_data_ptr = buf_ptr;
-        m_size_ptr = size_ptr;
-        m_pos = 0;
-        m_fixed_size = false;
-    }
+    if (is_open()) return FileError::InvalidState;
 
-    return File::open();
+    m_is_open = true;
+    m_data = *buf_ptr;
+    m_size = *size_ptr;
+    m_data_ptr = buf_ptr;
+    m_size_ptr = size_ptr;
+    m_pos = 0;
+    m_fixed_size = false;
+
+    return oc::success();
 }
 
-oc::result<void> MemoryFile::on_close()
+oc::result<void> MemoryFile::close()
 {
+    if (!is_open()) return FileError::InvalidState;
+
     // Reset to allow opening another file
     clear();
 
     return oc::success();
 }
 
-oc::result<size_t> MemoryFile::on_read(void *buf, size_t size)
+oc::result<size_t> MemoryFile::read(void *buf, size_t size)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     size_t to_read = 0;
     if (m_pos < m_size) {
         to_read = std::min(m_size - m_pos, size);
@@ -192,8 +215,10 @@ oc::result<size_t> MemoryFile::on_read(void *buf, size_t size)
     return to_read;
 }
 
-oc::result<size_t> MemoryFile::on_write(const void *buf, size_t size)
+oc::result<size_t> MemoryFile::write(const void *buf, size_t size)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     if (m_pos > SIZE_MAX - size) {
         return FileError::ArgumentOutOfRange;
     }
@@ -232,8 +257,10 @@ oc::result<size_t> MemoryFile::on_write(const void *buf, size_t size)
     return to_write;
 }
 
-oc::result<uint64_t> MemoryFile::on_seek(int64_t offset, int whence)
+oc::result<uint64_t> MemoryFile::seek(int64_t offset, int whence)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     switch (whence) {
     case SEEK_SET:
         if (offset < 0 || static_cast<uint64_t>(offset) > SIZE_MAX) {
@@ -269,8 +296,10 @@ oc::result<uint64_t> MemoryFile::on_seek(int64_t offset, int whence)
     }
 }
 
-oc::result<void> MemoryFile::on_truncate(uint64_t size)
+oc::result<void> MemoryFile::truncate(uint64_t size)
 {
+    if (!is_open()) return FileError::InvalidState;
+
     if (m_fixed_size) {
         // Cannot truncate fixed buffer
         return FileError::UnsupportedTruncate;
@@ -299,8 +328,14 @@ oc::result<void> MemoryFile::on_truncate(uint64_t size)
     return oc::success();
 }
 
-void MemoryFile::clear()
+bool MemoryFile::is_open()
 {
+    return m_is_open;
+}
+
+void MemoryFile::clear() noexcept
+{
+    m_is_open = false;
     m_data = nullptr;
     m_size = 0;
     m_data_ptr = nullptr;

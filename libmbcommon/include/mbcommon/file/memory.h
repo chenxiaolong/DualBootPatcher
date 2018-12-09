@@ -40,16 +40,20 @@ public:
     oc::result<void> open(void *buf, size_t size);
     oc::result<void> open(void **buf_ptr, size_t *size_ptr);
 
-protected:
-    oc::result<void> on_close() override;
-    oc::result<size_t> on_read(void *buf, size_t size) override;
-    oc::result<size_t> on_write(const void *buf, size_t size) override;
-    oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
-    oc::result<void> on_truncate(uint64_t size) override;
+    oc::result<void> close() override;
+
+    oc::result<size_t> read(void *buf, size_t size) override;
+    oc::result<size_t> write(const void *buf, size_t size) override;
+    oc::result<uint64_t> seek(int64_t offset, int whence) override;
+    oc::result<void> truncate(uint64_t size) override;
+
+    bool is_open() override;
 
 private:
     /*! \cond INTERNAL */
-    void clear();
+    void clear() noexcept;
+
+    bool m_is_open;
 
     void *m_data;
     size_t m_size;

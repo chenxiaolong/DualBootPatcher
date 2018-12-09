@@ -36,7 +36,6 @@
 
 // libmbcommon
 #include "mbcommon/error_code.h"
-#include "mbcommon/file/callbacks.h"
 #include "mbcommon/file/standard.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/integer.h"
@@ -323,30 +322,69 @@ static bool load_block_devs()
     return true;
 }
 
-static mb::oc::result<size_t> cb_zip_read(archive *a, mb::File &file,
-                                          void *buf, size_t size)
+class LibArchiveEntryFile : public mb::File
 {
-    (void) file;
-
-    uint64_t total = 0;
-
-    while (size > 0) {
-        la_ssize_t n = archive_read_data(a, buf, size);
-        if (n < 0) {
-            error("libarchive: Failed to read data: %s",
-                  archive_error_string(a));
-            return mb::ec_from_errno(archive_errno(a));
-        } else if (n == 0) {
-            break;
-        }
-
-        total += static_cast<size_t>(n);
-        size -= static_cast<size_t>(n);
-        buf = static_cast<char *>(buf) + n;
+public:
+    LibArchiveEntryFile(archive *a)
+        : m_archive(a)
+    {
     }
 
-    return static_cast<size_t>(total);
-}
+    mb::oc::result<void> close() override
+    {
+        return mb::oc::success();
+    }
+
+    mb::oc::result<size_t> read(void *buf, size_t size) override
+    {
+        size_t total = 0;
+
+        while (size > 0) {
+            la_ssize_t n = archive_read_data(m_archive, buf, size);
+            if (n < 0) {
+                error("libarchive: Failed to read data: %s",
+                      archive_error_string(m_archive));
+                return mb::ec_from_errno(archive_errno(m_archive));
+            } else if (n == 0) {
+                break;
+            }
+
+            total += static_cast<size_t>(n);
+            size -= static_cast<size_t>(n);
+            buf = static_cast<char *>(buf) + n;
+        }
+
+        return total;
+    }
+
+    mb::oc::result<size_t> write(const void *buf, size_t size) override
+    {
+        (void) buf;
+        (void) size;
+        return mb::FileError::UnsupportedWrite;
+    }
+
+    mb::oc::result<uint64_t> seek(int64_t offset, int whence) override
+    {
+        (void) offset;
+        (void) whence;
+        return mb::FileError::UnsupportedSeek;
+    }
+
+    mb::oc::result<void> truncate(uint64_t size) override
+    {
+        (void) size;
+        return mb::FileError::UnsupportedTruncate;
+    }
+
+    bool is_open() override
+    {
+        return true;
+    }
+
+private:
+    archive *m_archive;
+};
 
 static ExtractResult extract_sparse_file(const char *zip_filename,
                                          const char *out_filename)
@@ -354,7 +392,7 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
     using namespace std::placeholders;
 
     ScopedArchive a{archive_read_new(), &archive_read_free};
-    mb::CallbackFile file;
+    LibArchiveEntryFile file(a.get());
     mb::sparse::SparseFile sparse_file;
     mb::StandardFile out_file;
 
@@ -368,31 +406,20 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
     }
 
     archive_entry *entry;
-    auto result = la_skip_to(a.get(), zip_filename, &entry);
-    if (result != ExtractResult::Ok) {
-        return result;
+    if (auto r = la_skip_to(a.get(), zip_filename, &entry);
+            r != ExtractResult::Ok) {
+        return r;
     }
 
-    auto open_ret = file.open(nullptr, nullptr,
-                              std::bind(cb_zip_read, a.get(), _1, _2, _3),
-                              nullptr, nullptr, nullptr);
-    if (!open_ret) {
-        error("Failed to open sparse file in zip: %s",
-              open_ret.error().message().c_str());
-        return ExtractResult::Error;
-    }
-
-    open_ret = sparse_file.open(&file);
-    if (!open_ret) {
+    if (auto r = sparse_file.open(&file); !r) {
         error("Failed to open sparse file: %s",
-              open_ret.error().message().c_str());
+              r.error().message().c_str());
         return ExtractResult::Error;
     }
 
-    open_ret = out_file.open(out_filename, mb::FileOpenMode::WriteOnly);
-    if (!open_ret) {
+    if (auto r = out_file.open(out_filename, mb::FileOpenMode::WriteOnly); !r) {
         error("%s: Failed to open for writing: %s",
-              out_filename, open_ret.error().message().c_str());
+              out_filename, r.error().message().c_str());
         return ExtractResult::Error;
     }
 
@@ -437,10 +464,9 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
         }
     }
 
-    auto close_ret = out_file.close();
-    if (!close_ret) {
+    if (auto r = out_file.close(); !r) {
         error("%s: Failed to close file: %s",
-              out_filename, close_ret.error().message().c_str());
+              out_filename, r.error().message().c_str());
         return ExtractResult::Error;
     }
 
