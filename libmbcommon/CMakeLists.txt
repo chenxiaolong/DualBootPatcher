@@ -133,6 +133,7 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/test_flags.cpp
         tests/test_integer.cpp
         tests/test_locale.cpp
+        tests/test_span.cpp
         tests/test_string.cpp
     )
 
