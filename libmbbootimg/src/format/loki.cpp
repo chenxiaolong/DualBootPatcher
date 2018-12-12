@@ -35,6 +35,7 @@
 
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
+#include "mbcommon/file_error.h"
 #include "mbcommon/file_util.h"
 #include "mbcommon/finally.h"
 

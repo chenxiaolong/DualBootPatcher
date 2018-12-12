@@ -23,6 +23,7 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/memory.h"
+#include "mbcommon/file_error.h"
 
 using namespace mb;
 
