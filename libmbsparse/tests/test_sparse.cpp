@@ -23,6 +23,7 @@
 
 #include "mbcommon/endian.h"
 #include "mbcommon/file/memory.h"
+#include "mbcommon/file_error.h"
 
 #include "mbsparse/sparse_error.h"
 

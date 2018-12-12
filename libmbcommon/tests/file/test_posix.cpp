@@ -21,6 +21,7 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/posix.h"
+#include "mbcommon/file_error.h"
 
 using namespace mb;
 using namespace mb::detail;

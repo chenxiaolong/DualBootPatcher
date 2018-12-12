@@ -26,6 +26,7 @@
 #include <cstring>
 
 #include "mbcommon/file.h"
+#include "mbcommon/file_error.h"
 #include "mbcommon/file_util.h"
 #include "mbcommon/string.h"
 

@@ -25,6 +25,7 @@
 #include <cstring>
 
 #include "mbcommon/error_code.h"
+#include "mbcommon/file_error.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/locale.h"
 

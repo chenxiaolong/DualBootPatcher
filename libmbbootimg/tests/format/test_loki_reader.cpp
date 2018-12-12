@@ -23,6 +23,7 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/memory.h"
+#include "mbcommon/file_error.h"
 
 #include "mbbootimg/format/loki_error.h"
 #include "mbbootimg/format/loki_reader_p.h"

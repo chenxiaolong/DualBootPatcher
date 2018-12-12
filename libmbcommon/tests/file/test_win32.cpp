@@ -24,6 +24,7 @@
 #include "mbcommon/error_code.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file/win32.h"
+#include "mbcommon/file_error.h"
 
 using namespace mb;
 using namespace mb::detail;
