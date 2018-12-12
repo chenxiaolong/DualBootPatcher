@@ -25,6 +25,7 @@
 #include <cstring>
 
 #include "mbcommon/error_code.h"
+#include "mbcommon/file_error.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/locale.h"
 
@@ -448,20 +449,20 @@ oc::result<void> Win32File::close()
     return oc::success();
 }
 
-oc::result<size_t> Win32File::read(void *buf, size_t size)
+oc::result<size_t> Win32File::read(span<std::byte> buf)
 {
     if (!is_open()) return FileError::InvalidState;
 
     DWORD n = 0;
 
-    if (size > UINT_MAX) {
-        size = UINT_MAX;
+    if (buf.size() > UINT_MAX) {
+        buf = buf.first(UINT_MAX);
     }
 
     bool ret = m_funcs->fn_ReadFile(
         m_handle,   // hFile
-        buf,        // lpBuffer
-        size,       // nNumberOfBytesToRead
+        buf.data(), // lpBuffer
+        buf.size(), // nNumberOfBytesToRead
         &n,         // lpNumberOfBytesRead
         nullptr     // lpOverlapped
     );
@@ -473,7 +474,7 @@ oc::result<size_t> Win32File::read(void *buf, size_t size)
     return n;
 }
 
-oc::result<size_t> Win32File::write(const void *buf, size_t size)
+oc::result<size_t> Win32File::write(span<const std::byte> buf)
 {
     if (!is_open()) return FileError::InvalidState;
 
@@ -485,14 +486,14 @@ oc::result<size_t> Win32File::write(const void *buf, size_t size)
         OUTCOME_TRYV(seek(0, SEEK_END));
     }
 
-    if (size > UINT_MAX) {
-        size = UINT_MAX;
+    if (buf.size() > UINT_MAX) {
+        buf = buf.first(UINT_MAX);
     }
 
     bool ret = m_funcs->fn_WriteFile(
         m_handle,   // hFile
-        buf,        // lpBuffer
-        size,       // nNumberOfBytesToWrite
+        buf.data(), // lpBuffer
+        buf.size(), // nNumberOfBytesToWrite
         &n,         // lpNumberOfBytesWritten
         nullptr     // lpOverlapped
     );

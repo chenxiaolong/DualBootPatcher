@@ -26,6 +26,7 @@
 #include <cinttypes>
 
 #include "mbcommon/file/memory.h"
+#include "mbcommon/file_error.h"
 #include "mbcommon/file_util.h"
 #include "mbcommon/string.h"
 
@@ -47,17 +48,17 @@ struct FileUtilTest : Test
 
 TEST_F(FileUtilTest, ReadRetryNormal)
 {
-    EXPECT_CALL(_file, read(_, _))
+    EXPECT_CALL(_file, read(_))
             .Times(5)
             .WillRepeatedly(Return(2u));
 
-    char buf[10];
-    ASSERT_EQ(file_read_retry(_file, buf, sizeof(buf)), oc::success(10u));
+    std::byte buf[10];
+    ASSERT_EQ(file_read_retry(_file, span(buf)), oc::success(10u));
 }
 
 TEST_F(FileUtilTest, ReadRetryEOF)
 {
-    EXPECT_CALL(_file, read(_, _))
+    EXPECT_CALL(_file, read(_))
             .Times(5)
             .WillOnce(Return(2u))
             .WillOnce(Return(2u))
@@ -65,15 +66,15 @@ TEST_F(FileUtilTest, ReadRetryEOF)
             .WillOnce(Return(2u))
             .WillOnce(Return(0u));
 
-    char buf[10];
-    ASSERT_EQ(file_read_retry(_file, buf, sizeof(buf)), oc::success(8u));
+    std::byte buf[10];
+    ASSERT_EQ(file_read_retry(_file, span(buf)), oc::success(8u));
 }
 
 TEST_F(FileUtilTest, ReadRetryInterrupted)
 {
     auto eintr = std::make_error_code(std::errc::interrupted);
 
-    EXPECT_CALL(_file, read(_, _))
+    EXPECT_CALL(_file, read(_))
             .Times(5)
             .WillOnce(Return(eintr))
             .WillOnce(Return(eintr))
@@ -81,33 +82,34 @@ TEST_F(FileUtilTest, ReadRetryInterrupted)
             .WillOnce(Return(eintr))
             .WillOnce(Return(10u));
 
-    char buf[10];
-    ASSERT_EQ(file_read_retry(_file, buf, sizeof(buf)), oc::success(10u));
+    std::byte buf[10];
+    ASSERT_EQ(file_read_retry(_file, span(buf)), oc::success(10u));
 }
 
 TEST_F(FileUtilTest, ReadRetryFailure)
 {
-    EXPECT_CALL(_file, read(_, _))
+    EXPECT_CALL(_file, read(_))
             .Times(1)
             .WillOnce(Return(std::error_code()));
 
-    char buf[10];
-    ASSERT_EQ(file_read_retry(_file, buf, sizeof(buf)),
+    std::byte buf[10];
+    ASSERT_EQ(file_read_retry(_file, span(buf)),
               oc::failure(std::error_code()));
 }
 
 TEST_F(FileUtilTest, WriteRetryNormal)
 {
-    EXPECT_CALL(_file, write(_, _))
+    EXPECT_CALL(_file, write(_))
             .Times(5)
             .WillRepeatedly(Return(2u));
 
-    ASSERT_EQ(file_write_retry(_file, "xxxxxxxxxx", 10u), oc::success(10u));
+    ASSERT_EQ(file_write_retry(_file, as_bytes(span("xxxxxxxxxx", 10u))),
+              oc::success(10u));
 }
 
 TEST_F(FileUtilTest, WriteRetryEOF)
 {
-    EXPECT_CALL(_file, write(_, _))
+    EXPECT_CALL(_file, write(_))
             .Times(5)
             .WillOnce(Return(2u))
             .WillOnce(Return(2u))
@@ -115,14 +117,15 @@ TEST_F(FileUtilTest, WriteRetryEOF)
             .WillOnce(Return(2u))
             .WillOnce(Return(0u));
 
-    ASSERT_EQ(file_write_retry(_file, "xxxxxxxxxx", 10u), oc::success(8u));
+    ASSERT_EQ(file_write_retry(_file, as_bytes(span("xxxxxxxxxx", 10u))),
+              oc::success(8u));
 }
 
 TEST_F(FileUtilTest, WriteRetryInterrupted)
 {
     auto eintr = std::make_error_code(std::errc::interrupted);
 
-    EXPECT_CALL(_file, write(_, _))
+    EXPECT_CALL(_file, write(_))
             .Times(5)
             .WillOnce(Return(eintr))
             .WillOnce(Return(eintr))
@@ -130,32 +133,33 @@ TEST_F(FileUtilTest, WriteRetryInterrupted)
             .WillOnce(Return(eintr))
             .WillOnce(Return(10u));
 
-    ASSERT_EQ(file_write_retry(_file, "xxxxxxxxxx", 10u), oc::success(10u));
+    ASSERT_EQ(file_write_retry(_file, as_bytes(span("xxxxxxxxxx", 10u))),
+              oc::success(10u));
 }
 
 TEST_F(FileUtilTest, WriteRetryFailure)
 {
-    EXPECT_CALL(_file, write(_, _))
+    EXPECT_CALL(_file, write(_))
             .Times(1)
             .WillOnce(Return(std::error_code()));
 
-    ASSERT_EQ(file_write_retry(_file, "xxxxxxxxxx", 10u),
+    ASSERT_EQ(file_write_retry(_file, as_bytes(span("xxxxxxxxxx", 10u))),
               oc::failure(std::error_code()));
 }
 
 TEST_F(FileUtilTest, ReadExactNormal)
 {
-    EXPECT_CALL(_file, read(_, _))
+    EXPECT_CALL(_file, read(_))
             .Times(5)
             .WillRepeatedly(Return(2u));
 
-    char buf[10];
-    ASSERT_TRUE(file_read_exact(_file, buf, sizeof(buf)));
+    std::byte buf[10];
+    ASSERT_TRUE(file_read_exact(_file, span(buf)));
 }
 
 TEST_F(FileUtilTest, ReadExactEOF)
 {
-    EXPECT_CALL(_file, read(_, _))
+    EXPECT_CALL(_file, read(_))
             .Times(5)
             .WillOnce(Return(2u))
             .WillOnce(Return(2u))
@@ -163,14 +167,14 @@ TEST_F(FileUtilTest, ReadExactEOF)
             .WillOnce(Return(2u))
             .WillOnce(Return(0u));
 
-    char buf[10];
-    ASSERT_EQ(file_read_exact(_file, buf, sizeof(buf)),
+    std::byte buf[10];
+    ASSERT_EQ(file_read_exact(_file, span(buf)),
               oc::failure(FileError::UnexpectedEof));
 }
 
 TEST_F(FileUtilTest, ReadExactPartialFail)
 {
-    EXPECT_CALL(_file, read(_, _))
+    EXPECT_CALL(_file, read(_))
             .Times(5)
             .WillOnce(Return(2u))
             .WillOnce(Return(2u))
@@ -178,23 +182,23 @@ TEST_F(FileUtilTest, ReadExactPartialFail)
             .WillOnce(Return(2u))
             .WillOnce(Return(std::error_code()));
 
-    char buf[10];
-    ASSERT_EQ(file_read_exact(_file, buf, sizeof(buf)),
+    std::byte buf[10];
+    ASSERT_EQ(file_read_exact(_file, span(buf)),
               oc::failure(std::error_code()));
 }
 
 TEST_F(FileUtilTest, WriteExactNormal)
 {
-    EXPECT_CALL(_file, write(_, _))
+    EXPECT_CALL(_file, write(_))
             .Times(5)
             .WillRepeatedly(Return(2u));
 
-    ASSERT_TRUE(file_write_exact(_file, "xxxxxxxxxx", 10));
+    ASSERT_TRUE(file_write_exact(_file, as_bytes(span("xxxxxxxxxx", 10))));
 }
 
 TEST_F(FileUtilTest, WriteExactEOF)
 {
-    EXPECT_CALL(_file, write(_, _))
+    EXPECT_CALL(_file, write(_))
             .Times(5)
             .WillOnce(Return(2u))
             .WillOnce(Return(2u))
@@ -202,13 +206,13 @@ TEST_F(FileUtilTest, WriteExactEOF)
             .WillOnce(Return(2u))
             .WillOnce(Return(0u));
 
-    ASSERT_EQ(file_write_exact(_file, "xxxxxxxxxx", 10),
+    ASSERT_EQ(file_write_exact(_file, as_bytes(span("xxxxxxxxxx", 10))),
               oc::failure(FileError::UnexpectedEof));
 }
 
 TEST_F(FileUtilTest, WriteExactPartialFail)
 {
-    EXPECT_CALL(_file, write(_, _))
+    EXPECT_CALL(_file, write(_))
             .Times(5)
             .WillOnce(Return(2u))
             .WillOnce(Return(2u))
@@ -216,13 +220,13 @@ TEST_F(FileUtilTest, WriteExactPartialFail)
             .WillOnce(Return(2u))
             .WillOnce(Return(std::error_code()));
 
-    ASSERT_EQ(file_write_exact(_file, "xxxxxxxxxx", 10),
+    ASSERT_EQ(file_write_exact(_file, as_bytes(span("xxxxxxxxxx", 10))),
               oc::failure(std::error_code()));
 }
 
 TEST_F(FileUtilTest, ReadDiscardNormal)
 {
-    EXPECT_CALL(_file, read(_, _))
+    EXPECT_CALL(_file, read(_))
             .Times(5)
             .WillRepeatedly(Return(2u));
 
@@ -231,7 +235,7 @@ TEST_F(FileUtilTest, ReadDiscardNormal)
 
 TEST_F(FileUtilTest, ReadDiscardEOF)
 {
-    EXPECT_CALL(_file, read(_, _))
+    EXPECT_CALL(_file, read(_))
             .Times(5)
             .WillOnce(Return(2u))
             .WillOnce(Return(2u))
@@ -244,7 +248,7 @@ TEST_F(FileUtilTest, ReadDiscardEOF)
 
 TEST_F(FileUtilTest, ReadDiscardPartialFail)
 {
-    EXPECT_CALL(_file, read(_, _))
+    EXPECT_CALL(_file, read(_))
             .Times(5)
             .WillOnce(Return(2u))
             .WillOnce(Return(2u))
@@ -280,58 +284,60 @@ struct FileSearchTest : Test
 
 TEST_F(FileSearchTest, CheckInvalidBoundariesFail)
 {
-    MemoryFile file(const_cast<char *>(""), 0);
+    MemoryFile file(span<std::byte>{});
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file_search(file, 20, 10, 0, "x", 1, {}, _cb),
+    ASSERT_EQ(file_search(file, 20, 10, 0, as_bytes(span("x", 1)), {}, _cb),
               oc::failure(FileError::ArgumentOutOfRange));
 }
 
 TEST_F(FileSearchTest, CheckZeroMaxMatches)
 {
-    MemoryFile file(const_cast<char *>(""), 0);
+    MemoryFile file(span<std::byte>{});
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, 0, _cb));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, as_bytes(span("x", 1)), 0, _cb));
 }
 
 TEST_F(FileSearchTest, CheckZeroPatternSize)
 {
-    MemoryFile file(const_cast<char *>(""), 0);
+    MemoryFile file(span<std::byte>{});
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, {}, {}, 0, nullptr, 0, {}, _cb));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, {}, {}, _cb));
 }
 
 TEST_F(FileSearchTest, CheckBufferSize)
 {
-    MemoryFile file(const_cast<char *>(""), 0);
+    MemoryFile file(span<std::byte>{});
     ASSERT_TRUE(file.is_open());
 
     // Auto buffer size
-    ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, {}, _cb));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, as_bytes(span("x", 1)), {}, _cb));
 
     // Too small
-    ASSERT_EQ(file_search(file, {}, {}, 1, "xxx", 3, {}, _cb),
+    ASSERT_EQ(file_search(file, {}, {}, 1, as_bytes(span("xxx", 3)), {}, _cb),
               oc::failure(FileError::ArgumentOutOfRange));
 
     // Equal to pattern size
-    ASSERT_TRUE(file_search(file, {}, {}, 1, "x", 1, {}, _cb));
+    ASSERT_TRUE(file_search(file, {}, {}, 1, as_bytes(span("x", 1)), {}, _cb));
 }
 
 TEST_F(FileSearchTest, FindNormal)
 {
-    MemoryFile file(const_cast<char *>("abc"), 3);
+    char buf[] = "abc";
+
+    MemoryFile file(as_writable_bytes(span(buf, sizeof(buf) - 1)));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, {}, {}, 0, "a", 1, {}, _cb));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, as_bytes(span("a", 1)), {}, _cb));
 }
 
 TEST(FileMoveTest, DegenerateCasesShouldSucceed)
 {
     char buf[] = "abcdef";
 
-    MemoryFile file(buf, sizeof(buf) - 1);
+    MemoryFile file(as_writable_bytes(span(buf, sizeof(buf) - 1)));
     ASSERT_TRUE(file.is_open());
 
     // src == dest
@@ -345,7 +351,7 @@ TEST(FileMoveTest, NormalForwardsCopyShouldSucceed)
 {
     char buf[] = "abcdef";
 
-    MemoryFile file(buf, sizeof(buf) - 1);
+    MemoryFile file(as_writable_bytes(span(buf, sizeof(buf) - 1)));
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file_move(file, 2, 0, 3), oc::success(3u));
@@ -356,7 +362,7 @@ TEST(FileMoveTest, NormalBackwardsCopyShouldSucceed)
 {
     char buf[] = "abcdef";
 
-    MemoryFile file(buf, sizeof(buf) - 1);
+    MemoryFile file(as_writable_bytes(span(buf, sizeof(buf) - 1)));
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file_move(file, 0, 2, 3), oc::success(3u));
@@ -367,7 +373,7 @@ TEST(FileMoveTest, OutOfBoundsForwardsCopyShouldCopyPartially)
 {
     char buf[] = "abcdef";
 
-    MemoryFile file(buf, sizeof(buf) - 1);
+    MemoryFile file(as_writable_bytes(span(buf, sizeof(buf) - 1)));
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file_move(file, 2, 0, 5), oc::success(4u));
@@ -378,7 +384,7 @@ TEST(FileMoveTest, OutOfBoundsBackwardsCopyShouldCopyPartially)
 {
     char buf[] = "abcdef";
 
-    MemoryFile file(buf, sizeof(buf) - 1);
+    MemoryFile file(as_writable_bytes(span(buf, sizeof(buf) - 1)));
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file_move(file, 0, 2, 5), oc::success(4u));
@@ -387,39 +393,39 @@ TEST(FileMoveTest, OutOfBoundsBackwardsCopyShouldCopyPartially)
 
 TEST(FileMoveTest, LargeForwardsCopyShouldSucceed)
 {
-    std::vector<unsigned char> buf(100000);
+    std::vector<std::byte> buf(100000);
 
     auto middle = buf.begin() + (buf.end() - buf.begin()) / 2;
-    std::fill(buf.begin(), middle, 'a');
-    std::fill(middle, buf.end(), 'b');
+    std::fill(buf.begin(), middle, std::byte('a'));
+    std::fill(middle, buf.end(), std::byte('b'));
 
-    MemoryFile file(buf.data(), buf.size());
+    MemoryFile file(span<std::byte>{buf});
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file_move(file, buf.size() / 2, 0, buf.size() / 2),
               oc::success(buf.size() / 2));
 
     for (size_t i = 0; i < buf.size(); ++i) {
-        ASSERT_EQ(buf[i], 'b');
+        ASSERT_EQ(buf[i], std::byte('b'));
     }
 }
 
 TEST(FileMoveTest, LargeBackwardsCopyShouldSucceed)
 {
-    std::vector<unsigned char> buf(100000);
+    std::vector<std::byte> buf(100000);
 
     auto middle = buf.begin() + (buf.end() - buf.begin()) / 2;
-    std::fill(buf.begin(), middle, 'a');
-    std::fill(middle, buf.end(), 'b');
+    std::fill(buf.begin(), middle, std::byte('a'));
+    std::fill(middle, buf.end(), std::byte('b'));
 
-    MemoryFile file(buf.data(), buf.size());
+    MemoryFile file(span<std::byte>{buf});
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file_move(file, 0, buf.size() / 2, buf.size() / 2),
               oc::success(buf.size() / 2));
 
     for (size_t i = 0; i < buf.size(); ++i) {
-        ASSERT_EQ(buf[i], 'a');
+        ASSERT_EQ(buf[i], std::byte('a'));
     }
 }
 

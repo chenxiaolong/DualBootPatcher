@@ -37,22 +37,22 @@ using FileSearchResultCallback = std::function<oc::result<FileSearchAction>
         (File &file, uint64_t offset)>;
 
 MB_EXPORT oc::result<size_t> file_read_retry(File &file,
-                                             void *buf, size_t size);
+                                             span<std::byte> buf);
 MB_EXPORT oc::result<size_t> file_write_retry(File &file,
-                                              const void *buf, size_t size);
+                                              span<const std::byte> buf);
 
 MB_EXPORT oc::result<void> file_read_exact(File &file,
-                                           void *buf, size_t size);
+                                           span<std::byte> buf);
 MB_EXPORT oc::result<void> file_write_exact(File &file,
-                                            const void *buf, size_t size);
+                                            span<const std::byte> buf);
 
 MB_EXPORT oc::result<uint64_t> file_read_discard(File &file, uint64_t size);
 
 MB_EXPORT oc::result<void> file_search(File &file,
                                        std::optional<uint64_t> start,
                                        std::optional<uint64_t> end,
-                                       size_t bsize, const void *pattern,
-                                       size_t pattern_size,
+                                       size_t bsize,
+                                       span<const std::byte> pattern,
                                        std::optional<uint64_t> max_matches,
                                        const FileSearchResultCallback &result_cb);
 

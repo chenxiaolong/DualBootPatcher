@@ -32,6 +32,7 @@
 #include <cstring>
 
 #include "mbcommon/error_code.h"
+#include "mbcommon/file_error.h"
 
 #define DEFAULT_BUFFER_SIZE             (8 * 1024 * 1024)
 
@@ -53,28 +54,26 @@ namespace std2 = std;
  * \brief Read from a File handle.
  *
  * This function differs from File::read() in that it will call File::read()
- * repeatedly until \p size bytes are read or EOF is reached. If File::read()
- * returns std::errc::interrupted, then the read operation will be automatically
- * reattempted.
+ * repeatedly until `buf.size()` bytes are read or EOF is reached. If
+ * File::read() returns std::errc::interrupted, then the read operation will be
+ * automatically reattempted.
  *
  * If this function fails, the contents of \p buf are unspecified. It is also
  * unspecified how many bytes are read, though it will always be less than
- * \p size.
+ * `buf.size()`.
  *
  * \param[in] file File handle
  * \param[out] buf Buffer to read into
- * \param[in] size Buffer size
  *
  * \return Number of bytes read if some are successfully read or EOF is reached.
  *         Otherwise, the error code.
  */
-oc::result<size_t> file_read_retry(File &file, void *buf, size_t size)
+oc::result<size_t> file_read_retry(File &file, span<std::byte> buf)
 {
     size_t bytes_read = 0;
 
-    while (bytes_read < size) {
-        auto n = file.read(static_cast<char *>(buf) + bytes_read,
-                           size - bytes_read);
+    while (!buf.empty()) {
+        auto n = file.read(buf);
         if (!n) {
             if (n.error() == std::errc::interrupted) {
                 continue;
@@ -85,6 +84,7 @@ oc::result<size_t> file_read_retry(File &file, void *buf, size_t size)
             break;
         }
 
+        buf = buf.last(buf.size() - n.value());
         bytes_read += n.value();
     }
 
@@ -95,27 +95,25 @@ oc::result<size_t> file_read_retry(File &file, void *buf, size_t size)
  * \brief Write to a File handle.
  *
  * This function differs from File::write() in that it will call File::write()
- * repeatedly until \p size bytes are written or EOF is reached. If
+ * repeatedly until `buf.size()` bytes are written or EOF is reached. If
  * File::write() returns std::errc::interrupted, then the write operation is
  * automatically reattempted.
  *
  * If this function fails, it is unspecified how many bytes were written, though
- * it will always be less than \p size.
+ * it will always be less than `buf.size()`.
  *
  * \param file File handle
  * \param buf Buffer to write from
- * \param size Buffer size
  *
  * \return Number of bytes written if some are successfully written or EOF is
  *         reached. Otherwise, the error code.
  */
-oc::result<size_t> file_write_retry(File &file, const void *buf, size_t size)
+oc::result<size_t> file_write_retry(File &file, span<const std::byte> buf)
 {
     size_t bytes_written = 0;
 
-    while (bytes_written < size) {
-        auto n = file.write(static_cast<const char *>(buf) + bytes_written,
-                            size - bytes_written);
+    while (!buf.empty()) {
+        auto n = file.write(buf);
         if (!n) {
             if (n.error() == std::errc::interrupted) {
                 continue;
@@ -126,6 +124,7 @@ oc::result<size_t> file_write_retry(File &file, const void *buf, size_t size)
             break;
         }
 
+        buf = buf.last(buf.size() - n.value());
         bytes_written += n.value();
     }
 
@@ -136,27 +135,26 @@ oc::result<size_t> file_write_retry(File &file, const void *buf, size_t size)
  * \brief Read from a File handle.
  *
  * This function differs from File::read() in that it will call File::read()
- * repeatedly until \p size bytes are read. If File::read() returns
+ * repeatedly until `buf.size()` bytes are read. If File::read() returns
  * std::errc::interrupted, then the read operation will be automatically
  * reattempted. If EOF is reached before the specified number of bytes are read,
  * then FileError::UnexpectedEof will be returned.
  *
  * If this function fails, the contents of \p buf are unspecified. It is also
  * unspecified how many bytes are read, though it will always be less than
- * \p size.
+ * `buf.size()`.
  *
  * \param[in] file File handle
  * \param[out] buf Buffer to read into
- * \param[in] size Buffer size
  *
  * \return Nothing if the specified number of bytes were successfully read.
  *         Otherwise, the error code.
  */
-oc::result<void> file_read_exact(File &file, void *buf, size_t size)
+oc::result<void> file_read_exact(File &file, span<std::byte> buf)
 {
-    OUTCOME_TRY(n, file_read_retry(file, buf, size));
+    OUTCOME_TRY(n, file_read_retry(file, buf));
 
-    if (n != size) {
+    if (n != buf.size()) {
         return FileError::UnexpectedEof;
     }
 
@@ -167,26 +165,25 @@ oc::result<void> file_read_exact(File &file, void *buf, size_t size)
  * \brief Write to a File handle.
  *
  * This function differs from File::write() in that it will call File::write()
- * repeatedly until \p size bytes are written. If File::write() returns
+ * repeatedly until `buf.size()` bytes are written. If File::write() returns
  * std::errc::interrupted, then the write operation will be automatically
  * reattempted. If EOF is reached before the specified number of bytes are read,
  * then FileError::UnexpectedEof will be returned.
  *
  * If this function fails, it is unspecified how many bytes were written, though
- * it will always be less than \p size.
+ * it will always be less than `buf.size()`.
  *
  * \param file File handle
  * \param buf Buffer to write from
- * \param size Buffer size
  *
  * \return Nothing if the specified number of bytes were successfully written.
  *         Otherwise, the error code.
  */
-oc::result<void> file_write_exact(File &file, const void *buf, size_t size)
+oc::result<void> file_write_exact(File &file, span<const std::byte> buf)
 {
-    OUTCOME_TRY(n, file_write_retry(file, buf, size));
+    OUTCOME_TRY(n, file_write_retry(file, buf));
 
-    if (n != size) {
+    if (n != buf.size()) {
         return FileError::UnexpectedEof;
     }
 
@@ -208,15 +205,15 @@ oc::result<void> file_write_exact(File &file, const void *buf, size_t size)
  */
 oc::result<uint64_t> file_read_discard(File &file, uint64_t size)
 {
-    char buf[10240];
+    std::byte buf[10240];
 
     uint64_t bytes_discarded = 0;
 
     while (bytes_discarded < size) {
         auto to_read = std::min<uint64_t>(size - bytes_discarded, sizeof(buf));
 
-        OUTCOME_TRY(n, file_read_retry(file, buf,
-                                       static_cast<size_t>(to_read)));
+        OUTCOME_TRY(n, file_read_retry(
+                file, span(buf, static_cast<size_t>(to_read))));
         bytes_discarded += n;
 
         if (n < to_read) {
@@ -255,8 +252,8 @@ oc::result<uint64_t> file_read_discard(File &file, uint64_t size)
  * If \p buf_size is non-zero, a buffer of size \p buf_size will be allocated.
  * If it is less than or equal to \p pattern_size, then the function will return
  * FileError::ArgumentOutOfRange. If \p buf_size is zero, then the larger of
- * 8 MiB and 2 * \p pattern_size will be used. In the rare case that
- * 2 * \p pattern_size would exceed the maximum value of a `size_t`, `SIZE_MAX`
+ * 8 MiB and `2 * pattern.size()` will be used. In the rare case that
+ * `2 * pattern.size()` would exceed the maximum value of a `size_t`, `SIZE_MAX`
  * will be used.
  *
  * If \p file does not support seeking, then the file position must be set to
@@ -277,7 +274,6 @@ oc::result<uint64_t> file_read_discard(File &file, uint64_t size)
  * \param end End offset or nothing for end of file
  * \param bsize Buffer size or 0 to automatically choose a size
  * \param pattern Pattern to search
- * \param pattern_size Size of pattern
  * \param max_matches Maximum number of matches or nothing to find all matches
  * \param result_cb Callback to invoke upon finding a match
  *
@@ -287,8 +283,8 @@ oc::result<uint64_t> file_read_discard(File &file, uint64_t size)
 oc::result<void> file_search(File &file,
                              std::optional<uint64_t> start,
                              std::optional<uint64_t> end,
-                             size_t bsize, const void *pattern,
-                             size_t pattern_size,
+                             size_t bsize,
+                             span<const std::byte> pattern,
                              std::optional<uint64_t> max_matches,
                              const FileSearchResultCallback &result_cb)
 {
@@ -302,7 +298,7 @@ oc::result<void> file_search(File &file,
     }
 
     // Trivial case
-    if ((max_matches && *max_matches == 0) || pattern_size == 0) {
+    if ((max_matches && *max_matches == 0) || pattern.empty()) {
         return oc::success();
     }
 
@@ -312,20 +308,20 @@ oc::result<void> file_search(File &file,
     } else {
         buf_size = DEFAULT_BUFFER_SIZE;
 
-        if (pattern_size > SIZE_MAX / 2) {
+        if (pattern.size() > SIZE_MAX / 2) {
             buf_size = SIZE_MAX;
         } else {
-            buf_size = std::max(buf_size, pattern_size * 2);
+            buf_size = std::max(buf_size, pattern.size() * 2);
         }
     }
 
     // Ensure buffer is large enough
-    if (buf_size < pattern_size) {
+    if (buf_size < pattern.size()) {
         // Buffer size cannot be less than pattern size
         return FileError::ArgumentOutOfRange;
     }
 
-    std::vector<unsigned char> buf(buf_size);
+    std::vector<std::byte> buf(buf_size);
 
     if (start) {
         offset = *start;
@@ -334,9 +330,8 @@ oc::result<void> file_search(File &file,
     }
 
     // Seek to starting point
-    auto seek_ret = file.seek(static_cast<int64_t>(offset), SEEK_SET);
-    if (!seek_ret) {
-        if (seek_ret.error() == FileErrorC::Unsupported) {
+    if (auto r = file.seek(static_cast<int64_t>(offset), SEEK_SET); !r) {
+        if (r.error() == FileErrorC::Unsupported) {
             OUTCOME_TRY(discarded, file_read_discard(file, offset));
 
             if (discarded != offset) {
@@ -344,26 +339,24 @@ oc::result<void> file_search(File &file,
                 return FileError::ArgumentOutOfRange;
             }
         } else {
-            return seek_ret.as_failure();
+            return r.as_failure();
         }
     }
 
     // Initially read to beginning of buffer
-    unsigned char *ptr = buf.data();
-    size_t ptr_remain = buf.size();
+    span search_buf = buf;
 
     // Boyer-Moore searcher for pattern
-    auto pattern_searcher = std2::boyer_moore_searcher<const unsigned char *>(
-            static_cast<const unsigned char *>(pattern),
-            static_cast<const unsigned char *>(pattern) + pattern_size);
+    auto pattern_searcher = std2::boyer_moore_searcher(
+            pattern.begin(), pattern.end());
 
     while (true) {
-        OUTCOME_TRY(n, file_read_retry(file, ptr, ptr_remain));
+        OUTCOME_TRY(n, file_read_retry(file, search_buf));
 
         // Number of available bytes in buf
-        n += static_cast<size_t>(ptr - buf.data());
+        n += static_cast<size_t>(search_buf.data() - buf.data());
 
-        if (n < pattern_size) {
+        if (n < pattern.size()) {
             // Reached EOF
             return oc::success();
         } else if (end && offset >= *end) {
@@ -379,29 +372,27 @@ oc::result<void> file_search(File &file,
         }
 
         // Search from beginning of buffer
-        unsigned char *match = buf.data();
-        size_t match_remain = n;
+        span match_buf{buf.data(), n};
 
         while (true) {
-            auto it = std2::search(match, match + match_remain,
+            auto it = std2::search(match_buf.begin(), match_buf.end(),
                                    pattern_searcher);
-            if (it == match + match_remain) {
+            if (it == match_buf.end()) {
                 break;
             }
-            match = it;
+
+            auto match_index = static_cast<size_t>(it - buf.data());
+            auto match_offset = offset + match_index;
 
             // Stop if match falls outside of ending boundary
-            if (end && offset + static_cast<size_t>(match - buf.data())
-                    + pattern_size > *end) {
+            if (end && match_offset + pattern.size() > *end) {
                 return oc::success();
             }
 
             // Invoke callback
-            auto ret = result_cb(
-                    file, offset + static_cast<size_t>(match - buf.data()));
-            if (!ret) {
-                return ret.as_failure();
-            } else if (ret.value() == FileSearchAction::Stop) {
+            if (auto r = result_cb(file, match_offset); !r) {
+                return r.as_failure();
+            } else if (r.value() == FileSearchAction::Stop) {
                 // Stop searching early
                 return oc::success();
             }
@@ -414,21 +405,15 @@ oc::result<void> file_search(File &file,
             }
 
             // We don't do overlapping searches
-            if (match_remain >= pattern_size) {
-                match += pattern_size;
-                match_remain = n - static_cast<size_t>(match - buf.data());
-            } else {
-                break;
-            }
+            match_buf = match_buf.subspan(match_index + pattern.size());
         }
 
         // Up to pattern_size - 1 bytes may still match, so move those to the
         // beginning. We will move fewer than pattern_size - 1 bytes if there
         // was a match close to the end.
-        size_t to_move = std::min(match_remain, pattern_size - 1);
-        memmove(buf.data(), buf.data() + n - to_move, to_move);
-        ptr = buf.data() + to_move;
-        ptr_remain = buf.size() - to_move;
+        size_t to_move = std::min(match_buf.size(), pattern.size() - 1);
+        memmove(buf.data(), match_buf.last(to_move).data(), to_move);
+        search_buf = span(buf).subspan(to_move);
         offset += n - to_move;
     }
 }
@@ -460,7 +445,7 @@ oc::result<void> file_search(File &file,
 oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
                                uint64_t size)
 {
-    char buf[10240];
+    std::byte buf[10240];
 
     // Check if we need to do anything
     if (src == dest || size == 0) {
@@ -486,7 +471,7 @@ oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
 
             // Read data from source
             OUTCOME_TRY(n_read, file_read_retry(
-                    file, buf, static_cast<size_t>(to_read)));
+                    file, span(buf, static_cast<size_t>(to_read))));
             if (n_read == 0) {
                 break;
             }
@@ -496,7 +481,7 @@ oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
                                    SEEK_SET));
 
             // Write data to destination
-            OUTCOME_TRY(n_written, file_write_retry(file, buf, n_read));
+            OUTCOME_TRY(n_written, file_write_retry(file, span(buf, n_read)));
 
             size_moved += n_written;
 
@@ -515,7 +500,7 @@ oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
 
             // Read data form source
             OUTCOME_TRY(n_read, file_read_retry(
-                    file, buf, static_cast<size_t>(to_read)));
+                    file, span(buf, static_cast<size_t>(to_read))));
             if (n_read == 0) {
                 break;
             }
@@ -525,7 +510,7 @@ oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
                     dest + size - size_moved - n_read), SEEK_SET));
 
             // Write data to destination
-            OUTCOME_TRY(n_written, file_write_retry(file, buf, n_read));
+            OUTCOME_TRY(n_written, file_write_retry(file, span(buf, n_read)));
 
             size_moved += n_written;
 

@@ -20,11 +20,13 @@
 #include <gmock/gmock.h>
 
 #include "mbcommon/file.h"
+#include "mbcommon/file_error.h"
 #include "mbcommon/file/posix.h"
 
 using namespace mb;
 using namespace mb::detail;
 using namespace testing;
+using namespace std::literals;
 
 // Dummy fp that's never dereferenced
 static FILE *g_fp = reinterpret_cast<FILE *>(-1);
@@ -151,8 +153,8 @@ TEST_F(FilePosixTest, CheckInvalidStates)
     auto error = oc::failure(FileError::InvalidState);
 
     ASSERT_EQ(file.close(), error);
-    ASSERT_EQ(file.read(nullptr, 0), error);
-    ASSERT_EQ(file.write(nullptr, 0), error);
+    ASSERT_EQ(file.read({}), error);
+    ASSERT_EQ(file.write({}), error);
     ASSERT_EQ(file.seek(0, SEEK_SET), error);
     ASSERT_EQ(file.truncate(1024), error);
 
@@ -345,8 +347,8 @@ TEST_F(FilePosixTest, ReadSuccess)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    char c;
-    ASSERT_EQ(file.read(&c, 1), oc::success(1u));
+    std::byte b;
+    ASSERT_EQ(file.read({&b, 1}), oc::success(1u));
 }
 
 TEST_F(FilePosixTest, ReadEof)
@@ -359,8 +361,8 @@ TEST_F(FilePosixTest, ReadEof)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    char c;
-    ASSERT_EQ(file.read(&c, 1), oc::success(0u));
+    std::byte b;
+    ASSERT_EQ(file.read({&b, 1}), oc::success(0u));
 }
 
 TEST_F(FilePosixTest, ReadFailure)
@@ -374,8 +376,8 @@ TEST_F(FilePosixTest, ReadFailure)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    char c;
-    ASSERT_EQ(file.read(&c, 1), oc::failure(std::errc::io_error));
+    std::byte b;
+    ASSERT_EQ(file.read({&b, 1}), oc::failure(std::errc::io_error));
 }
 
 TEST_F(FilePosixTest, ReadFailureEINTR)
@@ -393,8 +395,8 @@ TEST_F(FilePosixTest, ReadFailureEINTR)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    char c;
-    ASSERT_EQ(file.read(&c, 1), oc::failure(std::errc::interrupted));
+    std::byte b;
+    ASSERT_EQ(file.read({&b, 1}), oc::failure(std::errc::interrupted));
 }
 
 TEST_F(FilePosixTest, WriteSuccess)
@@ -407,7 +409,7 @@ TEST_F(FilePosixTest, WriteSuccess)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("x", 1), oc::success(1u));
+    ASSERT_EQ(file.write(as_bytes(span("x"sv))), oc::success(1u));
 }
 
 TEST_F(FilePosixTest, WriteEof)
@@ -420,7 +422,7 @@ TEST_F(FilePosixTest, WriteEof)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("x", 1), oc::success(0u));
+    ASSERT_EQ(file.write(as_bytes(span("x"sv))), oc::success(0u));
 }
 
 TEST_F(FilePosixTest, WriteFailure)
@@ -434,7 +436,8 @@ TEST_F(FilePosixTest, WriteFailure)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("x", 1), oc::failure(std::errc::io_error));
+    ASSERT_EQ(file.write(as_bytes(span("x"sv))),
+              oc::failure(std::errc::io_error));
 }
 
 TEST_F(FilePosixTest, WriteFailureEINTR)
@@ -452,7 +455,8 @@ TEST_F(FilePosixTest, WriteFailureEINTR)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("x", 1), oc::failure(std::errc::interrupted));
+    ASSERT_EQ(file.write(as_bytes(span("x"sv))),
+              oc::failure(std::errc::interrupted));
 }
 
 TEST_F(FilePosixTest, SeekSuccess)

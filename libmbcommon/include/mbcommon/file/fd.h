@@ -47,8 +47,8 @@ public:
 
     oc::result<void> close() override;
 
-    oc::result<size_t> read(void *buf, size_t size) override;
-    oc::result<size_t> write(const void *buf, size_t size) override;
+    oc::result<size_t> read(span<std::byte> buf) override;
+    oc::result<size_t> write(span<const std::byte> buf) override;
     oc::result<uint64_t> seek(int64_t offset, int whence) override;
     oc::result<void> truncate(uint64_t size) override;
 

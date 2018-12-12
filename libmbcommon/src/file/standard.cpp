@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -123,14 +123,14 @@ oc::result<void> StandardFile::close()
     return m_file.close();
 }
 
-oc::result<size_t> StandardFile::read(void *buf, size_t size)
+oc::result<size_t> StandardFile::read(span<std::byte> buf)
 {
-    return m_file.read(buf, size);
+    return m_file.read(buf);
 }
 
-oc::result<size_t> StandardFile::write(const void *buf, size_t size)
+oc::result<size_t> StandardFile::write(span<const std::byte> buf)
 {
-    return m_file.write(buf, size);
+    return m_file.write(buf);
 }
 
 oc::result<uint64_t> StandardFile::seek(int64_t offset, int whence)

@@ -22,9 +22,11 @@
 #include <memory>
 
 #include "mbcommon/file.h"
+#include "mbcommon/file_error.h"
 #include "mbcommon/file/memory.h"
 
 using namespace mb;
+using namespace std::literals;
 
 TEST(FileMemoryTest, CheckInvalidStates)
 {
@@ -33,34 +35,28 @@ TEST(FileMemoryTest, CheckInvalidStates)
     auto error = oc::failure(FileError::InvalidState);
 
     ASSERT_EQ(file.close(), error);
-    ASSERT_EQ(file.read(nullptr, 0), error);
-    ASSERT_EQ(file.write(nullptr, 0), error);
+    ASSERT_EQ(file.read({}), error);
+    ASSERT_EQ(file.write({}), error);
     ASSERT_EQ(file.seek(0, SEEK_SET), error);
     ASSERT_EQ(file.truncate(1024), error);
 
     void *in = nullptr;
     size_t in_size = 0;
 
-    ASSERT_TRUE(file.open(in, in_size));
-    ASSERT_EQ(file.open(in, in_size), error);
+    ASSERT_TRUE(file.open({}));
+    ASSERT_EQ(file.open({}), error);
     ASSERT_EQ(file.open(&in, &in_size), error);
 }
 
 TEST(FileStaticMemoryTest, OpenFile)
 {
-    constexpr char *in = nullptr;
-    constexpr size_t in_size = 0;
-
-    MemoryFile file(in, in_size);
+    MemoryFile file(span<std::byte>{});
     ASSERT_TRUE(file.is_open());
 }
 
 TEST(FileStaticMemoryTest, CloseFile)
 {
-    constexpr char *in = nullptr;
-    constexpr size_t in_size = 0;
-
-    MemoryFile file(in, in_size);
+    MemoryFile file(span<std::byte>{});
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file.close());
@@ -72,10 +68,10 @@ TEST(FileStaticMemoryTest, ReadInBounds)
     constexpr size_t in_size = 1;
     char out[1];
 
-    MemoryFile file(in, in_size);
+    MemoryFile file(as_writable_bytes(span(in, in_size)));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(1u));
+    ASSERT_EQ(file.read(as_writable_bytes(span(out))), oc::success(1u));
     ASSERT_EQ(out[0], 'x');
 }
 
@@ -85,23 +81,21 @@ TEST(FileStaticMemoryTest, ReadOutOfBounds)
     constexpr size_t in_size = 1;
     char out[1];
 
-    MemoryFile file(in, in_size);
+    MemoryFile file(as_writable_bytes(span(in, in_size)));
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
-    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(0u));
+    ASSERT_EQ(file.read(as_writable_bytes(span(out))), oc::success(0u));
 }
 
 TEST(FileStaticMemoryTest, ReadEmpty)
 {
-    constexpr char *in = nullptr;
-    constexpr size_t in_size = 0;
     char out[1];
 
-    MemoryFile file(in, in_size);
+    MemoryFile file(span<std::byte>{});
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(0u));
+    ASSERT_EQ(file.read(as_writable_bytes(span(out))), oc::success(0u));
 }
 
 TEST(FileStaticMemoryTest, ReadTooLarge)
@@ -110,10 +104,10 @@ TEST(FileStaticMemoryTest, ReadTooLarge)
     constexpr size_t in_size = 1;
     char out[2];
 
-    MemoryFile file(in, in_size);
+    MemoryFile file(as_writable_bytes(span(in, in_size)));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(1u));
+    ASSERT_EQ(file.read(as_writable_bytes(span(out))), oc::success(1u));
     ASSERT_EQ(out[0], 'x');
 }
 
@@ -122,10 +116,10 @@ TEST(FileStaticMemoryTest, WriteInBounds)
     char in[] = "x";
     constexpr size_t in_size = 1;
 
-    MemoryFile file(in, in_size);
+    MemoryFile file(as_writable_bytes(span(in, in_size)));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("y", 1), oc::success(1u));
+    ASSERT_EQ(file.write(as_bytes(span("y", 1))), oc::success(1u));
     ASSERT_EQ(in[0], 'y');
 }
 
@@ -134,11 +128,11 @@ TEST(FileStaticMemoryTest, WriteOutOfBounds)
     char in[] = "x";
     constexpr size_t in_size = 1;
 
-    MemoryFile file(in, in_size);
+    MemoryFile file(as_writable_bytes(span(in, in_size)));
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
-    ASSERT_EQ(file.write("y", 1), oc::success(0u));
+    ASSERT_EQ(file.write(as_bytes(span("y", 1))), oc::success(0u));
 }
 
 TEST(FileStaticMemoryTest, WriteTooLarge)
@@ -146,10 +140,10 @@ TEST(FileStaticMemoryTest, WriteTooLarge)
     char in[] = "x";
     constexpr size_t in_size = 1;
 
-    MemoryFile file(in, in_size);
+    MemoryFile file(as_writable_bytes(span(in, in_size)));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("yz", 2), oc::success(1u));
+    ASSERT_EQ(file.write(as_bytes(span("yz", 2))), oc::success(1u));
     ASSERT_EQ(in[0], 'y');
 }
 
@@ -158,7 +152,7 @@ TEST(FileStaticMemoryTest, SeekNormal)
     char in[] = "abcdefghijklmnopqrstuvwxyz";
     constexpr size_t in_size = 26;
 
-    MemoryFile file(in, in_size);
+    MemoryFile file(as_writable_bytes(span(in, in_size)));
     ASSERT_TRUE(file.is_open());
 
     // SEEK_SET
@@ -182,7 +176,7 @@ TEST(FileStaticMemoryTest, SeekInvalid)
     char in[] = "abcdefghijklmnopqrstuvwxyz";
     constexpr size_t in_size = 26;
 
-    MemoryFile file(in, in_size);
+    MemoryFile file(as_writable_bytes(span(in, in_size)));
     ASSERT_TRUE(file.is_open());
 
     // Negative SEEK_SET
@@ -221,7 +215,7 @@ TEST(FileStaticMemoryTest, CheckTruncateUnsupported)
     char in[] = "x";
     constexpr size_t in_size = 1;
 
-    MemoryFile file(in, in_size);
+    MemoryFile file(as_writable_bytes(span(in, in_size)));
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file.truncate(10), oc::failure(FileError::UnsupportedTruncate));
@@ -262,7 +256,7 @@ TEST(FileDynamicMemoryTest, ReadInBounds)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(1u));
+    ASSERT_EQ(file.read(as_writable_bytes(span(out))), oc::success(1u));
     ASSERT_EQ(out[0], 'x');
 
     free(in);
@@ -281,7 +275,7 @@ TEST(FileDynamicMemoryTest, ReadOutOfBounds)
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
 
-    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(0u));
+    ASSERT_EQ(file.read(as_writable_bytes(span(out))), oc::success(0u));
 
     free(in);
 }
@@ -295,7 +289,7 @@ TEST(FileDynamicMemoryTest, ReadEmpty)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(0u));
+    ASSERT_EQ(file.read(as_writable_bytes(span(out))), oc::success(0u));
 
     free(in);
 }
@@ -311,7 +305,7 @@ TEST(FileDynamicMemoryTest, ReadTooLarge)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out)), oc::success(1u));
+    ASSERT_EQ(file.read(as_writable_bytes(span(out))), oc::success(1u));
     ASSERT_EQ(out[0], 'x');
 
     free(in);
@@ -327,7 +321,7 @@ TEST(FileDynamicMemoryTest, WriteInBounds)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("y", 1), oc::success(1u));
+    ASSERT_EQ(file.write(as_bytes(span("y", 1))), oc::success(1u));
     ASSERT_EQ(static_cast<char *>(in)[0], 'y');
 
     free(in);
@@ -345,7 +339,7 @@ TEST(FileDynamicMemoryTest, WriteOutOfBounds)
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
 
-    ASSERT_EQ(file.write("y", 1), oc::success(1u));
+    ASSERT_EQ(file.write(as_bytes(span("y", 1))), oc::success(1u));
     ASSERT_EQ(in_size, 11u);
     ASSERT_NE(in, nullptr);
     ASSERT_EQ(static_cast<char *>(in)[10], 'y');
@@ -361,7 +355,7 @@ TEST(FileDynamicMemoryTest, WriteEmpty)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("x", 1), oc::success(1u));
+    ASSERT_EQ(file.write(as_bytes(span("x", 1))), oc::success(1u));
     ASSERT_EQ(in_size, 1u);
     ASSERT_NE(in, nullptr);
     ASSERT_EQ(static_cast<char *>(in)[0], 'x');
@@ -379,7 +373,7 @@ TEST(FileDynamicMemoryTest, WriteTooLarge)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("yz", 2), oc::success(2u));
+    ASSERT_EQ(file.write(as_bytes(span("yz", 2))), oc::success(2u));
     ASSERT_EQ(in_size, 2u);
     ASSERT_NE(in, nullptr);
     ASSERT_EQ(memcmp(in, "yz", 2), 0);

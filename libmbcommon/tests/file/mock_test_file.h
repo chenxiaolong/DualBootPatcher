@@ -34,8 +34,8 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MockFile)
 
     MOCK_METHOD0(close, mb::oc::result<void>());
-    MOCK_METHOD2(read, mb::oc::result<size_t>(void *buf, size_t size));
-    MOCK_METHOD2(write, mb::oc::result<size_t>(const void *buf, size_t size));
+    MOCK_METHOD1(read, mb::oc::result<size_t>(mb::span<std::byte> buf));
+    MOCK_METHOD1(write, mb::oc::result<size_t>(mb::span<const std::byte> buf));
     MOCK_METHOD2(seek, mb::oc::result<uint64_t>(int64_t offset, int whence));
     MOCK_METHOD1(truncate, mb::oc::result<void>(uint64_t size));
     MOCK_METHOD0(is_open, bool());

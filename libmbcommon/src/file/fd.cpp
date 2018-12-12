@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "mbcommon/error_code.h"
+#include "mbcommon/file_error.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/locale.h"
 
@@ -427,15 +428,15 @@ oc::result<void> FdFile::close()
     return oc::success();
 }
 
-oc::result<size_t> FdFile::read(void *buf, size_t size)
+oc::result<size_t> FdFile::read(span<std::byte> buf)
 {
     if (!is_open()) return FileError::InvalidState;
 
-    if (size > SSIZE_MAX) {
-        size = SSIZE_MAX;
+    if (buf.size() > SSIZE_MAX) {
+        buf = buf.first(SSIZE_MAX);
     }
 
-    ssize_t n = m_funcs->fn_read(m_fd, buf, size);
+    ssize_t n = m_funcs->fn_read(m_fd, buf.data(), buf.size());
     if (n < 0) {
         return ec_from_errno();
     }
@@ -443,15 +444,15 @@ oc::result<size_t> FdFile::read(void *buf, size_t size)
     return static_cast<size_t>(n);
 }
 
-oc::result<size_t> FdFile::write(const void *buf, size_t size)
+oc::result<size_t> FdFile::write(span<const std::byte> buf)
 {
     if (!is_open()) return FileError::InvalidState;
 
-    if (size > SSIZE_MAX) {
-        size = SSIZE_MAX;
+    if (buf.size() > SSIZE_MAX) {
+        buf = buf.first(SSIZE_MAX);
     }
 
-    ssize_t n = m_funcs->fn_write(m_fd, buf, size);
+    ssize_t n = m_funcs->fn_write(m_fd, buf.data(), buf.size());
     if (n < 0) {
         return ec_from_errno();
     }

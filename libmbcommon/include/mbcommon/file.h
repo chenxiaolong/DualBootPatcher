@@ -21,14 +21,11 @@
 
 #include "mbcommon/common.h"
 
-#include <memory>
-#include <string>
-
 #include <cstddef>
 #include <cstdint>
 
-#include "mbcommon/file_error.h"
 #include "mbcommon/outcome.h"
+#include "mbcommon/span.h"
 
 namespace mb
 {
@@ -45,8 +42,8 @@ public:
     virtual oc::result<void> close() = 0;
 
     // File operations
-    virtual oc::result<size_t> read(void *buf, size_t size) = 0;
-    virtual oc::result<size_t> write(const void *buf, size_t size) = 0;
+    virtual oc::result<size_t> read(span<std::byte> buf) = 0;
+    virtual oc::result<size_t> write(span<const std::byte> buf) = 0;
     virtual oc::result<uint64_t> seek(int64_t offset, int whence) = 0;
     virtual oc::result<void> truncate(uint64_t size) = 0;
 

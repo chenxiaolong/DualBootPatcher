@@ -96,7 +96,6 @@ File::~File() = default;
  * \endcode
  *
  * \param[out] buf Buffer to read into
- * \param[in] size Buffer size
  *
  * \return
  *   * Number of bytes read if some bytes are successfully read or EOF is
@@ -122,7 +121,6 @@ File::~File() = default;
  * \endcode
  *
  * \param buf Buffer to write from
- * \param size Buffer size
  *
  * \return
  *   * Number of bytes written if some bytes are successfully written or EOF is
