@@ -33,6 +33,7 @@
 #include "file/mock_test_file.h"
 
 using namespace mb;
+using namespace mb::detail;
 using namespace testing;
 
 struct FileUtilTest : Test
@@ -256,76 +257,98 @@ TEST_F(FileUtilTest, ReadDiscardPartialFail)
     ASSERT_EQ(file_read_discard(_file, 10), oc::failure(std::error_code()));
 }
 
-struct FileSearchTest : Test
-{
-    // Callback counters
-    int _n_result = 0;
-    FileSearchResultCallback _cb;
-
-    FileSearchTest()
-        : _cb(std::bind(&FileSearchTest::_result_cb, this,
-                        std::placeholders::_1, std::placeholders::_2))
-    {
-    }
-
-    oc::result<FileSearchAction> _result_cb(File &file, uint64_t offset)
-    {
-        (void) file;
-        (void) offset;
-
-        ++_n_result;
-
-        return FileSearchAction::Continue;
-    }
-};
-
-TEST_F(FileSearchTest, CheckInvalidBoundariesFail)
+TEST(FileSearchTest, CheckZeroPatternSize)
 {
     MemoryFile file(const_cast<char *>(""), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file_search(file, 20, 10, 0, "x", 1, {}, _cb),
-              oc::failure(FileError::ArgumentOutOfRange));
+    FileSearcher searcher(&file, nullptr, 0);
+    // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
+    ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
 }
 
-TEST_F(FileSearchTest, CheckZeroMaxMatches)
+TEST(FileSearchTest, FindAtBeginningOfBuffer)
 {
-    MemoryFile file(const_cast<char *>(""), 0);
+    std::string buf = "abcdxxxx";
+
+    MemoryFile file(buf.data(), buf.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, 0, _cb));
+    FileSearcher searcher(&file, "abcd", 4);
+    // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
+    ASSERT_TRUE(searcher.next() == oc::success(0));
+    ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
 }
 
-TEST_F(FileSearchTest, CheckZeroPatternSize)
+TEST(FileSearchTest, FindAtEndOfBuffer)
 {
-    MemoryFile file(const_cast<char *>(""), 0);
+    std::string buf = "xxxxabcd";
+
+    MemoryFile file(buf.data(), buf.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, {}, {}, 0, nullptr, 0, {}, _cb));
+    FileSearcher searcher(&file, "abcd", 4);
+    // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
+    ASSERT_TRUE(searcher.next() == oc::success(4));
+    ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
 }
 
-TEST_F(FileSearchTest, CheckBufferSize)
+TEST(FileSearchTest, FindOnBoundaryOfBuffer)
 {
-    MemoryFile file(const_cast<char *>(""), 0);
+    std::string buf;
+    buf.resize(DEFAULT_BUFFER_SIZE - 1);
+    buf += "abcd";
+
+    MemoryFile file(buf.data(), buf.size());
     ASSERT_TRUE(file.is_open());
 
-    // Auto buffer size
-    ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, {}, _cb));
-
-    // Too small
-    ASSERT_EQ(file_search(file, {}, {}, 1, "xxx", 3, {}, _cb),
-              oc::failure(FileError::ArgumentOutOfRange));
-
-    // Equal to pattern size
-    ASSERT_TRUE(file_search(file, {}, {}, 1, "x", 1, {}, _cb));
+    FileSearcher searcher(&file, "abcd", 4);
+    // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
+    ASSERT_TRUE(searcher.next() == oc::success(DEFAULT_BUFFER_SIZE - 1));
+    ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
 }
 
-TEST_F(FileSearchTest, FindNormal)
+TEST(FileSearchTest, FindAtBeginningOfNextBuffer)
 {
-    MemoryFile file(const_cast<char *>("abc"), 3);
+    // Next buffer contains pattern size - 1 bytes of data
+    std::string buf;
+    buf.resize(DEFAULT_BUFFER_SIZE - 3);
+    buf += "abcd";
+
+    MemoryFile file(buf.data(), buf.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, {}, {}, 0, "a", 1, {}, _cb));
+    FileSearcher searcher(&file, "abcd", 4);
+    // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
+    ASSERT_TRUE(searcher.next() == oc::success(DEFAULT_BUFFER_SIZE - 3));
+    ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
+}
+
+TEST(FileSearchTest, FindNonMatching)
+{
+    std::string buf = "xxxxabcdxxxx";
+
+    MemoryFile file(buf.data(), buf.size());
+    ASSERT_TRUE(file.is_open());
+
+    FileSearcher searcher(&file, "abcde", 5);
+    // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
+    ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
+}
+
+TEST(FileSearchTest, FindNonMatchingAtBoundary)
+{
+    // Next buffer contains pattern size - 1 bytes of data
+    std::string buf;
+    buf.resize(DEFAULT_BUFFER_SIZE - 4);
+    buf += "abcdxxxx";
+
+    MemoryFile file(buf.data(), buf.size());
+    ASSERT_TRUE(file.is_open());
+
+    FileSearcher searcher(&file, "abcde", 5);
+    // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
+    ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
 }
 
 TEST(FileMoveTest, DegenerateCasesShouldSucceed)
