@@ -596,19 +596,13 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         return false;
     }
 
-    // Replace pattern
-    auto result_cb = [&](File &file, uint64_t offset_)
-            -> oc::result<FileSearchAction> {
-        (void) file;
-        offset = offset_;
-        return FileSearchAction::Stop;
-    };
+    FileSearcher searcher(&fin, source_pattern, sizeof(source_pattern));
 
-    auto search_ret = file_search(fin, {}, {}, 0, source_pattern,
-                                  sizeof(source_pattern), 1, result_cb);
-    if (!search_ret) {
+    if (auto r = searcher.next()) {
+        offset = r.value();
+    } else {
         LOGE("%s: Error when searching for pattern: %s",
-             input_file.c_str(), search_ret.error().message().c_str());
+             input_file.c_str(), r.error().message().c_str());
         return false;
     }
 
