@@ -34,8 +34,6 @@
 #include "mbcommon/error_code.h"
 #include "mbcommon/file_error.h"
 
-#define DEFAULT_BUFFER_SIZE             (8 * 1024 * 1024)
-
 /*!
  * \file mbcommon/file_util.h
  * \brief Useful utility functions for File API
@@ -44,11 +42,7 @@
 namespace mb
 {
 
-#ifdef __ANDROID__
-namespace std2 = std::experimental;
-#else
-namespace std2 = std;
-#endif
+using namespace detail;
 
 /*!
  * \brief Read from a File handle.
@@ -229,209 +223,175 @@ oc::result<uint64_t> file_read_discard(File &file, uint64_t size)
 }
 
 /*!
- * \typedef FileSearchResultCallback
+ * \class FileSearcher
  *
- * \brief Search result callback for file_search()
- *
- * \note The file position must not change after a successful return of this
- *       callback. If file operations need to be performed, save the file
- *       position beforehand with File::seek() and restore it afterwards. Note
- *       that the file position is unlikely to match \p offset.
- *
- * \sa file_search()
- *
- * \param file File handle
- * \param offset File offset of search result
- *
- * \return
- *   * #FileSearchAction::Continue to continue search
- *   * #FileSearchAction::Stop to stop search, but have file_search() report a
- *     successful result
- *   * An error code if file_search() should report a failure
+ * \brief Search file for binary sequence
  */
 
 /*!
- * \brief Search file for binary sequence
+ * \brief Construct with search pattern
  *
- * If \p buf_size is non-zero, a buffer of size \p buf_size will be allocated.
- * If it is less than or equal to \p pattern_size, then the function will return
- * FileError::ArgumentOutOfRange. If \p buf_size is zero, then the larger of
- * 8 MiB and 2 * \p pattern_size will be used. In the rare case that
- * 2 * \p pattern_size would exceed the maximum value of a `size_t`, `SIZE_MAX`
- * will be used.
+ * \param file File to search
+ * \param pattern Pointer to search for
+ * \param pattern_size Size of pattern
+ */
+FileSearcher::FileSearcher(File *file, const void *pattern, size_t pattern_size)
+    : m_file(file)
+    , m_pattern(pattern)
+    , m_pattern_size(pattern_size)
+    , m_searcher({static_cast<const unsigned char *>(pattern),
+                  static_cast<const unsigned char *>(pattern) + pattern_size})
+    , m_region_begin(0)
+    , m_region_end(0)
+    , m_offset(0)
+{
+    auto buf_size = DEFAULT_BUFFER_SIZE;
+
+    if (pattern_size > SIZE_MAX / 2) {
+        buf_size = SIZE_MAX;
+    } else {
+        buf_size = std::max(buf_size, pattern_size * 2);
+    }
+
+    m_buf.resize(buf_size);
+}
+
+/*!
+ * \brief Move constructor
  *
- * If \p file does not support seeking, then the file position must be set to
- * the beginning of the file before calling this function. Instead of seeking,
- * the function will read and discard any data before \p start.
+ * \p other will be placed in an unusable state. It can be reused by assigning
+ * it to a new FileSearcher instance.
  *
+ * \param other File searcher to move from
+ */
+FileSearcher::FileSearcher(FileSearcher &&other) noexcept
+{
+    clear();
+
+    std::swap(m_file, other.m_file);
+    std::swap(m_pattern, other.m_pattern);
+    std::swap(m_pattern_size, other.m_pattern_size);
+    std::swap(m_searcher, other.m_searcher);
+    std::swap(m_buf, other.m_buf);
+    std::swap(m_region_begin, other.m_region_begin);
+    std::swap(m_region_end, other.m_region_end);
+    std::swap(m_offset, other.m_offset);
+}
+
+/*!
+ * \brief Move assignment operator
+ *
+ * \p rhs will be placed in an unusable state. It can be reused by assigning it
+ * to a new FileSearcher instance.
+ *
+ * \param rhs File searcher to move from
+ */
+FileSearcher & FileSearcher::operator=(FileSearcher &&rhs) noexcept
+{
+    if (this != &rhs) {
+        clear();
+
+        std::swap(m_file, rhs.m_file);
+        std::swap(m_pattern, rhs.m_pattern);
+        std::swap(m_pattern_size, rhs.m_pattern_size);
+        std::swap(m_searcher, rhs.m_searcher);
+        std::swap(m_buf, rhs.m_buf);
+        std::swap(m_region_begin, rhs.m_region_begin);
+        std::swap(m_region_end, rhs.m_region_end);
+        std::swap(m_offset, rhs.m_offset);
+    }
+
+    return *this;
+}
+
+/*!
+ * \brief Find next match in the file
+ *
+ * The offset returned is relative to the file position when the FileSearcher
+ * was constructed.
+ *
+ * If the file happens to be seekable, the caller may interact with the file.
+ * However, the file position *must* be restored to the original position before
+ * the next call to this function. Note that the file position is not guaranteed
+ * (and even unlikely) to equal the match offset due to in-memory buffering.
+  *
  * \note We do not do overlapping searches. For example, if a file's contents
- *       is "ababababab" and the search pattern is "abab", the resulting offsets
+ *       is `ababababab` and the search pattern is `abab`, the resulting offsets
  *       will be (0 and 4), *not* (0, 2, 4, 6). In other words, the next search
- *       begins at the end of the curent search.
+ *       begins at the end of the curent match.
  *
- * \note The file position after this function returns is undefined. Be sure to
- *       seek to a known location before attempting further read or write
+ * \note The file position after this function returns is unspecified. Be sure
+ *       to seek to a known location before attempting further read or write
  *       operations.
  *
- * \param file File handle
- * \param start Start offset or nothing for beginning of file
- * \param end End offset or nothing for end of file
- * \param bsize Buffer size or 0 to automatically choose a size
- * \param pattern Pattern to search
- * \param pattern_size Size of pattern
- * \param max_matches Maximum number of matches or nothing to find all matches
- * \param result_cb Callback to invoke upon finding a match
- *
- * \return Nothing if the search completes successfully. Otherwise, the error
- *         code.
+ * \return
+ *   * The match offset if the pattern is found
+ *   * std::nullopt if there are no more matches
+ *   * Otherwise, an appropriate error code
  */
-oc::result<void> file_search(File &file,
-                             std::optional<uint64_t> start,
-                             std::optional<uint64_t> end,
-                             size_t bsize, const void *pattern,
-                             size_t pattern_size,
-                             std::optional<uint64_t> max_matches,
-                             const FileSearchResultCallback &result_cb)
+oc::result<std::optional<uint64_t>> FileSearcher::next()
 {
-    size_t buf_size;
-    uint64_t offset;
-
-    // Check boundaries
-    if (start && end && *end < *start) {
-        // End offset < start offset
-        return FileError::ArgumentOutOfRange;
+    if (!m_file) {
+        return FileError::InvalidState;
     }
 
-    // Trivial case
-    if ((max_matches && *max_matches == 0) || pattern_size == 0) {
-        return oc::success();
+    if (m_pattern_size == 0) {
+        return std::nullopt;
     }
-
-    // Compute buffer size
-    if (bsize != 0) {
-        buf_size = bsize;
-    } else {
-        buf_size = DEFAULT_BUFFER_SIZE;
-
-        if (pattern_size > SIZE_MAX / 2) {
-            buf_size = SIZE_MAX;
-        } else {
-            buf_size = std::max(buf_size, pattern_size * 2);
-        }
-    }
-
-    // Ensure buffer is large enough
-    if (buf_size < pattern_size) {
-        // Buffer size cannot be less than pattern size
-        return FileError::ArgumentOutOfRange;
-    }
-
-    std::vector<unsigned char> buf(buf_size);
-
-    if (start) {
-        offset = *start;
-    } else {
-        offset = 0;
-    }
-
-    // Seek to starting point
-    auto seek_ret = file.seek(static_cast<int64_t>(offset), SEEK_SET);
-    if (!seek_ret) {
-        if (seek_ret.error() == FileErrorC::Unsupported) {
-            OUTCOME_TRY(discarded, file_read_discard(file, offset));
-
-            if (discarded != offset) {
-                // Reached EOF before starting offset
-                return FileError::ArgumentOutOfRange;
-            }
-        } else {
-            return seek_ret.as_failure();
-        }
-    }
-
-    // Initially read to beginning of buffer
-    unsigned char *ptr = buf.data();
-    size_t ptr_remain = buf.size();
-
-    // Boyer-Moore searcher for pattern
-    auto pattern_searcher = std2::boyer_moore_searcher<const unsigned char *>(
-            static_cast<const unsigned char *>(pattern),
-            static_cast<const unsigned char *>(pattern) + pattern_size);
 
     while (true) {
-        OUTCOME_TRY(n, file_read_retry(file, ptr, ptr_remain));
-
-        // Number of available bytes in buf
-        n += static_cast<size_t>(ptr - buf.data());
-
-        if (n < pattern_size) {
-            // Reached EOF
-            return oc::success();
-        } else if (end && offset >= *end) {
-            // Artificial EOF
-            return oc::success();
-        }
-
-        // Ensure that offset + n (and consequently, offset + diff) cannot
-        // overflow
-        if (n > UINT64_MAX - offset) {
-            // Read overflows offset value
-            return FileError::IntegerOverflow;
-        }
-
-        // Search from beginning of buffer
-        unsigned char *match = buf.data();
-        size_t match_remain = n;
-
-        while (true) {
-            auto it = std2::search(match, match + match_remain,
-                                   pattern_searcher);
-            if (it == match + match_remain) {
-                break;
-            }
-            match = it;
-
-            // Stop if match falls outside of ending boundary
-            if (end && offset + static_cast<size_t>(match - buf.data())
-                    + pattern_size > *end) {
-                return oc::success();
-            }
-
-            // Invoke callback
-            auto ret = result_cb(
-                    file, offset + static_cast<size_t>(match - buf.data()));
-            if (!ret) {
-                return ret.as_failure();
-            } else if (ret.value() == FileSearchAction::Stop) {
-                // Stop searching early
-                return oc::success();
-            }
-
-            if (max_matches && *max_matches > 0) {
-                --*max_matches;
-                if (*max_matches == 0) {
-                    return oc::success();
-                }
-            }
+        // Find pattern in current buffer
+        if (auto it = std2::search(m_buf.data() + m_region_begin,
+                                   m_buf.data() + m_region_end, *m_searcher);
+                it != m_buf.data() + m_region_end) {
+            auto match_index = static_cast<size_t>(it - m_buf.data());
+            auto match_offset = m_offset + match_index;
 
             // We don't do overlapping searches
-            if (match_remain >= pattern_size) {
-                match += pattern_size;
-                match_remain = n - static_cast<size_t>(match - buf.data());
-            } else {
-                break;
-            }
+            m_region_begin += match_index + m_pattern_size;
+
+            return match_offset;
         }
 
-        // Up to pattern_size - 1 bytes may still match, so move those to the
-        // beginning. We will move fewer than pattern_size - 1 bytes if there
-        // was a match close to the end.
-        size_t to_move = std::min(match_remain, pattern_size - 1);
-        memmove(buf.data(), buf.data() + n - to_move, to_move);
-        ptr = buf.data() + to_move;
-        ptr_remain = buf.size() - to_move;
-        offset += n - to_move;
+        // If the pattern is not found, up to pattern_size - 1 bytes may still
+        // match, so move those to the beginning. We will move fewer than
+        // pattern_size - 1 bytes if there was a match close to the end.
+        auto to_move = std::min(m_region_end - m_region_begin,
+                                m_pattern_size - 1);
+        m_offset += m_region_end - to_move;
+        memmove(m_buf.data(), m_buf.data() + m_region_end - to_move, to_move);
+        m_region_begin = 0;
+        m_region_end = to_move;
+
+        // Fill up buffer. Dereferencing m_buf_end is always okay because it is
+        // guaranteed to be m_pattern_size - 1 bytes or less into the buffer.
+        OUTCOME_TRY(n, file_read_retry(*m_file, m_buf.data() + m_region_end,
+                                       m_buf.size() - m_region_end));
+
+        m_region_end += n;
+
+        if (m_region_end < m_pattern_size) {
+            // Reached EOF
+            return std::nullopt;
+        }
+
+        // Ensure match offset cannot overflow
+        if (m_offset > UINT64_MAX - (m_region_end - m_pattern_size)) {
+            return std::errc::result_out_of_range;
+        }
     }
+}
+
+void FileSearcher::clear() noexcept
+{
+    m_file = nullptr;
+    m_pattern = nullptr;
+    m_pattern_size = 0;
+    m_searcher = std::nullopt;
+    m_buf.clear();
+    m_region_begin = 0;
+    m_region_end = 0;
+    m_offset = 0;
 }
 
 /*!

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,6 +20,8 @@
 #include "mbcommon/file_util.h"
 
 #include <limits>
+#include <string>
+#include <string_view>
 #include <type_traits>
 
 #include <cerrno>
@@ -47,8 +49,7 @@ static void usage(FILE *stream, const char *prog_name)
                     "  -n, --num-matches\n"
                     "                  Maximum number of matches\n"
                     "  --start-offset  Starting boundary offset for search\n"
-                    "  --end-offset    Ending boundary offset for search\n"
-                    "  --buffer-size   Buffer size\n",
+                    "  --end-offset    Ending boundary offset for search\n",
                     prog_name);
 }
 
@@ -65,71 +66,84 @@ static int ascii_to_hex(char c)
     }
 }
 
-static bool hex_to_binary(const char *hex, void **data, size_t *data_size)
+static bool hex_to_binary(std::string_view hex, std::string &data)
 {
-    size_t size = strlen(hex);
-    unsigned char *buf;
-
-    if (size & 1) {
+    if (hex.size() & 1) {
         errno = EINVAL;
         return false;
     }
 
-    buf = static_cast<unsigned char *>(malloc(size / 2));
-    if (!buf) {
-        return false;
-    }
+    data.clear();
+    data.reserve(hex.size() / 2);
 
-    for (size_t i = 0; i < size; i += 2) {
-        int hi = ascii_to_hex(hex[i]);
-        int lo = ascii_to_hex(hex[i + 1]);
+    for (auto it = hex.begin(); it != hex.end(); it += 2) {
+        int hi = ascii_to_hex(*it);
+        int lo = ascii_to_hex(*(it + 1));
 
         if (hi < 0 || lo < 0) {
-            free(buf);
             errno = EINVAL;
             return false;
         }
 
-        buf[i / 2] = static_cast<unsigned char>((hi << 4) | lo);
+        data.push_back(static_cast<char>((hi << 4) | lo));
     }
 
-    *data = buf;
-    *data_size = size / 2;
-
     return true;
-}
-
-static mb::oc::result<mb::FileSearchAction>
-search_result_cb(const char *name, mb::File &file, uint64_t offset)
-{
-    (void) file;
-    printf("%s: 0x%016" PRIx64 "\n", name, offset);
-    return mb::FileSearchAction::Continue;
 }
 
 static bool search(const char *name, mb::File &file,
                    std::optional<uint64_t> start,
                    std::optional<uint64_t> end,
-                   size_t bsize, const void *pattern,
-                   size_t pattern_size, std::optional<uint64_t> max_matches)
+                   std::string_view pattern,
+                   std::optional<uint64_t> max_matches)
 {
     using namespace std::placeholders;
 
-    auto ret = mb::file_search(file, start, end, bsize, pattern, pattern_size,
-                               max_matches,
-                               std::bind(search_result_cb, name, _1, _2));
-    if (!ret) {
-        fprintf(stderr, "%s: Search failed: %s\n",
-                name, ret.error().message().c_str());
-        return false;
+    if (start) {
+        if (auto r = file.seek(static_cast<int64_t>(*start), SEEK_SET); !r) {
+            fprintf(stderr, "%s: Failed to seek file: %s\n",
+                    name, r.error().message().c_str());
+            return false;
+        }
+    } else {
+        start = 0;
     }
+
+    mb::FileSearcher searcher(&file, pattern.data(), pattern.size());
+
+    while (true) {
+        if (max_matches) {
+            if (*max_matches == 0) {
+                break;
+            }
+            --*max_matches;
+        }
+
+        if (auto r = searcher.next()) {
+            if (r.value()) {
+                if (end && (*r.value() + pattern.size()) > *end) {
+                    // Artificial EOF
+                    break;
+                } else {
+                    printf("%s: 0x%016" PRIx64 "\n", name, *r.value() + *start);
+                }
+            } else {
+                // No more matches
+                break;
+            }
+        } else {
+            fprintf(stderr, "%s: Search failed: %s\n",
+                    name, r.error().message().c_str());
+            return false;
+        }
+    }
+
     return true;
 }
 
 static bool search_stdin(std::optional<uint64_t> start,
                          std::optional<uint64_t> end,
-                         size_t bsize, const void *pattern,
-                         size_t pattern_size,
+                         std::string_view pattern,
                          std::optional<uint64_t> max_matches)
 {
     mb::PosixFile file;
@@ -141,15 +155,13 @@ static bool search_stdin(std::optional<uint64_t> start,
         return false;
     }
 
-    return search("stdin", file, start, end, bsize, pattern, pattern_size,
-                  max_matches);
+    return search("stdin", file, start, end, pattern, max_matches);
 }
 
 static bool search_file(const char *path,
                         std::optional<uint64_t> start,
                         std::optional<uint64_t> end,
-                        size_t bsize, const void *pattern,
-                        size_t pattern_size,
+                        std::string_view pattern,
                         std::optional<uint64_t> max_matches)
 {
     mb::StandardFile file;
@@ -161,22 +173,15 @@ static bool search_file(const char *path,
         return false;
     }
 
-    return search(path, file, start, end, bsize, pattern, pattern_size,
-                  max_matches);
+    return search(path, file, start, end, pattern, max_matches);
 }
 
 int main(int argc, char *argv[])
 {
     std::optional<uint64_t> start;
     std::optional<uint64_t> end;
-    size_t bsize = 0;
     std::optional<uint64_t> max_matches;
-
-    const char *text_pattern = nullptr;
-    const char *hex_pattern = nullptr;
-    void *pattern = nullptr;
-    size_t pattern_size = 0;
-    bool pattern_needs_free = false;
+    std::optional<std::string> pattern;
 
     int opt;
 
@@ -185,7 +190,6 @@ int main(int argc, char *argv[])
     {
         OPT_START_OFFSET         = CHAR_MAX + 1,
         OPT_END_OFFSET           = CHAR_MAX + 2,
-        OPT_BUFFER_SIZE          = CHAR_MAX + 3,
     };
 
     static const char short_options[] = "hn:p:t:";
@@ -199,7 +203,6 @@ int main(int argc, char *argv[])
         // Arguments without short versions
         {"start-offset", required_argument, nullptr, OPT_START_OFFSET},
         {"end-offset",   required_argument, nullptr, OPT_END_OFFSET},
-        {"buffer-size",  required_argument, nullptr, OPT_BUFFER_SIZE},
         {nullptr,        0,                 nullptr, 0},
     };
 
@@ -219,12 +222,17 @@ int main(int argc, char *argv[])
             break;
         }
 
-        case 'p':
-            hex_pattern = optarg;
+        case 'p': {
+            pattern = "";
+            if (!hex_to_binary(optarg, *pattern)) {
+                fprintf(stderr, "Invalid hex pattern: %s\n", strerror(errno));
+                return EXIT_FAILURE;
+            }
             break;
+        }
 
         case 't':
-            text_pattern = optarg;
+            pattern = optarg;
             break;
 
         case OPT_START_OFFSET: {
@@ -249,14 +257,6 @@ int main(int argc, char *argv[])
             break;
         }
 
-        case OPT_BUFFER_SIZE:
-            if (!mb::str_to_num(optarg, 10, bsize)) {
-                fprintf(stderr, "Invalid value for --buffer-size: %s\n",
-                        optarg);
-                return EXIT_FAILURE;
-            }
-            break;
-
         case 'h':
             usage(stdout, argv[0]);
             return EXIT_SUCCESS;
@@ -267,37 +267,22 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!hex_pattern && !text_pattern) {
+    if (!pattern) {
         fprintf(stderr, "No pattern provided\n");
         return EXIT_FAILURE;
-    } else if (hex_pattern) {
-        if (!hex_to_binary(hex_pattern, &pattern, &pattern_size)) {
-            fprintf(stderr, "Invalid hex pattern: %s\n", strerror(errno));
-            return EXIT_FAILURE;
-        }
-        pattern_needs_free = true;
-    } else if (text_pattern) {
-        pattern = const_cast<char *>(text_pattern);
-        pattern_size = strlen(text_pattern);
     }
 
     bool ret = true;
 
     if (optind == argc) {
-        ret = search_stdin(start, end, bsize, pattern, pattern_size,
-                           max_matches);
+        ret = search_stdin(start, end, *pattern, max_matches);
     } else {
         for (int i = optind; i < argc; ++i) {
-            bool ret2 = search_file(argv[i], start, end, bsize, pattern,
-                                    pattern_size, max_matches);
+            bool ret2 = search_file(argv[i], start, end, *pattern, max_matches);
             if (!ret2) {
                 ret = false;
             }
         }
-    }
-
-    if (pattern_needs_free) {
-        free(pattern);
     }
 
     return ret ? EXIT_SUCCESS : EXIT_FAILURE;
