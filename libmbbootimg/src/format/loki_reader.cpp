@@ -243,25 +243,18 @@ LokiFormatReader::find_ramdisk_address(File &file,
     uint32_t ramdisk_addr;
 
     if (lhdr.ramdisk_addr != 0) {
-        uint64_t offset = 0;
+        OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
-        auto result_cb = [&](File &file_, uint64_t offset_)
-                -> oc::result<FileSearchAction> {
-            (void) file_;
-            offset = offset_;
-            return FileSearchAction::Continue;
-        };
+        FileSearcher searcher(&file, LOKI_SHELLCODE, LOKI_SHELLCODE_SIZE - 9);
 
-        OUTCOME_TRYV(file_search(file, {}, {}, 0, LOKI_SHELLCODE,
-                                 LOKI_SHELLCODE_SIZE - 9, 1, result_cb));
-
-        if (offset == 0) {
+        OUTCOME_TRY(offset, searcher.next());
+        if (!offset) {
             return LokiError::ShellcodeNotFound;
         }
 
-        offset += LOKI_SHELLCODE_SIZE - 5;
+        *offset += LOKI_SHELLCODE_SIZE - 5;
 
-        OUTCOME_TRYV(file.seek(static_cast<int64_t>(offset), SEEK_SET));
+        OUTCOME_TRYV(file.seek(static_cast<int64_t>(*offset), SEEK_SET));
 
         OUTCOME_TRYV(file_read_exact(file, &ramdisk_addr, sizeof(ramdisk_addr)));
 
@@ -313,50 +306,55 @@ LokiFormatReader::find_gzip_offset_old(File &file, uint32_t start_offset)
     // byte 8   : compression flags
     // byte 9   : operating system
 
-    static const unsigned char gzip_deflate_magic[] = { 0x1f, 0x8b, 0x08 };
+    static constexpr unsigned char gzip_deflate_magic[] = { 0x1f, 0x8b, 0x08 };
 
+    OUTCOME_TRYV(file.seek(static_cast<int64_t>(start_offset), SEEK_SET));
+
+    FileSearcher searcher(&file, gzip_deflate_magic,
+                          sizeof(gzip_deflate_magic));
     std::optional<uint64_t> flag0_offset;
     std::optional<uint64_t> flag8_offset;
 
     // Find first result with flags == 0x00 and flags == 0x08
-    auto result_cb = [&](File &file_, uint64_t offset)
-            -> oc::result<FileSearchAction> {
+    while (true) {
+        OUTCOME_TRY(offset, searcher.next());
+        if (!offset) {
+            break;
+        }
+
+        // Offset is relative to starting position
+        *offset += start_offset;
+
         // Save original position
-        OUTCOME_TRY(orig_offset, file_.seek(0, SEEK_CUR));
+        OUTCOME_TRY(orig_offset, file.seek(0, SEEK_CUR));
 
         // Seek to flags byte
-        OUTCOME_TRYV(file_.seek(static_cast<int64_t>(offset + 3), SEEK_SET));
+        OUTCOME_TRYV(file.seek(static_cast<int64_t>(*offset + 3), SEEK_SET));
 
         // Read next bytes for flags
         unsigned char flags;
-        auto ret = file_read_exact(file_, &flags, sizeof(flags));
-        if (!ret) {
-            if (ret.error() == FileError::UnexpectedEof) {
-                return FileSearchAction::Stop;
+        if (auto r = file_read_exact(file, &flags, sizeof(flags)); !r) {
+            if (r.error() == FileError::UnexpectedEof) {
+                break;
             } else {
-                return ret.as_failure();
+                return r.as_failure();
             }
         }
 
         if (!flag0_offset && flags == 0x00) {
-            flag0_offset = offset;
+            flag0_offset = *offset;
         } else if (!flag8_offset && flags == 0x08) {
-            flag8_offset = offset;
+            flag8_offset = *offset;
         }
 
         // Restore original position as per contract
-        OUTCOME_TRYV(file_.seek(static_cast<int64_t>(orig_offset), SEEK_SET));
+        OUTCOME_TRYV(file.seek(static_cast<int64_t>(orig_offset), SEEK_SET));
 
         // Stop early if possible
         if (flag0_offset && flag8_offset) {
-            return FileSearchAction::Stop;
+            break;
         }
-
-        return FileSearchAction::Continue;
-    };
-
-    OUTCOME_TRYV(file_search(file, start_offset, {}, 0, gzip_deflate_magic,
-                             sizeof(gzip_deflate_magic), {}, result_cb));
+    }
 
     // Prefer gzip header with original filename flag since most loki'd boot
     // images will have been compressed manually with the gzip tool
