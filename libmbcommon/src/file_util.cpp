@@ -421,8 +421,6 @@ void FileSearcher::clear() noexcept
 oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
                                uint64_t size)
 {
-    char buf[10240];
-
     // Check if we need to do anything
     if (src == dest || size == 0) {
         return size;
@@ -433,64 +431,39 @@ oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
         return FileError::ArgumentOutOfRange;
     }
 
+    char buf[10240];
     uint64_t size_moved = 0;
+    const bool copy_forwards = dest < src;
 
-    if (dest < src) {
-        // Copy forwards
-        while (size_moved < size) {
-            auto to_read = std::min<uint64_t>(
-                    sizeof(buf), size - size_moved);
+    while (size_moved < size) {
+        auto to_read = std::min<uint64_t>(sizeof(buf), size - size_moved);
 
-            // Seek to source offset
-            OUTCOME_TRYV(file.seek(static_cast<int64_t>(src + size_moved),
-                                   SEEK_SET));
+        // Seek to source offset
+        OUTCOME_TRYV(file.seek(static_cast<int64_t>(
+                copy_forwards ? src + size_moved
+                        : src + size - size_moved - to_read), SEEK_SET));
 
-            // Read data from source
-            OUTCOME_TRY(n_read, file_read_retry(
-                    file, buf, static_cast<size_t>(to_read)));
-            if (n_read == 0) {
-                break;
-            }
-
-            // Seek to destination offset
-            OUTCOME_TRYV(file.seek(static_cast<int64_t>(dest + size_moved),
-                                   SEEK_SET));
-
-            // Write data to destination
-            OUTCOME_TRY(n_written, file_write_retry(file, buf, n_read));
-
-            size_moved += n_written;
-
-            if (n_written < n_read) {
-                break;
-            }
+        // Read data from source
+        OUTCOME_TRY(n_read, file_read_retry(
+                file, buf, static_cast<size_t>(to_read)));
+        if (n_read == 0) {
+            break;
         }
-    } else {
-        // Copy backwards
-        while (size_moved < size) {
-            auto to_read = std::min<uint64_t>(sizeof(buf), size - size_moved);
 
-            // Seek to source offset
-            OUTCOME_TRYV(file.seek(static_cast<int64_t>(
-                    src + size - size_moved - to_read), SEEK_SET));
+        // Seek to destination offset
+        OUTCOME_TRYV(file.seek(static_cast<int64_t>(
+                copy_forwards ? dest + size_moved
+                        : dest + size - size_moved - n_read), SEEK_SET));
 
-            // Read data form source
-            OUTCOME_TRY(n_read, file_read_retry(
-                    file, buf, static_cast<size_t>(to_read)));
-            if (n_read == 0) {
+        // Write data to destination
+        OUTCOME_TRY(n_written, file_write_retry(file, buf, n_read));
+
+        size_moved += n_written;
+
+        if (n_written < n_read) {
+            if (copy_forwards) {
                 break;
-            }
-
-            // Seek to destination offset
-            OUTCOME_TRYV(file.seek(static_cast<int64_t>(
-                    dest + size - size_moved - n_read), SEEK_SET));
-
-            // Write data to destination
-            OUTCOME_TRY(n_written, file_write_retry(file, buf, n_read));
-
-            size_moved += n_written;
-
-            if (n_written < n_read) {
+            } else {
                 // Hit EOF. Subtract bytes beyond EOF that we can't copy
                 size -= n_read - n_written;
             }
