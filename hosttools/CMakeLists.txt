@@ -30,7 +30,18 @@ if(MBP_TOP_LEVEL_BUILD)
         VERBATIM
     )
 
-    set(SIGNTOOL_COMMAND "${CMAKE_CURRENT_BINARY_DIR}/result/bin/signtool" PARENT_SCOPE)
-    set(DEVICESGEN_COMMAND "${CMAKE_CURRENT_BINARY_DIR}/result/bin/devicesgen" PARENT_SCOPE)
-    set(SCHEMAS2CPP_COMMAND "${CMAKE_CURRENT_BINARY_DIR}/result/bin/schemas2cpp" PARENT_SCOPE)
+    set(hosttools_binaries
+        devicesgen
+        mbsystrace-headersgen
+        schemas2cpp
+        signtool
+    )
+
+    foreach(binary ${hosttools_binaries})
+        string(TOUPPER "${binary}" var)
+        string(REGEX REPLACE "[^A-Z0-9]+" "_" var "${var}")
+        set(var "${var}_COMMAND")
+
+        set("${var}" "${CMAKE_CURRENT_BINARY_DIR}/result/bin/${binary}" PARENT_SCOPE)
+    endforeach()
 endif()

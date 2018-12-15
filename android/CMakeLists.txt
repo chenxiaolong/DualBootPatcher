@@ -80,6 +80,7 @@ if(MBP_TOP_LEVEL_BUILD)
             -DANDROID_PLATFORM=android-28
             -DANDROID_STL=c++_static
             -DMBP_BUILD_TARGET=android-system
+            -DMBSYSTRACE_HEADERSGEN_COMMAND=${MBSYSTRACE_HEADERSGEN_COMMAND}
         )
 
         message(STATUS "Recursive CMake build for Android system components (${abi}):")
