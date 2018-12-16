@@ -109,6 +109,11 @@ void mb_unreachable(const char *file, unsigned long line,
 // C++-only macros and functions
 #ifdef __cplusplus
 
+// Use same trick as in glibc for explicitly ignoring return values of
+// functions with gcc.
+#define MB_IGNORE_VALUE(x) \
+    { decltype(x) mb_ignored_value = (x); (void) mb_ignored_value; }
+
 // Constructor and assignment macros
 #define MB_DISABLE_COPY_CONSTRUCTOR(CLASS) \
     CLASS(CLASS const &) = delete;
