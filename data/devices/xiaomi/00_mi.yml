@@ -385,6 +385,54 @@
     brightness_path: /sys/devices/soc/c900000.qcom,mdss_mdp/c900000.qcom,mdss_mdp:qcom,mdss_fb_primary/leds/lcd-backlight/brightness
     theme: portrait_hdpi
 
+- name: Xiaomi Mi 8 SE
+  id: sirius
+  codenames:
+    - sirius
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7c4000.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p79
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p79
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p77
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p77
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p81
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p81
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p70
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p70
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p71
+      - /dev/block/platform/soc/7c4000.sdhci/by-num/p71
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/recovery
+      
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBA_8888
+    default_brightness: 60
+    max_brightness: 1023
+    brightness_path: /sys/class/backlight/panel0-backlight/brightness
+    theme: portrait_hdpi
+    
 - name: Xiaomi Mi 5X
   id: tiffany
   codenames:
