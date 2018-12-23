@@ -26,9 +26,9 @@ script:
     # Build Utilities Zip
     cd ~/DualBootPatcher/builder && ./utilities/create.sh
     # Build Linux
-    cmake .. -DMBP_BUILD_TARGET=desktop -DMBP_PORTABLE=ON && make -j16 && cpack
-    exit
-    EOF
+    #cmake .. -DMBP_BUILD_TARGET=desktop -DMBP_PORTABLE=ON && make -j16 && cpack
+    #exit
+    #EOF
 after_success:
   - export TRAVIS_CURRENT_DATE=$(date +"%d%m%y-%Hh%Mm")
   # Check output & md5sum
@@ -36,9 +36,22 @@ after_success:
   - md5sum ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/debug/Android_GUI-debug.apk
   - ls -l ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/utilities/DualBootUtilities-9.3.0.zip
   - md5sum ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/utilities/DualBootUtilities-9.3.0.zip
-  - ls -l ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/DualBootPatcher-9.3.0-Linux.zip
-  - md5sum ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/DualBootPatcher-9.3.0-Linux.zip
+  #- ls -l ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/DualBootPatcher-9.3.0-Linux.zip
+  #- md5sum ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/DualBootPatcher-9.3.0-Linux.zip
   # Upload to transfer.sh
-  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/debug/ &&  curl --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug-ndl54-test1.apk
-  - cd ${TRAVIS_BUILD_DIR}//DualBootPatcher/builder/utilities/ && curl --upload-file ./DualBootUtilities-9.3.0.zip https://transfer.sh/DualBootUtilities-9.3.0-ndl54-test1.zip
-  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/ && curl --upload-file ./DualBootPatcher-9.3.0-Linux.zip https://transfer.sh/DualBootPatcher-9.3.0-ndl54-test1.zip
+  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/debug/  &&  curl --verbose --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug-ndl54-test1.apk
+  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/utilities/ && curl --verbose --upload-file ./DualBootUtilities-9.3.0.zip https://transfer.sh/DualBootUtilities-9.3.0-ndl54-test1.zip
+  #- cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/ && curl  --verbose --upload-file ./DualBootPatcher-9.3.0-Linux.zip https://transfer.sh/DualBootPatcher-9.3.0-ndl54-test1.zip
+  
+  - cp ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/debug/Android_GUI-debug.apk ${TRAVIS_BUILD_DIR}/
+  - cp ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/utilities/DualBootUtilities-9.3.0.zip ${TRAVIS_BUILD_DIR}/
+  - cd ${TRAVIS_BUILD_DIR}/
+deploy:
+  provider: releases
+  api_key: 9042e93a38c7ae3a4aadf8dfe6a2960e7fa4b33a
+  file:
+    - Android_GUI-debug.apk
+    - DualBootUtilities-9.3.0.zip
+  skip_cleanup: true
+  on:
+    tags: true
