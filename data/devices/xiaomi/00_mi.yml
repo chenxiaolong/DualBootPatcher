@@ -460,14 +460,4 @@
     recovery:
       - /dev/block/platform/soc/c0c4000.sdhci/by-name/recovery
       - /dev/block/mmcblk0p59
-    boot_ui:
-      supported: true
-      flags:
-        - TW_QCOM_RTC_FIX
-      graphics_backends:
-        - fbdev
-      brightness_path: /sys/class/leds/lcd-backlight/brightness
-      max_brightness: 255
-      default_brightness: 153
-      pixel_format: RGBX_8888
-      theme: portrait_hdpi
+    
