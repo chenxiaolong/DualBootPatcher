@@ -77,7 +77,7 @@ static bool generate_signals(const std::vector<NativeString> &compiler_args,
         return false;
     }
 
-    std::regex re("^#define[ \t]+(SIG[A-Z0-9]+)[ \t]+([0-9]+)");
+    std::regex re("^#[ \t]*define[ \t]+(SIG[A-Z0-9]+)[ \t]+([0-9]+)");
     std::smatch match;
 
     out.clear();
@@ -103,14 +103,25 @@ static bool generate_syscalls(const std::vector<NativeString> &compiler_args,
     auto args = compiler_args;
     args.push_back(STR("-dM"));
 
+    constexpr char preprocess_input[] =
+R"(#include <sys/syscall.h>
+
+// Removed in Linux commit db695c0509d6ec9046ee5e4c520a19fa17d9fce2, but many
+// Android devices run older kernels
+//#if defined(__arm__) && !defined(__aarch64__) && !defined(__ARM_NR_cmpxchg)
+#if defined(__ARM_NR_BASE) && !defined(__ARM_NR_cmpxchg)
+#  define __ARM_NR_cmpxchg (__ARM_NR_BASE + 0x00fff0)
+#endif
+)";
+
     std::string temp;
 
     // First round to build list of syscalls
-    if (!preprocess(args, "#include <sys/syscall.h>\n", temp)) {
+    if (!preprocess(args, preprocess_input, temp)) {
         return false;
     }
 
-    std::regex re("^#define[ \t]+SYS_([^ \t]+)[ \t]+(.+)");
+    std::regex re("^#[ \t]*define[ \t]+(SYS_|__ARM_NR_)([^ \t]+)[ \t]+(.+)");
     std::smatch match;
     std::string input =
 R"(#include <sys/syscall.h>
@@ -119,11 +130,11 @@ struct { const char *name; long number; } syscalls[] = {
 )";
 
     for (auto const &line : split(temp, '\n')) {
-        if (std::regex_match(line, match, re)) {
+        if (std::regex_match(line, match, re) && match[2] != "BASE") {
             input += "{\"";
-            input += match[1];
-            input += "\", ";
             input += match[2];
+            input += "\", ";
+            input += match[3];
             input += "},\n";
         }
     }
