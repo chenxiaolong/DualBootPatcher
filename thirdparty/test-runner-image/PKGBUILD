@@ -1,0 +1,142 @@
+# Copyright (C) 2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Versions from Debian stable (9.6)
+_linux_kernel_ver=4.9.0-8
+_linux_package_ver=4.9.130-2
+_busybox_ver=1.22.0-19+b3
+
+pkgname=test-runner-image
+pkgver=1.0
+pkgrel=1
+pkgdesc="Debian-based kernel image and ramdisk for running DBP tests in QEMU"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://www.debian.org/"
+license=(GPL2)
+source=(
+    init
+    inittab
+    startup
+)
+
+# Associative arrays are not visible in build() and package(), so use functions
+# instead
+
+_carch_to_linux_arch() {
+    case "${1}" in
+        armv7)   echo armmp   ;;
+        aarch64) echo arm64   ;;
+        x86)     echo 686-pae ;;
+        x86_64)  echo amd64   ;;
+    esac
+}
+
+_carch_to_deb_arch() {
+    case "${1}" in
+        armv7)   echo armhf ;;
+        aarch64) echo arm64 ;;
+        x86)     echo i386  ;;
+        x86_64)  echo amd64 ;;
+    esac
+}
+
+_linux_arch=$(_carch_to_linux_arch "${CARCH}")
+_deb_arch=$(_carch_to_deb_arch "${CARCH}")
+
+_set_sources() {
+    local _arch
+
+    for _arch in "${arch[@]}"; do
+        local _linux_arch=$(_carch_to_linux_arch "${_arch}")
+        local _deb_arch=$(_carch_to_deb_arch "${_arch}")
+        local -n var="source_${_arch}"
+
+        var=(
+            "http://ftp.us.debian.org/debian/pool/main/l/linux/linux-image-${_linux_kernel_ver}-${_linux_arch}_${_linux_package_ver}_${_deb_arch}.deb"
+            "http://ftp.us.debian.org/debian/pool/main/b/busybox/busybox-static_${_busybox_ver}_${_deb_arch}.deb"
+        )
+    done
+}
+
+_set_sources
+
+noextract=(
+    "linux-image-${_linux_kernel_ver}-${_linux_arch}_${_linux_package_ver}_${_deb_arch}.deb"
+    "busybox-static_${_busybox_ver}_${_deb_arch}.deb"
+)
+
+_extract_deb() {
+    local source_file=${1}
+    local target_dir=${2}
+    local temp_dir
+
+    temp_dir=$(mktemp -d -p "${srcdir}")
+
+    bsdtar -xf "${source_file}" -C "${temp_dir}"
+
+    mkdir -p "${target_dir}"
+    bsdtar -xf "${temp_dir}/data.tar.xz" -C "${target_dir}"
+
+    rm -rf "${temp_dir}"
+}
+
+build() {
+    mkdir temp_root ramdisk_root
+
+    _extract_deb \
+        "linux-image-${_linux_kernel_ver}-${_linux_arch}_${_linux_package_ver}_${_deb_arch}.deb" \
+        temp_root
+    _extract_deb \
+        "busybox-static_${_busybox_ver}_${_deb_arch}.deb" \
+        temp_root
+
+    mkdir ramdisk_root/{bin,etc,lib}
+    cp temp_root/bin/busybox ramdisk_root/bin/
+    cp -r temp_root/lib/modules ramdisk_root/lib/
+
+    # Add /bin/sh symlink so system() works
+    ln -s busybox ramdisk_root/bin/sh
+
+    install -m755 init ramdisk_root/
+    install -m644 inittab ramdisk_root/etc/
+    install -m755 startup ramdisk_root/
+
+    depmod -b ramdisk_root -a "${_linux_kernel_ver}-${_linux_arch}"
+}
+
+package() {
+    install -m644 temp_root/boot/vmlinuz-${_linux_kernel_ver}-${_linux_arch} \
+        "${pkgdir}"/kernel.img
+
+    pushd ramdisk_root
+    find -mindepth 1 -printf '%P\0' \
+        | sort -z \
+        | bsdcpio -o -0 --format newc \
+        | lz4 -9 -l \
+        > "${pkgdir}"/ramdisk.img
+    popd
+}
+
+sha512sums=('43381440ef0f397869a318d12ccd27cada081749743798b723f1c836ba8c1435498872789018eb3aaf8c9af55970a185a7a92ba774a9cd9a41ae23db12339788'
+            'bf970b2596bf140664fbc38e631442774e73c851627c33f57721a2bf6582621f1ad05be2c0e69eb5d098ebd903e191959b74795f7265d88a735a4566f31e2e48'
+            '237147d2f14b574920fa126417a635c94affeddbc21f794ee5882ec1b1552ea72a310b9e4938d72e208827ada6b8acb215b3a0da9a9f97f412b99e5fda26cd99')
+sha512sums_armv7=('58f678fb77871d8bac78b5c4113805519e5f3b442a8c1633e0527281bfba775e79d28179c1bf85d4482a4d073b9920a8b91a62cab510d4434561c7eaa9edbc7f'
+                  '4c415854f83f9378c9afc0bfc764057b945897319a84221e028012e2f75c6f7ff3727621ab7db86dc3fc972c06bca3b500ee7c28a4cc4f5af3be4cc3af600fe2')
+sha512sums_aarch64=('0e7a790e43aa76126c6cbbe2cfee3754044577f772865a40d53de12af2aecb1f91fa5ce7d56a100a48da4c59052e319c1add3075f489e9dd3bc8db19093a2d51'
+                    'fa8428b3440a38503da10f97c5742ab6d4d260450a94f265322d14056a06e50a72fe9798b05631492e1b288d787324599166d854a30460af4b141c5015ea810b')
+sha512sums_x86=('14a5fb885ddf979739ae7e7ad4499f3f03039c35986167058ef1f54bc137c3125db693f3040a365f0b2f05d42e5a2685a688165ccf6a7bd04c256e2c7a28bc16'
+                '7e4f6f6f1f6519ddae71093b21fca3a19c7d41c33adc4d449f531fca26d3a470ba41082cc460f1df76ccf6747168cf14ba091442ab5d8f261b7cc343ff451102')
+sha512sums_x86_64=('b82f523b2e999093ef5d13c79d17584a0865296fc0d06fc6f1f8b56722d9835989898ca51c854545a41ce0a32c845173bc2dfd217ad9731025726592441c47d2'
+                   'd5d0a6df49f686ec854a98791e07f8cd34dd9cbb9c0d5c0cb09d8f33d8cf94558812e24074c45570543a606e07d6e3d8d1edc90c97592b055f3edeb69ae7b9a3')

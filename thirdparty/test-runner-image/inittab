@@ -1,0 +1,4 @@
+::wait:-/startup
+::ctrlaltdel:/bin/busybox reboot
+::shutdown:/bin/busybox umount -a -r
+::restart:/bin/busybox init
