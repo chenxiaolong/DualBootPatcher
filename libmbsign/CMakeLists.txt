@@ -82,8 +82,5 @@ if(variants AND MBP_ENABLE_TESTS)
     endif()
 
     # Add to ctest
-    add_test(
-        NAME mbsign_tests
-        COMMAND mbsign_tests
-    )
+    add_gtest_test(mbsign_tests)
 endif()

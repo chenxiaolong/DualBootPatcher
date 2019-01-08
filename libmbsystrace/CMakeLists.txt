@@ -275,8 +275,5 @@ if(variants AND MBP_ENABLE_TESTS)
     endif()
 
     # Add to ctest
-    add_test(
-        NAME mbsystrace_tests
-        COMMAND mbsystrace_tests
-    )
+    add_gtest_test(mbsystrace_tests)
 endif()

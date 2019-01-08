@@ -6,6 +6,7 @@
     * [`MBP_BUILD_TARGET`](#mbp_build_target)
     * [`MBP_BUILD_TYPE`](#mbp_build_type)
     * [`MBP_ENABLE_TESTS`](#mbp_enable_tests)
+    * [`MBP_ENABLE_QEMU`](#mbp_enable_qemu)
 * [Signing](#signing)
     * [`MBP_SIGN_CONFIG_PATH`](#mbp_sign_config_path)
 * [Desktop options](#desktop-options)
@@ -89,6 +90,32 @@ Boolean value.
 ##### Default value:
 
 ON
+
+##### Required:
+
+No
+
+---
+
+#### `MBP_ENABLE_QEMU`
+
+##### Description:
+
+Whether to enable the `qemu-tests-<abi>` and `qemu-shell-<abi>` targets. The `qemu-tests-<abi>` will run all tests for the specified Android ABI within a QEMU virtual machine.
+
+Enabling this option requires the following programs to be installed:
+- `qemu-system-arm` (for `armeabi-v7a`)
+- `qemu-system-aarch64` (for `arm64-v8a`)
+- `qemu-system-i386` (for `x86`)
+- `qemu-system-x86_64` (for `x86_64`)
+
+##### Valid values:
+
+Boolean value.
+
+##### Default value:
+
+OFF
 
 ##### Required:
 

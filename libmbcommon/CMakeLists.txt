@@ -179,10 +179,7 @@ if(variants AND MBP_ENABLE_TESTS)
     endif()
 
     # Add to ctest
-    add_test(
-        NAME mbcommon_tests
-        COMMAND mbcommon_tests
-    )
+    add_gtest_test(mbcommon_tests)
 endif()
 
 # Interfaces
