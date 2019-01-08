@@ -359,6 +359,25 @@ elseif(ANDROID)
 endif()
 
 ################################################################################
+# test-runner-image
+################################################################################
+
+if(MBP_ENABLE_QEMU)
+    set(TEST_RUNNER_IMAGE_VER "1.0-1")
+
+    if(MBP_TOP_LEVEL_BUILD)
+        get_prebuilt(test-runner-image ${TEST_RUNNER_IMAGE_VER} armeabi-v7a SHA512=d7ff0445b06e75feaaf8995ec90c2d8e307edacac5d4db5c9b6a5caeb3df2b5a82af369b41ad699ce2b0af629ded213ebae84c495250f7f1f8c35844bef0f23b)
+        get_prebuilt(test-runner-image ${TEST_RUNNER_IMAGE_VER} arm64-v8a   SHA512=017034706f3851268442a37c9cb1509fbf69656c544110c2673fe59e721ff76a12e20d0557ca32edc57f8bdb9b9c60e499cde1279311eb7fa81c4a5840f26c74)
+        get_prebuilt(test-runner-image ${TEST_RUNNER_IMAGE_VER} x86         SHA512=939adf3f2988a620f176bfcc648a1396c5159f01cdd76141b27d4d652cd20f9341eabdf4291bc5884d176bf5ca8994762fe7f930e801d22e0f3cb1bb1c9f32a5)
+        get_prebuilt(test-runner-image ${TEST_RUNNER_IMAGE_VER} x86_64      SHA512=14f3aab1f8709fe1379eb347b03ea49f90950792ae09979bc1b6c5408d14dd505a126100334b472b4302d6fb6bacd01082ccf17fc1e46f7fbd462403d2412d1c)
+    elseif(ANDROID)
+        set(test_runner_image_root "${MBP_PREBUILTS_BINARY_DIR}/test-runner-image/${TEST_RUNNER_IMAGE_VER}/${ANDROID_ABI}")
+
+        set(TEST_RUNNER_IMAGE_DIR "${test_runner_image_root}" CACHE INTERNAL "")
+    endif()
+endif()
+
+################################################################################
 # AROMA for Android
 ################################################################################
 
