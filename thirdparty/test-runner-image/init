@@ -1,0 +1,65 @@
+#!/bin/busybox sh
+
+set -euo pipefail
+
+warning() {
+    echo >&2 "[WARNING] ${*}"
+}
+
+mount_qemu_9p() {
+    modprobe -a 9p 9pnet_virtio
+
+    # The Debian 9 kernel doesn't support PCI virtio on ARM
+    case "$(uname -m)" in
+    armv7l)
+        modprobe virtio_mmio
+        ;;
+    *)
+        modprobe virtio_pci
+        ;;
+    esac
+
+    local i
+    for i in ${qemu_mounts}; do
+        case "${i}" in
+        */*|.|..|'')
+            warning "Ignoring invalid QEMU 9P mount ID: '${i}'"
+            ;;
+        *)
+            mkdir "/mnt/${i}"
+            mount -t 9p -o trans=virtio "${i}" "/mnt/${i}"
+            ;;
+        esac
+    done
+}
+
+mkdir -p /dev /mnt /proc /sys /tmp
+
+# Mount procfs first so FEATURE_PREFER_APPLETS and FEATURE_SH_STANDALONE work
+busybox mount -t proc -o nodev,noexec,nosuid proc /proc
+
+# Mount remaining essential filesystems
+mount -t sysfs -o nodev,noexec,nosuid sysfs /sys
+mount -t devtmpfs -o nosuid,mode=0755 devtmpfs /dev
+mkdir /dev/pts
+mount -t devpts -o noexec,nosuid,mode=0620 devpts /dev/pts
+mount -t tmpfs -o nodev,nosuid tmpfs /tmp
+
+post_init=''
+qemu_mounts=''
+
+# Parse command line options
+for x in $(cat /proc/cmdline); do
+    case "${x}" in
+    post-init=*)
+        post_init="${x#post-init=}"
+        ;;
+    qemu-mount=*)
+        qemu_mounts="${qemu_mounts} ${x#qemu-mount=}"
+        ;;
+    esac
+done
+
+mount_qemu_9p
+
+exec busybox init

@@ -122,10 +122,7 @@ if(variants AND MBP_ENABLE_TESTS)
     endif()
 
     # Add to ctest
-    add_test(
-        NAME mbbootimg_tests
-        COMMAND mbbootimg_tests
-    )
+    add_gtest_test(mbbootimg_tests)
 endif()
 
 # Interfaces

@@ -34,8 +34,30 @@ if(MBP_TOP_LEVEL_BUILD)
         endif()
     endif()
 
-    # List of ExternalProject directories to run "make clean" in
-    set(RECURSIVE_CLEAN_DIRS)
+    function(create_project_wrapper_script project)
+        ExternalProject_Get_Property("${project}" BINARY_DIR)
+
+        # Create wrapper script for running ExternalProject targets from the
+        # top-level build
+        string(CONCAT script
+               "message(STATUS \"Running \${TARGET} in ${BINARY_DIR}\")\n"
+               "execute_process(COMMAND \${CMAKE_COMMAND} --build \"${BINARY_DIR}\" --target \"\${TARGET}\")\n")
+
+        file(WRITE
+             "${CMAKE_CURRENT_BINARY_DIR}/run_target.${project}.cmake"
+             "${script}")
+    endfunction()
+
+    function(expose_project_target project target)
+        add_custom_target(
+            "${project}_${target}"
+            ${CMAKE_COMMAND}
+                -D "TARGET=${target}"
+                -P "${CMAKE_CURRENT_BINARY_DIR}/run_target.${project}.cmake"
+            VERBATIM
+            USES_TERMINAL
+        )
+    endfunction()
 
     # FIXME: Required until https://github.com/android-ndk/ndk/issues/222 is fixed
     set(ENV{ANDROID_NDK} "${ndk_path}")
@@ -80,7 +102,16 @@ if(MBP_TOP_LEVEL_BUILD)
             -DANDROID_PLATFORM=android-28
             -DANDROID_STL=c++_static
             -DMBP_BUILD_TARGET=android-system
+            -DMBSYSTRACE_HEADERSGEN_COMMAND=${MBSYSTRACE_HEADERSGEN_COMMAND}
         )
+
+        if(MBP_ENABLE_QEMU)
+            android_abi_to_qemu_arch("${abi}" qemu_arch)
+
+            list(APPEND INTERNAL_ANDROID_SYSTEM_OPTIONS
+                 "-DMBP_ENABLE_QEMU=${MBP_ENABLE_QEMU}"
+                 "-DQEMU_SYSTEM_COMMAND=${QEMU_SYSTEM_${qemu_arch}}")
+        endif()
 
         message(STATUS "Recursive CMake build for Android system components (${abi}):")
         foreach(_option ${INTERNAL_ANDROID_SYSTEM_OPTIONS})
@@ -124,8 +155,13 @@ if(MBP_TOP_LEVEL_BUILD)
             android-system_${abi}
         )
 
-        ExternalProject_Get_Property(android-system_${abi} BINARY_DIR)
-        list(APPEND RECURSIVE_CLEAN_DIRS ${BINARY_DIR})
+        create_project_wrapper_script("android-system_${abi}")
+        expose_project_target("android-system_${abi}" clean)
+
+        if(MBP_ENABLE_QEMU)
+            expose_project_target("android-system_${abi}" qemu-shell)
+            expose_project_target("android-system_${abi}" qemu-tests)
+        endif()
 
         install(
             FILES ${result_files} ${sig_files}
@@ -155,8 +191,8 @@ if(MBP_TOP_LEVEL_BUILD)
                 hosttools
             )
 
-            ExternalProject_Get_Property(android-app_${abi} BINARY_DIR)
-            list(APPEND RECURSIVE_CLEAN_DIRS ${BINARY_DIR})
+            create_project_wrapper_script("android-app_${abi}")
+            expose_project_target("android-app_${abi}" clean)
         endif()
 
         set(ARCHIVE_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bootui/${abi}/bootui.zip)
@@ -228,25 +264,6 @@ if(MBP_TOP_LEVEL_BUILD)
             COMPONENT Libraries
         )
     endforeach()
-
-    # Create clean target
-    set(CLEAN_CONTENTS)
-    foreach(_dir ${RECURSIVE_CLEAN_DIRS})
-        string(CONCAT CLEAN_CONTENTS
-               ${CLEAN_CONTENTS}
-               "message(STATUS \"Cleaning ${_dir}\")\n"
-               "execute_process(COMMAND \${CMAKE_COMMAND} --build \"${_dir}\" --target clean)\n")
-    endforeach()
-
-    file(WRITE
-         ${CMAKE_CURRENT_BINARY_DIR}/clean-android.cmake
-         "${CLEAN_CONTENTS}")
-
-    add_custom_target(
-        clean-android
-        ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/clean-android.cmake
-        VERBATIM
-    )
 elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
     # Install libc++. We do this in the android-app target because we have
     # access to the CMAKE_LINKER variable.

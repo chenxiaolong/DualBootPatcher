@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -101,6 +101,32 @@ inline bool str_to_num(const char *str, int base, IntType &out)
         out = static_cast<IntType>(num);
         return true;
     }
+}
+
+/*!
+ * \brief Cast an integer to its unsigned representation
+ *
+ * \param num Number to cast
+ *
+ * \return Unsigned representation (of the same size) of \p num
+ */
+template<typename IntType>
+inline std::make_unsigned_t<IntType> make_unsigned_v(IntType num)
+{
+    return static_cast<std::make_unsigned_t<IntType>>(num);
+}
+
+/*!
+ * \brief Cast an integer to its signed representation
+ *
+ * \param num Number to cast
+ *
+ * \return Signed representation (of the same size) of \p num
+ */
+template<typename IntType>
+inline std::make_signed_t<IntType> make_signed_v(IntType num)
+{
+    return static_cast<std::make_signed_t<IntType>>(num);
 }
 
 }

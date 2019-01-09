@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -18,6 +18,10 @@
  */
 
 #include <gtest/gtest.h>
+
+#include <limits>
+
+#include <cstdint>
 
 #include "mbcommon/integer.h"
 
@@ -206,4 +210,90 @@ TEST(IntegerTest, ConvertUnsignedIntegerOutOfRange)
     ASSERT_EQ(errno, ERANGE);
     ASSERT_FALSE(str_to_num("18446744073709551616", 10, r64));
     ASSERT_EQ(errno, ERANGE);
+}
+
+TEST(IntegerTest, ConvertSignedToUnsigned)
+{
+    // 8 bit
+    EXPECT_EQ(make_signed_v(std::numeric_limits<uint8_t>::max()), -1);
+    EXPECT_EQ(make_signed_v(std::numeric_limits<uint8_t>::min()), 0);
+    EXPECT_EQ(make_signed_v(
+            static_cast<uint8_t>(std::numeric_limits<uint8_t>::max() / 2)),
+            std::numeric_limits<int8_t>::max());
+    EXPECT_EQ(make_signed_v(
+            static_cast<uint8_t>(std::numeric_limits<uint8_t>::max() / 2 + 1)),
+            std::numeric_limits<int8_t>::min());
+
+    // 16 bit
+    EXPECT_EQ(make_signed_v(std::numeric_limits<uint16_t>::max()), -1);
+    EXPECT_EQ(make_signed_v(std::numeric_limits<uint16_t>::min()), 0);
+    EXPECT_EQ(make_signed_v(
+            static_cast<uint16_t>(std::numeric_limits<uint16_t>::max() / 2)),
+            std::numeric_limits<int16_t>::max());
+    EXPECT_EQ(make_signed_v(
+            static_cast<uint16_t>(std::numeric_limits<uint16_t>::max() / 2 + 1)),
+            std::numeric_limits<int16_t>::min());
+
+    // 32 bit
+    EXPECT_EQ(make_signed_v(std::numeric_limits<uint32_t>::max()), -1);
+    EXPECT_EQ(make_signed_v(std::numeric_limits<uint32_t>::min()), 0);
+    EXPECT_EQ(make_signed_v(
+            static_cast<uint32_t>(std::numeric_limits<uint32_t>::max() / 2)),
+            std::numeric_limits<int32_t>::max());
+    EXPECT_EQ(make_signed_v(
+            static_cast<uint32_t>(std::numeric_limits<uint32_t>::max() / 2 + 1)),
+            std::numeric_limits<int32_t>::min());
+
+    // 64 bit
+    EXPECT_EQ(make_signed_v(std::numeric_limits<uint64_t>::max()), -1);
+    EXPECT_EQ(make_signed_v(std::numeric_limits<uint64_t>::min()), 0);
+    EXPECT_EQ(make_signed_v(
+            static_cast<uint64_t>(std::numeric_limits<uint64_t>::max() / 2)),
+            std::numeric_limits<int64_t>::max());
+    EXPECT_EQ(make_signed_v(
+            static_cast<uint64_t>(std::numeric_limits<uint64_t>::max() / 2 + 1)),
+            std::numeric_limits<int64_t>::min());
+}
+
+TEST(IntegerTest, ConvertUnsignedToSigned)
+{
+    // 8 bit
+    EXPECT_EQ(make_unsigned_v(std::numeric_limits<int8_t>::max()),
+              static_cast<uint8_t>(std::numeric_limits<uint8_t>::max() / 2));
+    EXPECT_EQ(make_unsigned_v(std::numeric_limits<int8_t>::min()),
+              static_cast<uint8_t>(std::numeric_limits<uint8_t>::max() / 2 + 1));
+    EXPECT_EQ(make_unsigned_v(static_cast<int8_t>(-1)),
+              std::numeric_limits<uint8_t>::max());
+    EXPECT_EQ(make_unsigned_v(static_cast<int8_t>(0)),
+              std::numeric_limits<uint8_t>::min());
+
+    // 16 bit
+    EXPECT_EQ(make_unsigned_v(std::numeric_limits<int16_t>::max()),
+              static_cast<uint16_t>(std::numeric_limits<uint16_t>::max() / 2));
+    EXPECT_EQ(make_unsigned_v(std::numeric_limits<int16_t>::min()),
+              static_cast<uint16_t>(std::numeric_limits<uint16_t>::max() / 2 + 1));
+    EXPECT_EQ(make_unsigned_v(static_cast<int16_t>(-1)),
+              std::numeric_limits<uint16_t>::max());
+    EXPECT_EQ(make_unsigned_v(static_cast<int16_t>(0)),
+              std::numeric_limits<uint16_t>::min());
+
+    // 32 bit
+    EXPECT_EQ(make_unsigned_v(std::numeric_limits<int32_t>::max()),
+              static_cast<uint32_t>(std::numeric_limits<uint32_t>::max() / 2));
+    EXPECT_EQ(make_unsigned_v(std::numeric_limits<int32_t>::min()),
+              static_cast<uint32_t>(std::numeric_limits<uint32_t>::max() / 2 + 1));
+    EXPECT_EQ(make_unsigned_v(static_cast<int32_t>(-1)),
+              std::numeric_limits<uint32_t>::max());
+    EXPECT_EQ(make_unsigned_v(static_cast<int32_t>(0)),
+              std::numeric_limits<uint32_t>::min());
+
+    // 64 bit
+    EXPECT_EQ(make_unsigned_v(std::numeric_limits<int64_t>::max()),
+              static_cast<uint64_t>(std::numeric_limits<uint64_t>::max() / 2));
+    EXPECT_EQ(make_unsigned_v(std::numeric_limits<int64_t>::min()),
+              static_cast<uint64_t>(std::numeric_limits<uint64_t>::max() / 2 + 1));
+    EXPECT_EQ(make_unsigned_v(static_cast<int64_t>(-1)),
+              std::numeric_limits<uint64_t>::max());
+    EXPECT_EQ(make_unsigned_v(static_cast<int64_t>(0)),
+              std::numeric_limits<uint64_t>::min());
 }

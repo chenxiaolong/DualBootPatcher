@@ -134,10 +134,7 @@ if(variants AND MBP_ENABLE_TESTS)
     endif()
 
     # Add to ctest
-    add_test(
-        NAME mbdevice_tests
-        COMMAND mbdevice_tests
-    )
+    add_gtest_test(mbdevice_tests)
 endif()
 
 # Build schemas2cpp

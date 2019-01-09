@@ -58,3 +58,19 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop OR ${MBP_BUILD_TARGET} STREQUAL android-
         mbbootimg-shared
     )
 endif()
+
+if(UNIX AND (${MBP_BUILD_TARGET} STREQUAL desktop
+        OR ${MBP_BUILD_TARGET} STREQUAL android-system))
+    # Simple frontend to libmbsystrace
+
+    add_executable(
+        mbtrace
+        mbtrace.cpp
+    )
+    target_link_libraries(
+        mbtrace
+        PRIVATE
+        interface.global.CXXVersion
+        mbsystrace-static
+    )
+endif()

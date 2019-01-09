@@ -72,13 +72,6 @@ if(MBP_CI_VERSION)
     set(MBP_VERSION ${MBP_CI_VERSION})
 endif()
 
-# Tests
-set(MBP_ENABLE_TESTS TRUE CACHE BOOL "Enable building of tests")
-
-if(MBP_ENABLE_TESTS)
-    enable_testing()
-endif()
-
 # CPack versions
 set(CPACK_PACKAGE_VERSION_MAJOR ${MBP_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${MBP_VERSION_MINOR})
@@ -168,11 +161,17 @@ include(cmake/VariableBackup.cmake)
 # Compile and link flags
 include(cmake/CompilerFlags.cmake)
 
+# Tests
+include(cmake/Testing.cmake)
+
 # Third party binaries
 add_subdirectory(thirdparty)
 
 # Dependencies
 include(cmake/Dependencies.cmake)
+
+# QEMU-based testing
+include(cmake/Qemu.cmake)
 
 add_subdirectory(hosttools)
 add_subdirectory(libmbcommon)
@@ -183,6 +182,7 @@ add_subdirectory(libmbpio)
 add_subdirectory(libmbpatcher)
 add_subdirectory(libmbsign)
 add_subdirectory(libmbsparse)
+add_subdirectory(libmbsystrace)
 add_subdirectory(libmbutil)
 add_subdirectory(data)
 add_subdirectory(mbtool)
