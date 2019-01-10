@@ -92,7 +92,7 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
     add_custom_target(
         qemu-tests
         ${qemu_command}
-        -append "${qemu_kernel_args} post-init=/mnt/workspace/cmake/qemu_run_tests.sh"
+        -append "${qemu_kernel_args} quiet post-init=/mnt/workspace/cmake/qemu_run_tests.sh"
         DEPENDS "${CMAKE_BINARY_DIR}/cmake/qemu_run_tests.sh"
         VERBATIM
         USES_TERMINAL
