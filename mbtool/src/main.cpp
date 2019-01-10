@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 
     umask(0);
 
-    if (!setlocale(LC_ALL, "C")) {
+    if (!setlocale(LC_ALL, "")) {
         fprintf(stderr, "Failed to set default locale\n");
     }
 
