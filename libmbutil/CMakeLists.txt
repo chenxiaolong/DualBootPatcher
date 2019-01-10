@@ -96,3 +96,32 @@ foreach(variant ${variants})
         )
     endif()
 endforeach()
+
+# Build tests
+if(variants AND MBP_ENABLE_TESTS)
+    # Build tests
+    add_executable(
+        mbutil_tests
+        # Helpers
+        tests/main.cpp
+        # Tests
+        tests/test_archive.cpp
+    )
+
+    # Link dependencies
+    target_link_libraries(
+        mbutil_tests
+        interface.global.CXXVersion
+        mbutil-static
+        LibArchive::LibArchive
+        gmock
+        gmock_main
+    )
+
+    if(${MBP_BUILD_TARGET} STREQUAL android-system)
+        unix_link_executable_statically(mbutil_tests)
+    endif()
+
+    # Add to ctest
+    add_gtest_test(mbutil_tests)
+endif()
