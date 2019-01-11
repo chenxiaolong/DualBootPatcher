@@ -412,12 +412,12 @@
     default_brightness: 255
     theme: portrait_hdpi
 
----
-- name: samsung GT-I9060I
+- name: Samsung Galaxy Grand Neo Plus
   id: grandneove3g
   codenames:
       - GT-I9060I
       - grandneove3g
+      - grandneove3gxx
   architecture: 
   block_devs:
     base_dirs:
