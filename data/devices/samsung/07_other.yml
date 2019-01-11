@@ -418,7 +418,8 @@
       - GT-I9060I
       - grandneove3g
       - grandneove3gxx
-  architecture: 
+  architecture: armeabi-v7a
+  
   block_devs:
     base_dirs:
       - /dev/block/platform/sprd-sdhci.3/by-num
