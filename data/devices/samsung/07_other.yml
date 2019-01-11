@@ -411,3 +411,81 @@
     brightness_path: /sys/class/backlight/panel/brightness
     default_brightness: 255
     theme: portrait_hdpi
+
+---
+- name: samsung GT-I9060I
+  id: grandneove3g
+  codenames:
+      - GT-I9060I
+      - grandneove3g
+  architecture: 
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sprd-sdhci.3/by-num
+      - /dev/block/bootdevice/by-num
+    system:
+      - /dev/block/bootdevice/by-num/system
+      - /dev/block/mmcblk0p23
+      - /dev/block/platform/sprd-sdhci.3/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-num/cache
+      - /dev/block/mmcblk0p22
+      - /dev/block/platform/sprd-sdhci.3/by-name/CSC
+    data:
+      - /dev/block/bootdevice/by-num/userdata
+      - /dev/block/mmcblk0p25
+      - /dev/block/platform/sprd-sdhci.3/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-num/boot
+      - /dev/block/mmcblk0p20
+      - /dev/block/platform/sprd-sdhci.3/by-name/KERNEL
+    recovery:
+      - /dev/block/bootdevice/by-num/recovery
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
+    extra:
+      - /dev/block/mmcblk0p8
+      - /dev/block/mmcblk1p1
+      - /dev/block/platform/sprd-sdhci.3/by-name/HIDDEN
+      - /dev/block/platform/sprd-sdhci.3/by-name/efs
+      - /dev/block/platform/sprd-sdhci.3/by-name/prodnv
+      - /dev/block/platform/sprd-sdhci.3/by-num/p1
+      - /dev/block/platform/sprd-sdhci.3/by-num/p10
+      - /dev/block/platform/sprd-sdhci.3/by-num/p11
+      - /dev/block/platform/sprd-sdhci.3/by-num/p12
+      - /dev/block/platform/sprd-sdhci.3/by-num/p13
+      - /dev/block/platform/sprd-sdhci.3/by-num/p14
+      - /dev/block/platform/sprd-sdhci.3/by-num/p15
+      - /dev/block/platform/sprd-sdhci.3/by-num/p16
+      - /dev/block/platform/sprd-sdhci.3/by-num/p17
+      - /dev/block/platform/sprd-sdhci.3/by-num/p18
+      - /dev/block/platform/sprd-sdhci.3/by-num/p19
+      - /dev/block/platform/sprd-sdhci.3/by-num/p2
+      - /dev/block/platform/sprd-sdhci.3/by-num/p20
+      - /dev/block/platform/sprd-sdhci.3/by-num/p21
+      - /dev/block/platform/sprd-sdhci.3/by-num/p22
+      - /dev/block/platform/sprd-sdhci.3/by-num/p23
+      - /dev/block/platform/sprd-sdhci.3/by-num/p24
+      - /dev/block/platform/sprd-sdhci.3/by-num/p25
+      - /dev/block/platform/sprd-sdhci.3/by-num/p3
+      - /dev/block/platform/sprd-sdhci.3/by-num/p4
+      - /dev/block/platform/sprd-sdhci.3/by-num/p5
+      - /dev/block/platform/sprd-sdhci.3/by-num/p6
+      - /dev/block/platform/sprd-sdhci.3/by-num/p7
+      - /dev/block/platform/sprd-sdhci.3/by-num/p8
+      - /dev/block/platform/sprd-sdhci.3/by-num/p9
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: 
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
