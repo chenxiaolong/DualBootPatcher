@@ -89,27 +89,9 @@ android {
 
     sourceSets {
         main {
-            manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = ['src', '../external/flatbuffers/java']
-            resources.srcDirs = ['src']
-            aidl.srcDirs = ['src']
-            renderscript.srcDirs = ['src']
-            res.srcDirs = ['res']
-            assets.srcDirs = [
-                '@CMAKE_BINARY_DIR@/assets/',
-                'assets'
-            ]
-            jniLibs.srcDirs = [
-                '@CMAKE_BINARY_DIR@/android/result/lib/',
-            ]
-        }
-
-        debug {
-            manifest.srcFile 'manifests/debug.xml'
-        }
-
-        ci {
-            manifest.srcFile 'manifests/ci.xml'
+            java.srcDirs += ['../external/flatbuffers/java']
+            assets.srcDirs += ['@CMAKE_BINARY_DIR@/assets/']
+            jniLibs.srcDirs += ['@CMAKE_BINARY_DIR@/android/result/lib/']
         }
     }
 }
@@ -141,18 +123,18 @@ readSigningConfig('@_CI_SIGN_CONFIG_PATH@', android.signingConfigs.ci)
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    implementation "android.arch.lifecycle:extensions:1.1.1"
-    annotationProcessor "android.arch.lifecycle:compiler:1.1.1"
+    implementation "androidx.lifecycle:lifecycle-extensions:2.1.0-alpha01"
+    annotationProcessor "androidx.lifecycle:lifecycle-compiler:2.1.0-alpha01"
 
-    implementation 'com.android.support:support-v4:27.1.1'
-    implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation 'com.android.support:cardview-v7:27.1.1'
-    implementation 'com.android.support:palette-v7:27.1.1'
-    implementation 'com.android.support:preference-v7:27.1.1'
-    implementation 'com.android.support:preference-v14:27.1.1'
-    implementation 'com.android.support:design:27.1.1'
-    implementation 'com.android.support:recyclerview-v7:27.1.1'
-    implementation 'com.android.support:support-v13:27.1.1'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.appcompat:appcompat:1.1.0-alpha01'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.palette:palette:1.0.0'
+    implementation 'androidx.preference:preference:1.1.0-alpha02'
+    implementation 'androidx.legacy:legacy-preference-v14:1.0.0'
+    implementation 'com.google.android.material:material:1.1.0-alpha02'
+    implementation 'androidx.recyclerview:recyclerview:1.1.0-alpha01'
+    implementation 'androidx.legacy:legacy-support-v13:1.0.0'
     implementation 'com.google.code.gson:gson:2.8.2'
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'com.afollestad.material-dialogs:core:0.9.6.0'

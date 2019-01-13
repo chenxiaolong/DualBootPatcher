@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+   * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   *
+   * This program is free software: you can redistribute it and/or modify
+   * it under the terms of the GNU General Public License as published by
+   * the Free Software Foundation, either version 3 of the License, or
+   * (at your option) any later version.
+   *
+   * This program is distributed in the hope that it will be useful,
+   * but WITHOUT ANY WARRANTY; without even the implied warranty of
+   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   * GNU General Public License for more details.
+   *
+   * You should have received a copy of the GNU General Public License
+   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/card_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingLeft="@dimen/card_v7_outside_side_padding"
+        android:paddingRight="@dimen/card_v7_outside_side_padding" />
+
+    <ProgressBar
+        android:id="@+id/card_list_loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:indeterminate="true" />
+
+    <com.github.clans.fab.FloatingActionMenu
+        android:id="@+id/fab_add_item_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginBottom="@dimen/fab_margin_bottom"
+        android:layout_marginEnd="@dimen/fab_margin_end"
+        fab:menu_colorNormal="@color/fab_pink"
+        fab:menu_colorPressed="@color/fab_pink_pressed">
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/fab_add_patched_file"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_plus_white_24dp"
+            fab:fab_colorNormal="@color/fab_pink"
+            fab:fab_colorPressed="@color/fab_pink_pressed"
+            fab:fab_size="mini"
+            fab:fab_label="@string/in_app_flashing_fab_add_patched_file" />
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/fab_add_backup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_plus_white_24dp"
+            fab:fab_colorNormal="@color/fab_pink"
+            fab:fab_colorPressed="@color/fab_pink_pressed"
+            fab:fab_size="mini"
+            fab:fab_label="@string/in_app_flashing_fab_add_backup" />
+    </com.github.clans.fab.FloatingActionMenu>
+</RelativeLayout>
