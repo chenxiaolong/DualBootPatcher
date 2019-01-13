@@ -194,23 +194,17 @@ bool property_iter(const std::function<PropertyIterCb> &fn)
                 == PropertyIterAction::Stop) {
             ctx_->done = true;
         }
-    }, &ctx);
+    }, &ctx) == 0;
 }
 
 std::optional<PropertiesMap> property_get_all()
 {
     PropertiesMap result;
 
-    initialize_properties();
-
-    if (__system_property_foreach([](const prop_info *pi, void *cookie) {
-        auto *map = static_cast<PropertiesMap *>(cookie);
-
-        read_property_cb(pi, [&](std::string_view key, std::string_view value) {
-            map->insert_or_assign(std::string{key}, std::string{value});
-            return PropertyIterAction::Stop;
-        });
-    }, &result)) {
+    if (property_iter([&](std::string_view key, std::string_view value) {
+        result.insert_or_assign(std::string{key}, std::string{value});
+        return PropertyIterAction::Continue;
+    })) {
         return std::move(result);
     } else {
         return std::nullopt;
