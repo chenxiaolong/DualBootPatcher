@@ -855,7 +855,12 @@ bool Installer::set_up_legacy_properties()
     }
 
     for (auto const &pair : _chroot_prop) {
-        _legacy_prop_svc.set(pair.first, pair.second);
+        LOGD("Setting legacy property '%s'='%s'",
+             pair.first.c_str(), pair.second.c_str());
+        if (!_legacy_prop_svc.set(pair.first, pair.second)) {
+            LOGW("Failed to set legacy property '%s'='%s'",
+                 pair.first.c_str(), pair.second.c_str());
+        }
     }
 
     auto [fd, size] = _legacy_prop_svc.workspace();
