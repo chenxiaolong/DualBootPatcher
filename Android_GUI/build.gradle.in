@@ -118,7 +118,7 @@ def readSigningConfig(path, target) {
     def props = new Properties()
     def propFile = new File(path)
     if (propFile.canRead()) {
-        props.load(new FileInputStream(propFile));
+        props.load(new FileInputStream(propFile))
         if (props != null
                 && props.containsKey('keystore')
                 && props.containsKey('keystore_passphrase')
@@ -128,10 +128,10 @@ def readSigningConfig(path, target) {
             target.storePassword = props['keystore_passphrase']
             target.keyAlias = props['key_alias']
             target.keyPassword = props['key_passphrase']
-            return true;
+            return true
         }
     }
-    return false;
+    return false
 }
 
 readSigningConfig('@_RELEASE_SIGN_CONFIG_PATH@', android.signingConfigs.release)
