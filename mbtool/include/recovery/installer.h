@@ -102,6 +102,7 @@ protected:
     std::unordered_map<std::string, std::string> _chroot_prop;
     std::unordered_map<std::string, std::string> _cached_prop;
 
+    bool _use_legacy_props;
     LegacyPropertyService _legacy_prop_svc;
 
     std::string _temp_image_path;
@@ -115,6 +116,7 @@ protected:
     std::string in_chroot(const std::string &path) const;
 
     static bool is_aroma(const std::string &path);
+    static bool is_legacy_props(const std::string &path);
 
 
 private:
@@ -141,6 +143,8 @@ private:
                             uint64_t image_size);
     static bool change_root(const std::string &path);
     bool set_up_legacy_properties();
+    bool set_up_modern_properties();
+    bool set_up_properties();
     bool updater_fd_reader(int stdio_fd, int command_fd);
     bool run_real_updater();
     bool run_debug_shell();
