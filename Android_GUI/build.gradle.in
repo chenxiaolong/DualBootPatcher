@@ -21,8 +21,8 @@ repositories {
 }
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion "27.0.3"
+    compileSdkVersion 28
+    buildToolsVersion "28.0.3"
 
     packagingOptions {
         // CMake will strip the libraries automatically for release builds
@@ -37,7 +37,7 @@ android {
     defaultConfig {
         applicationId "com.github.chenxiaolong.dualbootpatcher"
         minSdkVersion 17
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 1
         versionName "@MBP_VERSION@"
         buildConfigField "String", "GIT_SHA", '"@_GIT_SHA@"'
