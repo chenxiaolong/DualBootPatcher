@@ -174,6 +174,15 @@ static int log_mknod(const char *pathname, mode_t mode, dev_t dev)
     return ret;
 }
 
+static int log_stat(const char *path, struct stat *sb)
+{
+    int ret = stat(path, sb);
+    if (ret < 0) {
+        LOGE("%s: Failed to stat: %s", path, strerror(errno));
+    }
+    return ret;
+}
+
 static bool log_is_mounted(const std::string &mountpoint)
 {
     auto ret = util::is_mounted(mountpoint);
@@ -392,6 +401,20 @@ bool Installer::create_chroot()
                     | util::CopyFlag::CopyXattrs
                     | util::CopyFlag::ExcludeTopLevel)) {
         return false;
+    }
+
+    // Copy properties for read-only access if legacy properties are not
+    // supported
+    if (struct stat sb; log_stat("/dev/__properties__", &sb) < 0) {
+        return false;
+    } else if (S_ISDIR(sb.st_mode)) {
+        if (!log_copy_dir("/dev/__properties__",
+                          in_chroot("/mb/__properties__"),
+                          util::CopyFlag::CopyAttributes
+                        | util::CopyFlag::CopyXattrs
+                        | util::CopyFlag::ExcludeTopLevel)) {
+            return false;
+        }
     }
 
     // Mount EFS partition so patched Odin images can properly set up multi-CSC
@@ -845,10 +868,6 @@ bool Installer::change_root(const std::string &path)
 
 bool Installer::set_up_legacy_properties()
 {
-    // We don't need to worry about /dev/__properties__ since that's not present
-    // in the chroot. Bionic will automatically fall back to getting the fd from
-    // the ANDROID_PROPERTY_WORKSPACE environment variable.
-
     if (!_legacy_prop_svc.initialize()) {
         LOGE("Failed to initialize legacy property service");
         return false;
@@ -877,6 +896,25 @@ bool Installer::set_up_legacy_properties()
     LOGD("Switched to legacy properties environment: %s", tmp);
 
     return true;
+}
+
+bool Installer::set_up_modern_properties()
+{
+    return log_copy_dir("/mb/__properties__", "/dev/__properties__",
+                        util::CopyFlag::CopyAttributes
+                      | util::CopyFlag::CopyXattrs
+                      | util::CopyFlag::ExcludeTopLevel);
+}
+
+bool Installer::set_up_properties()
+{
+    LOGV("updater requires legacy properties: %d", _use_legacy_props);
+
+    log_delete_recursive("/dev/__properties__");
+
+    return _use_legacy_props
+            ? set_up_legacy_properties()
+            : set_up_modern_properties();
 }
 
 bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
@@ -1057,15 +1095,7 @@ bool Installer::run_real_updater()
                 close(stdio_fds[1]);
             }
 
-            if (auto r = util::file_find_one_of(
-                    "/mb/updater", {"ANDROID_PROPERTY_WORKSPACE"})) {
-                LOGV("updater requires legacy properties: %d", r.value());
-
-                if (r.value() && !set_up_legacy_properties()) {
-                    _exit(EXIT_FAILURE);
-                }
-            } else {
-                LOGE("Failed to read updater: %s", r.error().message().c_str());
+            if (!set_up_properties()) {
                 _exit(EXIT_FAILURE);
             }
 
@@ -1148,7 +1178,7 @@ bool Installer::run_debug_shell()
                 _exit(EXIT_FAILURE);
             }
 
-            if (!set_up_legacy_properties()) {
+            if (!set_up_properties()) {
                 _exit(EXIT_FAILURE);
             }
 
@@ -1183,6 +1213,14 @@ bool Installer::is_aroma(const std::string &path)
         "AROMA_NAME",
         "AROMA_BUILD",
         "AROMA_VERSION"
+    });
+    return r && r.value();
+}
+
+bool Installer::is_legacy_props(const std::string &path)
+{
+    auto r = util::file_find_one_of(path, {
+        "ANDROID_PROPERTY_WORKSPACE",
     });
     return r && r.value();
 }
@@ -1629,6 +1667,11 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
                            util::CopyFlag::CopyAttributes
                          | util::CopyFlag::CopyXattrs);
 
+    // Copy property_contexts
+    (void) util::copy_file("/property_contexts", in_chroot("/property_contexts"),
+                           util::CopyFlag::CopyAttributes
+                         | util::CopyFlag::CopyXattrs);
+
     return on_set_up_chroot();
 }
 
@@ -1749,6 +1792,9 @@ Installer::ProceedState Installer::install_stage_installation()
 
     // Get chroot props
     _chroot_prop = get_properties();
+
+    // Check if legacy props are required
+    _use_legacy_props = is_legacy_props(in_chroot("/mb/updater"));
 
     // Run real update-binary
     display_msg("Running real update-binary");
