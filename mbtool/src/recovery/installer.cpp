@@ -405,15 +405,23 @@ bool Installer::create_chroot()
 
     // Copy properties for read-only access if legacy properties are not
     // supported
-    if (struct stat sb; log_stat("/dev/__properties__", &sb) < 0) {
-        return false;
-    } else if (S_ISDIR(sb.st_mode)) {
-        if (!log_copy_dir("/dev/__properties__",
-                          in_chroot("/mb/__properties__"),
-                          util::CopyFlag::CopyAttributes
-                        | util::CopyFlag::CopyXattrs
-                        | util::CopyFlag::ExcludeTopLevel)) {
-            return false;
+    for (auto const &path : {
+        // TWRP properties backup when legacy properties are enabled
+        "/dev/__properties_kk__",
+        // Standard properties path
+        "/dev/__properties__",
+    }) {
+        if (struct stat sb; log_stat(path, &sb) == 0 && S_ISDIR(sb.st_mode)) {
+            LOGW("Found modern properties at: %s", path);
+
+            if (!log_copy_dir(path, in_chroot("/mb/__properties__"),
+                              util::CopyFlag::CopyAttributes
+                            | util::CopyFlag::CopyXattrs
+                            | util::CopyFlag::ExcludeTopLevel)) {
+                return false;
+            }
+
+            break;
         }
     }
 
