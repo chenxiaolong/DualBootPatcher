@@ -18,6 +18,8 @@
     data:
       - /dev/block/platform/msm_sdcc.1/by-name/userdata
       - /dev/block/mmcblk0p28
+    cache:
+      - /data/cache
     boot:
       - /dev/block/platform/msm_sdcc.1/by-name/boot
       - /dev/block/mmcblk0p7
