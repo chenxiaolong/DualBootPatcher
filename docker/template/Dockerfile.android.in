@@ -1,4 +1,4 @@
-# Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2017-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
 FROM @REPO@:@VERSION@-@RELEASE@-base
 
 # Install Android SDK
-ARG ANDROID_SDK_VERSION=3859397
-ARG ANDROID_SDK_CHECKSUM=444e22ce8ca0f67353bda4b85175ed3731cae3ffa695ca18119cbacef1c1bea0
+ARG ANDROID_SDK_VERSION=4333796
+ARG ANDROID_SDK_CHECKSUM=92ffee5a1d98d856634e8b71132e8a95d96c83a63fde1099be3d86df3106def9
 ENV ANDROID_HOME /opt/android-sdk
 
 RUN mkdir ${ANDROID_HOME} \
@@ -38,16 +38,10 @@ RUN dnf -y install java-1.8.0-openjdk-devel glibc.i686 libstdc++.i686 \
 ENV PATH ${PATH}:${ANDROID_NDK_HOME}:${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools
 
 # Install Android SDK components
-# Change to "sdkmanager --licenses" once it's available in a stable release
-# Chromium's Android tools repo usually has the checksum for the latest license:
-# https://chromium.googlesource.com/android_tools/+/refs/heads/master/sdk/licenses/android-sdk-license
-RUN mkdir -p "${ANDROID_HOME}/licenses" \
-    && echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" \
-        > "${ANDROID_HOME}/licenses/android-sdk-license" \
-    && sdkmanager \
-        'build-tools;27.0.3' \
-        'extras;android;m2repository' \
-        'extras;google;m2repository' \
-        'platforms;android-27' \
-        'platform-tools' \
-        'tools'
+RUN yes | sdkmanager \
+    'build-tools;28.0.3' \
+    'extras;android;m2repository' \
+    'extras;google;m2repository' \
+    'platforms;android-28' \
+    'platform-tools' \
+    'tools'
