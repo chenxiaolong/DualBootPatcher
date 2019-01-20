@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include "mbcommon/file/standard.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/command.h"
@@ -41,6 +42,8 @@ namespace mb
 
 static int run_command_and_log(const std::vector<std::string> &args)
 {
+    LOGV("Running command: [%s]", join(args, ", ").c_str());
+
     return util::run_command(args[0], args, {}, {},
                              [&](std::string_view line, bool error) {
         (void) error;
@@ -52,6 +55,38 @@ static int run_command_and_log(const std::vector<std::string> &args)
         LOGV("%s: %.*s", args[0].c_str(),
              static_cast<int>(line.size()), line.data());
     });
+}
+
+static oc::result<void> truncate_file(const char *path, uint64_t size)
+{
+    StandardFile file;
+
+    OUTCOME_TRYV(file.open(path, FileOpenMode::WriteOnly));
+    OUTCOME_TRYV(file.truncate(size));
+    OUTCOME_TRYV(file.close());
+
+    return oc::success();
+}
+
+static bool run_make_ext4fs(const char *path, uint64_t size)
+{
+    char size_str[64];
+    snprintf(size_str, sizeof(size_str), "%" PRIu64, size);
+
+    int ret = run_command_and_log({"make_ext4fs", "-l", size_str, path});
+    return ret >= 0 && WIFEXITED(ret) && WEXITSTATUS(ret) == 0;
+}
+
+static bool run_mkfs_ext4(const char *path, uint64_t size)
+{
+    if (auto r = truncate_file(path, size); !r) {
+        LOGE("%s: Failed to truncate file: %s",
+             path, r.error().message().c_str());
+        return false;
+    }
+
+    int ret = run_command_and_log({"mkfs.ext4", path});
+    return ret >= 0 && WIFEXITED(ret) && WEXITSTATUS(ret) == 0;
 }
 
 CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
@@ -75,16 +110,8 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
             LOGE("%s: Failed to stat: %s", path.c_str(), strerror(errno));
             return CreateImageResult::Failed;
         } else {
-            char size_str[64];
-            snprintf(size_str, sizeof(size_str), "%" PRIu64, size);
-
-            LOGD("%s: Creating new %s ext4 image", path.c_str(), size_str);
-
-            // Create new image
-            int ret = run_command_and_log({
-                "make_ext4fs", "-l", size_str, path
-            });
-            if (ret < 0 || WEXITSTATUS(ret) != 0) {
+            if (!run_make_ext4fs(path.c_str(), size)
+                    && !run_mkfs_ext4(path.c_str(), size)) {
                 LOGE("%s: Failed to create image", path.c_str());
                 return CreateImageResult::Failed;
             }
