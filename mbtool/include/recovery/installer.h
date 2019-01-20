@@ -87,6 +87,7 @@ protected:
     int _output_fd;
     InstallerFlags _flags;
     bool _passthrough;
+    int _api_ver;
 
     device::Device _device;
     std::string _detected_device;

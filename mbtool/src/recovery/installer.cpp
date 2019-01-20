@@ -123,6 +123,7 @@ Installer::Installer(std::string zip_file, std::string chroot_dir,
     , _ran(false)
 {
     _passthrough = _output_fd >= 0;
+    _api_ver = util::property_get_num("ro.build.version.sdk", 0);
 
     LOGD("Initialized installer for zip file: %s", _zip_file.c_str());
 }
@@ -209,6 +210,17 @@ static bool log_delete_recursive(const std::string &path)
     if (auto r = util::delete_recursive(path); !r) {
         LOGE("Failed to recursively remove %s: %s",
              path.c_str(), r.error().message().c_str());
+        return false;
+    }
+    return true;
+}
+
+static bool log_copy_file(const std::string &source,
+                          const std::string &target, util::CopyFlags flags)
+{
+    if (auto r = util::copy_file(source, target, flags); !r) {
+        LOGE("Failed to copy %s to %s: %s",
+             source.c_str(), target.c_str(), r.error().message().c_str());
         return false;
     }
     return true;
@@ -407,21 +419,41 @@ bool Installer::create_chroot()
     // supported
     for (auto const &path : {
         // TWRP properties backup when legacy properties are enabled
-        "/dev/__properties_kk__",
+        PROPERTIES_CTX_TWRP_BACKUP,
         // Standard properties path
-        "/dev/__properties__",
+        PROPERTIES_CTX,
     }) {
-        if (struct stat sb; log_stat(path, &sb) == 0 && S_ISDIR(sb.st_mode)) {
-            LOGW("Found modern properties at: %s", path);
+        LOGV("Looking for properties at: %s", path);
 
-            if (!log_copy_dir(path, in_chroot("/mb/__properties__"),
-                              util::CopyFlag::CopyAttributes
-                            | util::CopyFlag::CopyXattrs
-                            | util::CopyFlag::ExcludeTopLevel)) {
-                return false;
+        if (struct stat sb; log_stat(path, &sb) == 0) {
+            if (S_ISDIR(sb.st_mode)) {
+                LOGV("Found >=7.0 style properties");
+
+                if (!log_copy_dir(path, in_chroot(CHROOT_PROPERTIES),
+                                  util::CopyFlag::CopyAttributes
+                                | util::CopyFlag::CopyXattrs
+                                | util::CopyFlag::ExcludeTopLevel)) {
+                    return false;
+                }
+
+                break;
+            } else if (S_ISREG(sb.st_mode)) {
+                if (_api_ver >= 19) {
+                    LOGV("Found 4.4-6.0 style properties");
+
+                    if (!log_copy_file(path, in_chroot(CHROOT_PROPERTIES),
+                                       util::CopyFlag::CopyAttributes
+                                     | util::CopyFlag::CopyXattrs
+                                     | util::CopyFlag::ExcludeTopLevel)) {
+                        return false;
+                    }
+
+                    break;
+                } else {
+                    LOGW("Android <4.4 style properties are NOT SUPPORTED");
+                    LOGW("Flashing >=8.0 ROMs will fail");
+                }
             }
-
-            break;
         }
     }
 
@@ -908,17 +940,31 @@ bool Installer::set_up_legacy_properties()
 
 bool Installer::set_up_modern_properties()
 {
-    return log_copy_dir("/mb/__properties__", "/dev/__properties__",
-                        util::CopyFlag::CopyAttributes
-                      | util::CopyFlag::CopyXattrs
-                      | util::CopyFlag::ExcludeTopLevel);
+    if (struct stat sb; log_stat(CHROOT_PROPERTIES, &sb) == 0) {
+        if (S_ISDIR(sb.st_mode)) {
+            return log_copy_dir(CHROOT_PROPERTIES, PROPERTIES_CTX,
+                                util::CopyFlag::CopyAttributes
+                              | util::CopyFlag::CopyXattrs
+                              | util::CopyFlag::ExcludeTopLevel);
+        } else if (S_ISREG(sb.st_mode)) {
+            return log_copy_file(CHROOT_PROPERTIES, PROPERTIES_CTX,
+                                 util::CopyFlag::CopyAttributes
+                               | util::CopyFlag::CopyXattrs);
+        } else {
+            LOGE("Invalid modern properties context");
+            return false;
+        }
+    } else {
+        LOGW("%s: Failed to stat: %s", CHROOT_PROPERTIES, strerror(errno));
+        return false;
+    }
 }
 
 bool Installer::set_up_properties()
 {
     LOGV("updater requires legacy properties: %d", _use_legacy_props);
 
-    log_delete_recursive("/dev/__properties__");
+    log_delete_recursive(PROPERTIES_CTX);
 
     return _use_legacy_props
             ? set_up_legacy_properties()
