@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -26,6 +26,7 @@
 
 #include <fcntl.h>
 #include <linux/reboot.h>
+#include <sys/mount.h>
 #include <sys/reboot.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
@@ -36,6 +37,7 @@
 #include "mbutil/command.h"
 #include "mbutil/file.h"
 #include "mbutil/mount.h"
+#include "mbutil/path.h"
 #include "mbutil/properties.h"
 
 #define LOG_TAG "mbutil/reboot"
@@ -64,40 +66,64 @@ static bool run_command_and_log(const std::vector<std::string> &args)
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
-static bool remount_ro_done()
-{
-    auto entries = util::get_mount_entries();
-    if (!entries) {
-        return true;
-    }
-
-    for (auto const &entry : entries.value()) {
-        if (starts_with(entry.source, "/dev/block")
-                && starts_with(entry.vfs_options, "rw,")) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-static bool remount_ro()
+static bool remount_ro_and_unmount()
 {
     using namespace std::chrono;
     using namespace std::chrono_literals;
 
-    if (!file_write_data("/proc/sysrq-trigger", "u", 1)) {
-        return false;
+    if (auto r = file_write_data("/proc/sysrq-trigger", "u", 1); !r) {
+        LOGW("Failed to remount everything read-only via sysrq: %s",
+             r.error().message().c_str());
     }
 
-    // Allow 1 minute to remount read-only
-    auto stop_tp = steady_clock::now() + 1min;
+    // Allow 6 seconds to remount read-only (same as Android 9.0 init)
+    auto stop_tp = steady_clock::now() + 6s;
 
-    while (!remount_ro_done() && steady_clock::now() < stop_tp) {
+    do {
+        if (auto entries = util::get_mount_entries()) {
+            // Iterate backwards and try to unmount. If there are no "rw"
+            // volumes left, then stop.
+            std::vector<std::string> rw;
+
+            for (auto it = entries.value().rbegin();
+                    it != entries.value().rend(); ++it) {
+                if (starts_with(it->source, "/dev/block/")
+                        || starts_with(it->target, "/data/")) {
+                    if (umount2(it->target.c_str(), MNT_FORCE) < 0) {
+                        LOGW("%s: Failed to unmount: %s", it->target.c_str(),
+                             strerror(errno));
+                        if (starts_with(it->vfs_options, "rw,")) {
+                            rw.emplace_back(it->target);
+                        }
+                    }
+                }
+            }
+
+            if (rw.empty()) {
+                break;
+            } else {
+                LOGW("Remaining rw mountpoints: [%s]", join(rw, ", ").c_str());
+            }
+        } else {
+            LOGW("Failed to get mount entries: %s",
+                 entries.error().message().c_str());
+        }
+
         std::this_thread::sleep_for(100ms);
-    }
+    } while (steady_clock::now() < stop_tp);
 
     return true;
+}
+
+static void pre_shutdown_tasks()
+{
+    using namespace std::chrono_literals;
+
+    sync();
+    remount_ro_and_unmount();
+    sync();
+
+    std::this_thread::sleep_for(100ms);
 }
 
 bool reboot_via_framework(bool show_confirm_dialog)
@@ -127,8 +153,7 @@ bool reboot_via_init(const std::string &reboot_arg)
 
 bool reboot_via_syscall(const std::string &reboot_arg)
 {
-    sync();
-    remount_ro();
+    pre_shutdown_tasks();
 
     auto ret = syscall(__NR_reboot, LINUX_REBOOT_MAGIC1,
                        LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART2,
@@ -177,8 +202,7 @@ bool shutdown_via_init()
 
 bool shutdown_via_syscall()
 {
-    sync();
-    remount_ro();
+    pre_shutdown_tasks();
 
     if (reboot(RB_POWER_OFF) < 0) {
         LOGE("Failed to shut down via syscall: %s", strerror(errno));
