@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -34,6 +34,6 @@
 namespace mb
 {
 
-bool emergency_reboot();
+[[noreturn]] void emergency_reboot();
 
 }

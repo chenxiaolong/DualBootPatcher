@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -141,7 +141,7 @@ struct EmergencyMount
     std::vector<std::string> paths;
 };
 
-bool emergency_reboot()
+void emergency_reboot()
 {
     using namespace std::chrono_literals;
 
@@ -269,7 +269,7 @@ bool emergency_reboot()
     // Does not return if successful
     util::reboot_via_syscall("recovery");
 
-    return false;
+    abort();
 }
 
 }
