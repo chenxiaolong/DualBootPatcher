@@ -1079,18 +1079,16 @@ static bool create_mbtool_types(policydb_t *pdb)
     }
 
     // For all attributes
-    for (uint32_t type_val = 1; type_val <= pdb->p_types.nprim;
-            ++type_val) {
+    for (uint32_t type_val = 1; type_val <= pdb->p_types.nprim; ++type_val) {
         // Skip non-attributes
-        if (pdb->type_val_to_struct[type_val - 1]->flavor
-                != TYPE_ATTRIB) {
+        if (pdb->type_val_to_struct[type_val - 1]->flavor != TYPE_ATTRIB) {
             continue;
         }
 
-        auto ret2 = selinux_raw_grant_all_perms(
+        auto ret = selinux_raw_grant_all_perms(
                 pdb, static_cast<uint16_t>(mb_exec->s.value),
                 static_cast<uint16_t>(type_val));
-        switch (ret2) {
+        switch (ret) {
         case SELinuxResult::Changed:
         case SELinuxResult::Unchanged:
             break;
