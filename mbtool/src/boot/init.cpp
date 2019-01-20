@@ -1096,11 +1096,6 @@ static void redirect_stdio_null()
     }
 }
 
-static bool critical_failure()
-{
-    return emergency_reboot();
-}
-
 int init_main(int argc, char *argv[])
 {
     // Some devices actually receive arguments, so ignore them during boot
@@ -1167,8 +1162,7 @@ int init_main(int argc, char *argv[])
     if (!contents) {
         LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH,
              contents.error().message().c_str());
-        critical_failure();
-        return EXIT_FAILURE;
+        emergency_reboot();
     }
 
     // Start probing for devices so we have somewhere to write logs for
@@ -1181,12 +1175,10 @@ int init_main(int argc, char *argv[])
 
     if (!device_from_json(contents.value(), device, error)) {
         LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
-        critical_failure();
-        return EXIT_FAILURE;
+        emergency_reboot();
     } else if (device.validate()) {
         LOGE("%s: Device definition validation failed", DEVICE_JSON_PATH);
-        critical_failure();
-        return EXIT_FAILURE;
+        emergency_reboot();
     }
 
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
@@ -1213,8 +1205,7 @@ int init_main(int argc, char *argv[])
     std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
     if (!rom) {
         LOGE("Unknown ROM ID: %s", rom_id.c_str());
-        critical_failure();
-        return EXIT_FAILURE;
+        emergency_reboot();
     }
 
     LOGV("ROM ID is: %s", rom_id.c_str());
@@ -1229,8 +1220,7 @@ int init_main(int argc, char *argv[])
     if (!mount_fstab(fstab.c_str(), rom, device, flags,
                      uevent_thread.device_handler())) {
         LOGE("Failed to mount fstab");
-        critical_failure();
-        return EXIT_FAILURE;
+        emergency_reboot();
     }
 
     LOGV("Successfully mounted fstab");
@@ -1249,8 +1239,7 @@ int init_main(int argc, char *argv[])
     // Mount ROM (bind mount directory or mount images, etc.)
     if (!mount_rom(rom)) {
         LOGE("Failed to mount ROM directories and images");
-        critical_failure();
-        return EXIT_FAILURE;
+        emergency_reboot();
     }
 
     std::string config_path(rom->config_path());
@@ -1292,8 +1281,7 @@ int init_main(int argc, char *argv[])
                             SELinuxPatch::Main)) {
             LOGW("%s: Failed to patch policy",
                  util::SELINUX_DEFAULT_POLICY_FILE);
-            critical_failure();
-            return EXIT_FAILURE;
+            emergency_reboot();
         }
     }
 
@@ -1330,8 +1318,7 @@ int init_main(int argc, char *argv[])
     LOGD("Launching real init ...");
     execlp("/init", "/init", nullptr);
     LOGE("Failed to exec real init: %s", strerror(errno));
-    critical_failure();
-    return EXIT_FAILURE;
+    emergency_reboot();
 }
 
 }
