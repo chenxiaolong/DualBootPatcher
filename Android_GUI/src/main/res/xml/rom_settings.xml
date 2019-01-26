@@ -49,7 +49,7 @@
             android:persistent="true"
             android:summary="@string/rom_settings_initial_screen_desc"
             android:title="@string/rom_settings_initial_screen_title" />
-        <androidx.preference.CheckBoxPreference
+        <androidx.preference.SwitchPreference
             android:defaultValue="false"
             android:key="use_dark_theme"
             android:title="@string/rom_settings_use_dark_theme" />
@@ -58,21 +58,21 @@
             android:title="@string/rom_settings_parallel_patching_title"
             android:persistent="false"
             android:inputType="number" />
-        <androidx.preference.CheckBoxPreference
+        <androidx.preference.SwitchPreference
             android:defaultValue="false"
             android:key="allow_3rd_party_intents"
             android:summary="@string/rom_settings_allow_intents_desc"
             android:title="@string/rom_settings_allow_intents_title" />
-        <androidx.preference.CheckBoxPreference
+        <androidx.preference.SwitchPreference
             android:defaultValue="false"
             android:key="confirm_reboot"
             android:summary="@string/rom_settings_show_reboot_confirm_desc"
             android:title="@string/rom_settings_show_reboot_confirm_title" />
-        <androidx.preference.CheckBoxPreference
+        <androidx.preference.SwitchPreference
             android:defaultValue="true"
             android:key="show_reboot"
             android:title="@string/rom_settings_show_reboot_title" />
-        <androidx.preference.CheckBoxPreference
+        <androidx.preference.SwitchPreference
             android:defaultValue="false"
             android:key="show_exit"
             android:title="@string/rom_settings_show_exit_title" />

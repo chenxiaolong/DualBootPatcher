@@ -23,7 +23,7 @@
     <androidx.preference.PreferenceCategory
         android:title="@string/a_s_settings_indiv_app_sharing_section_title">
 
-        <androidx.preference.CheckBoxPreference
+        <androidx.preference.SwitchPreference
             android:key="share_indiv_apps"
             android:persistent="false"
             android:title="@string/a_s_settings_indiv_app_sharing_title" />
