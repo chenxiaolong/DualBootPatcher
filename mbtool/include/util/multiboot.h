@@ -21,7 +21,8 @@
 
 #include <string>
 
-#define INTERNAL_STORAGE                "/data/media/0"
+#define INTERNAL_STORAGE_ROOT           "/data/media"
+#define INTERNAL_STORAGE                INTERNAL_STORAGE_ROOT "/0"
 #define MULTIBOOT_DIR                   INTERNAL_STORAGE "/MultiBoot"
 #define MULTIBOOT_LOG_INSTALLER         INTERNAL_STORAGE "/MultiBoot.log"
 #define MULTIBOOT_LOG_APPSYNC           MULTIBOOT_DIR "/appsync.log"

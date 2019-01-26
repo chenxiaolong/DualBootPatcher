@@ -339,7 +339,8 @@ static bool fix_file_contexts(const char *path)
     });
 
     while ((read = getline(&line, &len, fp_old.get())) >= 0) {
-        if (starts_with(line, "/data/media(") && !strstr(line, "<<none>>")) {
+        if (starts_with(line, INTERNAL_STORAGE_ROOT "(")
+                && !strstr(line, "<<none>>")) {
             fputc('#', fp_new.get());
         }
 
@@ -353,12 +354,12 @@ static bool fix_file_contexts(const char *path)
 
     static const char *new_contexts =
             "\n"
-            "/data/media              <<none>>\n"
-            "/data/media/[0-9]+(/.*)? <<none>>\n"
-            "/raw(/.*)?               <<none>>\n"
-            "/data/multiboot(/.*)?    <<none>>\n"
-            "/cache/multiboot(/.*)?   <<none>>\n"
-            "/system/multiboot(/.*)?  <<none>>\n";
+            INTERNAL_STORAGE_ROOT                 " <<none>>\n"
+            INTERNAL_STORAGE_ROOT "/[0-9]+(/.*)?" " <<none>>\n"
+            "/raw(/.*)?"                          " <<none>>\n"
+            "/data/multiboot(/.*)?"               " <<none>>\n"
+            "/cache/multiboot(/.*)?"              " <<none>>\n"
+            "/system/multiboot(/.*)?"             " <<none>>\n";
     fputs(new_contexts, fp_new.get());
 
     return replace_file(path, new_path.c_str());

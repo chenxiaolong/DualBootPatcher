@@ -1006,12 +1006,13 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
     }
 
     // Bind mount internal SD directory
-    (void) util::mkdir_recursive("/raw/data/media", 0771);
-    (void) util::mkdir_recursive("/data/media", 0771);
+    (void) util::mkdir_recursive("/raw" INTERNAL_STORAGE_ROOT, 0771);
+    (void) util::mkdir_recursive(INTERNAL_STORAGE_ROOT, 0771);
 
-    if (auto ret = util::mount(
-            "/raw/data/media", "/data/media", "", MS_BIND, ""); !ret) {
-        LOGE("Failed to mount /data/media: %s", ret.error().message().c_str());
+    if (auto ret = util::mount("/raw" INTERNAL_STORAGE_ROOT,
+                               INTERNAL_STORAGE_ROOT, "", MS_BIND, ""); !ret) {
+        LOGE("%s: Failed to mount directory: %s",
+             INTERNAL_STORAGE_ROOT, ret.error().message().c_str());
         return false;
     }
 

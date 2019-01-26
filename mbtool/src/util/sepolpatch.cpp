@@ -45,6 +45,7 @@
 #include "mblog/logging.h"
 #include "mbutil/selinux.h"
 
+#include "util/android_api.h"
 #include "util/multiboot.h"
 
 #define LOG_TAG "mbtool/util/sepolpatch"
@@ -887,6 +888,55 @@ static bool apply_pre_boot_patches(policydb_t *pdb)
     return true;
 }
 
+static bool copy_attributes(policydb_t *pdb,
+                            const char *source_type,
+                            const char *target_type)
+{
+    if (strcmp(source_type, target_type) == 0) {
+        LOGE("Source and target types are the same: %s", source_type);
+        return false;
+    }
+
+    auto source = find_type(pdb, source_type);
+    if (!source) {
+        LOGE("Source type %s does not exist", source_type);
+        return false;
+    }
+
+    auto target = find_type(pdb, target_type);
+    if (!target) {
+        LOGE("Target type %s does not exist", target_type);
+        return false;
+    }
+
+    std::vector<uint16_t> attributes;
+    ebitmap_node *n;
+    unsigned int bit;
+
+    ebitmap_for_each_bit(&pdb->type_attr_map[source->s.value - 1], n, bit) {
+        if (!ebitmap_node_get_bit(n, bit)) {
+            continue;
+        }
+
+        if (source->s.value != bit + 1) {
+            attributes.push_back(static_cast<uint16_t>(bit + 1));
+        }
+    }
+
+    for (auto const &attr : attributes) {
+        auto ret = selinux_raw_set_attribute(
+                pdb, static_cast<uint16_t>(target->s.value), attr);
+        if (ret == SELinuxResult::Error) {
+            LOGE("Failed to set attribute %s for type %s",
+                 pdb->p_type_val_to_name[attr - 1],
+                 pdb->p_type_val_to_name[target->s.value - 1]);
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static bool copy_avtab_rules(policydb_t *pdb,
                              const char *source_type,
                              const char *target_type)
@@ -953,46 +1003,56 @@ static bool copy_avtab_rules(policydb_t *pdb,
  */
 static bool fix_data_media_rules(policydb_t *pdb)
 {
-    static const char *expected_type = "media_rw_data_file";
-    const char *path = INTERNAL_STORAGE;
+    auto sdk_version = get_sdk_version(SdkVersionSource::BuildProp);
+    const char *expected_type;
+
+    if (sdk_version >= 21) {
+        expected_type = "media_rw_data_file";
+    } else {
+        expected_type = "media_data_file";
+    }
+
+    LOGV("Expected SELinux type (API %lu) for %s: %s",
+         sdk_version, INTERNAL_STORAGE_ROOT, expected_type);
 
     if (!find_type(pdb, expected_type)) {
         LOGW("Type %s doesn't exist. Won't touch %s related rules",
-             expected_type, INTERNAL_STORAGE);
+             expected_type, INTERNAL_STORAGE_ROOT);
         return true;
     }
 
-    auto context = util::selinux_lget_context(path);
+    auto context = util::selinux_lget_context(INTERNAL_STORAGE_ROOT);
     if (!context) {
         LOGE("%s: Failed to get context: %s",
-             path, context.error().message().c_str());
-        path = "/data/media";
-        context = util::selinux_lget_context(path);
-        if (!context) {
-            LOGE("%s: Failed to get context: %s",
-                 path, context.error().message().c_str());
-            // Don't fail if /data/media does not exist
-            return errno == ENOENT;
-        }
+             INTERNAL_STORAGE_ROOT, context.error().message().c_str());
+        // Don't fail if /data/media does not exist
+        return errno == ENOENT;
     }
 
     std::vector<std::string> pieces = split(context.value(), ':');
     if (pieces.size() < 3) {
-        LOGE("%s: Malformed context string: %s", path, context.value().c_str());
+        LOGE("%s: Malformed context string: %s",
+             INTERNAL_STORAGE_ROOT, context.value().c_str());
         return false;
     }
     const std::string &type = pieces[2];
 
-    if (type == expected_type) {
-        return true;
+    LOGV("Type of %s: %s", INTERNAL_STORAGE_ROOT, type.c_str());
+
+    if (type != expected_type) {
+        if (!find_type(pdb, type.c_str())) {
+            LOGV("Type %s does not exist. Creating it", type.c_str());
+            ff(selinux_create_type(pdb, type.c_str()) != SELinuxResult::Error);
+            ff(copy_attributes(pdb, expected_type, type.c_str()));
+        }
+
+        LOGV("Copying %s rules to %s because of improper %s SELinux label",
+             expected_type, type.c_str(), INTERNAL_STORAGE_ROOT);
+        ff(copy_avtab_rules(pdb, expected_type, type.c_str()));
+
+        // Required for MLS on Android 7.1
+        ff(selinux_set_attribute(pdb, type.c_str(), "mlstrustedobject"));
     }
-
-    LOGV("Copying %s rules to %s because of improper %s SELinux label",
-         expected_type, type.c_str(), path);
-    ff(copy_avtab_rules(pdb, expected_type, type.c_str()));
-
-    // Required for MLS on Android 7.1
-    ff(selinux_set_attribute(pdb, type.c_str(), "mlstrustedobject"));
 
     return true;
 }
