@@ -31,6 +31,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.provider.DocumentsContract
 import android.widget.Toast
+import androidx.core.content.edit
 import androidx.preference.Preference
 import androidx.preference.Preference.OnPreferenceChangeListener
 import androidx.preference.Preference.OnPreferenceClickListener
@@ -350,9 +351,9 @@ class RomSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChangeListen
                 if (threads >= 1) {
                     // Do this instead of using EditTextPreference's built-in persisting since we
                     // want it saved as an integer
-                    val editor = preferenceManager.sharedPreferences.edit()
-                    editor.putInt(KEY_PARALLEL_PATCHING, threads)
-                    editor.apply()
+                    preferenceManager.sharedPreferences.edit {
+                        putInt(KEY_PARALLEL_PATCHING, threads)
+                    }
 
                     updateParallelPatchingSummary(threads)
                     return true
@@ -382,9 +383,9 @@ class RomSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChangeListen
                 }
 
                 val prefs = preferenceManager.sharedPreferences
-                val editor = prefs.edit()
-                editor.putString(Constants.Preferences.BACKUP_DIRECTORY_URI, uri!!.toString())
-                editor.apply()
+                prefs.edit {
+                    putString(Constants.Preferences.BACKUP_DIRECTORY_URI, uri!!.toString())
+                }
 
                 updateBackupDirectorySummary()
             }

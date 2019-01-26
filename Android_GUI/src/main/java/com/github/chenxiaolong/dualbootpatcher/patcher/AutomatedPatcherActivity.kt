@@ -20,6 +20,7 @@ package com.github.chenxiaolong.dualbootpatcher.patcher
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Toast
+import androidx.fragment.app.transaction
 import com.github.chenxiaolong.dualbootpatcher.R
 
 class AutomatedPatcherActivity : AppCompatActivity() /* , PatcherListener */ {
@@ -43,11 +44,11 @@ class AutomatedPatcherActivity : AppCompatActivity() /* , PatcherListener */ {
         }
 
         if (savedInstanceState == null) {
-            val ft = supportFragmentManager.beginTransaction()
-            val frag = PatchFileFragment.newInstance()
-            frag.arguments = args
-            ft.replace(R.id.content_frame, frag)
-            ft.commit()
+            supportFragmentManager.transaction {
+                val frag = PatchFileFragment.newInstance()
+                frag.arguments = args
+                replace(R.id.content_frame, frag)
+            }
         }
     }
 

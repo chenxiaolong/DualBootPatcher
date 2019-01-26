@@ -20,6 +20,7 @@ package com.github.chenxiaolong.dualbootpatcher.settings
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.transaction
 import com.github.chenxiaolong.dualbootpatcher.R
 
 class RomSettingsActivity : AppCompatActivity() {
@@ -28,8 +29,9 @@ class RomSettingsActivity : AppCompatActivity() {
         setContentView(R.layout.rom_settings)
 
         if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                    .replace(R.id.content_frame, RomSettingsFragment()).commit()
+            supportFragmentManager.transaction {
+                replace(R.id.content_frame, RomSettingsFragment())
+            }
         }
 
         setSupportActionBar(findViewById(R.id.toolbar))

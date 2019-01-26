@@ -20,6 +20,7 @@ package com.github.chenxiaolong.dualbootpatcher.appsharing
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.transaction
 import com.github.chenxiaolong.dualbootpatcher.R
 
 class AppSharingSettingsActivity : AppCompatActivity() {
@@ -28,8 +29,9 @@ class AppSharingSettingsActivity : AppCompatActivity() {
         setContentView(R.layout.rom_settings)
 
         if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                    .replace(R.id.content_frame, AppSharingSettingsFragment()).commit()
+            supportFragmentManager.transaction {
+                replace(R.id.content_frame, AppSharingSettingsFragment())
+            }
         }
 
         setSupportActionBar(findViewById(R.id.toolbar))
