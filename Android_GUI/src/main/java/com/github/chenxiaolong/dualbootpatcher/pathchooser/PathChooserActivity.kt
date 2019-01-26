@@ -23,6 +23,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.pathchooser.PathChooserDialog.FileChooserDialogListener
@@ -73,9 +74,9 @@ class PathChooserActivity : AppCompatActivity(), FileChooserDialogListener {
 
     override fun onPathSelected(tag: String, file: File) {
         if (DIALOG_PATH_CHOOSER == tag) {
-            val editor = prefs.edit()
-            editor.putString("last_cwd", file.parent)
-            editor.apply()
+            prefs.edit {
+                putString("last_cwd", file.parent)
+            }
 
             val intent = Intent()
             intent.data = Uri.fromFile(file)

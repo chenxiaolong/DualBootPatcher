@@ -27,6 +27,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.RomUtils
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder
@@ -217,9 +218,9 @@ class AutomatedSwitcherActivity : AppCompatActivity(), ConfirmAutomatedSwitchRom
     }
 
     override fun onConfirmSwitchRom(dontShowAgain: Boolean) {
-        val e = prefs.edit()
-        e.putBoolean(PREF_SHOW_CONFIRM_DIALOG, !dontShowAgain)
-        e.apply()
+        prefs.edit {
+            putBoolean(PREF_SHOW_CONFIRM_DIALOG, !dontShowAgain)
+        }
 
         switchRom()
     }

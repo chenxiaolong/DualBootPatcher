@@ -31,8 +31,10 @@ import android.widget.TextView
 import androidx.annotation.IdRes
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.transaction
 import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingSettingsActivity
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog
 import com.github.chenxiaolong.dualbootpatcher.freespace.FreeSpaceFragment
@@ -143,9 +145,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
             if (initialScreen == null || !initialScreens.contains(initialScreen)) {
                 // Show about screen by default
                 initialScreen = INITIAL_SCREEN_ABOUT
-                val e = prefs.edit()
-                e.putString("initial_screen", initialScreen)
-                e.apply()
+                prefs.edit {
+                    putString("initial_screen", initialScreen)
+                }
             }
 
             drawerItemSelected = when (initialScreen) {
@@ -165,9 +167,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
             val isFirstStart = prefs.getBoolean("first_start", true)
             if (isFirstStart) {
                 drawerLayout.openDrawer(drawerView)
-                val e = prefs.edit()
-                e.putBoolean("first_start", false)
-                e.apply()
+                prefs.edit {
+                    putBoolean("first_start", false)
+                }
             }
         }
     }
@@ -315,26 +317,25 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
         val prevFreeSpace = fm.findFragmentByTag(FreeSpaceFragment.FRAGMENT_TAG)
         val prevAbout = fm.findFragmentByTag(AboutFragment.FRAGMENT_TAG)
 
-        val ft = fm.beginTransaction()
+        fm.transaction {
+            if (animate) {
+                setCustomAnimations(0, R.animator.fragment_out)
+            }
 
-        if (animate) {
-            ft.setCustomAnimations(0, R.animator.fragment_out)
+            if (prevRoms != null) {
+                hide(prevRoms)
+            }
+            if (prevPatchFile != null) {
+                hide(prevPatchFile)
+            }
+            if (prevFreeSpace != null) {
+                hide(prevFreeSpace)
+            }
+            if (prevAbout != null) {
+                hide(prevAbout)
+            }
         }
 
-        if (prevRoms != null) {
-            ft.hide(prevRoms)
-        }
-        if (prevPatchFile != null) {
-            ft.hide(prevPatchFile)
-        }
-        if (prevFreeSpace != null) {
-            ft.hide(prevFreeSpace)
-        }
-        if (prevAbout != null) {
-            ft.hide(prevAbout)
-        }
-
-        ft.commit()
         fm.executePendingTransactions()
     }
 
@@ -346,63 +347,61 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
         val prevFreeSpace = fm.findFragmentByTag(FreeSpaceFragment.FRAGMENT_TAG)
         val prevAbout = fm.findFragmentByTag(AboutFragment.FRAGMENT_TAG)
 
-        val ft = fm.beginTransaction()
-        ft.setCustomAnimations(R.animator.fragment_in, 0)
+        fm.transaction {
+            setCustomAnimations(R.animator.fragment_in, 0)
 
-        when (fragment) {
-            FRAGMENT_ROMS -> {
-                appTitle = R.string.title_roms
-                updateTitle()
+            when (fragment) {
+                FRAGMENT_ROMS -> {
+                    appTitle = R.string.title_roms
+                    updateTitle()
 
-                if (prevRoms == null) {
-                    val f = SwitcherListFragment.newInstance()
-                    ft.add(R.id.content_frame, f,
-                            SwitcherListFragment.FRAGMENT_TAG)
-                } else {
-                    ft.show(prevRoms)
+                    if (prevRoms == null) {
+                        val f = SwitcherListFragment.newInstance()
+                        add(R.id.content_frame, f, SwitcherListFragment.FRAGMENT_TAG)
+                    } else {
+                        show(prevRoms)
+                    }
                 }
-            }
 
-            FRAGMENT_PATCH_FILE -> {
-                appTitle = R.string.title_patch_zip
-                updateTitle()
+                FRAGMENT_PATCH_FILE -> {
+                    appTitle = R.string.title_patch_zip
+                    updateTitle()
 
-                if (prevPatchFile == null) {
-                    val f = PatchFileFragment.newInstance()
-                    ft.add(R.id.content_frame, f, PatchFileFragment.FRAGMENT_TAG)
-                } else {
-                    ft.show(prevPatchFile)
+                    if (prevPatchFile == null) {
+                        val f = PatchFileFragment.newInstance()
+                        add(R.id.content_frame, f, PatchFileFragment.FRAGMENT_TAG)
+                    } else {
+                        show(prevPatchFile)
+                    }
                 }
-            }
 
-            FRAGMENT_FREE_SPACE -> {
-                appTitle = R.string.title_free_space
-                updateTitle()
+                FRAGMENT_FREE_SPACE -> {
+                    appTitle = R.string.title_free_space
+                    updateTitle()
 
-                if (prevFreeSpace == null) {
-                    val f = FreeSpaceFragment.newInstance()
-                    ft.add(R.id.content_frame, f, FreeSpaceFragment.FRAGMENT_TAG)
-                } else {
-                    ft.show(prevFreeSpace)
+                    if (prevFreeSpace == null) {
+                        val f = FreeSpaceFragment.newInstance()
+                        add(R.id.content_frame, f, FreeSpaceFragment.FRAGMENT_TAG)
+                    } else {
+                        show(prevFreeSpace)
+                    }
                 }
-            }
 
-            FRAGMENT_ABOUT -> {
-                appTitle = BuildConfig.APP_NAME_RESOURCE
-                updateTitle()
+                FRAGMENT_ABOUT -> {
+                    appTitle = BuildConfig.APP_NAME_RESOURCE
+                    updateTitle()
 
-                if (prevAbout == null) {
-                    val f = AboutFragment.newInstance()
-                    ft.add(R.id.content_frame, f, AboutFragment.FRAGMENT_TAG)
-                } else {
-                    ft.show(prevAbout)
+                    if (prevAbout == null) {
+                        val f = AboutFragment.newInstance()
+                        add(R.id.content_frame, f, AboutFragment.FRAGMENT_TAG)
+                    } else {
+                        show(prevAbout)
+                    }
                 }
-            }
 
-            else -> throw IllegalStateException("Invalid fragment ID")
+                else -> throw IllegalStateException("Invalid fragment ID")
+            }
         }
-
-        ft.commit()
     }
 
     fun lockNavigation() {

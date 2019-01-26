@@ -33,6 +33,7 @@ import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.SearchView.OnQueryTextListener
+import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import androidx.loader.app.LoaderManager
 import androidx.loader.app.LoaderManager.LoaderCallbacks
@@ -174,9 +175,9 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
     }
 
     override fun onConfirmFirstUse(dontShowAgain: Boolean) {
-        val e = prefs.edit()
-        e.putBoolean(PREF_SHOW_FIRST_USE_DIALOG, !dontShowAgain)
-        e.apply()
+        prefs.edit {
+            putBoolean(PREF_SHOW_FIRST_USE_DIALOG, !dontShowAgain)
+        }
     }
 
     private fun showAppList(show: Boolean) {

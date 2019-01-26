@@ -37,6 +37,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
+import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import androidx.loader.app.LoaderManager
 import androidx.loader.app.LoaderManager.LoaderCallbacks
@@ -457,9 +458,9 @@ class InAppFlashingFragment : Fragment(), FirstUseDialogListener, RomIdSelection
     }
 
     override fun onConfirmFirstUse(dontShowAgain: Boolean) {
-        val e = prefs.edit()
-        e.putBoolean(PREF_SHOW_FIRST_USE_DIALOG, !dontShowAgain)
-        e.apply()
+        prefs.edit {
+            putBoolean(PREF_SHOW_FIRST_USE_DIALOG, !dontShowAgain)
+        }
     }
 
     override fun onConfirmSingleChoice(tag: String, index: Int, text: String?) {

@@ -22,6 +22,7 @@ import android.view.MenuItem
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.transaction
 import com.github.chenxiaolong.dualbootpatcher.R
 
 class MbtoolTaskOutputActivity : AppCompatActivity() {
@@ -34,8 +35,9 @@ class MbtoolTaskOutputActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             fragment = MbtoolTaskOutputFragment()
             fragment.arguments = intent.extras
-            supportFragmentManager.beginTransaction().add(
-                    R.id.content_frame, fragment, MbtoolTaskOutputFragment.FRAGMENT_TAG).commit()
+            supportFragmentManager.transaction {
+                add(R.id.content_frame, fragment, MbtoolTaskOutputFragment.FRAGMENT_TAG)
+            }
         } else {
             fragment = supportFragmentManager.findFragmentByTag(
                     MbtoolTaskOutputFragment.FRAGMENT_TAG) as MbtoolTaskOutputFragment
