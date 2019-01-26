@@ -28,7 +28,7 @@ import androidx.preference.Preference
 import androidx.preference.Preference.OnPreferenceChangeListener
 import androidx.preference.Preference.OnPreferenceClickListener
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import com.github.chenxiaolong.dualbootpatcher.PermissionUtils
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.RomConfig
@@ -48,7 +48,7 @@ class AppSharingSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChang
         GenericYesNoDialogListener, GenericConfirmDialogListener {
     private var config: RomConfig? = null
 
-    private lateinit var shareIndivApps: SwitchPreference
+    private lateinit var shareIndivApps: SwitchPreferenceCompat
     private lateinit var manageIndivApps: Preference
 
     private var loading = true
@@ -58,7 +58,7 @@ class AppSharingSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChang
 
         addPreferencesFromResource(R.xml.app_sharing_settings)
 
-        shareIndivApps = findPreference(KEY_SHARE_INDIV_APPS) as SwitchPreference
+        shareIndivApps = findPreference(KEY_SHARE_INDIV_APPS) as SwitchPreferenceCompat
         shareIndivApps.onPreferenceChangeListener = this
 
         manageIndivApps = findPreference(KEY_MANAGE_INDIV_APPS)
