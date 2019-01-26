@@ -38,7 +38,6 @@
 
 #define LOG_TAG "mbtool/util/roms"
 
-#define BUILD_PROP "build.prop"
 
 static std::vector<std::string> extsd_mount_points{
     "/raw/extsd",
@@ -356,7 +355,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
     }
 
     // Otherwise, iterate through the installed ROMs
-    if (struct stat sb; stat("/system/build.prop", &sb) == 0) {
+    if (struct stat sb; stat(BUILD_PROP_PATH, &sb) == 0) {
         for (auto rom : roms.roms) {
             // We can't check roms that use images since they aren't mounted
             if (rom->system_is_image) {

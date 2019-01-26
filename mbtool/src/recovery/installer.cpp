@@ -71,6 +71,7 @@
 // Local
 #include "recovery/image.h"
 #include "recovery/installer_util.h"
+#include "util/android_api.h"
 #include "util/multiboot.h"
 #include "util/signature.h"
 #include "util/romconfig.h"
@@ -123,7 +124,7 @@ Installer::Installer(std::string zip_file, std::string chroot_dir,
     , _ran(false)
 {
     _passthrough = _output_fd >= 0;
-    _api_ver = util::property_get_num("ro.build.version.sdk", 0);
+    _api_ver = get_sdk_version();
 
     LOGD("Initialized installer for zip file: %s", _zip_file.c_str());
 }
@@ -1898,8 +1899,7 @@ Installer::ProceedState Installer::install_stage_installation()
     run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
 
     // Grab version and display ID so that can be cached in config.json later
-    if (auto props = util::property_file_get_all(
-            in_chroot("/system/build.prop"))) {
+    if (auto props = util::property_file_get_all(in_chroot(BUILD_PROP_PATH))) {
         auto to_cache = {
             "ro.build.version.release",
             "ro.build.display.id",

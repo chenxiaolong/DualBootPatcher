@@ -64,6 +64,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     add_library(
         mbtool-util
         STATIC
+        src/util/android_api.cpp
         src/util/legacy_property_service.cpp
         src/util/multiboot.cpp
         src/util/romconfig.cpp
