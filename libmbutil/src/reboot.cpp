@@ -87,15 +87,28 @@ static bool remount_ro_and_unmount()
 
             for (auto it = entries.value().rbegin();
                     it != entries.value().rend(); ++it) {
-                if (starts_with(it->source, "/dev/block/")
-                        || starts_with(it->target, "/data/")) {
-                    if (umount2(it->target.c_str(), MNT_FORCE) < 0) {
-                        LOGW("%s: Failed to unmount: %s", it->target.c_str(),
-                             strerror(errno));
-                        if (starts_with(it->vfs_options, "rw,")) {
-                            rw.emplace_back(it->target);
-                        }
-                    }
+                if (!starts_with(it->source, "/dev/block/")
+                        && !starts_with(it->target, "/data/")) {
+                    continue;
+                }
+
+                if (umount2(it->target.c_str(), MNT_FORCE) == 0) {
+                    continue;
+                }
+
+                LOGW("%s: Failed to unmount: %s",
+                     it->target.c_str(), strerror(errno));
+
+                if (::mount("", it->target.c_str(), "",
+                            MS_REMOUNT | MS_RDONLY, "") == 0) {
+                    continue;
+                }
+
+                LOGW("%s: Failed to remount read only: %s",
+                     it->target.c_str(), strerror(errno));
+
+                if (starts_with(it->vfs_options, "rw,")) {
+                    rw.emplace_back(it->target);
                 }
             }
 
@@ -124,6 +137,8 @@ static void pre_shutdown_tasks()
     sync();
 
     std::this_thread::sleep_for(100ms);
+
+    LOGV("Ready for shutdown");
 }
 
 bool reboot_via_framework(bool show_confirm_dialog)
