@@ -321,7 +321,7 @@ class PathChooserDialog : DialogFragment(), PathChooserItemClickListener,
 
     companion object {
         private val DIALOG_NEW_FOLDER =
-                "${PathChooserDialog::class.java.canonicalName}.dialog.new_folder"
+                "${PathChooserDialog::class.java.name}.dialog.new_folder"
 
         private const val EMULATED_STORAGE_DIR = "/storage/emulated"
 

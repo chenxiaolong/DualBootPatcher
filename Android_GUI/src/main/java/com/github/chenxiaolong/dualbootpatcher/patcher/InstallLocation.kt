@@ -74,8 +74,8 @@ class TemplateLocation(
         private val descriptionArgs: Array<Any>
 ) {
     companion object {
-        val PLACEHOLDER_ID = "${InstallLocation::class.java.canonicalName}.placeholder_id"
-        val PLACEHOLDER_SUFFIX = "${InstallLocation::class.java.canonicalName}.placeholder_suffix"
+        val PLACEHOLDER_ID = "${InstallLocation::class.java.name}.placeholder_id"
+        val PLACEHOLDER_SUFFIX = "${InstallLocation::class.java.name}.placeholder_suffix"
     }
 
     constructor(

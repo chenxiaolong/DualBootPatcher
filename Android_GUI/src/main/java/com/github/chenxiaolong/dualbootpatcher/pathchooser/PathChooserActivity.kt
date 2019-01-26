@@ -94,13 +94,13 @@ class PathChooserActivity : AppCompatActivity(), FileChooserDialogListener {
 
     companion object {
         val ACTION_OPEN_FILE =
-                "${PathChooserActivity::class.java.canonicalName}.open_file"
+                "${PathChooserActivity::class.java.name}.open_file"
         val ACTION_OPEN_DIRECTORY =
-                "${PathChooserActivity::class.java.canonicalName}.open_directory"
+                "${PathChooserActivity::class.java.name}.open_directory"
         val ACTION_SAVE_FILE =
-                "${PathChooserActivity::class.java.canonicalName}.save_file"
+                "${PathChooserActivity::class.java.name}.save_file"
 
         private val DIALOG_PATH_CHOOSER =
-                "${PathChooserActivity::class.java.canonicalName}.path_chooser"
+                "${PathChooserActivity::class.java.name}.path_chooser"
     }
 }

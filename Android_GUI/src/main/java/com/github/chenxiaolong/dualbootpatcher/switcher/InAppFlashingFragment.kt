@@ -702,23 +702,23 @@ class InAppFlashingFragment : Fragment(), FirstUseDialogListener, RomIdSelection
         private const val ACTIVITY_REQUEST_FILE = 1000
 
         private val PROGRESS_DIALOG_VERIFY_ZIP =
-                "${InAppFlashingFragment::class.java.canonicalName}.progress.verify_zip"
+                "${InAppFlashingFragment::class.java.name}.progress.verify_zip"
         private val PROGRESS_DIALOG_QUERYING_METADATA =
-                "${InAppFlashingFragment::class.java.canonicalName}.progress.querying_metadata"
+                "${InAppFlashingFragment::class.java.name}.progress.querying_metadata"
         private val CONFIRM_DIALOG_FIRST_USE =
-                "${InAppFlashingFragment::class.java.canonicalName}.confirm.first_use"
+                "${InAppFlashingFragment::class.java.name}.confirm.first_use"
         private val CONFIRM_DIALOG_INSTALL_LOCATION =
-                "${InAppFlashingFragment::class.java.canonicalName}.confirm.install_location"
+                "${InAppFlashingFragment::class.java.name}.confirm.install_location"
         private val CONFIRM_DIALOG_NAMED_SLOT_ID =
-                "${InAppFlashingFragment::class.java.canonicalName}.confirm.named_slot_id"
+                "${InAppFlashingFragment::class.java.name}.confirm.named_slot_id"
         private val CONFIRM_DIALOG_ROM_ID =
-                "${InAppFlashingFragment::class.java.canonicalName}.confirm.rom_id"
+                "${InAppFlashingFragment::class.java.name}.confirm.rom_id"
         private val CONFIRM_DIALOG_ERROR =
-                "${InAppFlashingFragment::class.java.canonicalName}.confirm.error"
+                "${InAppFlashingFragment::class.java.name}.confirm.error"
         private val CONFIRM_DIALOG_SELECT_BACKUP =
-                "${InAppFlashingFragment::class.java.canonicalName}.confirm.select_backup"
+                "${InAppFlashingFragment::class.java.name}.confirm.select_backup"
         private val CONFIRM_DIALOG_SELECT_TARGETS =
-                "${InAppFlashingFragment::class.java.canonicalName}.confirm.select_targets"
+                "${InAppFlashingFragment::class.java.name}.confirm.select_targets"
 
         private fun getDirectories(context: Context?, uri: Uri?): Array<String>? {
             val directory = FileUtils.getDocumentFile(context!!, uri!!)

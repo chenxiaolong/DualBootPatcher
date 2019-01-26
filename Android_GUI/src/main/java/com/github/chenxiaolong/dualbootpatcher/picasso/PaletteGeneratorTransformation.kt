@@ -30,7 +30,7 @@ class PaletteGeneratorTransformation private constructor() : Transformation {
     }
 
     override fun key(): String {
-        return javaClass.canonicalName!!
+        return javaClass.name
     }
 
     fun getPalette(bitmap: Bitmap): Palette? {

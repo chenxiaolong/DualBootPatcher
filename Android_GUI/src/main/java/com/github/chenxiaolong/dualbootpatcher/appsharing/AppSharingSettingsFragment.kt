@@ -293,9 +293,9 @@ class AppSharingSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChang
         private const val KEY_MANAGE_INDIV_APPS = "manage_indiv_apps"
 
         private val YES_NO_DIALOG_PERMISSIONS =
-                "${AppSharingSettingsFragment::class.java.canonicalName}.yes_no.permissions"
+                "${AppSharingSettingsFragment::class.java.name}.yes_no.permissions"
         private val CONFIRM_DIALOG_PERMISSIONS =
-                "${AppSharingSettingsFragment::class.java.canonicalName}.confirm.permissions"
+                "${AppSharingSettingsFragment::class.java.name}.confirm.permissions"
 
         /**
          * Request code for storage permissions request

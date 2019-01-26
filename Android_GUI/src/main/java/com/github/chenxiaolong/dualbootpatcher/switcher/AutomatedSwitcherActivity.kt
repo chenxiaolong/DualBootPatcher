@@ -264,7 +264,7 @@ class AutomatedSwitcherActivity : AppCompatActivity(), ConfirmAutomatedSwitchRom
         private const val EXTRA_TASK_ID_SWITCH_ROM = "task_id_switch_rom"
 
         private val CONFIRM_DIALOG_AUTOMATED =
-                "${AutomatedSwitcherActivity::class.java.canonicalName}.confirm.automated"
+                "${AutomatedSwitcherActivity::class.java.name}.confirm.automated"
 
         const val EXTRA_ROM_ID = "rom_id"
         const val EXTRA_REBOOT = "reboot"

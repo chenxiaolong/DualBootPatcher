@@ -417,8 +417,8 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
         private const val PREF_SHOW_FIRST_USE_DIALOG = "indiv_app_sync_first_use_show_dialog"
 
         private val CONFIRM_DIALOG_FIRST_USE =
-                "${AppListFragment::class.java.canonicalName}.confirm.first_use"
+                "${AppListFragment::class.java.name}.confirm.first_use"
         private val CONFIRM_DIALOG_A_S_SETTINGS =
-                "${AppListFragment::class.java.canonicalName}.confirm.a_s_settings"
+                "${AppListFragment::class.java.name}.confirm.a_s_settings"
     }
 }
