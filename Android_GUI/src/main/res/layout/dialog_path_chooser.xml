@@ -18,6 +18,7 @@
 -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -32,9 +33,10 @@
         android:id="@+id/filename"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/md_dialog_frame_margin"
-        android:layout_marginEnd="@dimen/md_dialog_frame_margin"
+        android:layout_marginStart="@dimen/md_dialog_frame_margin_horizontal"
+        android:layout_marginEnd="@dimen/md_dialog_frame_margin_horizontal"
         android:hint="@string/path_chooser_enter_a_filename"
         android:maxLines="1"
-        android:inputType="text|textNoSuggestions" />
+        android:inputType="text|textNoSuggestions"
+        tools:ignore="PrivateResource" />
 </LinearLayout>

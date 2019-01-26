@@ -19,10 +19,14 @@ package com.github.chenxiaolong.dualbootpatcher.dialogs
 
 import android.app.Dialog
 import android.os.Bundle
+import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.fragment.app.DialogFragment
 
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.customview.customView
+import com.afollestad.materialdialogs.customview.getCustomView
+import com.github.chenxiaolong.dualbootpatcher.R
 
 import java.io.Serializable
 
@@ -31,23 +35,20 @@ class GenericProgressDialog : DialogFragment() {
         val args = arguments
         val builder = args!!.getSerializable(ARG_BUILDER) as Builder
 
-        val dialogBuilder = MaterialDialog.Builder(activity!!)
+        val dialog = MaterialDialog(requireActivity())
+                .customView(R.layout.dialog_progress)
 
-        if (builder.title != null) {
-            dialogBuilder.title(builder.title!!)
-        } else if (builder.titleResId != 0) {
-            dialogBuilder.title(builder.titleResId)
+        if (builder.titleResId != null || builder.title != null) {
+            dialog.title(builder.titleResId, text = builder.title)
         }
 
-        if (builder.message != null) {
-            dialogBuilder.content(builder.message!!)
-        } else if (builder.messageResId != 0) {
-            dialogBuilder.content(builder.messageResId)
+        val tv = dialog.getCustomView().findViewById<TextView>(R.id.message)
+
+        if (builder.messageResId != null) {
+            tv.setText(builder.messageResId!!)
+        } else if (builder.message != null) {
+            tv.text = builder.message
         }
-
-        dialogBuilder.progress(true, 0)
-
-        val dialog = dialogBuilder.build()
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)
@@ -58,14 +59,14 @@ class GenericProgressDialog : DialogFragment() {
     class Builder : Serializable {
         internal var title: String? = null
         @StringRes
-        internal var titleResId: Int = 0
+        internal var titleResId: Int? = null
         internal var message: String? = null
         @StringRes
-        internal var messageResId: Int = 0
+        internal var messageResId: Int? = null
 
         fun title(title: String?): Builder {
             this.title = title
-            titleResId = 0
+            titleResId = null
             return this
         }
 
@@ -77,7 +78,7 @@ class GenericProgressDialog : DialogFragment() {
 
         fun message(message: String?): Builder {
             this.message = message
-            messageResId = 0
+            messageResId = null
             return this
         }
 

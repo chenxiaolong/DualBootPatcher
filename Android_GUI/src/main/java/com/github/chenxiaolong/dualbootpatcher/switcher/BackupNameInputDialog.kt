@@ -22,8 +22,11 @@ import android.os.Bundle
 import android.text.InputType
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
-import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.WhichButton
+import com.afollestad.materialdialogs.actions.setActionButtonEnabled
+import com.afollestad.materialdialogs.input.getInputField
+import com.afollestad.materialdialogs.input.input
 import com.github.chenxiaolong.dualbootpatcher.R
 
 class BackupNameInputDialog : DialogFragment() {
@@ -47,29 +50,29 @@ class BackupNameInputDialog : DialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val suggestedName = arguments!!.getString(ARG_SUGGESTED_NAME)
+        val inputType = InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE or
+                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
 
-        val dialog = MaterialDialog.Builder(activity!!)
-                .content(R.string.br_name_dialog_desc)
-                .negativeText(R.string.cancel)
-                .positiveText(R.string.ok)
-                .inputType(InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
-                .input(getString(R.string.br_name_dialog_hint), suggestedName, false) { dialog, input ->
-                    val text = input.toString()
-                    if (text.contains("/") || text == "." || text == "..") {
-                        dialog.getActionButton(DialogAction.POSITIVE).isEnabled = false
-                    }
-                }
-                .alwaysCallInputCallback()
-                .onPositive { dialog, _ ->
+        val dialog = MaterialDialog(requireActivity())
+                .message(R.string.br_name_dialog_desc)
+                .negativeButton(R.string.cancel)
+                .positiveButton(R.string.ok) { dialog ->
                     val owner = owner
                     if (owner != null) {
-                        val editText = dialog.inputEditText
+                        val editText = dialog.getInputField()
                         if (editText != null) {
                             owner.onSelectedBackupName(editText.text.toString())
                         }
                     }
                 }
-                .build()
+                .input(hintRes = R.string.br_name_dialog_hint, prefill = suggestedName,
+                        inputType = inputType, allowEmpty = false, waitForPositiveButton = false)
+                { dialog, input ->
+                    val text = input.toString()
+                    if (text.contains("/") || text == "." || text == "..") {
+                        dialog.setActionButtonEnabled(WhichButton.POSITIVE, false)
+                    }
+                }
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

@@ -20,12 +20,10 @@ package com.github.chenxiaolong.dualbootpatcher.switcher
 import android.app.Dialog
 import android.os.Bundle
 import android.view.WindowManager
-import android.widget.EditText
-import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback
+import com.afollestad.materialdialogs.input.input
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation
 
@@ -54,27 +52,21 @@ class RomNameInputDialog : DialogFragment() {
         val title = String.format(getString(R.string.rename_rom_title), info.defaultName)
         val message = String.format(getString(R.string.rename_rom_desc), info.defaultName)
 
-        val dialog = MaterialDialog.Builder(activity!!)
-                .title(title)
-                .customView(R.layout.dialog_textbox, true)
-                .positiveText(R.string.ok)
-                .negativeText(R.string.cancel)
-                .onPositive(SingleButtonCallback { dialog, _ ->
-                    val owner = owner ?: return@SingleButtonCallback
-
-                    val et = dialog.findViewById(R.id.edittext) as EditText
-                    val newName = et.text.toString().trim { it <= ' ' }
+        val dialog = MaterialDialog(requireActivity())
+                .title(text = title)
+                .message(text = message)
+                .positiveButton(R.string.ok)
+                .negativeButton(R.string.cancel)
+                .input(allowEmpty = true) { _, text ->
+                    val owner = owner ?: return@input
+                    val newName = text.toString().trim { it <= ' ' }
 
                     if (newName.isEmpty()) {
                         owner.onRomNameChanged(null)
                     } else {
                         owner.onRomNameChanged(newName)
                     }
-                })
-                .build()
-
-        val tv = (dialog as MaterialDialog).customView!!.findViewById<TextView>(R.id.message)
-        tv.text = message
+                }
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

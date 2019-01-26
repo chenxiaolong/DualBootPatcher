@@ -53,14 +53,12 @@ class ConfirmChecksumIssueDialog : DialogFragment() {
             else -> throw IllegalArgumentException("Invalid value for issue param: $issue")
         }
 
-        val dialog = MaterialDialog.Builder(activity!!)
-                .content(message)
-                .positiveText(R.string.proceed)
-                .negativeText(R.string.cancel)
-                .onPositive { _, _ ->
+        val dialog = MaterialDialog(requireActivity())
+                .message(text = message)
+                .positiveButton(R.string.proceed) {
                     owner?.onConfirmChecksumIssue(romId)
                 }
-                .build()
+                .negativeButton(R.string.cancel)
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

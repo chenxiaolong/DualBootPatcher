@@ -37,17 +37,14 @@ class ChangeInstallLocationDialog : DialogFragment() {
         val message = String.format(
                 getString(R.string.in_app_flashing_change_install_location_desc), zipRomId)
 
-        val dialog = MaterialDialog.Builder(activity!!)
-                .content(message)
-                .positiveText(R.string.in_app_flashing_change_install_location)
-                .negativeText(R.string.in_app_flashing_keep_current_location)
-                .onPositive { _, _ ->
+        val dialog = MaterialDialog(requireActivity())
+                .message(text = message)
+                .positiveButton(R.string.in_app_flashing_change_install_location) {
                     owner?.onChangeInstallLocationClicked(true)
                 }
-                .onNegative { _, _ ->
+                .negativeButton(R.string.in_app_flashing_keep_current_location) {
                     owner?.onChangeInstallLocationClicked(false)
                 }
-                .build()
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

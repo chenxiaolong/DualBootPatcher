@@ -19,13 +19,14 @@ package com.github.chenxiaolong.dualbootpatcher.switcher
 
 import android.app.Dialog
 import android.os.Bundle
-import android.text.Editable
 import android.text.InputType
-import android.text.TextWatcher
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
-import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.WhichButton
+import com.afollestad.materialdialogs.actions.setActionButtonEnabled
+import com.afollestad.materialdialogs.input.getInputField
+import com.afollestad.materialdialogs.input.input
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils
 
@@ -42,44 +43,34 @@ class NamedSlotIdInputDialog : DialogFragment() {
         val template = PatcherUtils.templateLocations.find {
             it.prefix == prefix
         } ?: throw IllegalArgumentException("Invalid prefix: $prefix")
+        val inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
 
-        val builder = MaterialDialog.Builder(activity!!)
-                .content(R.string.install_location_named_slot_id_hint)
-                .inputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
-                .input(R.string.install_location_named_slot_id_hint, 0, false) { _, input ->
-                    val loc = template.toInstallLocation(input.toString())
+        val dialog = MaterialDialog(requireActivity())
+                .title(text = template.getTemplateDisplayName(context!!))
+                .message(R.string.install_location_named_slot_id_hint)
+                .input(hintRes = R.string.install_location_named_slot_id_hint,
+                        inputType = inputType, waitForPositiveButton = false) { dialog, text ->
+                    val et = dialog.getInputField()
+
+                    if (text.isEmpty()) {
+                        et.error = getString(
+                                R.string.install_location_named_slot_id_error_is_empty)
+                        dialog.setActionButtonEnabled(WhichButton.POSITIVE, false)
+                    } else if (!text.matches("[a-z0-9]+".toRegex())) {
+                        et.error = getString(R.string.install_location_named_slot_id_error_invalid)
+                        dialog.setActionButtonEnabled(WhichButton.POSITIVE, false)
+                    } else {
+                        dialog.setActionButtonEnabled(WhichButton.POSITIVE, true)
+                    }
+
+                    val loc = template.toInstallLocation(text.toString())
+                    dialog.message(text = loc.getDescription(context!!))
+                }
+                .positiveButton { dialog ->
+                    val text = dialog.getInputField().text
+                    val loc = template.toInstallLocation(text.toString())
                     owner?.onSelectedNamedSlotRomId(loc.id)
                 }
-
-        builder.title(template.getTemplateDisplayName(context!!))
-
-        val dialog = builder.build()
-
-        val et = dialog.inputEditText
-        et?.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
-
-            override fun afterTextChanged(s: Editable) {
-                val text = s.toString()
-
-                if (text.isEmpty()) {
-                    et.error = getString(
-                            R.string.install_location_named_slot_id_error_is_empty)
-                    dialog.getActionButton(DialogAction.POSITIVE).isEnabled = false
-                } else if (!text.matches("[a-z0-9]+".toRegex())) {
-                    et.error = getString(
-                            R.string.install_location_named_slot_id_error_invalid)
-                    dialog.getActionButton(DialogAction.POSITIVE).isEnabled = false
-                } else {
-                    dialog.getActionButton(DialogAction.POSITIVE).isEnabled = true
-                }
-
-                val loc = template.toInstallLocation(text)
-                dialog.setContent(loc.getDescription(context!!))
-            }
-        })
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

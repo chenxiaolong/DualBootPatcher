@@ -22,14 +22,10 @@ import android.os.Bundle
 import androidx.annotation.StringRes
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
-
-import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback
-
 import java.io.Serializable
 
-class GenericYesNoDialog : DialogFragment(), SingleButtonCallback {
+class GenericYesNoDialog : DialogFragment() {
     private lateinit var target: DialogListenerTarget
     private lateinit var dialogTag: String
 
@@ -52,36 +48,27 @@ class GenericYesNoDialog : DialogFragment(), SingleButtonCallback {
         target = args.getSerializable(ARG_TARGET) as DialogListenerTarget
         dialogTag = args.getString(ARG_TAG)!!
 
-        val dialogBuilder = MaterialDialog.Builder(activity!!)
+        val dialog = MaterialDialog(requireActivity())
 
-        if (builder.title != null) {
-            dialogBuilder.title(builder.title!!)
-        } else if (builder.titleResId != 0) {
-            dialogBuilder.title(builder.titleResId)
+        if (builder.titleResId != null || builder.title != null) {
+            dialog.title(builder.titleResId, text = builder.title)
         }
 
-        if (builder.message != null) {
-            dialogBuilder.content(builder.message!!)
-        } else if (builder.messageResId != 0) {
-            dialogBuilder.content(builder.messageResId)
+        if (builder.messageResId != null || builder.message != null) {
+            dialog.message(builder.messageResId, text = builder.message)
         }
 
-        if (builder.positive != null) {
-            dialogBuilder.positiveText(builder.positive!!)
-        } else if (builder.positiveResId != 0) {
-            dialogBuilder.positiveText(builder.positiveResId)
+        if (builder.positiveResId != null || builder.positive != null) {
+            dialog.positiveButton(builder.positiveResId, text = builder.positive) {
+                owner?.onConfirmYesNo(dialogTag, true)
+            }
         }
 
-        if (builder.negative != null) {
-            dialogBuilder.negativeText(builder.negative!!)
-        } else if (builder.negativeResId != 0) {
-            dialogBuilder.negativeText(builder.negativeResId)
+        if (builder.negativeResId != null || builder.negative != null) {
+            dialog.negativeButton(builder.negativeResId, text = builder.negative) {
+                owner?.onConfirmYesNo(dialogTag, false)
+            }
         }
-
-        dialogBuilder.onPositive(this)
-        dialogBuilder.onNegative(this)
-
-        val dialog = dialogBuilder.build()
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)
@@ -89,33 +76,23 @@ class GenericYesNoDialog : DialogFragment(), SingleButtonCallback {
         return dialog
     }
 
-    override fun onClick(dialog: MaterialDialog, which: DialogAction) {
-        val owner = owner ?: return
-
-        when (which) {
-            DialogAction.POSITIVE -> owner.onConfirmYesNo(dialogTag, true)
-            DialogAction.NEGATIVE -> owner.onConfirmYesNo(dialogTag, false)
-            DialogAction.NEUTRAL -> {}
-        }
-    }
-
     class Builder : Serializable {
         internal var title: String? = null
         @StringRes
-        internal var titleResId: Int = 0
+        internal var titleResId: Int? = null
         internal var message: String? = null
         @StringRes
-        internal var messageResId: Int = 0
+        internal var messageResId: Int? = null
         internal var positive: String? = null
         @StringRes
-        internal var positiveResId: Int = 0
+        internal var positiveResId: Int? = null
         internal var negative: String? = null
         @StringRes
-        internal var negativeResId: Int = 0
+        internal var negativeResId: Int? = null
 
         fun title(title: String?): Builder {
             this.title = title
-            titleResId = 0
+            titleResId = null
             return this
         }
 
@@ -127,7 +104,7 @@ class GenericYesNoDialog : DialogFragment(), SingleButtonCallback {
 
         fun message(message: String?): Builder {
             this.message = message
-            messageResId = 0
+            messageResId = null
             return this
         }
 
@@ -139,7 +116,7 @@ class GenericYesNoDialog : DialogFragment(), SingleButtonCallback {
 
         fun positive(text: String?): Builder {
             positive = text
-            positiveResId = 0
+            positiveResId = null
             return this
         }
 
@@ -151,7 +128,7 @@ class GenericYesNoDialog : DialogFragment(), SingleButtonCallback {
 
         fun negative(text: String?): Builder {
             negative = text
-            negativeResId = 0
+            negativeResId = null
             return this
         }
 

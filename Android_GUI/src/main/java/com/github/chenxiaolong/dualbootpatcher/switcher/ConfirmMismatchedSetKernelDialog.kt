@@ -49,14 +49,12 @@ class ConfirmMismatchedSetKernelDialog : DialogFragment() {
         val message = String.format(
                 getString(R.string.set_kernel_mismatched_rom), currentRom, targetRom)
 
-        val dialog = MaterialDialog.Builder(activity!!)
-                .content(message)
-                .positiveText(R.string.proceed)
-                .negativeText(R.string.cancel)
-                .onPositive { _, _ ->
+        val dialog = MaterialDialog(requireActivity())
+                .message(text = message)
+                .positiveButton(R.string.proceed) {
                     owner?.onConfirmMismatchedSetKernel()
                 }
-                .build()
+                .negativeButton(R.string.cancel)
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)
