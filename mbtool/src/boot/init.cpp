@@ -66,6 +66,7 @@
 #include "boot/mount_fstab.h"
 #include "boot/property_service.h"
 #include "boot/uevent_thread.h"
+#include "util/android_api.h"
 #include "util/multiboot.h"
 #include "util/romconfig.h"
 #include "util/sepolpatch.h"
@@ -338,7 +339,8 @@ static bool fix_file_contexts(const char *path)
     });
 
     while ((read = getline(&line, &len, fp_old.get())) >= 0) {
-        if (starts_with(line, "/data/media(") && !strstr(line, "<<none>>")) {
+        if (starts_with(line, INTERNAL_STORAGE_ROOT "(")
+                && !strstr(line, "<<none>>")) {
             fputc('#', fp_new.get());
         }
 
@@ -352,12 +354,12 @@ static bool fix_file_contexts(const char *path)
 
     static const char *new_contexts =
             "\n"
-            "/data/media              <<none>>\n"
-            "/data/media/[0-9]+(/.*)? <<none>>\n"
-            "/raw(/.*)?               <<none>>\n"
-            "/data/multiboot(/.*)?    <<none>>\n"
-            "/cache/multiboot(/.*)?   <<none>>\n"
-            "/system/multiboot(/.*)?  <<none>>\n";
+            INTERNAL_STORAGE_ROOT                 " <<none>>\n"
+            INTERNAL_STORAGE_ROOT "/[0-9]+(/.*)?" " <<none>>\n"
+            "/raw(/.*)?"                          " <<none>>\n"
+            "/data/multiboot(/.*)?"               " <<none>>\n"
+            "/cache/multiboot(/.*)?"              " <<none>>\n"
+            "/system/multiboot(/.*)?"             " <<none>>\n";
     fputs(new_contexts, fp_new.get());
 
     return replace_file(path, new_path.c_str());
@@ -797,12 +799,6 @@ static std::string find_fstab()
     return std::string();
 }
 
-static unsigned long get_api_version()
-{
-    return util::property_file_get_num<unsigned long>(
-            "/system/build.prop", "ro.build.version.sdk", 0);
-}
-
 static bool create_layout_version()
 {
     // Prevent installd from dying because it can't unmount /data/media for
@@ -811,7 +807,7 @@ static bool create_layout_version()
     ScopedFILE fp(fopen("/data/.layout_version", "wbe"), fclose);
     if (fp) {
         const char *layout_version;
-        if (get_api_version() >= 21) {
+        if (get_sdk_version(SdkVersionSource::BuildProp) >= 21) {
             layout_version = "3";
         } else {
             layout_version = "2";
@@ -864,7 +860,7 @@ static bool disable_spota()
 {
     static const char *spota_dir = "/data/security/spota";
 
-    auto props = util::property_file_get_all("/system/build.prop");
+    auto props = util::property_file_get_all(BUILD_PROP_PATH);
 
     if (props && strcasecmp((*props)["ro.product.brand"].c_str(), "samsung") != 0
             && strcasecmp((*props)["ro.product.manufacturer"].c_str(), "samsung") != 0) {

@@ -48,6 +48,8 @@
 #include "mbutil/external/bionic_macros.h"
 #include "mbutil/properties.h"
 
+#include "util/multiboot.h"
+
 #define LOG_TAG "mbtool/boot/property_service"
 
 class SocketConnection
@@ -547,7 +549,7 @@ void PropertyService::load_boot_props()
 
 void PropertyService::load_system_props()
 {
-    load_properties_file("/system/build.prop", {});
+    load_properties_file(BUILD_PROP_PATH, {});
     load_properties_file("/odm/build.prop", {});
     load_properties_file("/vendor/build.prop", {});
     load_properties_file("/factory/factory.prop", "ro.*");

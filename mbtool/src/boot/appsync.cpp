@@ -944,9 +944,9 @@ int appsync_main(int argc, char *argv[])
 
     LOGI("=== APPSYNC VERSION %s ===", version());
 
-    LOGI("Calling restorecon on /data/media/obb");
+    LOGI("Calling restorecon on " INTERNAL_STORAGE_ROOT "/obb");
     std::vector<std::string> restorecon{
-        "restorecon", "-R", "-F", "/data/media/obb"
+        "restorecon", "-R", "-F", INTERNAL_STORAGE_ROOT "/obb"
     };
     util::run_command(restorecon[0], restorecon, {}, {}, {});
 
