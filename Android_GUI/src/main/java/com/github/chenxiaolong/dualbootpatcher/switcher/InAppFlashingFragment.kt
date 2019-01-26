@@ -179,7 +179,7 @@ class InAppFlashingFragment : Fragment(), FirstUseDialogListener, RomIdSelection
             selectedBackupTargets = savedInstanceState.getStringArray(EXTRA_SELECTED_BACKUP_TARGETS)
             selectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID)
             zipRomId = savedInstanceState.getString(EXTRA_ZIP_ROM_ID)
-            addType = savedInstanceState.getSerializable(EXTRA_ADD_TYPE) as Type
+            addType = savedInstanceState.getSerializable(EXTRA_ADD_TYPE) as Type?
             taskIdVerifyZip = savedInstanceState.getInt(EXTRA_TASK_ID_VERIFY_ZIP)
             queryingMetadata = savedInstanceState.getBoolean(EXTRA_QUERYING_METADATA)
         }
