@@ -1044,8 +1044,10 @@ static bool create_mbtool_types(policydb_t *pdb)
     ff(add_rules(pdb, "zygote", "init", "fifo_file", { "write" }));
 
     // Allow 'am' to use fds (eg. pipes) inherited from the daemon
-    ff(add_rules(pdb, "system_server", "mb_exec", "fd", { "use" }));
-    ff(add_rules(pdb, "system_server", "mb_exec", "fifo_file", { "write" }));
+    if (find_type(pdb, "system_server")) {
+        ff(add_rules(pdb, "system_server", "mb_exec", "fd", { "use" }));
+        ff(add_rules(pdb, "system_server", "mb_exec", "fifo_file", { "write" }));
+    }
 
     // Allow rebooting via the android.intent.action.REBOOT intent
     if (find_type(pdb, "activity_service")) {
