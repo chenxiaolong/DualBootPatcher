@@ -49,15 +49,13 @@ class SetKernelConfirmDialog : DialogFragment() {
 
         val message = String.format(getString(R.string.switcher_ask_set_kernel_desc), info.name)
 
-        val dialog = MaterialDialog.Builder(activity!!)
+        val dialog = MaterialDialog(requireActivity())
                 .title(R.string.switcher_ask_set_kernel_title)
-                .content(message)
-                .positiveText(R.string.proceed)
-                .negativeText(R.string.cancel)
-                .onPositive { _, _ ->
+                .message(text = message)
+                .positiveButton(R.string.proceed) {
                     owner?.onConfirmSetKernel()
                 }
-                .build()
+                .negativeButton(R.string.cancel)
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

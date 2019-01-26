@@ -19,21 +19,21 @@ package com.github.chenxiaolong.dualbootpatcher.dialogs
 
 import android.app.Dialog
 import android.os.Bundle
-import android.view.View
 import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
-import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.MaterialDialog.ListCallbackSingleChoice
-import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback
+import com.afollestad.materialdialogs.WhichButton
+import com.afollestad.materialdialogs.actions.setActionButtonEnabled
+import com.afollestad.materialdialogs.list.listItemsSingleChoice
 import java.io.Serializable
 
-class GenericSingleChoiceDialog : DialogFragment(), ListCallbackSingleChoice, SingleButtonCallback {
+class GenericSingleChoiceDialog : DialogFragment() {
     private lateinit var target: DialogListenerTarget
     private lateinit var dialogTag: String
 
+    private var selectedIndex: Int = -1
     private var selectedText: String? = null
 
     private val owner: GenericSingleChoiceDialogListener?
@@ -62,47 +62,38 @@ class GenericSingleChoiceDialog : DialogFragment(), ListCallbackSingleChoice, Si
             selectedText = savedInstanceState.getString(EXTRA_SELECTED_TEXT)
         }
 
-        val dialogBuilder = MaterialDialog.Builder(activity!!)
+        val dialog = MaterialDialog(requireActivity())
 
-        if (builder.title != null) {
-            dialogBuilder.title(builder.title!!)
-        } else if (builder.titleResId != 0) {
-            dialogBuilder.title(builder.titleResId)
+        if (builder.titleResId != null || builder.title != null) {
+            dialog.title(builder.titleResId, text = builder.title)
         }
 
-        if (builder.message != null) {
-            dialogBuilder.content(builder.message!!)
-        } else if (builder.messageResId != 0) {
-            dialogBuilder.content(builder.messageResId)
+        if (builder.messageResId != null || builder.message != null) {
+            dialog.message(builder.messageResId, text = builder.message)
         }
 
-        if (builder.positive != null) {
-            dialogBuilder.positiveText(builder.positive!!)
-        } else if (builder.positiveResId != 0) {
-            dialogBuilder.positiveText(builder.positiveResId)
+        if (builder.positiveResId != null || builder.positive != null) {
+            dialog.positiveButton(builder.positiveResId, text = builder.positive) {
+                owner?.onConfirmSingleChoice(dialogTag, selectedIndex, selectedText)
+            }
         }
 
-        if (builder.negative != null) {
-            dialogBuilder.negativeText(builder.negative!!)
-        } else if (builder.negativeResId != 0) {
-            dialogBuilder.negativeText(builder.negativeResId)
+        if (builder.negativeResId != null || builder.negative != null) {
+            dialog.negativeButton(builder.negativeResId, text = builder.negative)
         }
 
-        if (builder.choices != null) {
-            dialogBuilder.items(*builder.choices!!)
-        } else if (builder.choicesResId != 0) {
-            dialogBuilder.items(builder.choicesResId)
+        if (builder.choicesResId != null || builder.choices != null) {
+            @Suppress("CheckResult")
+            dialog.listItemsSingleChoice(builder.choicesResId, items = builder.choices,
+                    waitForPositiveButton = false) { _, index, text ->
+                dialog.setActionButtonEnabled(WhichButton.POSITIVE, true)
+                selectedIndex = index
+                selectedText = text
+            }
         }
-
-        dialogBuilder.itemsCallbackSingleChoice(selectedIndex, this)
-        dialogBuilder.alwaysCallSingleChoiceCallback()
-
-        dialogBuilder.onPositive(this)
-
-        val dialog = dialogBuilder.build()
 
         // Nothing selected by default, so don't enable OK button
-        dialog.getActionButton(DialogAction.POSITIVE).isEnabled = selectedIndex >= 0
+        dialog.setActionButtonEnabled(WhichButton.POSITIVE, selectedIndex >= 0)
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)
@@ -111,44 +102,30 @@ class GenericSingleChoiceDialog : DialogFragment(), ListCallbackSingleChoice, Si
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        val dialog = dialog as MaterialDialog?
-        if (dialog != null) {
-            outState.putInt(EXTRA_SELECTED_INDEX, dialog.selectedIndex)
-        }
+        outState.putInt(EXTRA_SELECTED_INDEX, selectedIndex)
         outState.putString(EXTRA_SELECTED_TEXT, selectedText)
-    }
-
-    override fun onSelection(dialog: MaterialDialog, itemView: View, which: Int,
-                             text: CharSequence): Boolean {
-        dialog.getActionButton(DialogAction.POSITIVE).isEnabled = true
-        selectedText = text.toString()
-        return true
-    }
-
-    override fun onClick(dialog: MaterialDialog, which: DialogAction) {
-        owner?.onConfirmSingleChoice(dialogTag, dialog.selectedIndex, selectedText)
     }
 
     class Builder : Serializable {
         internal var title: String? = null
         @StringRes
-        internal var titleResId: Int = 0
+        internal var titleResId: Int? = null
         internal var message: String? = null
         @StringRes
-        internal var messageResId: Int = 0
+        internal var messageResId: Int? = null
         internal var positive: String? = null
         @StringRes
-        internal var positiveResId: Int = 0
+        internal var positiveResId: Int? = null
         internal var negative: String? = null
         @StringRes
-        internal var negativeResId: Int = 0
-        internal var choices: Array<String>? = null
+        internal var negativeResId: Int? = null
+        internal var choices: List<String>? = null
         @ArrayRes
-        internal var choicesResId: Int = 0
+        internal var choicesResId: Int? = null
 
         fun title(title: String?): Builder {
             this.title = title
-            titleResId = 0
+            titleResId = null
             return this
         }
 
@@ -160,7 +137,7 @@ class GenericSingleChoiceDialog : DialogFragment(), ListCallbackSingleChoice, Si
 
         fun message(message: String?): Builder {
             this.message = message
-            messageResId = 0
+            messageResId = null
             return this
         }
 
@@ -172,7 +149,7 @@ class GenericSingleChoiceDialog : DialogFragment(), ListCallbackSingleChoice, Si
 
         fun positive(text: String?): Builder {
             positive = text
-            positiveResId = 0
+            positiveResId = null
             return this
         }
 
@@ -184,7 +161,7 @@ class GenericSingleChoiceDialog : DialogFragment(), ListCallbackSingleChoice, Si
 
         fun negative(text: String?): Builder {
             negative = text
-            negativeResId = 0
+            negativeResId = null
             return this
         }
 
@@ -195,8 +172,8 @@ class GenericSingleChoiceDialog : DialogFragment(), ListCallbackSingleChoice, Si
         }
 
         fun choices(vararg choices: String): Builder {
-            this.choices = arrayOf(*choices)
-            choicesResId = 0
+            this.choices = listOf(*choices)
+            choicesResId = null
             return this
         }
 

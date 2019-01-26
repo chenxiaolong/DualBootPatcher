@@ -21,11 +21,12 @@ import android.app.Dialog
 import android.os.Bundle
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
-import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.WhichButton
+import com.afollestad.materialdialogs.actions.setActionButtonEnabled
+import com.afollestad.materialdialogs.list.listItemsMultiChoice
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams.Action
-import java.util.*
 
 class BackupRestoreTargetsSelectionDialog : DialogFragment() {
     internal val owner: BackupRestoreTargetsSelectionDialogListener?
@@ -47,7 +48,7 @@ class BackupRestoreTargetsSelectionDialog : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val items = arrayOf(
+        val items = listOf(
                 getString(R.string.br_target_system),
                 getString(R.string.br_target_cache),
                 getString(R.string.br_target_data),
@@ -56,50 +57,33 @@ class BackupRestoreTargetsSelectionDialog : DialogFragment() {
         )
 
         val action = arguments!!.getSerializable(ARG_ACTION) as Action
-        var descResid = 0
-
-        if (action == Action.BACKUP) {
-            descResid = R.string.br_backup_targets_dialog_desc
-        } else if (action == Action.RESTORE) {
-            descResid = R.string.br_restore_targets_dialog_desc
+        val descResid = when (action) {
+            Action.BACKUP -> R.string.br_backup_targets_dialog_desc
+            Action.RESTORE -> R.string.br_restore_targets_dialog_desc
         }
 
-        val selected = ArrayList<String>(items.size)
+        val dialog = MaterialDialog(requireActivity())
+                .message(descResid)
+                .negativeButton(R.string.cancel)
+                .positiveButton(R.string.ok)
+                .listItemsMultiChoice(items = items) { dialog, indices, _ ->
+                    dialog.setActionButtonEnabled(WhichButton.POSITIVE, indices.isNotEmpty())
 
-        @Suppress("UNCHECKED_CAST")
-        val dialog = MaterialDialog.Builder(activity!!)
-                .content(descResid)
-                .items(*items as Array<CharSequence>)
-                .negativeText(R.string.cancel)
-                .positiveText(R.string.ok)
-                .itemsCallbackMultiChoice(null) { dialog, which, _ ->
-                    dialog.getActionButton(DialogAction.POSITIVE).isEnabled = which.isNotEmpty()
+                    val selected = Array(indices.size) {
+                        val arrIndex = indices[it]
 
-                    selected.clear()
-                    for (arrIndex in which) {
                         when (arrIndex) {
-                            0 -> selected.add("system")
-                            1 -> selected.add("cache")
-                            2 -> selected.add("data")
-                            3 -> selected.add("boot")
-                            4 -> selected.add("config")
+                            0 -> "system"
+                            1 -> "cache"
+                            2 -> "data"
+                            3 -> "boot"
+                            4 -> "config"
+                            else -> throw IllegalStateException()
                         }
                     }
 
-                    true
+                    owner?.onSelectedBackupRestoreTargets(selected)
                 }
-                .alwaysCallMultiChoiceCallback()
-                .onPositive { _, _ ->
-                    val owner = owner
-                    if (owner != null) {
-                        val targets = selected.toTypedArray()
-                        owner.onSelectedBackupRestoreTargets(targets)
-                    }
-                }
-                .build()
-
-        // No targets selected by default, so don't enable OK button
-        dialog.getActionButton(DialogAction.POSITIVE).isEnabled = false
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

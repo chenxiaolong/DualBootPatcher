@@ -22,6 +22,7 @@ import android.os.Bundle
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.list.listItemsMultiChoice
 import com.github.chenxiaolong.dualbootpatcher.R
 import java.util.*
 
@@ -42,7 +43,7 @@ class AppSharingChangeSharedDialog : DialogFragment() {
 
         val shareDataItem = getString(R.string.indiv_app_sharing_dialog_share_data)
 
-        val items = arrayOf(shareDataItem)
+        val items = listOf(shareDataItem)
         val message = StringBuilder()
 
         if (!romsUsingSharedData!!.isEmpty()) {
@@ -52,29 +53,22 @@ class AppSharingChangeSharedDialog : DialogFragment() {
             message.append("\n\n")
         }
 
-        val selected = ArrayList<Int>()
-        if (shareData) {
-            selected.add(0)
-        }
         message.append(getString(R.string.indiv_app_sharing_dialog_default_message))
 
-        val selectedIndices = selected.toTypedArray()
+        val selected = if (shareData) intArrayOf(0) else intArrayOf()
 
-        val dialog = MaterialDialog.Builder(activity!!)
-                .title(name)
-                .content(message)
-                .items(*items)
-                .negativeText(R.string.cancel)
-                .positiveText(R.string.ok)
-                .itemsCallbackMultiChoice(selectedIndices) { _, which, _ ->
-                    val shouldShareData = which.contains(0)
+        val dialog = MaterialDialog(requireActivity())
+                .title(text = name)
+                .message(text = message)
+                .negativeButton(R.string.cancel)
+                .positiveButton(R.string.ok)
+                .listItemsMultiChoice(items = items, initialSelection = selected,
+                        allowEmptySelection = true) { _, indices, _ ->
+                    val shouldShareData = indices.contains(0)
 
                     val owner = owner
                     owner?.onChangedShared(pkg, shouldShareData)
-
-                    true
                 }
-                .build()
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

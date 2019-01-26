@@ -31,9 +31,11 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback
+import com.afollestad.materialdialogs.WhichButton
+import com.afollestad.materialdialogs.actions.setActionButtonEnabled
+import com.afollestad.materialdialogs.customview.customView
+import com.afollestad.materialdialogs.customview.getCustomView
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.dialogs.DialogListenerTarget
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericInputDialog
@@ -43,7 +45,7 @@ import java.io.File
 import java.io.Serializable
 import java.util.*
 
-class PathChooserDialog : DialogFragment(), SingleButtonCallback, PathChooserItemClickListener,
+class PathChooserDialog : DialogFragment(), PathChooserItemClickListener,
         GenericInputDialogListener {
     private lateinit var builder: Builder
     private lateinit var target: DialogListenerTarget
@@ -94,25 +96,31 @@ class PathChooserDialog : DialogFragment(), SingleButtonCallback, PathChooserIte
         adapter = PathChooserItemAdapter(names, this)
         refreshContents()
 
-        val dialogBuilder = MaterialDialog.Builder(activity!!)
-        dialogBuilder.title(cwd.absolutePath)
-        dialogBuilder.customView(R.layout.dialog_path_chooser, false)
-        dialogBuilder.onNegative(this)
-        dialogBuilder.autoDismiss(false)
-        dialogBuilder.negativeText(R.string.cancel)
+        val dialog = MaterialDialog(requireActivity())
+                .title(text = cwd.absolutePath)
+                .customView(R.layout.dialog_path_chooser, scrollable = false)
+                .negativeButton(R.string.cancel) { dialog ->
+                    owner.onPathSelectionCancelled(dialogTag)
+                    dialog.dismiss()
+                }
+                .noAutoDismiss()
 
         if (builder.type == Type.OPEN_DIRECTORY) {
-            dialogBuilder.onPositive(this)
-            dialogBuilder.positiveText(R.string.path_chooser_choose_label)
+            dialog.positiveButton(R.string.path_chooser_choose_label) {
+                owner.onPathSelected(dialogTag, cwd)
+                dialog.dismiss()
+            }
         } else if (builder.type == Type.SAVE_FILE) {
-            dialogBuilder.onPositive(this)
-            dialogBuilder.positiveText(R.string.path_chooser_save_label)
-            dialogBuilder.onNeutral(this)
-            dialogBuilder.neutralText(R.string.path_chooser_new_folder_label)
+            dialog.positiveButton(R.string.path_chooser_save_label) {
+                owner.onPathSelected(dialogTag, File(cwd, editText.text.toString()))
+                dialog.dismiss()
+            }
+            dialog.neutralButton(R.string.path_chooser_new_folder_label) {
+                showNewFolderDialog()
+            }
         }
 
-        val dialog = dialogBuilder.build()
-        val view = dialog.view
+        val view = dialog.getCustomView()
 
         val rv: RecyclerView = view.findViewById(R.id.files)
         editText = view.findViewById(R.id.filename)
@@ -174,25 +182,6 @@ class PathChooserDialog : DialogFragment(), SingleButtonCallback, PathChooserIte
         }
     }
 
-    override fun onClick(dialog: MaterialDialog, which: DialogAction) {
-        when (which) {
-            DialogAction.POSITIVE -> if (builder.type == Type.OPEN_DIRECTORY) {
-                owner.onPathSelected(dialogTag, cwd)
-                dialog.dismiss()
-            } else if (builder.type == Type.SAVE_FILE) {
-                owner.onPathSelected(dialogTag, File(cwd, editText.text.toString()))
-                dialog.dismiss()
-            }
-            DialogAction.NEGATIVE -> {
-                owner.onPathSelectionCancelled(dialogTag)
-                dialog.dismiss()
-            }
-            DialogAction.NEUTRAL -> if (builder.type == Type.SAVE_FILE) {
-                showNewFolderDialog()
-            }
-        }
-    }
-
     override fun onConfirmInput(tag: String, text: String) {
         if (DIALOG_NEW_FOLDER == tag) {
             val newDirectory = File(cwd, text)
@@ -248,7 +237,7 @@ class PathChooserDialog : DialogFragment(), SingleButtonCallback, PathChooserIte
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
 
         override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-            dialog.getActionButton(DialogAction.POSITIVE).isEnabled = !TextUtils.isEmpty(s)
+            dialog.setActionButtonEnabled(WhichButton.POSITIVE, !TextUtils.isEmpty(s))
         }
 
         override fun afterTextChanged(s: Editable) {}

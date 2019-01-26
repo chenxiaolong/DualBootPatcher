@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-   * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2016-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -25,9 +25,10 @@
     android:descendantFocusability="blocksDescendants"
     android:minHeight="@dimen/md_listitem_height"
     android:orientation="horizontal"
-    android:paddingEnd="@dimen/md_dialog_frame_margin"
-    android:paddingStart="@dimen/md_dialog_frame_margin"
-    tools:gravity="start|center_vertical">
+    android:paddingEnd="@dimen/md_dialog_frame_margin_horizontal"
+    android:paddingStart="@dimen/md_dialog_frame_margin_horizontal"
+    tools:gravity="start|center_vertical"
+    tools:ignore="PrivateResource">
 
     <TextView
         android:id="@android:id/title"

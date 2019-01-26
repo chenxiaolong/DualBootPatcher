@@ -47,32 +47,31 @@ class UpdateRamdiskResultDialog : DialogFragment() {
         val succeeded = arguments!!.getBoolean(ARG_SUCCEEDED)
         val allowReboot = arguments!!.getBoolean(ARG_ALLOW_REBOOT)
 
-        val builder = MaterialDialog.Builder(activity!!)
+        val dialog = MaterialDialog(requireActivity())
 
         if (!succeeded) {
-            builder.title(R.string.update_ramdisk_failure_title)
-            builder.content(R.string.update_ramdisk_failure_desc)
+            dialog.title(R.string.update_ramdisk_failure_title)
+            dialog.message(R.string.update_ramdisk_failure_desc)
 
-            builder.negativeText(R.string.ok)
+            dialog.negativeButton(R.string.ok)
         } else {
-            builder.title(R.string.update_ramdisk_success_title)
+            dialog.title(R.string.update_ramdisk_success_title)
 
             if (allowReboot) {
-                builder.content(R.string.update_ramdisk_reboot_desc)
-                builder.negativeText(R.string.reboot_later)
-                builder.positiveText(R.string.reboot_now)
-
-                builder.onPositive { _, _ -> confirm(true) }
-                builder.onNegative { _, _ -> confirm(false) }
+                dialog.message(R.string.update_ramdisk_reboot_desc)
+                dialog.negativeButton(R.string.reboot_later) {
+                    confirm(false)
+                }
+                dialog.positiveButton(R.string.reboot_now) {
+                    confirm(true)
+                }
             } else {
-                builder.content(R.string.update_ramdisk_no_reboot_desc)
-                builder.positiveText(R.string.ok)
-
-                builder.onPositive { _, _ -> confirm(false) }
+                dialog.message(R.string.update_ramdisk_no_reboot_desc)
+                dialog.positiveButton(R.string.ok) {
+                    confirm(false)
+                }
             }
         }
-
-        val dialog = builder.build()
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

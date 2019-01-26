@@ -22,14 +22,10 @@ import android.os.Bundle
 import androidx.annotation.StringRes
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
-
-import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback
-
 import java.io.Serializable
 
-class GenericConfirmDialog : DialogFragment(), SingleButtonCallback {
+class GenericConfirmDialog : DialogFragment() {
     private lateinit var target: DialogListenerTarget
     private lateinit var dialogTag: String
 
@@ -52,29 +48,21 @@ class GenericConfirmDialog : DialogFragment(), SingleButtonCallback {
         target = args.getSerializable(ARG_TARGET) as DialogListenerTarget
         dialogTag = args.getString(ARG_TAG)!!
 
-        val dialogBuilder = MaterialDialog.Builder(activity!!)
+        val dialog = MaterialDialog(requireActivity())
 
-        if (builder.title != null) {
-            dialogBuilder.title(builder.title!!)
-        } else if (builder.titleResId != 0) {
-            dialogBuilder.title(builder.titleResId)
+        if (builder.titleResId != null || builder.title != null) {
+            dialog.title(builder.titleResId, text = builder.title)
         }
 
-        if (builder.message != null) {
-            dialogBuilder.content(builder.message!!)
-        } else if (builder.messageResId != 0) {
-            dialogBuilder.content(builder.messageResId)
+        if (builder.messageResId != null || builder.message != null) {
+            dialog.message(builder.messageResId, text = builder.message)
         }
 
-        if (builder.buttonText != null) {
-            dialogBuilder.positiveText(builder.buttonText!!)
-        } else if (builder.buttonTextResId != 0) {
-            dialogBuilder.positiveText(builder.buttonTextResId)
+        if (builder.buttonTextResId != null || builder.buttonText != null) {
+            dialog.positiveButton(builder.buttonTextResId, text = builder.buttonText) {
+                owner?.onConfirmOk(dialogTag)
+            }
         }
-
-        dialogBuilder.onPositive(this)
-
-        val dialog = dialogBuilder.build()
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)
@@ -82,24 +70,20 @@ class GenericConfirmDialog : DialogFragment(), SingleButtonCallback {
         return dialog
     }
 
-    override fun onClick(dialog: MaterialDialog, which: DialogAction) {
-        owner?.onConfirmOk(dialogTag)
-    }
-
     class Builder : Serializable {
         internal var title: String? = null
         @StringRes
-        internal var titleResId: Int = 0
+        internal var titleResId: Int? = null
         internal var message: String? = null
         @StringRes
-        internal var messageResId: Int = 0
+        internal var messageResId: Int? = null
         internal var buttonText: String? = null
         @StringRes
-        internal var buttonTextResId: Int = 0
+        internal var buttonTextResId: Int? = null
 
         fun title(title: String?): Builder {
             this.title = title
-            titleResId = 0
+            titleResId = null
             return this
         }
 
@@ -111,7 +95,7 @@ class GenericConfirmDialog : DialogFragment(), SingleButtonCallback {
 
         fun message(message: String?): Builder {
             this.message = message
-            messageResId = 0
+            messageResId = null
             return this
         }
 
@@ -123,7 +107,7 @@ class GenericConfirmDialog : DialogFragment(), SingleButtonCallback {
 
         fun buttonText(text: String?): Builder {
             buttonText = text
-            buttonTextResId = 0
+            buttonTextResId = null
             return this
         }
 

@@ -22,6 +22,7 @@ import android.os.Bundle
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.list.listItemsMultiChoice
 import com.github.chenxiaolong.dualbootpatcher.R
 import mbtool.daemon.v3.MbWipeTarget
 
@@ -45,7 +46,7 @@ class WipeTargetsSelectionDialog : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val items = arrayOf(
+        val items = listOf(
                 getString(R.string.wipe_target_system),
                 getString(R.string.wipe_target_cache),
                 getString(R.string.wipe_target_data),
@@ -53,16 +54,15 @@ class WipeTargetsSelectionDialog : DialogFragment() {
                 getString(R.string.wipe_target_multiboot_files)
         )
 
-        val dialog = MaterialDialog.Builder(activity!!)
+        val dialog = MaterialDialog(requireActivity())
                 .title(R.string.wipe_rom_dialog_title)
-                .items(*items)
-                .negativeText(R.string.cancel)
-                .positiveText(R.string.ok)
-                .itemsCallbackMultiChoice(null) { _, which, _ ->
-                    val targets = ShortArray(which.size)
+                .negativeButton(R.string.cancel)
+                .positiveButton(R.string.ok)
+                .listItemsMultiChoice(items = items) { _, indices, _ ->
+                    val targets = ShortArray(indices.size)
 
-                    for (i in which.indices) {
-                        val arrIndex = which[i]
+                    for (i in indices.indices) {
+                        val arrIndex = indices[i]
 
                         when (arrIndex) {
                             0 -> targets[i] = MbWipeTarget.SYSTEM
@@ -73,12 +73,8 @@ class WipeTargetsSelectionDialog : DialogFragment() {
                         }
                     }
 
-                    val owner = owner
                     owner?.onSelectedWipeTargets(targets)
-
-                    true
                 }
-                .build()
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

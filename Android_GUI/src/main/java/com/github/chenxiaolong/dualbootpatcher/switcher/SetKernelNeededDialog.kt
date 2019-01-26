@@ -35,14 +35,12 @@ class SetKernelNeededDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val messageResId = arguments!!.getInt(ARG_MESSAGE_RES_ID)
 
-        val dialog = MaterialDialog.Builder(activity!!)
-                .content(messageResId)
-                .positiveText(R.string.set_kernel_now)
-                .negativeText(R.string.set_kernel_later)
-                .onPositive { _, _ ->
+        val dialog = MaterialDialog(requireActivity())
+                .message(messageResId)
+                .positiveButton(R.string.set_kernel_now) {
                     owner?.onConfirmSetKernelNeeded()
                 }
-                .build()
+                .negativeButton(R.string.set_kernel_later)
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

@@ -19,10 +19,10 @@ package com.github.chenxiaolong.dualbootpatcher.switcher
 
 import android.app.Dialog
 import android.os.Bundle
-import android.widget.CheckBox
-import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.checkbox.checkBoxPrompt
+import com.afollestad.materialdialogs.checkbox.isCheckPromptChecked
 import com.github.chenxiaolong.dualbootpatcher.R
 
 class ConfirmAutomatedSwitchRomDialog : DialogFragment() {
@@ -43,25 +43,16 @@ class ConfirmAutomatedSwitchRomDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val romId = arguments!!.getString(ARG_ROM_ID)
 
-        val builder = MaterialDialog.Builder(activity!!)
-                .customView(R.layout.dialog_first_time, true)
+        val dialog = MaterialDialog(requireActivity())
                 .title(R.string.switching_rom)
-                .positiveText(R.string.proceed)
-                .negativeText(R.string.cancel)
-                .onPositive { dialog, _ ->
-                    val cb = dialog.findViewById(R.id.checkbox) as CheckBox
-                    listener?.onConfirmSwitchRom(cb.isChecked)
+                .message(text = getString(R.string.confirm_automated_switch_rom, romId))
+                .checkBoxPrompt(R.string.do_not_show_again, onToggle = null)
+                .positiveButton(R.string.proceed) { dialog ->
+                    listener?.onConfirmSwitchRom(dialog.isCheckPromptChecked())
                 }
-                .onNegative { _, _ ->
+                .negativeButton(R.string.cancel) {
                     listener?.onCancelSwitchRom()
                 }
-
-        val dialog = builder.build()
-
-        if (dialog.customView != null) {
-            val tv: TextView = dialog.customView!!.findViewById(R.id.message)
-            tv.text = getString(R.string.confirm_automated_switch_rom, romId)
-        }
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

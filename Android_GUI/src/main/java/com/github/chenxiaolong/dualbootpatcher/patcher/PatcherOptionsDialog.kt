@@ -36,8 +36,11 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.WhichButton
+import com.afollestad.materialdialogs.actions.setActionButtonEnabled
+import com.afollestad.materialdialogs.customview.customView
+import com.afollestad.materialdialogs.customview.getCustomView
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device
 
@@ -81,17 +84,15 @@ class PatcherOptionsDialog : DialogFragment() {
         preselectedDeviceId = arguments!!.getString(ARG_PRESELECTED_DEVICE_ID)
         preselectedRomId = arguments!!.getString(ARG_PRESELECTED_ROM_ID)
 
-        val dialog = MaterialDialog.Builder(activity!!)
+        val dialog = MaterialDialog(requireActivity())
                 .title(R.string.patcher_options_dialog_title)
-                .customView(R.layout.dialog_patcher_opts, true)
-                .positiveText(R.string.proceed)
-                .negativeText(R.string.cancel)
-                .onPositive { _, _ ->
+                .customView(R.layout.dialog_patcher_opts, scrollable = true)
+                .positiveButton(R.string.proceed) {
                     owner?.onConfirmedOptions(id, model.device, model.selectedLocation.value!!.id)
                 }
-                .build()
+                .negativeButton(R.string.cancel)
 
-        val view = dialog.customView!!
+        val view = dialog.getCustomView()
         deviceSpinner = view.findViewById(R.id.spinner_device)
         locationSpinner = view.findViewById(R.id.spinner_location)
         templateSuffixEditor = view.findViewById(R.id.template_suffix)
@@ -128,23 +129,23 @@ class PatcherOptionsDialog : DialogFragment() {
         })
 
         model.validationState.observe(this, Observer {
-            val dialogButton = dialog.getActionButton(DialogAction.POSITIVE)
-
-            when (it!!) {
+            val enabled = when (it!!) {
                 PatcherOptionsValidationState.VALID -> {
-                    dialogButton.isEnabled = true
+                    true
                 }
                 PatcherOptionsValidationState.INVALID -> {
-                    dialogButton.isEnabled = false
                     templateSuffixEditor.error = getString(
                             R.string.install_location_named_slot_id_error_invalid)
+                    false
                 }
                 PatcherOptionsValidationState.EMPTY -> {
-                    dialogButton.isEnabled = false
                     templateSuffixEditor.error = getString(
                             R.string.install_location_named_slot_id_error_is_empty)
+                    false
                 }
             }
+
+            dialog.setActionButtonEnabled(WhichButton.POSITIVE, enabled)
         })
 
         model.suffixEditorVisible.observe(this, Observer {

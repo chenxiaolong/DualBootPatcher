@@ -19,11 +19,11 @@ package com.github.chenxiaolong.dualbootpatcher.dialogs
 
 import android.app.Dialog
 import android.os.Bundle
-import android.widget.CheckBox
-import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.checkbox.checkBoxPrompt
+import com.afollestad.materialdialogs.checkbox.isCheckPromptChecked
 import com.github.chenxiaolong.dualbootpatcher.R
 
 class FirstUseDialog : DialogFragment() {
@@ -38,25 +38,18 @@ class FirstUseDialog : DialogFragment() {
         val titleResId = arguments!!.getInt(ARG_TITLE_RES_ID)
         val messageResId = arguments!!.getInt(ARG_MESSAGE_RES_ID)
 
-        val builder = MaterialDialog.Builder(activity!!)
-                .customView(R.layout.dialog_first_time, true)
-                .positiveText(R.string.ok)
-                .onPositive { dialog, _ ->
-                    val cb = dialog.findViewById(R.id.checkbox) as CheckBox
-
+        val dialog = MaterialDialog(requireActivity())
+                .checkBoxPrompt(R.string.do_not_show_again, onToggle = null)
+                .positiveButton(R.string.ok) { dialog ->
                     val owner = owner
-                    owner?.onConfirmFirstUse(cb.isChecked)
+                    owner?.onConfirmFirstUse(dialog.isCheckPromptChecked())
                 }
 
         if (titleResId != 0) {
-            builder.title(titleResId)
+            dialog.title(titleResId)
         }
-
-        val dialog = builder.build()
-
         if (messageResId != 0) {
-            val tv = (dialog as MaterialDialog).customView!!.findViewById(R.id.message) as TextView
-            tv.setText(messageResId)
+            dialog.message(messageResId)
         }
 
         isCancelable = false

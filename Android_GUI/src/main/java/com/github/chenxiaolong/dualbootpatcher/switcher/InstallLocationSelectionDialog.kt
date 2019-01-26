@@ -22,6 +22,7 @@ import android.os.Bundle
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.list.listItemsSingleChoice
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils
 import java.util.*
@@ -42,26 +43,23 @@ class InstallLocationSelectionDialog : DialogFragment() {
         PatcherUtils.installLocations.mapTo(names) { it.getDisplayName(context!!) }
         PatcherUtils.templateLocations.mapTo(names) { it.getTemplateDisplayName(context!!) }
 
-        val dialog = MaterialDialog.Builder(activity!!)
+        val dialog = MaterialDialog(requireActivity())
                 .title(R.string.in_app_flashing_dialog_installation_location)
-                .items(*names.toTypedArray())
-                .negativeText(R.string.cancel)
-                .itemsCallbackSingleChoice(-1) { _, _, which, _ ->
-                    when (which) {
+                .negativeButton(R.string.cancel)
+                .listItemsSingleChoice(items = names, waitForPositiveButton = false) { _, index, _ ->
+                    when (index) {
                         in 0 until PatcherUtils.installLocations.size -> {
-                            val loc = PatcherUtils.installLocations[which]
+                            val loc = PatcherUtils.installLocations[index]
                             owner?.onSelectedInstallLocation(loc.id)
                         }
                         else -> {
-                            val index = which - PatcherUtils.installLocations.size
-                            val template = PatcherUtils.templateLocations[index]
+                            val templateIndex = index - PatcherUtils.installLocations.size
+                            val template = PatcherUtils.templateLocations[templateIndex]
                             owner?.onSelectedTemplateLocation(template.prefix)
                         }
                     }
-
-                    true
+                    dismiss()
                 }
-                .build()
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)

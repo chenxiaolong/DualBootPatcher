@@ -47,17 +47,14 @@ class AddToHomeScreenOptionsDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val info = arguments!!.getParcelable<RomInformation>(ARG_ROM_INFO)
 
-        val dialog = MaterialDialog.Builder(activity!!)
-                .content(R.string.auto_reboot_after_switching)
-                .negativeText(R.string.no)
-                .positiveText(R.string.yes)
-                .onPositive { _, _ ->
-                    owner?.onConfirmAddToHomeScreenOptions(info, true)
-                }
-                .onNegative { _, _ ->
+        val dialog = MaterialDialog(requireActivity())
+                .message(R.string.auto_reboot_after_switching)
+                .negativeButton(R.string.no) {
                     owner?.onConfirmAddToHomeScreenOptions(info, false)
                 }
-                .build()
+                .positiveButton(R.string.yes) {
+                    owner?.onConfirmAddToHomeScreenOptions(info, true)
+                }
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)
