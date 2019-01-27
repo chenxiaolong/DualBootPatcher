@@ -743,7 +743,7 @@ class SwitcherListFragment : Fragment(), RomCardActionListener, SetKernelNeededD
     }
 
     companion object {
-        val FRAGMENT_TAG: String = SwitcherListFragment::class.java.canonicalName!!
+        val FRAGMENT_TAG: String = SwitcherListFragment::class.java.name
         private val TAG = SwitcherListFragment::class.java.simpleName
 
         private const val EXTRA_TASK_ID_GET_ROMS_STATE = "task_id_get_roms_state"
@@ -760,21 +760,21 @@ class SwitcherListFragment : Fragment(), RomCardActionListener, SetKernelNeededD
 
         /** Fragment tag for progress dialog for switching ROMS  */
         private val PROGRESS_DIALOG_SWITCH_ROM =
-                "${SwitcherListFragment::class.java.canonicalName}.progress.switch_rom"
+                "${SwitcherListFragment::class.java.name}.progress.switch_rom"
         /** Fragment tag for progress dialog for setting the kernel  */
         private val PROGRESS_DIALOG_SET_KERNEL =
-                "${SwitcherListFragment::class.java.canonicalName}.progress.set_kernel"
+                "${SwitcherListFragment::class.java.name}.progress.set_kernel"
         /** Fragment tag for confirmation dialog saying that setting the kernel is needed  */
         private val CONFIRM_DIALOG_SET_KERNEL_NEEDED =
-                "${SwitcherListFragment::class.java.canonicalName}.confirm.set_kernel_needed"
+                "${SwitcherListFragment::class.java.name}.confirm.set_kernel_needed"
         private val CONFIRM_DIALOG_CHECKSUM_ISSUE =
-                "${SwitcherListFragment::class.java.canonicalName}.confirm.checksum_issue"
+                "${SwitcherListFragment::class.java.name}.confirm.checksum_issue"
         private val CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION =
-                "${SwitcherListFragment::class.java.canonicalName}.confirm.unknown_boot_partition"
+                "${SwitcherListFragment::class.java.name}.confirm.unknown_boot_partition"
         private val CONFIRM_DIALOG_PERMISSIONS =
-                "${SwitcherListFragment::class.java.canonicalName}.confirm.permissions"
+                "${SwitcherListFragment::class.java.name}.confirm.permissions"
         private val YES_NO_DIALOG_PERMISSIONS =
-                "${SwitcherListFragment::class.java.canonicalName}.yes_no.permissions"
+                "${SwitcherListFragment::class.java.name}.yes_no.permissions"
 
         /**
          * Request code for storage permissions request

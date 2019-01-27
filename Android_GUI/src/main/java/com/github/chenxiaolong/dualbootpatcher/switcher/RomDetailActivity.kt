@@ -1101,35 +1101,35 @@ class RomDetailActivity : AppCompatActivity(), RomNameInputDialogListener,
         private const val ACTION_WIPE_ROM = 5
 
         private val PROGRESS_DIALOG_SWITCH_ROM =
-                "${RomDetailActivity::class.java.canonicalName}.progress.switch_rom"
+                "${RomDetailActivity::class.java.name}.progress.switch_rom"
         private val PROGRESS_DIALOG_SET_KERNEL =
-                "${RomDetailActivity::class.java.canonicalName}.progress.set_kernel"
+                "${RomDetailActivity::class.java.name}.progress.set_kernel"
         private val PROGRESS_DIALOG_UPDATE_RAMDISK =
-                "${RomDetailActivity::class.java.canonicalName}.progress.update_ramdisk"
+                "${RomDetailActivity::class.java.name}.progress.update_ramdisk"
         private val PROGRESS_DIALOG_WIPE_ROM =
-                "${RomDetailActivity::class.java.canonicalName}.progress.wipe_rom"
+                "${RomDetailActivity::class.java.name}.progress.wipe_rom"
         private val PROGRESS_DIALOG_REBOOT =
-                "${RomDetailActivity::class.java.canonicalName}.progress.reboot"
+                "${RomDetailActivity::class.java.name}.progress.reboot"
         private val CONFIRM_DIALOG_UPDATED_RAMDISK =
-                "${RomDetailActivity::class.java.canonicalName}.confirm.updated_ramdisk"
+                "${RomDetailActivity::class.java.name}.confirm.updated_ramdisk"
         private val CONFIRM_DIALOG_ADD_TO_HOME_SCREEN =
-                "${RomDetailActivity::class.java.canonicalName}.confirm.add_to_home_screen"
+                "${RomDetailActivity::class.java.name}.confirm.add_to_home_screen"
         private val CONFIRM_DIALOG_ROM_NAME =
-                "${RomDetailActivity::class.java.canonicalName}.confirm.rom_name"
+                "${RomDetailActivity::class.java.name}.confirm.rom_name"
         private val CONFIRM_DIALOG_SET_KERNEL =
-                "${RomDetailActivity::class.java.canonicalName}.confirm.set_kernel"
+                "${RomDetailActivity::class.java.name}.confirm.set_kernel"
         private val CONFIRM_DIALOG_MISMATCHED_KERNEL =
-                "${RomDetailActivity::class.java.canonicalName}.confirm.mismatched_kernel"
+                "${RomDetailActivity::class.java.name}.confirm.mismatched_kernel"
         private val CONFIRM_DIALOG_BACKUP_RESTORE_TARGETS =
-                "${RomDetailActivity::class.java.canonicalName}.confirm.backup_restore_targets"
+                "${RomDetailActivity::class.java.name}.confirm.backup_restore_targets"
         private val CONFIRM_DIALOG_WIPE_TARGETS =
-                "${RomDetailActivity::class.java.canonicalName}.confirm.wipe_targets"
+                "${RomDetailActivity::class.java.name}.confirm.wipe_targets"
         private val CONFIRM_DIALOG_CHECKSUM_ISSUE =
-                "${RomDetailActivity::class.java.canonicalName}.confirm.checksum_issue"
+                "${RomDetailActivity::class.java.name}.confirm.checksum_issue"
         private val CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION =
-                "${RomDetailActivity::class.java.canonicalName}.confirm.unknown_boot_partition"
+                "${RomDetailActivity::class.java.name}.confirm.unknown_boot_partition"
         private val INPUT_DIALOG_BACKUP_NAME =
-                "${RomDetailActivity::class.java.canonicalName}.input.backup_name"
+                "${RomDetailActivity::class.java.name}.input.backup_name"
 
         private const val REQUEST_IMAGE = 1234
         private const val REQUEST_MBTOOL_ERROR = 2345

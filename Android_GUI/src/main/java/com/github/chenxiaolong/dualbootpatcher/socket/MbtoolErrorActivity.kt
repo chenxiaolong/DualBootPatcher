@@ -252,7 +252,7 @@ class MbtoolErrorActivity : AppCompatActivity(), ServiceConnection, GenericYesNo
     }
 
     companion object {
-        private val DIALOG_TAG = "${MbtoolErrorActivity::class.java.canonicalName}.dialog"
+        private val DIALOG_TAG = "${MbtoolErrorActivity::class.java.name}.dialog"
 
         // Argument extras
         const val EXTRA_REASON = "reason"

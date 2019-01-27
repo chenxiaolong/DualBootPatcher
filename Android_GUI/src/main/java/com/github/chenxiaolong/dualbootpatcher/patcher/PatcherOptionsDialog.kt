@@ -282,9 +282,9 @@ class PatcherOptionsDialog : DialogFragment() {
         private const val ARG_PRESELECTED_ROM_ID = "rom_id"
 
         private val STATE_DEVICE_POSITION =
-                "${PatcherOptionsDialog::class.java.canonicalName}.state.device_position"
+                "${PatcherOptionsDialog::class.java.name}.state.device_position"
         private val STATE_LOCATION_POSITION =
-                "${PatcherOptionsDialog::class.java.canonicalName}.state.location_position"
+                "${PatcherOptionsDialog::class.java.name}.state.location_position"
 
         fun newInstanceFromFragment(parent: Fragment?, id: Int,
                                     preselectedDeviceId: String?,

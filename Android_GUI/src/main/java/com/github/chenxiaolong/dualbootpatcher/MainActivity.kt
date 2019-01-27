@@ -454,7 +454,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
         private const val PREF_SHOW_EXIT = "show_exit"
 
         private val PROGRESS_DIALOG_REBOOT =
-                "${MainActivity::class.java.canonicalName}.progress.reboot"
+                "${MainActivity::class.java.name}.progress.reboot"
 
         private const val REQUEST_SETTINGS_ACTIVITY = 1000
 

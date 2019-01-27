@@ -945,17 +945,17 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
     }
 
     companion object {
-        val FRAGMENT_TAG: String = PatchFileFragment::class.java.canonicalName!!
+        val FRAGMENT_TAG: String = PatchFileFragment::class.java.name
         private val TAG = PatchFileFragment::class.java.simpleName
 
         private val DIALOG_PATCHER_OPTIONS =
-                "${PatchFileFragment::class.java.canonicalName}.patcher_options"
+                "${PatchFileFragment::class.java.name}.patcher_options"
         private val YES_NO_DIALOG_PERMISSIONS =
-                "${PatchFileFragment::class.java.canonicalName}.yes_no.permissions"
+                "${PatchFileFragment::class.java.name}.yes_no.permissions"
         private val CONFIRM_DIALOG_PERMISSIONS =
-                "${PatchFileFragment::class.java.canonicalName}.confirm.permissions"
+                "${PatchFileFragment::class.java.name}.confirm.permissions"
         private val PROGRESS_DIALOG_QUERYING_METADATA =
-                "${PatchFileFragment::class.java.canonicalName}.progress.querying_metadata"
+                "${PatchFileFragment::class.java.name}.progress.querying_metadata"
 
         private const val EXTRA_SELECTED_PATCHER_ID = "selected_patcher_id"
         private const val EXTRA_SELECTED_INPUT_URI = "selected_input_file"

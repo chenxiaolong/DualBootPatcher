@@ -73,7 +73,7 @@ class AboutFragment : Fragment() {
         }
 
     companion object {
-        val FRAGMENT_TAG: String = AboutFragment::class.java.canonicalName!!
+        val FRAGMENT_TAG: String = AboutFragment::class.java.name
 
         fun newInstance(): AboutFragment {
             return AboutFragment()
