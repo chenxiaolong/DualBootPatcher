@@ -31,7 +31,7 @@ RUN mkdir ${ANDROID_HOME} \
     && dnf clean all
 
 # Install Android SDK dependencies
-RUN dnf -y install java-1.8.0-openjdk-devel glibc.i686 libstdc++.i686 \
+RUN dnf -y install java-1.8.0-openjdk-devel glibc.i686 libstdc++.i686 which \
     && dnf clean all
 
 # Set up path
