@@ -44,4 +44,5 @@ RUN yes | sdkmanager \
     'extras;google;m2repository' \
     'platforms;android-28' \
     'platform-tools' \
-    'tools'
+    'tools' \
+    | grep -v '\[[= ]\+\]'
