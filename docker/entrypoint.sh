@@ -33,14 +33,12 @@ if [[ "${uid}" -eq 0 ]] && [[ "${gid}" -eq 0 ]]; then
         echo >&2 "WARNING WARNING WARNING"
     fi
 
-    export HOME=${BUILDER_HOME}
-
-    exec gosu "${uid}:${gid}" "${@}"
+    exec gosu "${uid}:${gid}" /entrypoint_user.sh "${@}"
 else
     echo >&2 "WARNING WARNING WARNING"
     echo >&2 "Skipping user creation because container is not running as root"
     echo >&2 "Expected (uid=0, gid=0), but have (uid=${uid}, gid=${gid})"
     echo >&2 "WARNING WARNING WARNING"
 
-    exec "${@}"
+    exec /entrypoint_user.sh "${@}"
 fi
