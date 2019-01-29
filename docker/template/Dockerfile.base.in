@@ -81,5 +81,4 @@ WORKDIR ${BUILDER_HOME}
 
 # Entrypoint
 ADD entrypoint.sh /
-ADD entrypoint_user.sh /
 ENTRYPOINT ["/entrypoint.sh"]

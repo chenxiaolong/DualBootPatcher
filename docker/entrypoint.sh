@@ -29,6 +29,10 @@ if [[ "${uid}" -eq 0 ]] && [[ "${gid}" -eq 0 ]]; then
 
         # shellcheck disable=SC2174
         mkdir -m 0700 -p "${BUILDER_HOME}"
+
+        # Modify user's home directory because setting HOME is insufficient for
+        # the Android gradle plugin
+        usermod -d "${BUILDER_HOME}" "$(id -un "${uid}")"
     fi
 
     # Fix permissions for anything that's not a mountpoint in the home directory
@@ -36,12 +40,12 @@ if [[ "${uid}" -eq 0 ]] && [[ "${gid}" -eq 0 ]]; then
         -exec mountpoint -q {} \; -prune \
         -o -exec chown "${uid}:${gid}" {} \+
 
-    exec gosu "${uid}:${gid}" /entrypoint_user.sh "${@}"
+    exec gosu "${uid}:${gid}" "${@}"
 else
     echo >&2 "WARNING WARNING WARNING"
     echo >&2 "Skipping user creation because container is not running as root"
     echo >&2 "Expected (uid=0, gid=0), but have (uid=${uid}, gid=${gid})"
     echo >&2 "WARNING WARNING WARNING"
 
-    exec /entrypoint_user.sh "${@}"
+    exec "${@}"
 fi
