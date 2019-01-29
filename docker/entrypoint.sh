@@ -22,16 +22,19 @@ if [[ "${uid}" -eq 0 ]] && [[ "${gid}" -eq 0 ]]; then
 
         # BUILDER_HOME already exists so useradd won't copy skel
         cp -r /etc/skel/. "${BUILDER_HOME}"
-
-        # Fix permissions for anything that's not a mountpoint in the home directory
-        find "${BUILDER_HOME}" \
-            -exec mountpoint -q {} \; -prune \
-            -o -exec chown "${uid}:${gid}" {} \+
     else
         echo >&2 "WARNING WARNING WARNING"
         echo >&2 "UID ${uid} already exists"
         echo >&2 "WARNING WARNING WARNING"
+
+        # shellcheck disable=SC2174
+        mkdir -m 0700 -p "${BUILDER_HOME}"
     fi
+
+    # Fix permissions for anything that's not a mountpoint in the home directory
+    find "${BUILDER_HOME}" \
+        -exec mountpoint -q {} \; -prune \
+        -o -exec chown "${uid}:${gid}" {} \+
 
     exec gosu "${uid}:${gid}" /entrypoint_user.sh "${@}"
 else
