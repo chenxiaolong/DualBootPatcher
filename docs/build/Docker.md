@@ -26,10 +26,10 @@ Note that building the docker images will take a long time and consume a lot of 
 Once the images have been built, the resulting image tags are written to `docker/generated/images.properties`. It will look something like the following:
 
 ```dosini
-android=chenxiaolong/dualbootpatcher:9.3.0-13-android
-base=chenxiaolong/dualbootpatcher:9.3.0-13-base
-linux=chenxiaolong/dualbootpatcher:9.3.0-13-linux
-mingw=chenxiaolong/dualbootpatcher:9.3.0-13-mingw
+android=chenxiaolong/dualbootpatcher:9.3.0-14-android
+base=chenxiaolong/dualbootpatcher:9.3.0-14-base
+linux=chenxiaolong/dualbootpatcher:9.3.0-14-linux
+mingw=chenxiaolong/dualbootpatcher:9.3.0-14-mingw
 ```
 
 The following table describes the images that are built:
@@ -54,7 +54,7 @@ docker run --rm -it \
     -v "${HOME}/.android:/builder/.android:rw,z" \
     -v "${HOME}/.ccache:/builder/.ccache:rw,z" \
     -v "${HOME}/.gradle:/builder/.gradle:rw,z" \
-    chenxiaolong/dualbootpatcher:9.3.0-13-android \
+    chenxiaolong/dualbootpatcher:9.3.0-14-android \
     bash
 ```
 

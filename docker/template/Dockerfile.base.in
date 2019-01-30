@@ -77,6 +77,7 @@ RUN dnf -y install \
 
 # Volumes
 ENV BUILDER_HOME /builder
+RUN mkdir -m 0700 ${BUILDER_HOME}
 WORKDIR ${BUILDER_HOME}
 
 # Entrypoint
