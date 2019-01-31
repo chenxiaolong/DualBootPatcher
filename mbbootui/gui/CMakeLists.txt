@@ -73,5 +73,5 @@ target_link_libraries(
     mbdevice-static
     mblog-static
     mbutil-static
-    AndroidSystemCore::Cutils
+    android-cutils-static
 )

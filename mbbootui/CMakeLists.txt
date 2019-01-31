@@ -72,7 +72,7 @@ target_link_libraries(
     mbdevice-static
     mblog-static
     mbcommon-static
-    AndroidSystemCore::Cutils
+    android-cutils-static
     LibArchive::LibArchive
 )
 

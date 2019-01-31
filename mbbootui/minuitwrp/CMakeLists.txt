@@ -50,7 +50,7 @@ target_link_libraries(
     interface.global.CXXVersion
     mbbootui-config
     mbutil-static
-    AndroidSystemCore::Cutils
+    android-cutils-static
     freetype2-static
     png-static
 )
@@ -66,7 +66,7 @@ if(ENABLE_OVERLAY_MSM_OLD_BACKEND)
     target_link_libraries(
         mbbootui-minui
         PRIVATE
-        AndroidSystemCore::PixelFlinger
+        android-pixelflinger-static
     )
 
     set_source_files_properties(
@@ -94,7 +94,7 @@ if(ENABLE_ADF_BACKEND)
     target_link_libraries(
         mbbootui-minui
         PRIVATE
-        AndroidSystemCore::PixelFlinger
+        android-pixelflinger-static
         LibAdf::LibAdf
     )
 endif()
@@ -110,7 +110,7 @@ if(ENABLE_DRM_BACKEND)
     target_link_libraries(
         mbbootui-minui
         PRIVATE
-        AndroidSystemCore::PixelFlinger
+        android-pixelflinger-static
         drm-static
     )
 endif()
@@ -126,6 +126,6 @@ if(ENABLE_FBDEV_BACKEND)
     target_link_libraries(
         mbbootui-minui
         PRIVATE
-        AndroidSystemCore::PixelFlinger
+        android-pixelflinger-static
     )
 endif()
