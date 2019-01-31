@@ -1,1 +1,1 @@
-find_package(LibDrm REQUIRED)
+add_subdirectory(external/libdrm)

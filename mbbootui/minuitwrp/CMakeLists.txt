@@ -111,7 +111,7 @@ if(ENABLE_DRM_BACKEND)
         mbbootui-minui
         PRIVATE
         AndroidSystemCore::PixelFlinger
-        LibDrm::LibDrm
+        drm-static
     )
 endif()
 
