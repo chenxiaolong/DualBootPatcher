@@ -165,7 +165,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbtool-util
         mbbootimg-static
         libminizip
-        Procps::Procps
     )
     target_link_libraries(
         mbtool_recovery
@@ -175,7 +174,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbbootimg-static
         libminizip
         LibArchive::LibArchive
-        Procps::Procps # TODO
     )
 
     install(

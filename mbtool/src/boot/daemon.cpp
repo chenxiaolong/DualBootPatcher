@@ -23,6 +23,7 @@
 #include <chrono>
 #include <thread>
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <sched.h>
@@ -35,12 +36,14 @@
 
 #include "mbcommon/common.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/integer.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/stdio_logger.h"
 #include "mbutil/directory.h"
+#include "mbutil/file.h"
 #include "mbutil/process.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
@@ -51,9 +54,6 @@
 #include "util/roms.h"
 #include "util/sepolpatch.h"
 #include "util/validcerts.h"
-
-// Needs to come last because it defines HIDDEN, which is used in packages.h
-#include <proc/readproc.h>
 
 #define LOG_TAG "mbtool/boot/daemon"
 
@@ -66,6 +66,7 @@
 namespace mb
 {
 
+using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 static int pipe_fds[2];
@@ -575,38 +576,42 @@ int daemon_main(int argc, char *argv[])
     }
 
     if (replace_flag) {
-        PROCTAB *proc = openproc(PROC_FILLCOM | PROC_FILLSTAT);
-        if (proc) {
+        ScopedDIR dp(opendir("/proc"), closedir);
+        if (dp) {
             pid_t curpid = getpid();
+            dirent *ent;
 
-            while (proc_t *info = readproc(proc, nullptr)) {
-                // NOTE: Can't check 'strcmp(info->cmd, "mbtool") == 0' (which
-                // is the basename of /proc/<pid>/cmd) because the binary is not
-                // always called "mbtool". For example, when run via SignedExec,
-                // it's just called "binary".
+            while ((ent = readdir(dp.get()))) {
+                pid_t pid;
 
-                // If we can read the cmdline and argc >= 2
-                if (info->cmdline && info->cmdline[0] && info->cmdline[1]) {
-                    const char *name = strrchr(info->cmdline[0], '/');
-                    if (name) {
-                        ++name;
-                    } else {
-                        name = info->cmdline[0];
-                    }
-
-                    if (strcmp(name, "mbtool") == 0               // This is mbtool
-                            && strstr(info->cmdline[1], "daemon") // And it's a daemon process
-                            && info->tid != curpid) {             // And we're not killing ourself
-                        // Kill the daemon process
-                        LOGV("Killing PID %d", info->tid);
-                        kill(info->tid, SIGTERM);
-                    }
+                if (!str_to_num(ent->d_name, 10, pid) || pid == curpid) {
+                    continue;
                 }
 
-                freeproc(info);
-            }
+                std::string path = "/proc/";
+                path += ent->d_name;
+                path += "/cmdline";
 
-            closeproc(proc);
+                auto cmdline_raw = util::file_read_all(path);
+                if (!cmdline_raw) {
+                    continue;
+                }
+
+                auto args = split_sv(cmdline_raw.value(), '\0');
+                if (args.size() < 2) {
+                    continue;
+                }
+
+                if (auto pos = args[0].rfind('/');
+                        pos != std::string_view::npos) {
+                    args[0].remove_prefix(pos + 1);
+                }
+
+                if (args[0] == "mbtool" && args[1] == "daemon") {
+                    LOGV("Killing PID %d", pid);
+                    kill(pid, SIGTERM);
+                }
+            }
         }
 
         // Give processes a chance to exit
