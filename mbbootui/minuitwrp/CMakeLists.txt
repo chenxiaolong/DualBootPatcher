@@ -51,7 +51,7 @@ target_link_libraries(
     mbbootui-config
     mbutil-static
     AndroidSystemCore::Cutils
-    Freetype::Freetype
+    freetype2-static
     png-static
 )
 
