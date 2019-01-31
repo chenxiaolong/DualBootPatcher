@@ -1,1 +1,1 @@
-find_package(PNG REQUIRED)
+add_subdirectory(external/libpng)

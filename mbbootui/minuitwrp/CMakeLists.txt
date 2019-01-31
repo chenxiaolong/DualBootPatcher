@@ -52,7 +52,7 @@ target_link_libraries(
     mbutil-static
     AndroidSystemCore::Cutils
     Freetype::Freetype
-    PNG::PNG
+    png-static
 )
 
 # Overlay backend (MSM old)
