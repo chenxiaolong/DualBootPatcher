@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -143,53 +143,41 @@ static SigVerifyResult verify_signature_with_key(const char *path,
 
 SigVerifyResult verify_signature(const char *path, const char *sig_path)
 {
-    for (const std::string &hex_der : valid_certs) {
-        std::string der;
-        if (!hex2bin(hex_der, der)) {
-            LOGE("Failed to convert hex-encoded certificate to binary: %s",
-                 hex_der.c_str());
-            return SigVerifyResult::Failure;
-        }
-
-        // Cast to (void *) is okay since BIO_new_mem_buf() creates a read-only
-        // BIO object
-        ScopedBIO bio_x509_cert(BIO_new_mem_buf(
-                der.data(), static_cast<int>(der.size())), BIO_free);
-        if (!bio_x509_cert) {
-            LOGE("Failed to create BIO for X509 certificate: %s",
-                 hex_der.c_str());
-            openssl_log_errors();
-            return SigVerifyResult::Failure;
-        }
-
-        // Load DER-encoded certificate
-        ScopedX509 cert(d2i_X509_bio(bio_x509_cert.get(), nullptr), X509_free);
-        if (!cert) {
-            LOGE("Failed to load X509 certificate: %s", hex_der.c_str());
-            openssl_log_errors();
-            return SigVerifyResult::Failure;
-        }
-
-        // Get public key from certificate
-        ScopedEVP_PKEY public_key(X509_get_pubkey(cert.get()), EVP_PKEY_free);
-        if (!public_key) {
-            LOGE("Failed to load public key from X509 certificate: %s",
-                 hex_der.c_str());
-            openssl_log_errors();
-            return SigVerifyResult::Failure;
-        }
-
-        SigVerifyResult result =
-                verify_signature_with_key(path, sig_path, *public_key);
-        if (result == SigVerifyResult::Invalid) {
-            // Keep trying ...
-            continue;
-        }
-
-        return result;
+    std::string der;
+    if (!hex2bin(signing_cert, der)) {
+        LOGE("Failed to convert hex-encoded certificate to binary: %s",
+             signing_cert);
+        return SigVerifyResult::Failure;
     }
 
-    return SigVerifyResult::Invalid;
+    // Cast to (void *) is okay since BIO_new_mem_buf() creates a read-only
+    // BIO object
+    ScopedBIO bio_x509_cert(BIO_new_mem_buf(
+            der.data(), static_cast<int>(der.size())), BIO_free);
+    if (!bio_x509_cert) {
+        LOGE("Failed to create BIO for X509 certificate: %s", signing_cert);
+        openssl_log_errors();
+        return SigVerifyResult::Failure;
+    }
+
+    // Load DER-encoded certificate
+    ScopedX509 cert(d2i_X509_bio(bio_x509_cert.get(), nullptr), X509_free);
+    if (!cert) {
+        LOGE("Failed to load X509 certificate: %s", signing_cert);
+        openssl_log_errors();
+        return SigVerifyResult::Failure;
+    }
+
+    // Get public key from certificate
+    ScopedEVP_PKEY public_key(X509_get_pubkey(cert.get()), EVP_PKEY_free);
+    if (!public_key) {
+        LOGE("Failed to load public key from X509 certificate: %s",
+             signing_cert);
+        openssl_log_errors();
+        return SigVerifyResult::Failure;
+    }
+
+    return verify_signature_with_key(path, sig_path, *public_key);
 }
 
 static void sigverify_usage(FILE *stream)
