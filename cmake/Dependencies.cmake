@@ -49,7 +49,6 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
     include(cmake/dependencies/libsepol.cmake)
     include(cmake/dependencies/lz4.cmake)
     include(cmake/dependencies/minizip.cmake)
-    include(cmake/dependencies/procps-ng.cmake)
     include(cmake/dependencies/safe-iop.cmake)
     include(cmake/dependencies/zlib.cmake)
 
