@@ -25,3 +25,6 @@
 [submodule "external/safe-iop/upstream"]
 	path = external/safe-iop/upstream
 	url = https://android.googlesource.com/platform/external/safe-iop
+[submodule "external/libpng/upstream"]
+	path = external/libpng/upstream
+	url = https://android.googlesource.com/platform/external/libpng
