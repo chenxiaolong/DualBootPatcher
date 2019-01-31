@@ -22,3 +22,6 @@
 [submodule "external/outcome"]
 	path = external/outcome
 	url = https://github.com/chenxiaolong/outcome.git
+[submodule "external/safe-iop/upstream"]
+	path = external/safe-iop/upstream
+	url = https://android.googlesource.com/platform/external/safe-iop
