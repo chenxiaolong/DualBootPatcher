@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -113,9 +113,7 @@ static bool verify_credentials(uid_t uid)
             continue;
         }
 
-        const std::string &key = pkgs.sigs[index];
-        if (std::find(valid_certs.begin(), valid_certs.end(), key)
-                != valid_certs.end()) {
+        if (pkgs.sigs[index] == signing_cert) {
             LOGV("%s matches whitelisted signatures", pkg->name.c_str());
             return true;
         }

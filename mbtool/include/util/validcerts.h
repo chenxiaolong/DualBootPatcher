@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,7 +19,4 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
-extern std::vector<std::string> valid_certs;
+extern const char *signing_cert;
