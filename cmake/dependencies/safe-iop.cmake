@@ -1,1 +1,1 @@
-find_package(SafeIop REQUIRED)
+add_subdirectory(external/safe-iop)

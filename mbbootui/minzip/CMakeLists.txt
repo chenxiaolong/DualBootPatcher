@@ -27,6 +27,6 @@ target_compile_options(
 target_link_libraries(
     mbbootui-minzip
     interface.global.CVersion
-    SafeIop::SafeIop
+    safe-iop-static
     ZLIB::ZLIB
 )
