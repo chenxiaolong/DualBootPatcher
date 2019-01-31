@@ -198,27 +198,6 @@ elseif(ANDROID)
 endif()
 
 ################################################################################
-# freetype2 for Android
-################################################################################
-
-set(FREETYPE2_VER "8.1.0_r2-2")
-
-if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} armeabi-v7a SHA512=144d8f54786d909bf9b73d6841fd25494e09ba725863fdb707df2286860c6c31b2594663e1b24cf385f757f04e9bc10cec819e24e3be6adedf77281513888d51)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} arm64-v8a   SHA512=323331521674881876a75f13d23b5cba557b8d95cd39b9558e5368cbdd20f8fea53a5d153c2d32db197614d7061eff635b2e0f577ad8a0a937fb19e02c6560cb )
-    get_prebuilt(freetype2 ${FREETYPE2_VER} x86         SHA512=43a506a1bf40ec67809abf579cde3ea9b40458c1e00a549be2b7e76c26e90230e02c76abd31e2b42ef99a728e547b55772d3e9089385af98441ae8357b1a523b)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} x86_64      SHA512=290b6afa6f1ef0a5da253d650faa93e788b503c7cc1385297705634c566d5543990350b5828068ba5c326c62d40f6c747cf64a88812b0024a647967ce15665ea)
-elseif(ANDROID)
-    set(freetype_root "${MBP_PREBUILTS_BINARY_DIR}/freetype2/${FREETYPE2_VER}/${ANDROID_ABI}")
-    list(APPEND CMAKE_FIND_ROOT_PATH "${freetype_root}")
-
-    set(FREETYPE_INCLUDE_DIR_freetype2 "${freetype_root}/include"      CACHE INTERNAL "")
-    set(FREETYPE_INCLUDE_DIR_ft2build  "${freetype_root}/include"      CACHE INTERNAL "")
-    # AOSP calls the library libft2 instead of libfreetype for some reason
-    set(FREETYPE_LIBRARY               "${freetype_root}/lib/libft2.a" CACHE INTERNAL "")
-endif()
-
-################################################################################
 # libdrm for Android
 ################################################################################
 
