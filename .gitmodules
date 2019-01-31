@@ -28,3 +28,6 @@
 [submodule "external/libpng/upstream"]
 	path = external/libpng/upstream
 	url = https://android.googlesource.com/platform/external/libpng
+[submodule "external/freetype2/upstream"]
+	path = external/freetype2/upstream
+	url = https://android.googlesource.com/platform/external/freetype
