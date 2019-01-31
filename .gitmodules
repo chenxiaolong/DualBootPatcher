@@ -34,3 +34,6 @@
 [submodule "external/libdrm/upstream"]
 	path = external/libdrm/upstream
 	url = https://android.googlesource.com/platform/external/libdrm
+[submodule "external/android-system-core/upstream"]
+	path = external/android-system-core/upstream
+	url = https://android.googlesource.com/platform/system/core
