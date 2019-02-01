@@ -1,0 +1,108 @@
+project(sepol LANGUAGES C)
+
+add_library(
+    sepol-static
+    STATIC
+    upstream/libsepol/src/android_m_compat.c
+    upstream/libsepol/src/assertion.c
+    upstream/libsepol/src/avrule_block.c
+    upstream/libsepol/src/avtab.c
+    upstream/libsepol/src/boolean_record.c
+    upstream/libsepol/src/booleans.c
+    upstream/libsepol/src/conditional.c
+    upstream/libsepol/src/constraint.c
+    upstream/libsepol/src/context.c
+    upstream/libsepol/src/context_record.c
+    upstream/libsepol/src/debug.c
+    upstream/libsepol/src/ebitmap.c
+    upstream/libsepol/src/expand.c
+    upstream/libsepol/src/genbools.c
+    upstream/libsepol/src/genusers.c
+    upstream/libsepol/src/handle.c
+    upstream/libsepol/src/hashtab.c
+    upstream/libsepol/src/hierarchy.c
+    upstream/libsepol/src/iface_record.c
+    upstream/libsepol/src/interfaces.c
+    upstream/libsepol/src/kernel_to_cil.c
+    upstream/libsepol/src/kernel_to_common.c
+    upstream/libsepol/src/kernel_to_conf.c
+    upstream/libsepol/src/link.c
+    upstream/libsepol/src/mls.c
+    upstream/libsepol/src/module.c
+    upstream/libsepol/src/module_to_cil.c
+    upstream/libsepol/src/node_record.c
+    upstream/libsepol/src/nodes.c
+    upstream/libsepol/src/polcaps.c
+    upstream/libsepol/src/policydb.c
+    upstream/libsepol/src/policydb_convert.c
+    upstream/libsepol/src/policydb_public.c
+    upstream/libsepol/src/port_record.c
+    upstream/libsepol/src/ports.c
+    upstream/libsepol/src/roles.c
+    upstream/libsepol/src/services.c
+    upstream/libsepol/src/sidtab.c
+    upstream/libsepol/src/symtab.c
+    upstream/libsepol/src/user_record.c
+    upstream/libsepol/src/users.c
+    upstream/libsepol/src/util.c
+    upstream/libsepol/src/write.c
+    upstream/libsepol/cil/src/android.c
+    upstream/libsepol/cil/src/cil_binary.c
+    upstream/libsepol/cil/src/cil_build_ast.c
+    upstream/libsepol/cil/src/cil.c
+    upstream/libsepol/cil/src/cil_copy_ast.c
+    upstream/libsepol/cil/src/cil_find.c
+    upstream/libsepol/cil/src/cil_fqn.c
+    upstream/libsepol/cil/src/cil_lexer.l
+    upstream/libsepol/cil/src/cil_list.c
+    upstream/libsepol/cil/src/cil_log.c
+    upstream/libsepol/cil/src/cil_mem.c
+    upstream/libsepol/cil/src/cil_parser.c
+    upstream/libsepol/cil/src/cil_policy.c
+    upstream/libsepol/cil/src/cil_post.c
+    upstream/libsepol/cil/src/cil_reset_ast.c
+    upstream/libsepol/cil/src/cil_resolve_ast.c
+    upstream/libsepol/cil/src/cil_stack.c
+    upstream/libsepol/cil/src/cil_strpool.c
+    upstream/libsepol/cil/src/cil_symtab.c
+    upstream/libsepol/cil/src/cil_tree.c
+    upstream/libsepol/cil/src/cil_verify.c
+    upstream/libsepol/cil/src/cil_write_ast.c
+)
+
+target_include_directories(
+    sepol-static
+    PRIVATE
+    upstream/libsepol/cil/src
+    upstream/libsepol/src
+    PUBLIC
+    upstream/libsepol/cil/include
+    upstream/libsepol/include
+)
+
+target_compile_definitions(
+    sepol-static
+    PRIVATE
+    -D_GNU_SOURCE
+)
+
+target_compile_options(
+    sepol-static
+    PRIVATE
+    -Wno-assign-enum
+    -Wno-cast-align
+    -Wno-cast-qual
+    -Wno-conditional-uninitialized
+    -Wno-conversion
+    -Wno-documentation
+    -Wno-format-nonliteral
+    -Wno-gnu-conditional-omitted-operand
+    -Wno-language-extension-token
+    -Wno-missing-prototypes
+    -Wno-missing-variable-declarations
+    -Wno-pedantic
+    -Wno-shorten-64-to-32
+    -Wno-sign-conversion
+    -Wno-unreachable-code-break
+    -Wno-unreachable-code-return
+)
