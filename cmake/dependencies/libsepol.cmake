@@ -1,1 +1,1 @@
-find_package(LibSepol REQUIRED)
+add_subdirectory(external/selinux)
