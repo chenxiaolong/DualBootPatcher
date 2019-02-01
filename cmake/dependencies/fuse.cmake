@@ -1,1 +1,1 @@
-find_package(Fuse REQUIRED)
+add_subdirectory(external/fuse)

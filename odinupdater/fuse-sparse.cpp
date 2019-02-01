@@ -46,8 +46,10 @@
 // See: https://github.com/android-ndk/ndk/issues/480
 #ifdef __ANDROID__
 #  define _FILE_OFFSET_BITS 64
+#  include <fuse.h>
+#else
+#  include <fuse/fuse.h>
 #endif
-#include <fuse/fuse.h>
 #ifdef __ANDROID__
 #  undef _FILE_OFFSET_BITS
 #endif

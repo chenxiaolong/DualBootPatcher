@@ -20,7 +20,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbsparse-static
         mbcommon-static
         mblog-static
-        Fuse::Fuse
+        fuse-static
     )
 
     unix_link_executable_statically(odinupdater fuse-sparse)
