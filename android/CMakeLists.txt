@@ -140,7 +140,8 @@ if(MBP_TOP_LEVEL_BUILD)
             ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/odinupdater
             ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/fuse-sparse
             ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/file-contexts-tool
-            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/fsck-wrapper)
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/fsck-wrapper
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mount.exfat)
         set(sig_files "")
         foreach(file ${result_files})
             list(APPEND sig_files "${file}.sig")

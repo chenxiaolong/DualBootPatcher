@@ -40,6 +40,7 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
 
     include(cmake/dependencies/android-system-core.cmake)
     include(cmake/dependencies/fuse.cmake)
+    include(cmake/dependencies/exfat.cmake)
     include(cmake/dependencies/googletest.cmake)
     include(cmake/dependencies/libarchive.cmake)
     include(cmake/dependencies/libdrm.cmake)
