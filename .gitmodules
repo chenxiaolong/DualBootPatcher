@@ -40,3 +40,6 @@
 [submodule "external/android-system-core/dlmalloc"]
 	path = external/android-system-core/dlmalloc
 	url = https://android.googlesource.com/platform/external/dlmalloc
+[submodule "external/selinux/upstream"]
+	path = external/selinux/upstream
+	url = https://github.com/chenxiaolong/selinux
