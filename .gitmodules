@@ -46,3 +46,6 @@
 [submodule "external/fuse/upstream"]
 	path = external/fuse/upstream
 	url = https://github.com/LineageOS/android_external_fuse.git
+[submodule "external/exfat/upstream"]
+	path = external/exfat/upstream
+	url = https://github.com/chenxiaolong/exfat.git
