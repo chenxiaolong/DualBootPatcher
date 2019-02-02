@@ -539,3 +539,55 @@
     max_brightness: 255
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     theme: portrait_hdpi
+    
+- name: ASUS_X01BD
+  id: WW_X01BD
+  codenames:
+    - ASUS_X01BD
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+	    - /dev/block/platform/soc/c0c4000.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+	    - /dev/block/mmcblk0p13
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+	    - /dev/block/mmcblk0p58
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+	    - /dev/block/mmcblk0p67
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+	    - /dev/block/mmcblk0p12
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+	    - /dev/block/mmcblk0p59
+    extra:
+	    - /dev/block/mmcblk0p25
+	    - /dev/block/bootdevice/by-name/vendor
+	    - /dev/block/mmcblk0p14
+      - /dev/block/bootdevice/by-name/modemst1
+	    - /dev/block/mmcblk0p44
+	    - /dev/block/bootdevice/by-name/modemst2
+	    - /dev/block/mmcblk0p45
+	    - /dev/block/bootdevice/by-name/misc
+	    - /dev/block/mmcblk0p47
+	  
+
+    boot_ui:
+    supported: true
+    flags:
+	    - RECOVERY_SDCARD_ON_DATA
+      - TW_INCLUDE_CRYPTO
+	    - TARGET_RECOVERY_QCOM_RTC_FIX
+	    - TW_NO_SCREEN_BLANK
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
