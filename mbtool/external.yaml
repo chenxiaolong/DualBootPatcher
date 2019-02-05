@@ -5,7 +5,6 @@
     - include/boot/init/devices.h
     - include/boot/init/uevent.h
     - include/boot/init/uevent_listener.h
-    - include/boot/init/unique_fd.h
     - include/boot/property_service.h
     - src/boot/audit/libaudit.cpp
     - src/boot/init/cutils/uevent.cpp

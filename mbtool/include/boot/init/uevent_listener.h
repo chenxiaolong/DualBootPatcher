@@ -23,8 +23,9 @@
 
 #include <dirent.h>
 
+#include "mbutil/unique_fd.h"
+
 #include "boot/init/uevent.h"
-#include "boot/init/unique_fd.h"
 
 #define UEVENT_MSG_LEN 2048
 
@@ -52,7 +53,7 @@ class UeventListener {
     bool ReadUevent(Uevent* uevent) const;
     ListenerAction RegenerateUeventsForDir(DIR* d, const ListenerCallback& callback) const;
 
-    android::base::unique_fd device_fd_;
+    mb::util::UniqueFd device_fd_;
 };
 
 }  // namespace init
