@@ -340,6 +340,22 @@ elseif(ANDROID)
 endif()
 
 ################################################################################
+# qt5 for Android
+################################################################################
+
+set(QT5_VER "5.12.1-1")
+
+if(MBP_TOP_LEVEL_BUILD)
+    get_prebuilt(qt5 ${QT5_VER} armeabi-v7a SHA512=081818d7f7e9f59d6fbee70419a7fa088290fe3a6180cd8b7459f3959db632e58203b67b8802031c2efcfcee25029031c1019ea883a06d4fff541844087656e3)
+    get_prebuilt(qt5 ${QT5_VER} arm64-v8a   SHA512=4f2d8e786d2f7201b4b3402fc276547d0b701014a747139966696305948c224b03884ec9f7134c7f38619212d51360e3e35b6fe5ef64aad62f646c82d1c016a0)
+    get_prebuilt(qt5 ${QT5_VER} x86         SHA512=2b5044d11facf0c5d9c17586141799b72e0908d4b8edf55e5612dccbcf943e4af21de87ed9eb7eeaf99b18251ac312c117414c1d48a6d10559e23e8fcb5199da)
+    get_prebuilt(qt5 ${QT5_VER} x86_64      SHA512=a1d7db8fe3dc1fce0bbf068db1ee78cbef7f2d8c9c6ac31d4e76ba79abe76f7dbda9af7607a86e7480be3e6a3f8be7b05f8edc7a0b46bc679614b6aba1231bd4)
+elseif(ANDROID)
+    set(qt5_root "${MBP_PREBUILTS_BINARY_DIR}/qt5/${QT5_VER}/${ANDROID_ABI}")
+    list(APPEND CMAKE_FIND_ROOT_PATH "${qt5_root}")
+endif()
+
+################################################################################
 # test-runner-image
 ################################################################################
 
