@@ -26,6 +26,7 @@
 
 #include "mbcommon/common.h"
 #include "mbcommon/flags.h"
+#include "mbcommon/outcome.h"
 #include "mbdevice/device.h"
 
 #include "util/roms.h"
@@ -101,6 +102,7 @@ protected:
     std::unordered_map<std::string, std::string> _chroot_prop;
     std::unordered_map<std::string, std::string> _cached_prop;
 
+    bool _use_aroma;
     bool _use_legacy_props;
 
     std::string _temp_image_path;
@@ -113,12 +115,12 @@ protected:
 
     std::string in_chroot(const std::string &path) const;
 
-    static bool is_aroma(const std::string &path);
-    static bool is_legacy_props(const std::string &path);
-
 
 private:
     bool _ran;
+
+    static oc::result<bool> is_aroma(const std::string &path);
+    static oc::result<bool> is_legacy_props(const std::string &path);
 
     void output_cb(std::string_view line, bool error);
     int run_command(const std::vector<std::string> &argv);

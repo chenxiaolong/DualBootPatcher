@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -628,6 +628,28 @@ bool Installer::extract_multiboot_files()
         }
     }
 
+    std::string updater(_temp);
+    updater += "/updater";
+
+    // Check if install is using AROMA
+    if (auto r = is_aroma(updater)) {
+        _use_aroma = r.value();
+    } else {
+        LOGW("%s: Failed to determine if updater is AROMA: %s",
+             updater.c_str(), r.error().message().c_str());
+        _use_aroma = false;
+    }
+    LOGD("update-binary is AROMA: %d", _use_aroma);
+
+    // Check if legacy props are required
+    if (auto r = is_legacy_props(updater)) {
+        _use_legacy_props = r.value();
+    } else {
+        LOGE("%s: Failed to determine if using legacy props: %s",
+             updater.c_str(), r.error().message().c_str());
+        return false;
+    }
+
     return true;
 }
 
@@ -1038,15 +1060,12 @@ bool Installer::run_real_updater()
 
     pid_t parent = getppid();
 
-    bool aroma = is_aroma(chroot_updater);
-    LOGD("update-binary is AROMA: %d", aroma);
-
-    if (aroma) {
+    if (_use_aroma) {
         kill(parent, SIGSTOP);
     }
 
     auto resume_aroma = finally([&]{
-        if (aroma) {
+        if (_use_aroma) {
             kill(parent, SIGCONT);
         }
     });
@@ -1216,9 +1235,9 @@ bool Installer::run_debug_shell()
 #endif
 }
 
-bool Installer::is_aroma(const std::string &path)
+oc::result<bool> Installer::is_aroma(const std::string &path)
 {
-    auto r = util::file_find_one_of(path, {
+    return util::file_find_one_of(path, {
         "AROMA Installer",
         "support@amarullz.com",
         "(c) 2013 by amarullz xda-developers",
@@ -1228,15 +1247,13 @@ bool Installer::is_aroma(const std::string &path)
         "AROMA_BUILD",
         "AROMA_VERSION"
     });
-    return r && r.value();
 }
 
-bool Installer::is_legacy_props(const std::string &path)
+oc::result<bool> Installer::is_legacy_props(const std::string &path)
 {
-    auto r = util::file_find_one_of(path, {
+    return util::file_find_one_of(path, {
         "ANDROID_PROPERTY_WORKSPACE",
     });
-    return r && r.value();
 }
 
 
@@ -1808,7 +1825,15 @@ Installer::ProceedState Installer::install_stage_installation()
     _chroot_prop = get_properties();
 
     // Check if legacy props are required
-    _use_legacy_props = is_legacy_props(in_chroot("/mb/updater"));
+    std::string updater(_temp);
+    updater += "/updater";
+    if (auto r = is_legacy_props(updater)) {
+        _use_legacy_props = r.value();
+    } else {
+        LOGE("%s: Failed to determine if using legacy props: %s",
+             updater.c_str(), r.error().message().c_str());
+        return ProceedState::Fail;
+    }
 
     // Run real update-binary
     display_msg("Running real update-binary");
