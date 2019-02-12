@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -28,7 +28,6 @@
 #include "mbcommon/flags.h"
 #include "mbdevice/device.h"
 
-#include "util/legacy_property_service.h"
 #include "util/roms.h"
 
 namespace mb
@@ -87,7 +86,6 @@ protected:
     int _output_fd;
     InstallerFlags _flags;
     bool _passthrough;
-    unsigned long _api_ver;
 
     device::Device _device;
     std::string _detected_device;
@@ -104,7 +102,6 @@ protected:
     std::unordered_map<std::string, std::string> _cached_prop;
 
     bool _use_legacy_props;
-    LegacyPropertyService _legacy_prop_svc;
 
     std::string _temp_image_path;
     bool _has_block_image;
