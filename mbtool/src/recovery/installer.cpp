@@ -225,6 +225,17 @@ static bool log_copy_dir(const std::string &source,
     return true;
 }
 
+static bool log_file_write_string(const std::string &path,
+                                  std::string_view contents)
+{
+    if (auto r = util::file_write_string(path, contents); !r) {
+        LOGE("Failed to write %s: %s",
+             path.c_str(), r.error().message().c_str());
+        return false;
+    }
+    return true;
+}
+
 
 /*
  * Helper functions
@@ -1698,10 +1709,11 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
                            util::CopyFlag::CopyAttributes
                          | util::CopyFlag::CopyXattrs);
 
-    // Copy property_contexts
-    (void) util::copy_file("/property_contexts", in_chroot("/property_contexts"),
-                           util::CopyFlag::CopyAttributes
-                         | util::CopyFlag::CopyXattrs);
+    // Forge property_contexts
+    static const std::string_view prop_contexts = "* u:object_r:default_prop:s0\n";
+    if (!log_file_write_string(in_chroot("/property_contexts"), prop_contexts)) {
+        return ProceedState::Fail;
+    }
 
     return on_set_up_chroot();
 }
