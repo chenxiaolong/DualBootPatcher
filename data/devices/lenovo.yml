@@ -55,15 +55,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
     pixel_format: RGBX_8888
-    max_brightness: 255
-    default_brightness: 162
-    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Lenovo K4 Note
   id: A7010a48
@@ -124,15 +116,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
     pixel_format: RGBX_8888
-    max_brightness: 255
-    default_brightness: 162
-    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Lenovo K4 Note
   id: A7010a48
@@ -189,15 +173,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
     pixel_format: RGBX_8888
-    max_brightness: 255
-    default_brightness: 162
-    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Lenovo Vibe Z2 Pro
   id: K920
@@ -234,11 +210,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Lenovo ZUK Z1
   id: Z1
@@ -275,11 +246,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Lenovo Vibe P1 Turbo
   id: P1a42
@@ -305,16 +271,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
     pixel_format: RGBA_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 128
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Lenovo Vibe P1
   id: P1a41
@@ -341,16 +298,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
     pixel_format: RGBA_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 128
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Lenovo Vibe P2
   id: P2a42
@@ -379,16 +327,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 153
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Lenovo Vibe K5 & K5 Plus
   id: A6020
@@ -419,13 +358,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Lenovo A7000-a
   id: A7000a
@@ -477,15 +410,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
     pixel_format: RGBX_8888
-    max_brightness: 255
-    default_brightness: 162
-    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Lenovo X3
   id: X3c50
@@ -516,13 +441,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Lenovo Vibe K6
   id: karate
@@ -560,14 +479,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
     pixel_format: RGBX_8888
-    default_brightness: 79
-    theme: portrait_hdpi
 
 - name: Lenovo A6000
   id: a6000
@@ -575,7 +487,7 @@
       - A6000
       - a6000
       - Kraft-A6000
-  architecture: armeabi-v7a 
+  architecture: armeabi-v7a
   block_devs:
     base_dirs:
       - /dev/block/platform/soc.0/7824900.sdhci/by-name
@@ -628,20 +540,10 @@
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/tz
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/tzbak
       - /dev/block/mmcblk1
- 
+
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 168
-    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
-    battery_path: /sys/class/power_supply/battery/capacity
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi    
-    
+
 - name: Lenovo P70-A
   id: P70
   codenames:
@@ -676,12 +578,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
     pixel_format: RGBA_8888
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Lenovo Vibe K53
   id: karatep
@@ -716,12 +613,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_SCREEN_BLANK_ON_BOOT
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
     pixel_format: RGBA_8888
-    default_brightness: 79
-    theme: portrait_hdpi

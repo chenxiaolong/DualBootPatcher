@@ -27,11 +27,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Star
   id: mint
@@ -54,14 +49,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Alpha (Exynos)
   id: slte
@@ -99,15 +86,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: BGRA_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Grand Prime VE 3G
   id: grandprimeve3g
@@ -138,12 +117,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
     pixel_format: BGRA_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Grand Prime (Qcom)
   id: fortuna
@@ -168,16 +142,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
     pixel_format: RGBA_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Trend Plus
   id: kylepro
@@ -205,20 +170,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_NO_SCREEN_TIMEOUT
-      - TW_NO_CPU_TEMP
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_PREFER_LCD_BACKLIGHT
     pixel_format: BGRA_8888
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 128
-    battery_path: /sys/class/power_supply/battery/capacity
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy S Duos 2
   id: kyleprods
@@ -246,20 +198,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_NO_SCREEN_TIMEOUT
-      - TW_NO_CPU_TEMP
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_PREFER_LCD_BACKLIGHT
     pixel_format: BGRA_8888
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 128
-    battery_path: /sys/class/power_supply/battery/capacity
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Win
   id: delos3geur
@@ -297,16 +236,7 @@
       - /dev/block/bootdevice/by-num/p13
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_NO_CPU_TEMP
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_QCOM_RTC_FIX
-      - TW_PREFER_LCD_BACKLIGHT
-    graphics_backends:
-      - fbdev
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Core
   id: arubaslim
@@ -342,16 +272,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_NO_CPU_TEMP
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_QCOM_RTC_FIX
-      - TW_PREFER_LCD_BACKLIGHT
-    graphics_backends:
-      - fbdev
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy J2 3G
   id: Galaxy-J2
@@ -403,11 +324,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
     pixel_format: RGBX_8888
-    brightness_path: /sys/class/backlight/panel/brightness
-    default_brightness: 255
-    theme: portrait_hdpi

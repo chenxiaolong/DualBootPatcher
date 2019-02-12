@@ -32,15 +32,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBX_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi Note Pro
   id: leo
@@ -69,15 +61,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBX_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi Note 2
   id: scorpio
@@ -123,12 +107,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 153
     pixel_format: RGBX_8888
-    theme: portrait_hdpi

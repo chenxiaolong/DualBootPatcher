@@ -35,13 +35,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_QCOM_RTC_FIX
-    max_brightness: 255
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy J1 (Verizon)
   id: j1qltevzw
@@ -76,15 +69,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: ABGR_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy J7 (Exynos)
   id: j7e
@@ -121,15 +106,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: ABGR_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy J5 (2015)
   id: j5lte
@@ -168,14 +145,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_QCOM_RTC_FIX
-    max_brightness: 255
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-    
+
 - name: Samsung Galaxy J5 (2016)
   id: j5xnlte
   codenames:
@@ -203,14 +173,6 @@
       - /dev/block/mmcblk0p17
   boot_ui:
     supported: true
-
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-
 
 
 - name: Samsung Galaxy E5
@@ -245,16 +207,9 @@
       - /dev/block/platform/7824900.sdhci/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p17
-      
+
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_QCOM_RTC_FIX
-    max_brightness: 255
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy J7 (2016) (Exynos)
   id: j7xelte
@@ -292,13 +247,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    max_brightness: 255
-    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy A5 (2017)
   id: a5y17lte
@@ -335,12 +283,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    max_brightness: 255
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy J7 (2017) (Exynos)
   id: j7y17lte
@@ -379,12 +321,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
     pixel_format: BGRA_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy A3 (2017) (Exynos)
   id: a3y17lte
@@ -425,13 +362,8 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
     pixel_format: BGRA_8888
-    theme: portrait_hdpi
-    
+
 - name: Samsung Galaxy J5 (2017) (Exynos)
   id: j5y17lte
   codenames:
@@ -482,13 +414,8 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
     pixel_format: BGRA_8888
-    theme: portrait_hdpi
-    
+
 - name: Samsung Galaxy A8 (2018) (Exynos)
   id: jackpotlte
   codenames:
@@ -528,15 +455,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 36600
-    default_brightness: 16200
     pixel_format: ABGR_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy A8+ (2018) (Exynos)
   id: jackpot2lte
@@ -577,15 +496,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 36600
-    default_brightness: 16200
     pixel_format: ABGR_8888
-    theme: portrait_hdpi
 
 
 - name: Samsung Galaxy A7 (2017) (Exynos)
@@ -612,18 +523,9 @@
     recovery:
       - /dev/block/mmcblk0p11
       - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
-   
+
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-    max_brightness: 255
-    default_brightness: 168
-    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
-    battery_path: /sys/class/power_supply/battery/capacity
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 
 - name: Samsung Galaxy Docomo J
@@ -667,13 +569,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/mdp.0/qcom,mdss_fb_primary.173/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi

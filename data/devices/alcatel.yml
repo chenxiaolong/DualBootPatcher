@@ -32,12 +32,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Alcatel Pixi 4(5) 5010
   id: Pixi4-5
@@ -73,13 +67,6 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 128
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Alcatel Pixi 4(7)
   id: Pixi4-7
@@ -114,12 +101,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Alcatel Pop 3(5)
   id: pixi3_5
@@ -159,17 +140,3 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_PREFER_LCD_BACKLIGHT
-    pixel_format: DEFAULT
-    force_pixel_format: NONE
-    overscan_percent: 0
-    default_x_offset: 0
-    default_y_offset: 0
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 128
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi

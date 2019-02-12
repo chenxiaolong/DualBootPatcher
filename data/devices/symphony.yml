@@ -29,12 +29,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Symphony i10
   id: Symphony_i10
@@ -68,13 +62,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
-    
+
 - name: Symphony v47
   id: Symphony_v47
   codenames:
@@ -107,9 +95,3 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi

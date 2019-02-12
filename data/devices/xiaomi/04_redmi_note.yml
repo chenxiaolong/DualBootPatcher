@@ -41,15 +41,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_NO_SCREEN_BLANK
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
-    max_brightness: 250
-    default_brightness: 157
-    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Note 3 (MTK)
   id: hennessy
@@ -86,15 +77,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_NO_SCREEN_BLANK
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 160
-    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone1/temp
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Note 3 Pro
   id: kenzo
@@ -135,15 +117,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBX_8888
-    default_brightness: 80
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Note 3 SE
   id: kate
@@ -178,15 +152,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBX_8888
-    default_brightness: 80
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Note 4
   id: mido
@@ -260,15 +226,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Note 4 (MTK)
   id: nikel
@@ -297,11 +255,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_NO_SCREEN_BLANK
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Note 4G
   id: dior
@@ -330,17 +283,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_NO_SCREEN_BLANK
-      - TW_NO_SCREEN_TIMEOUT
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 100
-    default_brightness: 160
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Note 4G TD/W (Single SIM)
   id: dior
@@ -369,17 +312,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_NO_SCREEN_BLANK
-      - TW_NO_SCREEN_TIMEOUT
     pixel_format: RGBX_8888
-    default_brightness: 100
-    max_brightness: 160
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Note 4G TD/W (Dual SIM)
   id: gucci
@@ -408,17 +341,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_NO_SCREEN_BLANK
-      - TW_NO_SCREEN_TIMEOUT
     pixel_format: RGBX_8888
-    default_brightness: 100
-    max_brightness: 160
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Note 5
   id: whyred

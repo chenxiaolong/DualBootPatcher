@@ -54,15 +54,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
     pixel_format: RGBX_8888
-    max_brightness: 255
-    default_brightness: 162
-    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Jiayu S3plus
   id: n560a
@@ -118,12 +110,4 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
     pixel_format: RGBX_8888
-    max_brightness: 255
-    default_brightness: 162
-    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
-    theme: portrait_hdpi

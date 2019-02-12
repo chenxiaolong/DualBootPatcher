@@ -26,15 +26,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi3W
   id: cancro
@@ -69,15 +61,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBX_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi4C
   id: libra
@@ -106,15 +90,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBX_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi4i
   id: ferrari
@@ -143,16 +119,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
     pixel_format: ABGR_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi4S
   id: aqua
@@ -187,15 +154,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBX_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi 5
   id: gemini
@@ -230,15 +189,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 80
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi 5s
   id: capricorn
@@ -284,15 +235,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 4095
-    default_brightness: 2047
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi 5s Plus
   id: natrium
@@ -327,15 +270,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 4095
-    default_brightness: 2047
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi 6
   id: sagit
@@ -375,22 +310,14 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 2047
-    max_brightness: 4095
-    brightness_path: /sys/devices/soc/c900000.qcom,mdss_mdp/c900000.qcom,mdss_mdp:qcom,mdss_fb_primary/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi 5X
   id: tiffany
   codenames:
     - tiffany
   architecture: arm64-v8a
-  
+
   block_devs:
     base_dirs:
       - /dev/block/bootdevice/by-name
@@ -415,7 +342,7 @@
   codenames:
     - jason
   architecture: arm64-v8a
-  
+
   block_devs:
     base_dirs:
       - /dev/block/bootdevice/by-name

@@ -32,15 +32,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - overlay_msm_old
     pixel_format: RGBX_8888
-    max_brightness: 255
-    default_brightness: 175
-    theme: portrait_hdpi
 
 - name: Pantech Vega Iron
   id: A870
@@ -75,15 +67,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - overlay_msm_old
     pixel_format: RGBX_8888
-    max_brightness: 255
-    default_brightness: 175
-    theme: portrait_hdpi
 
 - name: Pantech Vega Secret Up
   id: A900
@@ -118,15 +102,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - overlay_msm_old
     pixel_format: RGBX_8888
-    max_brightness: 255
-    default_brightness: 175
-    theme: portrait_hdpi
 
 
 - name: Pantech Vega Secret Note
@@ -162,12 +138,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - overlay_msm_old
     pixel_format: RGBX_8888
-    max_brightness: 255
-    default_brightness: 175
-    theme: portrait_hdpi

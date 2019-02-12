@@ -30,12 +30,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: WALTON Primo N2
   id: Primo_N2
@@ -66,12 +60,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Walton Primo GF4
   id: Primo_GF4
@@ -105,12 +93,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Walton Primo RX5
   id: Primo_RX5
@@ -168,13 +150,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 128
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
 
 - name: Walton Primo NF2/NF2+
   id: Primo_NF2
@@ -208,12 +184,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Walton Primo HM3+
   id: Walton_Primo HM3+
@@ -246,9 +216,3 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi

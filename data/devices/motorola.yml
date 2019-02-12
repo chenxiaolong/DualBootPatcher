@@ -29,13 +29,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_IGNORE_MAJOR_AXIS_0
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - overlay_msm_old
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Motorola Moto G 4G (2013)
   id: peregrine
@@ -69,13 +62,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_IGNORE_MAJOR_AXIS_0
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - overlay_msm_old
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Motorola Moto G (2014)
   id: titan
@@ -116,12 +102,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_SCREEN_BLANK_ON_BOOT
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Motorola Moto G (2014 LTE)
   id: thea
@@ -158,11 +138,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Motorola Moto G (2015)
   id: osprey
@@ -192,13 +167,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    force_pixel_format: RGB_565
-    theme: portrait_hdpi
 
 - name: Motorola Moto G4 Play
   id: harpia
@@ -238,13 +206,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    force_pixel_format: RGB_565
-    theme: portrait_hdpi
 
 - name: Motorola Moto E (1st gen)
   id: condor
@@ -278,13 +239,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Motorola Moto E 3G (2nd Gen)
   id: otus
@@ -317,13 +272,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Motorola Moto E 4G (2nd Gen)
   id: surnia
@@ -369,16 +318,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Motorola Moto E4 (MediaTek)
   id: woods
@@ -441,15 +381,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH 
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 160
-    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Motorola Moto E4 (Qualcomm)
   id: perry
@@ -484,16 +415,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
-    force_pixel_format: RGB_565
-    theme: portrait_hdpi
 
 - name: Motorola Moto E4 Plus (MediaTek)
   id: nicklaus
@@ -557,15 +478,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH 
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 160
-    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Motorola Moto E4 Plus (Qualcomm)
   id: owens
@@ -598,16 +510,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
-    force_pixel_format: RGB_565
-    theme: portrait_hdpi
 
 - name: Motorola Moto X (2013)
   id: ghost
@@ -647,15 +549,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: BGRA_8888
-    theme: portrait_hdpi
 
 - name: Motorola Moto X (2014)
   id: victara
@@ -684,12 +578,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Motorola Moto X Pure Edition
   id: clark
@@ -735,12 +623,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Motorola Droid Turbo
   id: quark
@@ -775,13 +657,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    force_pixel_format: RGB_565
-    theme: portrait_hdpi
 
 - name: Motorola Moto X Pro
   id: shamu_t
@@ -811,14 +686,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    default_brightness: 80
-    force_pixel_format: RGB_565
-    theme: portrait_hdpi
 
 - name: Motorola Moto G4 & G4 Plus Edition
   id: athene
@@ -864,14 +731,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Motorola Moto Z Play
   id: addison
@@ -908,15 +767,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Motorola Moto Z
   id: griffin
@@ -951,17 +802,9 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/624000.ufshc/by-name/recovery
       - /dev/block/sda14
-      
+
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 80
-    theme: portrait_hdpi
 
 - name: Motorola Moto G5 Plus
   id: potter
@@ -997,16 +840,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
-    force_pixel_format: RGB_565
-    theme: portrait_hdpi
 
 - name: Motorola Moto C (4G)
   id: namath
@@ -1049,10 +882,6 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
 
 - name: Moto E4
   id: perry
@@ -1061,7 +890,7 @@
   architecture: armeabi-v7a
 
   block_devs:
-    base_dirs: 
+    base_dirs:
       - /dev/block/bootdevice/by-name
       - /dev/block/platform/soc/7824900.sdhci/by-name
     system:
@@ -1089,15 +918,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
 
 - name: Motorola Moto G5
   id: cedric
@@ -1132,16 +953,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
 
 
 - name: Motorola Moto G5s Plus
@@ -1177,16 +989,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
 
 
 - name: Moto E3 Power (2016)
@@ -1204,7 +1007,7 @@
       - /dev/block/mmcblk0p23
     cache:
       - /dev/block/platform/mtk-msdc.0/by-name/cache
-      - /dev/block/mmcblk0p24 
+      - /dev/block/mmcblk0p24
     data:
       - /dev/block/platform/mtk-msdc.0/by-name/userdata
       - /dev/block/mmcblk0p25
@@ -1217,12 +1020,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBA_8888
-    theme: portrait_hdpi

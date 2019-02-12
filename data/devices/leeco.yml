@@ -45,15 +45,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: LeEco Le 2 (MTK)
   id: x620
@@ -82,9 +74,6 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: LeEco Le 2
   id: s2
@@ -144,19 +133,6 @@
   boot_ui:
     supported: true
 
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_QCOM_RTC_FIX
-      - TW_PREFER_LCD_BACKLIGHT
-
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 4095
-    default_brightness: 369
-    cpu_temp_path: /sys/class/thermal/thermal_zone0/temp
-    graphics_backends:
-      - fbdev
-      - drm
-    theme: portrait_hdpi
 
 - name: LeEco Le 1S
   id: x3
@@ -213,17 +189,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_PREFER_LCD_BACKLIGHT
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 168
-    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-    
+
 - name: LePro3
   id: le_zl1
   codenames:
@@ -268,15 +234,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: LePro3 Elite
   id: le_zl0
@@ -320,12 +278,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi

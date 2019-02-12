@@ -138,85 +138,9 @@ object LibMbDevice {
         external fun mb_device_set_tw_supported(device: CDevice, supported: Boolean)
 
         @JvmStatic
-        external fun mb_device_tw_flags(device: CDevice): Int /* uint32_t */
-        @JvmStatic
-        external fun mb_device_set_tw_flags(device: CDevice, flags: Int)
-
-        @JvmStatic
         external fun mb_device_tw_pixel_format(device: CDevice): Int /* uint32_t */
         @JvmStatic
         external fun mb_device_set_tw_pixel_format(device: CDevice, format: Int /* uint32_t */)
-
-        @JvmStatic
-        external fun mb_device_tw_force_pixel_format(device: CDevice): Int /* uint32_t */
-        @JvmStatic
-        external fun mb_device_set_tw_force_pixel_format(device: CDevice,
-                                                         format: Int /* uint32_t */)
-
-        @JvmStatic
-        external fun mb_device_tw_overscan_percent(device: CDevice): Int
-        @JvmStatic
-        external fun mb_device_set_tw_overscan_percent(device: CDevice, percent: Int)
-
-        @JvmStatic
-        external fun mb_device_tw_default_x_offset(device: CDevice): Int
-        @JvmStatic
-        external fun mb_device_set_tw_default_x_offset(device: CDevice, offset: Int)
-
-        @JvmStatic
-        external fun mb_device_tw_default_y_offset(device: CDevice): Int
-        @JvmStatic
-        external fun mb_device_set_tw_default_y_offset(device: CDevice, offset: Int)
-
-        @JvmStatic
-        external fun mb_device_tw_brightness_path(device: CDevice): Pointer? /* char * */
-        @JvmStatic
-        external fun mb_device_set_tw_brightness_path(device: CDevice, path: String?)
-
-        @JvmStatic
-        external fun mb_device_tw_secondary_brightness_path(device: CDevice): Pointer? /* char * */
-        @JvmStatic
-        external fun mb_device_set_tw_secondary_brightness_path(device: CDevice, path: String?)
-
-        @JvmStatic
-        external fun mb_device_tw_max_brightness(device: CDevice): Int
-        @JvmStatic
-        external fun mb_device_set_tw_max_brightness(device: CDevice, brightness: Int)
-
-        @JvmStatic
-        external fun mb_device_tw_default_brightness(device: CDevice): Int
-        @JvmStatic
-        external fun mb_device_set_tw_default_brightness(device: CDevice, brightness: Int)
-
-        @JvmStatic
-        external fun mb_device_tw_battery_path(device: CDevice): Pointer? /* char * */
-        @JvmStatic
-        external fun mb_device_set_tw_battery_path(device: CDevice, path: String?)
-
-        @JvmStatic
-        external fun mb_device_tw_cpu_temp_path(device: CDevice): Pointer? /* char * */
-        @JvmStatic
-        external fun mb_device_set_tw_cpu_temp_path(device: CDevice, path: String?)
-
-        @JvmStatic
-        external fun mb_device_tw_input_blacklist(device: CDevice): Pointer? /* char * */
-        @JvmStatic
-        external fun mb_device_set_tw_input_blacklist(device: CDevice, blacklist: String?)
-
-        @JvmStatic
-        external fun mb_device_tw_input_whitelist(device: CDevice): Pointer? /* char * */
-        @JvmStatic
-        external fun mb_device_set_tw_input_whitelist(device: CDevice, whitelist: String?)
-
-        @JvmStatic
-        external fun mb_device_tw_graphics_backends(device: CDevice): Pointer? /* char ** */
-        @JvmStatic
-        external fun mb_device_set_tw_graphics_backends(device: CDevice, backends: StringArray?)
-
-        @JvmStatic
-        external fun mb_device_tw_theme(device: CDevice): Pointer? /* char * */
-        @JvmStatic
-        external fun mb_device_set_tw_theme(device: CDevice, theme: String?)
 
         /* Other */
 
@@ -428,93 +352,9 @@ object LibMbDevice {
             get() = CWrapper.mb_device_tw_supported(pointer!!)
             set(supported) = CWrapper.mb_device_set_tw_supported(pointer!!, supported)
 
-        var twFlags: Int
-            get() = CWrapper.mb_device_tw_flags(pointer!!)
-            set(flags) = CWrapper.mb_device_set_tw_flags(pointer!!, flags)
-
         var twPixelFormat: Int
             get() = CWrapper.mb_device_tw_pixel_format(pointer!!)
             set(format) = CWrapper.mb_device_set_tw_pixel_format(pointer!!, format)
-
-        var twForcePixelFormat: Int
-            get() = CWrapper.mb_device_tw_force_pixel_format(pointer!!)
-            set(format) = CWrapper.mb_device_set_tw_force_pixel_format(pointer!!, format)
-
-        var twOverscanPercent: Int
-            get() = CWrapper.mb_device_tw_overscan_percent(pointer!!)
-            set(percent) = CWrapper.mb_device_set_tw_overscan_percent(pointer!!, percent)
-
-        var twDefaultXOffset: Int
-            get() = CWrapper.mb_device_tw_default_x_offset(pointer!!)
-            set(offset) = CWrapper.mb_device_set_tw_default_x_offset(pointer!!, offset)
-
-        var twDefaultYOffset: Int
-            get() = CWrapper.mb_device_tw_default_y_offset(pointer!!)
-            set(offset) = CWrapper.mb_device_set_tw_default_y_offset(pointer!!, offset)
-
-        var twBrightnessPath: String?
-            get() {
-                val p = CWrapper.mb_device_tw_brightness_path(pointer!!) ?: return null
-                return LibC.getStringAndFree(p)
-            }
-            set(path) = CWrapper.mb_device_set_tw_brightness_path(pointer!!, path)
-
-        var twSecondaryBrightnessPath: String?
-            get() {
-                val p = CWrapper.mb_device_tw_secondary_brightness_path(pointer!!) ?: return null
-                return LibC.getStringAndFree(p)
-            }
-            set(path) = CWrapper.mb_device_set_tw_secondary_brightness_path(pointer!!, path)
-
-        var twMaxBrightness: Int
-            get() = CWrapper.mb_device_tw_max_brightness(pointer!!)
-            set(brightness) = CWrapper.mb_device_set_tw_max_brightness(pointer!!, brightness)
-
-        var twDefaultBrightness: Int
-            get() = CWrapper.mb_device_tw_default_brightness(pointer!!)
-            set(brightness) = CWrapper.mb_device_set_tw_default_brightness(pointer!!, brightness)
-
-        var twBatteryPath: String?
-            get() {
-                val p = CWrapper.mb_device_tw_battery_path(pointer!!) ?: return null
-                return LibC.getStringAndFree(p)
-            }
-            set(path) = CWrapper.mb_device_set_tw_battery_path(pointer!!, path)
-
-        var twCpuTempPath: String?
-            get() {
-                val p = CWrapper.mb_device_tw_cpu_temp_path(pointer!!) ?: return null
-                return LibC.getStringAndFree(p)
-            }
-            set(path) = CWrapper.mb_device_set_tw_cpu_temp_path(pointer!!, path)
-
-        var twInputBlacklist: String?
-            get() {
-                val p = CWrapper.mb_device_tw_input_blacklist(pointer!!) ?: return null
-                return LibC.getStringAndFree(p)
-            }
-            set(blacklist) = CWrapper.mb_device_set_tw_input_blacklist(pointer!!, blacklist)
-
-        var twInputWhitelist: String?
-            get() {
-                val p = CWrapper.mb_device_tw_input_whitelist(pointer!!) ?: return null
-                return LibC.getStringAndFree(p)
-            }
-            set(whitelist) = CWrapper.mb_device_set_tw_input_whitelist(pointer!!, whitelist)
-
-        var twGraphicsBackends: Array<String>?
-            get() {
-                val p = CWrapper.mb_device_tw_graphics_backends(pointer!!) ?: return null
-                return LibC.getStringArrayAndFree(p)
-            }
-            set(backends) = CWrapper.mb_device_set_tw_graphics_backends(pointer!!, StringArray(backends))
-
-        var twTheme: String?
-            get() {
-                val p = CWrapper.mb_device_tw_theme(pointer!!) ?: return null
-                return LibC.getStringAndFree(p)
-            }
-            set(theme) = CWrapper.mb_device_set_tw_theme(pointer!!, theme)
 
         constructor() {
             pointer = CWrapper.mb_device_new()

@@ -27,12 +27,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Lava Iris821
   id: lava_iris821
@@ -64,13 +58,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
-    
+
 - name: Lava Iris 860
   id: lava_iris860
   codenames:
@@ -99,12 +87,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Lava Iris 870
   id: lava_iris870
@@ -113,7 +95,7 @@
     - lava_iris8670
     - iris870
     - lava6737m_sp504_int
-    
+
   architecture: arm64-v8a
 
   block_devs:
@@ -135,12 +117,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Lava Pixel V2
   id: lava_pixelv2
@@ -170,12 +146,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 
 - name: LAVA iris X1Beats
@@ -188,7 +158,7 @@
       - X1 Beats
       - X1_Beats
   architecture: armeabi-v7a
-  
+
   block_devs:
     base_dirs:
       - /dev/block/platform/sprd-sdhci.3/by-name
@@ -208,4 +178,4 @@
     recovery:
       - /dev/block/mmcblk0p19
       - /dev/block/platform/sprd-sdhci.3/by-name/recovery
-    
+

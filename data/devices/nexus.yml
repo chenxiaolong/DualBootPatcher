@@ -26,15 +26,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Google/LG Nexus 5
   id: hammerhead
@@ -71,15 +63,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/mdp.0/qcom\x2cmdss_fb_primary.160/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Google/LG Nexus 5X
   id: bullhead
@@ -114,16 +98,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_NO_SCREEN_TIMEOUT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 215
-    default_brightness: 100
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Google/Motorola Nexus 6
   id: shamu
@@ -152,16 +127,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_NO_SCREEN_TIMEOUT
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 215
-    default_brightness: 80
-    force_pixel_format: RGB_565
-    theme: portrait_hdpi
 
 - name: Google/Huawei Nexus 6P
   id: angler
@@ -195,13 +160,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Google/ASUS Nexus 7 (2012 Wifi)
   id: grouper
@@ -230,13 +189,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Google/ASUS Nexus 7 (2013 Wifi)
   id: flo
@@ -264,12 +217,3 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_NO_SCREEN_BLANK
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/platform/msm_fb.591617/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 107
-    theme: portrait_hdpi

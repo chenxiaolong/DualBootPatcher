@@ -28,9 +28,6 @@ Device::Device()
     , m_tw()
 {
     m_tw.pixel_format = TwPixelFormat::Default;
-    m_tw.force_pixel_format = TwForcePixelFormat::None;
-    m_tw.max_brightness = -1;
-    m_tw.default_brightness = -1;
 }
 
 Device::~Device() = default;
@@ -275,16 +272,6 @@ void Device::set_tw_supported(bool supported)
     m_tw.supported = supported;
 }
 
-TwFlags Device::tw_flags() const
-{
-    return m_tw.flags;
-}
-
-void Device::set_tw_flags(TwFlags flags)
-{
-    m_tw.flags = flags;
-}
-
 TwPixelFormat Device::tw_pixel_format() const
 {
     return m_tw.pixel_format;
@@ -293,146 +280,6 @@ TwPixelFormat Device::tw_pixel_format() const
 void Device::set_tw_pixel_format(TwPixelFormat format)
 {
     m_tw.pixel_format = format;
-}
-
-TwForcePixelFormat Device::tw_force_pixel_format() const
-{
-    return m_tw.force_pixel_format;
-}
-
-void Device::set_tw_force_pixel_format(TwForcePixelFormat format)
-{
-    m_tw.force_pixel_format = format;
-}
-
-int Device::tw_overscan_percent() const
-{
-    return m_tw.overscan_percent;
-}
-
-void Device::set_tw_overscan_percent(int percent)
-{
-    m_tw.overscan_percent = percent;
-}
-
-int Device::tw_default_x_offset() const
-{
-    return m_tw.default_x_offset;
-}
-
-void Device::set_tw_default_x_offset(int offset)
-{
-    m_tw.default_x_offset = offset;
-}
-
-int Device::tw_default_y_offset() const
-{
-    return m_tw.default_y_offset;
-}
-
-void Device::set_tw_default_y_offset(int offset)
-{
-    m_tw.default_y_offset = offset;
-}
-
-std::string Device::tw_brightness_path() const
-{
-    return m_tw.brightness_path;
-}
-
-void Device::set_tw_brightness_path(std::string path)
-{
-    m_tw.brightness_path = std::move(path);
-}
-
-std::string Device::tw_secondary_brightness_path() const
-{
-    return m_tw.secondary_brightness_path;
-}
-
-void Device::set_tw_secondary_brightness_path(std::string path)
-{
-    m_tw.secondary_brightness_path = std::move(path);
-}
-
-int Device::tw_max_brightness() const
-{
-    return m_tw.max_brightness;
-}
-
-void Device::set_tw_max_brightness(int value)
-{
-    m_tw.max_brightness = value;
-}
-
-int Device::tw_default_brightness() const
-{
-    return m_tw.default_brightness;
-}
-
-void Device::set_tw_default_brightness(int value)
-{
-    m_tw.default_brightness = value;
-}
-
-std::string Device::tw_battery_path() const
-{
-    return m_tw.battery_path;
-}
-
-void Device::set_tw_battery_path(std::string path)
-{
-    m_tw.battery_path = std::move(path);
-}
-
-std::string Device::tw_cpu_temp_path() const
-{
-    return m_tw.cpu_temp_path;
-}
-
-void Device::set_tw_cpu_temp_path(std::string path)
-{
-    m_tw.cpu_temp_path = std::move(path);
-}
-
-std::string Device::tw_input_blacklist() const
-{
-    return m_tw.input_blacklist;
-}
-
-void Device::set_tw_input_blacklist(std::string blacklist)
-{
-    m_tw.input_blacklist = std::move(blacklist);
-}
-
-std::string Device::tw_input_whitelist() const
-{
-    return m_tw.input_whitelist;
-}
-
-void Device::set_tw_input_whitelist(std::string whitelist)
-{
-    m_tw.input_whitelist = std::move(whitelist);
-}
-
-std::vector<std::string> Device::tw_graphics_backends() const
-{
-    return m_tw.graphics_backends;
-}
-
-void Device::set_tw_graphics_backends(std::vector<std::string> backends)
-{
-    m_tw.graphics_backends = std::move(backends);
-}
-
-std::string Device::tw_theme() const
-{
-    return m_tw.theme;
-}
-
-void Device::set_tw_theme(std::string theme)
-{
-    m_tw.theme = std::move(theme);
 }
 
 
@@ -485,20 +332,6 @@ ValidateFlags Device::validate() const
     //    flags |= ValidateFlag::MissingRecoveryBlockDevs;
     //}
 
-    if (m_tw.supported) {
-        if ((m_tw.flags & TW_FLAG_MASK) != m_tw.flags) {
-            flags |= ValidateFlag::InvalidBootUiFlags;
-        }
-
-        if (m_tw.theme.empty()) {
-            flags |= ValidateFlag::MissingBootUiTheme;
-        }
-
-        if (m_tw.graphics_backends.empty()) {
-            flags |= ValidateFlag::MissingBootUiGraphicsBackends;
-        }
-    }
-
     return flags;
 }
 
@@ -524,22 +357,7 @@ bool BaseOptions::operator==(const BaseOptions &other) const
 bool TwOptions::operator==(const TwOptions &other) const
 {
     return supported == other.supported
-            && flags == other.flags
-            && pixel_format == other.pixel_format
-            && force_pixel_format == other.force_pixel_format
-            && overscan_percent == other.overscan_percent
-            && default_x_offset == other.default_x_offset
-            && default_y_offset == other.default_y_offset
-            && brightness_path == other.brightness_path
-            && secondary_brightness_path == other.secondary_brightness_path
-            && max_brightness == other.max_brightness
-            && default_brightness == other.default_brightness
-            && battery_path == other.battery_path
-            && cpu_temp_path == other.cpu_temp_path
-            && input_blacklist == other.input_blacklist
-            && input_whitelist == other.input_whitelist
-            && graphics_backends == other.graphics_backends
-            && theme == other.theme;
+            && pixel_format == other.pixel_format;
 }
 
 }

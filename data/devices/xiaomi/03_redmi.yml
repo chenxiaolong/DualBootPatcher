@@ -26,15 +26,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi 2
   id: wt88047
@@ -90,15 +82,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi 3
   id: ido
@@ -159,15 +143,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi 3s Prime
   id: land
@@ -210,15 +186,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi 4
   id: markw
@@ -302,15 +270,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi 4A
   id: rolex
@@ -334,15 +294,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi 4X
   id: santoni
@@ -511,15 +463,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi 5
   id: rosy
@@ -553,7 +497,7 @@
     - /dev/block/mmcblk0p22
     extra:
       # cust
-      - /dev/block/bootdevice/by-name/cust	  
+      - /dev/block/bootdevice/by-name/cust
       - /dev/block/mmcblk0p48
       # modem
       - /dev/block/bootdevice/by-name/modem
@@ -561,15 +505,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 2047
-    max_brightness: 4095
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi 5 Plus
   id: vince
@@ -603,7 +539,7 @@
     - /dev/block/mmcblk0p22
     extra:
       # cust
-      - /dev/block/bootdevice/by-name/cust	  
+      - /dev/block/bootdevice/by-name/cust
       - /dev/block/mmcblk0p49
       # modem
       - /dev/block/bootdevice/by-name/modem
@@ -679,7 +615,7 @@
       - /dev/block/mmcblk0p38
       # logdump
       - /dev/block/bootdevice/by-name/logdump
-      - /dev/block/mmcblk0p48	  
+      - /dev/block/mmcblk0p48
       # mcfg
       - /dev/block/bootdevice/by-name/mcfg
       - /dev/block/mmcblk0p36
@@ -740,15 +676,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 4095
-    default_brightness: 2047
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 
 - name: Xiaomi Redmi Pro
@@ -778,15 +706,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 
 - name: Xiaomi Note Pro
@@ -853,11 +773,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-    graphics_backends:
-      - fbdev
     pixel_format: RGBA_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    default_brightness: 255
-    theme: portrait_hdpi

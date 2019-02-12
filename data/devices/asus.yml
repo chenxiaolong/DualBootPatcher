@@ -33,10 +33,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
     pixel_format: BGRA_8888
-    theme: portrait_hdpi
 
 - name: ASUS Zenfone 2 Laser - ZE601KL
   id: Z00T
@@ -114,17 +111,7 @@
 
   boot_ui:
     supported: yes
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
-    battery_path: /sys/devices/virtual/thermal/thermal_zone11/temp
-    theme: portrait_hdpi
 
 - name: ASUS Zenfone 2 Laser - ZE550KL
   id: Z00L
@@ -180,15 +167,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: ASUS Zenfone 2 Laser - ZE500KL
   id: Z00ED
@@ -241,15 +220,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: ASUS ZenFone 3 Deluxe - ZS570KL
   id: Z016
@@ -315,15 +286,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_SCREEN_BLANK_ON_BOOT
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-    brightness_path: /sys/devices/soc/900000.qcom,cmdss_mdp/900000.qcom,cmdss_mdp:qcom,cmdss_fb_primary/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 149
 
 - name: ASUS ZenFone 3 ZE520KL
   id: Z017
@@ -393,15 +355,6 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_SCREEN_BLANK_ON_BOOT
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-    brightness_path: /sys/devices/soc/1a00000.qcom,mdss_mdp/1a00000.qcom,mdss_mdp:qcom,mdss_fb_primary/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 149
 
 - name: ASUS ZenFone 3 ZE552KL
   id: Z012
@@ -470,17 +423,8 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_SCREEN_BLANK_ON_BOOT
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-    brightness_path: /sys/devices/soc/1a00000.qcom,mdss_mdp/1a00000.qcom,mdss_mdp:qcom,mdss_fb_primary/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 149
 
-- name: ASUS Zenfone Max 
+- name: ASUS Zenfone Max
   id: Z010D
   codenames:
     - ASUS_Z010D
@@ -530,12 +474,4 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBA_8888
-    default_brightness: 162
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi

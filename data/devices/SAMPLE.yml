@@ -69,31 +69,6 @@
     # Whether Boot UI is supported (optional).
     supported: true
 
-    # List of TWRP flags (optional). These flags correspond to the TWRP flags
-    # with the same name.
-    #
-    # Available flags:
-    # - TW_TOUCHSCREEN_SWAP_XY
-    # - TW_TOUCHSCREEN_FLIP_X
-    # - TW_TOUCHSCREEN_FLIP_Y
-    # - TW_GRAPHICS_FORCE_USE_LINELENGTH
-    # - TW_SCREEN_BLANK_ON_BOOT
-    # - TW_BOARD_HAS_FLIPPED_SCREEN
-    # - TW_IGNORE_MAJOR_AXIS_0
-    # - TW_IGNORE_MT_POSITION_0
-    # - TW_IGNORE_ABS_MT_TRACKING_ID
-    # - TW_NEW_ION_HEAP
-    # - TW_NO_SCREEN_BLANK
-    # - TW_NO_SCREEN_TIMEOUT
-    # - TW_ROUND_SCREEN
-    # - TW_NO_CPU_TEMP
-    # - TW_QCOM_RTC_FIX
-    # - TW_HAS_DOWNLOAD_MODE
-    # - TW_PREFER_LCD_BACKLIGHT
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_PREFER_LCD_BACKLIGHT
-
     # TWRP pixel format (optional).
     #
     # Available choices:
@@ -103,58 +78,3 @@
     # - BGRA_8888
     # - RGBA_8888
     pixel_format: DEFAULT
-
-    # TWRP force pixel format (optional).
-    #
-    # Available choices:
-    # - NONE
-    # - RGB_565
-    force_pixel_format: NONE
-
-    # TWRP overscan percentage (optional).
-    overscan_percent: 0
-
-    # TWRP default X offset (optional).
-    default_x_offset: 0
-
-    # TWRP default Y offset (optional).
-    default_y_offset: 0
-
-    # TWRP brightness sysfs path (optional).
-    brightness_path: '/sys/...'
-
-    # TWRP secondary brightness sysfs path (optional).
-    secondary_brightness_path: '/sys/...'
-
-    # TWRP max brightness (optional).
-    max_brightness: 255
-
-    # TWRP default brightness (optional).
-    default_brightness: 128
-
-    # TWRP battery sysfs path (optional).
-    battery_path: '/sys/...'
-
-    # TWRP CPU temperature sys path (optional).
-    cpu_temp_path: '/sys/...'
-
-    # TWRP input device blacklist (optional).
-    input_blacklist: ''
-
-    # TWRP input device whitelist (optional).
-    input_whitelist: ''
-
-    # TWRP graphics backend list (required).
-    #
-    # Available choices:
-    # - overlay_msm_old
-    # - drm
-    # - fbdev
-    graphics_backends:
-      - fbdev
-
-    # TWRP theme (required).
-    #
-    # Available choices:
-    # - portrait_hdpi
-    theme: portrait_hdpi

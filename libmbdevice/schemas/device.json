@@ -13,14 +13,6 @@
             "items": {
                 "$ref": "#/definitions/dev_path"
             }
-        },
-        "sysfs_path": {
-            "type": "string",
-            "pattern": "^/sys/[^/]+(/[^/]+)*$"
-        },
-        "absolute_path": {
-            "type": "string",
-            "pattern": "^/[^/]+(/[^/]+)*$"
         }
     },
     "title": "Device definition",
@@ -129,34 +121,6 @@
                     "title": "Whether Boot UI is supported",
                     "type": "boolean"
                 },
-                "flags": {
-                    "title": "List of TWRP flags",
-                    "description": "These flags correspond to the TWRP flags with the same name.",
-                    "type": "array",
-                    "uniqueItems": true,
-                    "items": {
-                        "type": "string",
-                        "enum": [
-                            "TW_TOUCHSCREEN_SWAP_XY",
-                            "TW_TOUCHSCREEN_FLIP_X",
-                            "TW_TOUCHSCREEN_FLIP_Y",
-                            "TW_GRAPHICS_FORCE_USE_LINELENGTH",
-                            "TW_SCREEN_BLANK_ON_BOOT",
-                            "TW_BOARD_HAS_FLIPPED_SCREEN",
-                            "TW_IGNORE_MAJOR_AXIS_0",
-                            "TW_IGNORE_MT_POSITION_0",
-                            "TW_IGNORE_ABS_MT_TRACKING_ID",
-                            "TW_NEW_ION_HEAP",
-                            "TW_NO_SCREEN_BLANK",
-                            "TW_NO_SCREEN_TIMEOUT",
-                            "TW_ROUND_SCREEN",
-                            "TW_NO_CPU_TEMP",
-                            "TW_QCOM_RTC_FIX",
-                            "TW_HAS_DOWNLOAD_MODE",
-                            "TW_PREFER_LCD_BACKLIGHT"
-                        ]
-                    }
-                },
                 "pixel_format": {
                     "title": "TWRP pixel format",
                     "type": "string",
@@ -167,89 +131,8 @@
                         "BGRA_8888",
                         "RGBA_8888"
                     ]
-                },
-                "force_pixel_format": {
-                    "title": "TWRP force pixel format",
-                    "type": "string",
-                    "enum": [
-                        "NONE",
-                        "RGB_565"
-                    ]
-                },
-                "overscan_percent": {
-                    "title": "TWRP overscan percentage",
-                    "type": "integer"
-                },
-                "default_x_offset": {
-                    "title": "TWRP default X offset",
-                    "type": "integer"
-                },
-                "default_y_offset": {
-                    "title": "TWRP default Y offset",
-                    "type": "integer"
-                },
-                "brightness_path": {
-                    "title": "TWRP brightness sysfs path",
-                    "$ref": "#/definitions/sysfs_path"
-                },
-                "secondary_brightness_path": {
-                    "title": "TWRP secondary brightness sysfs path",
-                    "$ref": "#/definitions/sysfs_path"
-                },
-                "max_brightness": {
-                    "title": "TWRP max brightness",
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "default_brightness": {
-                    "title": "TWRP default brightness",
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "battery_path": {
-                    "title": "TWRP battery sysfs path",
-                    "$ref": "#/definitions/sysfs_path"
-                },
-                "cpu_temp_path": {
-                    "title": "TWRP CPU temperature sys path",
-                    "$ref": "#/definitions/sysfs_path"
-                },
-                "input_blacklist": {
-                    "title": "TWRP input device blacklist",
-                    "type": "string",
-                    "minLength": 1
-                },
-                "input_whitelist": {
-                    "title": "TWRP input device whitelist",
-                    "type": "string",
-                    "minLength": 1
-                },
-                "graphics_backends": {
-                    "title": "TWRP graphics backend list",
-                    "type": "array",
-                    "minItems": 1,
-                    "uniqueItems": true,
-                    "items": {
-                        "type": "string",
-                        "enum": [
-                            "overlay_msm_old",
-                            "drm",
-                            "fbdev"
-                        ]
-                    }
-                },
-                "theme": {
-                    "title": "TWRP theme",
-                    "type": "string",
-                    "enum": [
-                        "portrait_hdpi"
-                    ]
                 }
             },
-            "required": [
-                "graphics_backends",
-                "theme"
-            ],
             "additionalProperties": false
         }
     },

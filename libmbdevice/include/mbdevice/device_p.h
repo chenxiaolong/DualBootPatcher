@@ -47,29 +47,7 @@ struct TwOptions
 {
     bool supported;
 
-    TwFlags flags;
-
     TwPixelFormat pixel_format;
-    TwForcePixelFormat force_pixel_format;
-
-    int overscan_percent;
-    int default_x_offset;
-    int default_y_offset;
-
-    std::string brightness_path;
-    std::string secondary_brightness_path;
-    int max_brightness;
-    int default_brightness;
-
-    std::string battery_path;
-    std::string cpu_temp_path;
-
-    std::string input_blacklist;
-    std::string input_whitelist;
-
-    std::vector<std::string> graphics_backends;
-
-    std::string theme;
 
     bool operator==(const TwOptions &other) const;
 };

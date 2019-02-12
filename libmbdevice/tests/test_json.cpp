@@ -73,43 +73,7 @@ static constexpr char sample_complete[] = R"json(
         },
         "boot_ui": {
             "supported": true,
-            "flags": [
-                "TW_TOUCHSCREEN_SWAP_XY",
-                "TW_TOUCHSCREEN_FLIP_X",
-                "TW_TOUCHSCREEN_FLIP_Y",
-                "TW_GRAPHICS_FORCE_USE_LINELENGTH",
-                "TW_SCREEN_BLANK_ON_BOOT",
-                "TW_BOARD_HAS_FLIPPED_SCREEN",
-                "TW_IGNORE_MAJOR_AXIS_0",
-                "TW_IGNORE_MT_POSITION_0",
-                "TW_IGNORE_ABS_MT_TRACKING_ID",
-                "TW_NEW_ION_HEAP",
-                "TW_NO_SCREEN_BLANK",
-                "TW_NO_SCREEN_TIMEOUT",
-                "TW_ROUND_SCREEN",
-                "TW_NO_CPU_TEMP",
-                "TW_QCOM_RTC_FIX",
-                "TW_HAS_DOWNLOAD_MODE",
-                "TW_PREFER_LCD_BACKLIGHT"
-            ],
-            "pixel_format": "RGBA_8888",
-            "force_pixel_format": "RGB_565",
-            "overscan_percent": 10,
-            "default_x_offset": 20,
-            "default_y_offset": 30,
-            "brightness_path": "/sys/class/backlight",
-            "secondary_brightness_path": "/sys/class/lcd-backlight",
-            "max_brightness": 255,
-            "default_brightness": 100,
-            "battery_path": "/sys/class/battery",
-            "cpu_temp_path": "/sys/class/cputemp",
-            "input_blacklist": "foo",
-            "input_whitelist": "bar",
-            "graphics_backends": [
-                "overlay_msm_old",
-                "fbdev"
-            ],
-            "theme": "portrait_hdpi"
+            "pixel_format": "RGBA_8888"
         }
     }
 )json";
@@ -135,28 +99,10 @@ static constexpr char sample_invalid_device_flags[] = R"json(
     }
 )json";
 
-static constexpr char sample_invalid_tw_flags[] = R"json(
-    {
-        "boot_ui": {
-            "flags": [
-                "TW_FOO_BAR"
-            ]
-        }
-    }
-)json";
-
 static constexpr char sample_invalid_tw_pixel_format[] = R"json(
     {
         "boot_ui": {
             "pixel_format": "FOO_BAR"
-        }
-    }
-)json";
-
-static constexpr char sample_invalid_tw_force_pixel_format[] = R"json(
-    {
-        "boot_ui": {
-            "force_pixel_format": "FOO_BAR"
         }
     }
 )json";
@@ -261,45 +207,7 @@ TEST(JsonTest, LoadCompleteDefinition)
 
     ASSERT_TRUE(device.tw_supported());
 
-    TwFlags flags =
-            TwFlag::TouchscreenSwapXY
-            | TwFlag::TouchscreenFlipX
-            | TwFlag::TouchscreenFlipY
-            | TwFlag::GraphicsForceUseLineLength
-            | TwFlag::ScreenBlankOnBoot
-            | TwFlag::BoardHasFlippedScreen
-            | TwFlag::IgnoreMajorAxis0
-            | TwFlag::IgnoreMtPosition0
-            | TwFlag::IgnoreAbsMtTrackingId
-            | TwFlag::NewIonHeap
-            | TwFlag::NoScreenBlank
-            | TwFlag::NoScreenTimeout
-            | TwFlag::RoundScreen
-            | TwFlag::NoCpuTemp
-            | TwFlag::QcomRtcFix
-            | TwFlag::HasDownloadMode
-            | TwFlag::PreferLcdBacklight;
-    ASSERT_EQ(device.tw_flags(), flags);
-
     ASSERT_EQ(device.tw_pixel_format(), TwPixelFormat::Rgba8888);
-    ASSERT_EQ(device.tw_force_pixel_format(), TwForcePixelFormat::Rgb565);
-    ASSERT_EQ(device.tw_overscan_percent(), 10);
-    ASSERT_EQ(device.tw_default_x_offset(), 20);
-    ASSERT_EQ(device.tw_default_y_offset(), 30);
-    ASSERT_EQ(device.tw_brightness_path(), "/sys/class/backlight");
-    ASSERT_EQ(device.tw_secondary_brightness_path(),
-              "/sys/class/lcd-backlight");
-    ASSERT_EQ(device.tw_max_brightness(), 255);
-    ASSERT_EQ(device.tw_default_brightness(), 100);
-    ASSERT_EQ(device.tw_battery_path(), "/sys/class/battery");
-    ASSERT_EQ(device.tw_cpu_temp_path(), "/sys/class/cputemp");
-    ASSERT_EQ(device.tw_input_blacklist(), "foo");
-    ASSERT_EQ(device.tw_input_whitelist(), "bar");
-
-    std::vector<std::string> graphics_backends{"overlay_msm_old", "fbdev"};
-    ASSERT_EQ(device.tw_graphics_backends(), graphics_backends);
-
-    ASSERT_EQ(device.tw_theme(), "portrait_hdpi");
 }
 
 TEST(JsonTest, LoadInvalidKey)
@@ -325,27 +233,11 @@ TEST(JsonTest, LoadInvalidValue)
 
     Device d2;
     JsonError e2;
-    ASSERT_FALSE(device_from_json(sample_invalid_tw_flags, d2, e2));
+    ASSERT_FALSE(device_from_json(sample_invalid_tw_pixel_format, d2, e2));
     ASSERT_EQ(e2.type, JsonErrorType::SchemaValidationFailure);
-    ASSERT_EQ(e2.schema_uri, "#/properties/boot_ui/properties/flags/items");
+    ASSERT_EQ(e2.schema_uri, "#/properties/boot_ui/properties/pixel_format");
     ASSERT_EQ(e2.schema_keyword, "enum");
-    ASSERT_EQ(e2.document_uri, "#/boot_ui/flags/0");
-
-    Device d3;
-    JsonError e3;
-    ASSERT_FALSE(device_from_json(sample_invalid_tw_pixel_format, d3, e3));
-    ASSERT_EQ(e3.type, JsonErrorType::SchemaValidationFailure);
-    ASSERT_EQ(e3.schema_uri, "#/properties/boot_ui/properties/pixel_format");
-    ASSERT_EQ(e3.schema_keyword, "enum");
-    ASSERT_EQ(e3.document_uri, "#/boot_ui/pixel_format");
-
-    Device d4;
-    JsonError e4;
-    ASSERT_FALSE(device_from_json(sample_invalid_tw_force_pixel_format, d4, e4));
-    ASSERT_EQ(e4.type, JsonErrorType::SchemaValidationFailure);
-    ASSERT_EQ(e4.schema_uri, "#/properties/boot_ui/properties/force_pixel_format");
-    ASSERT_EQ(e4.schema_keyword, "enum");
-    ASSERT_EQ(e4.document_uri, "#/boot_ui/force_pixel_format");
+    ASSERT_EQ(e2.document_uri, "#/boot_ui/pixel_format");
 }
 
 TEST(JsonTest, LoadInvalidType)

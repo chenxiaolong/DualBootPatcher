@@ -86,53 +86,8 @@ SETTER(char const * const *, extra_block_devs);
 GETTER(bool, tw_supported);
 SETTER(bool, tw_supported);
 
-GETTER(uint32_t, tw_flags);
-SETTER(uint32_t, tw_flags);
-
 GETTER(uint16_t, tw_pixel_format);
 SETTER(uint16_t, tw_pixel_format);
-
-GETTER(uint16_t, tw_force_pixel_format);
-SETTER(uint16_t, tw_force_pixel_format);
-
-GETTER(int, tw_overscan_percent);
-SETTER(int, tw_overscan_percent);
-
-GETTER(int, tw_default_x_offset);
-SETTER(int, tw_default_x_offset);
-
-GETTER(int, tw_default_y_offset);
-SETTER(int, tw_default_y_offset);
-
-GETTER(char *, tw_brightness_path);
-SETTER(const char *, tw_brightness_path);
-
-GETTER(char *, tw_secondary_brightness_path);
-SETTER(const char *, tw_secondary_brightness_path);
-
-GETTER(int, tw_max_brightness);
-SETTER(int, tw_max_brightness);
-
-GETTER(int, tw_default_brightness);
-SETTER(int, tw_default_brightness);
-
-GETTER(char *, tw_battery_path);
-SETTER(const char *, tw_battery_path);
-
-GETTER(char *, tw_cpu_temp_path);
-SETTER(const char *, tw_cpu_temp_path);
-
-GETTER(char *, tw_input_blacklist);
-SETTER(const char *, tw_input_blacklist);
-
-GETTER(char *, tw_input_whitelist);
-SETTER(const char *, tw_input_whitelist);
-
-GETTER(char * const *, tw_graphics_backends);
-SETTER(char const * const *, tw_graphics_backends);
-
-GETTER(char *, tw_theme);
-SETTER(const char *, tw_theme);
 
 MB_EXPORT uint32_t mb_device_validate(const CDevice *device);
 

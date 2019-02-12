@@ -43,15 +43,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBX_8888
-    default_brightness: 80
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi Max Pro
   id: helium
@@ -91,15 +83,7 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    flags:
-      - TW_QCOM_RTC_FIX
     pixel_format: RGBX_8888
-    default_brightness: 80
-    max_brightness: 255
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi Max 2
   id: oxygen
@@ -138,12 +122,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 4095
-    default_brightness: 2047
     pixel_format: RGBX_8888
-    theme: portrait_hdpi

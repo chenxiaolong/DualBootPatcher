@@ -35,15 +35,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: ABGR_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 2 (Exynos)
   id: t03g
@@ -75,16 +67,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
     pixel_format: BGRA_8888
-    brightness_path: /sys/devices/platform/s5p-dsim.0/ea8061/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 
 - name: Samsung Galaxy Note 3 (Snapdragon)
@@ -120,16 +103,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
     pixel_format: RGBX_8888
-    brightness_path: /sys/devices/mdp.0/qcom,mdss_fb_primary.185/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 3 (Exynos)
   id: ha3g
@@ -161,15 +135,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/platform/s5p-mipi-dsim.1/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 3 LTE-A
   id: hlteskt
@@ -198,16 +164,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
     pixel_format: RGBX_8888
-    brightness_path: /sys/devices/mdp.0/qcom,mdss_fb_primary.185/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 3 Neo
   id: hllte
@@ -242,16 +199,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 4 Edge
   id: tblte
@@ -288,15 +236,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 4 (Snapdragon)
   id: trlte
@@ -333,16 +273,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/fd900000.qcom\x2cmdss_mdp/qcom\x2cmdss_fb_primary.174/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 4 (Exynos)
   id: trelte
@@ -387,15 +318,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/13800000.decon_fb/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 5 (Sprint)
   id: nobleltespr
@@ -429,15 +352,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: ABGR_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 5 (China)
   id: nobleltechn
@@ -470,15 +385,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: ABGR_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 8 (Exynos)
   id: greatlte
@@ -513,12 +420,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 36600
-    default_brightness: 16200
     pixel_format: ABGR_8888
-    theme: portrait_hdpi

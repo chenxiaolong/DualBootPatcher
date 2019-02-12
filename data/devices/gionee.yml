@@ -31,12 +31,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Gionee Marathon mini
   id: M5_mini
@@ -69,12 +63,6 @@
 
   boot_ui:
     supported: yes
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_hdpi
 
 - name: Gionee F103 Pro
   id: F103_Pro
@@ -132,13 +120,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 120
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
 
 - name: Gionee F103
   id: F103
@@ -169,9 +151,4 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
     pixel_format: RGBA_8888
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
-    default_brightness: 255
-    theme: portrait_hdpi

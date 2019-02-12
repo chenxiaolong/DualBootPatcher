@@ -37,15 +37,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-      - TW_NO_CPU_TEMP
-      - TW_QCOM_RTC_FIX
-      - TW_PREFER_LCD_BACKLIGHT
-    graphics_backends:
-      - fbdev
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Nokia X2
   id: ara
@@ -78,15 +70,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
     pixel_format: RGBX_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Nokia 6
   id: D1C
@@ -126,12 +110,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
     pixel_format: RGBA_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi

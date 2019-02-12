@@ -79,53 +79,8 @@ public:
     bool tw_supported() const;
     void set_tw_supported(bool supported);
 
-    TwFlags tw_flags() const;
-    void set_tw_flags(TwFlags flags);
-
     TwPixelFormat tw_pixel_format() const;
     void set_tw_pixel_format(TwPixelFormat format);
-
-    TwForcePixelFormat tw_force_pixel_format() const;
-    void set_tw_force_pixel_format(TwForcePixelFormat format);
-
-    int tw_overscan_percent() const;
-    void set_tw_overscan_percent(int percent);
-
-    int tw_default_x_offset() const;
-    void set_tw_default_x_offset(int offset);
-
-    int tw_default_y_offset() const;
-    void set_tw_default_y_offset(int offset);
-
-    std::string tw_brightness_path() const;
-    void set_tw_brightness_path(std::string path);
-
-    std::string tw_secondary_brightness_path() const;
-    void set_tw_secondary_brightness_path(std::string path);
-
-    int tw_max_brightness() const;
-    void set_tw_max_brightness(int value);
-
-    int tw_default_brightness() const;
-    void set_tw_default_brightness(int value);
-
-    std::string tw_battery_path() const;
-    void set_tw_battery_path(std::string path);
-
-    std::string tw_cpu_temp_path() const;
-    void set_tw_cpu_temp_path(std::string path);
-
-    std::string tw_input_blacklist() const;
-    void set_tw_input_blacklist(std::string blacklist);
-
-    std::string tw_input_whitelist() const;
-    void set_tw_input_whitelist(std::string whitelist);
-
-    std::vector<std::string> tw_graphics_backends() const;
-    void set_tw_graphics_backends(std::vector<std::string> backends);
-
-    std::string tw_theme() const;
-    void set_tw_theme(std::string theme);
 
     ValidateFlags validate() const;
 

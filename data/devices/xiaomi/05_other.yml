@@ -21,15 +21,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/soc/900000.qcom\x2cmdss_mdp/900000.qcom\x2cmdss_mdp:qcom\x2cmdss_fb_primary/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 153
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Xiaomi Mi Mix 2
   id: chiron
@@ -64,15 +56,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 4095
-    default_brightness: 2047
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
 
 - name: Xiaomi MIPAD 1
   id: mocha
@@ -101,12 +85,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/platform/7000c000.i2c/i2c-0/0-002c/backlight/lcd-backlight/brightness
-    max_brightness: 255
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Y1 Lite (Redmi Note 5A Lite)
   id: ugglite
@@ -141,14 +120,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-    graphics_backends:
-      - fbdev
     pixel_format: RGBA_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    default_brightness: 255
-    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Y1 (Redmi Note 5A)
   id: ugg
@@ -183,15 +155,8 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_SCREEN_BLANK_ON_BOOT
-    graphics_backends:
-      - fbdev
     pixel_format: RGBA_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    default_brightness: 255
-    theme: portrait_hdpi    
-    
+
 - name: Xiaomi Mi A1
   id: tissot
   codenames:
@@ -214,12 +179,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/soc/900000.qcom\x2cmdss_mdp/900000.qcom\x2cmdss_mdp:qcom\x2cmdss_fb_primary/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 153
     pixel_format: RGBX_8888
-    theme: portrait_hdpi

@@ -38,9 +38,6 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 10.1
   id: p4noterf
@@ -72,12 +69,6 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 10.1 Wifi (2014 Edition)
   id: lt03wifi
@@ -110,12 +101,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
     pixel_format: BGRA_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 10.1 3G (2014 Edition)
   id: lt033g
@@ -148,12 +134,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
     pixel_format: BGRA_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 10.1 LTE (2014 Edition)
   id: lt03lte
@@ -183,13 +164,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note Pro 12.2 (LTE)
   id: viennalte
@@ -219,16 +194,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/mdp.0/qcom\x2cmdss_fb_primary.171/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note Pro 12.2 (Wifi)
   id: v1awifi
@@ -259,12 +225,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/devices/platform/i2c-gpio.24/i2c-24/24-002c/backlight/panel/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: BGRA_8888
-    theme: portrait_hdpi

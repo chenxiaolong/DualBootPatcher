@@ -24,8 +24,8 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p17
-      
-      
+
+
 - name: OPPO find7/7a
   id: find7
   codenames:
@@ -61,13 +61,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: OPPO find7/7a
   id: find7
@@ -103,13 +97,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/backlight/panel/brightness
     pixel_format: RGBX_8888
-    theme: portrait_hdpi
 
 - name: OPPO R1C
   id: r1c
@@ -149,13 +137,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
 
 - name: OPPO F1
   id: f1f
@@ -201,15 +183,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 162
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
 
 - name: OPPO A53
   id: A53
@@ -246,13 +220,7 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
 
 
 - name: OPPO R9m
@@ -316,12 +284,7 @@
 
   boot_ui:
     supported: true
-    graphics_backends:
-      - fbdev
     pixel_format: RGBA_8888
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    default_brightness: 255
-    theme: portrait_hdpi
 
 - name: OPPO A33
   id: A33
@@ -358,10 +321,4 @@
 
   boot_ui:
     supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
     pixel_format: RGBA_8888
-    theme: portrait_hdpi
