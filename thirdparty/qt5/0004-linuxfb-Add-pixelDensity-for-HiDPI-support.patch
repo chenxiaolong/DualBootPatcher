@@ -1,0 +1,97 @@
+From 8515a2a4d14f2a85bfd0b073fd4ac9903f71c93a Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
+Date: Mon, 18 Feb 2019 22:49:10 -0500
+Subject: [PATCH 4/5] linuxfb: Add pixelDensity() for HiDPI support
+
+Signed-off-by: Andrew Gunnerson <andrewgunnerson@gmail.com>
+---
+ .../platforms/linuxfb/qlinuxfbscreen.cpp      | 23 +++++++++++++++++++
+ .../platforms/linuxfb/qlinuxfbscreen.h        |  9 ++++++++
+ 2 files changed, 32 insertions(+)
+
+diff --git a/src/plugins/platforms/linuxfb/qlinuxfbscreen.cpp b/src/plugins/platforms/linuxfb/qlinuxfbscreen.cpp
+index dc7ea08dc5..3647dfc3c7 100644
+--- a/src/plugins/platforms/linuxfb/qlinuxfbscreen.cpp
++++ b/src/plugins/platforms/linuxfb/qlinuxfbscreen.cpp
+@@ -65,6 +65,8 @@
+ 
+ QT_BEGIN_NAMESPACE
+ 
++Q_LOGGING_CATEGORY(lcQpaLinuxFb, "qt.qpa.linuxfb")
++
+ static int openFramebufferDevice(const QString &dev)
+ {
+     int fd = -1;
+@@ -376,6 +378,22 @@ bool QLinuxFbScreen::initialize()
+     mFormat = determineFormat(vinfo, mDepth);
+     mPhysicalSize = determinePhysicalSize(vinfo, userMmSize, geometry.size());
+ 
++    bool ok;
++
++    mPhysicalDpi = qEnvironmentVariable("QT_QPA_LINUXFB_PHYSICAL_DPI").toDouble(&ok);
++    if (ok)
++        qCDebug(lcQpaLinuxFb) << "QT_QPA_LINUXFB_PHYSICAL_DPI is set";
++    else
++        mPhysicalDpi = logicalDpi().first;
++    qCDebug(lcQpaLinuxFb) << "Physical DPI:" << mPhysicalDpi;
++
++    mReferenceDpi = qEnvironmentVariable("QT_QPA_LINUXFB_REFERENCE_DPI").toDouble(&ok);
++    if (ok)
++        qCDebug(lcQpaLinuxFb) << "QT_QPA_LINUXFB_REFERENCE_DPI is set";
++    else
++        mReferenceDpi = 100.0;
++    qCDebug(lcQpaLinuxFb) << "Reference DPI:" << mReferenceDpi;
++
+     // mmap the framebuffer
+     mMmap.size = finfo.smem_len;
+     uchar *data = (unsigned char *)mmap(0, mMmap.size, PROT_READ | PROT_WRITE, MAP_SHARED, mFbFd, 0);
+@@ -446,5 +464,10 @@ QPixmap QLinuxFbScreen::grabWindow(WId wid, int x, int y, int width, int height)
+     return QPixmap();
+ }
+ 
++qreal QLinuxFbScreen::pixelDensity() const
++{
++    return qMax(1, qRound(mPhysicalDpi / mReferenceDpi));
++}
++
+ QT_END_NAMESPACE
+ 
+diff --git a/src/plugins/platforms/linuxfb/qlinuxfbscreen.h b/src/plugins/platforms/linuxfb/qlinuxfbscreen.h
+index c7ce455e6a..a02abe46d2 100644
+--- a/src/plugins/platforms/linuxfb/qlinuxfbscreen.h
++++ b/src/plugins/platforms/linuxfb/qlinuxfbscreen.h
+@@ -42,8 +42,12 @@
+ 
+ #include <QtFbSupport/private/qfbscreen_p.h>
+ 
++#include <QtCore/qloggingcategory.h>
++
+ QT_BEGIN_NAMESPACE
+ 
++Q_DECLARE_LOGGING_CATEGORY(lcQpaLinuxFb)
++
+ class QPainter;
+ class QFbCursor;
+ 
+@@ -58,6 +62,8 @@ public:
+ 
+     QPixmap grabWindow(WId wid, int x, int y, int width, int height) const override;
+ 
++    qreal pixelDensity() const override;
++
+     QRegion doRedraw() override;
+ 
+ private:
+@@ -75,6 +81,9 @@ private:
+     } mMmap;
+ 
+     QPainter *mBlitter;
++
++    qreal mPhysicalDpi;
++    qreal mReferenceDpi;
+ };
+ 
+ QT_END_NAMESPACE
+-- 
+2.20.1
+

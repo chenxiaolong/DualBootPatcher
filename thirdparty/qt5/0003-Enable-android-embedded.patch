@@ -1,0 +1,41 @@
+From 252069fb94ab9e1962794302361a12ad6f00b473 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
+Date: Sun, 10 Feb 2019 20:42:21 -0500
+Subject: [PATCH 3/5] Enable android-embedded
+
+This is normally only available in Qt Enterprise, but all the necessary
+source code is LGPL.
+
+Signed-off-by: Andrew Gunnerson <andrewgunnerson@gmail.com>
+---
+ mkspecs/android-clang/qmake.conf      | 2 +-
+ src/corelib/global/qsystemdetection.h | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/mkspecs/android-clang/qmake.conf b/mkspecs/android-clang/qmake.conf
+index a0a369bb44..82317cb21a 100644
+--- a/mkspecs/android-clang/qmake.conf
++++ b/mkspecs/android-clang/qmake.conf
+@@ -1,6 +1,6 @@
+ # qmake configuration for building with android-clang
+ MAKEFILE_GENERATOR      = UNIX
+-QMAKE_PLATFORM          = android
++QMAKE_PLATFORM          = android android-embedded
+ QMAKE_COMPILER          = gcc clang llvm
+ 
+ CONFIG                 += android_install unversioned_soname unversioned_libname plugin_with_soname android_deployment_settings
+diff --git a/src/corelib/global/qsystemdetection.h b/src/corelib/global/qsystemdetection.h
+index aabe46f3c2..d8d7fc7404 100644
+--- a/src/corelib/global/qsystemdetection.h
++++ b/src/corelib/global/qsystemdetection.h
+@@ -110,6 +110,7 @@
+ #  endif
+ #elif defined(__ANDROID__) || defined(ANDROID)
+ #  define Q_OS_ANDROID
++#  define Q_OS_ANDROID_EMBEDDED
+ #  define Q_OS_LINUX
+ #elif defined(__CYGWIN__)
+ #  define Q_OS_CYGWIN
+-- 
+2.20.1
+

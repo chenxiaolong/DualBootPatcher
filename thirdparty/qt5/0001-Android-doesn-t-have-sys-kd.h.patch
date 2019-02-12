@@ -1,0 +1,26 @@
+From 57fec979290409da7f79b7250767ced46e4ac005 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
+Date: Sun, 10 Feb 2019 17:00:32 -0500
+Subject: [PATCH 1/5] Android doesn't have sys/kd.h
+
+Signed-off-by: Andrew Gunnerson <andrewgunnerson@gmail.com>
+---
+ src/gui/configure.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/gui/configure.json b/src/gui/configure.json
+index 89934c8f1d..1ad20440b3 100644
+--- a/src/gui/configure.json
++++ b/src/gui/configure.json
+@@ -987,7 +987,7 @@
+             "label": "LinuxFB",
+             "type": "compile",
+             "test": {
+-                "include": [ "linux/fb.h", "sys/kd.h", "sys/ioctl.h" ],
++                "include": [ "linux/fb.h", "linux/kd.h", "sys/ioctl.h" ],
+                 "main": [
+                     "fb_fix_screeninfo finfo;",
+                     "fb_var_screeninfo vinfo;",
+-- 
+2.20.1
+

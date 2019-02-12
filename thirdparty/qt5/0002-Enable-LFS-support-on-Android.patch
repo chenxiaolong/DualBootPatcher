@@ -1,0 +1,25 @@
+From c041d547a5440e73138be6024b40bfbf75c930ed Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
+Date: Sun, 10 Feb 2019 21:00:11 -0500
+Subject: [PATCH 2/5] Enable LFS support on Android
+
+---
+ configure.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.json b/configure.json
+index 9fce6d039e..fed386e415 100644
+--- a/configure.json
++++ b/configure.json
+@@ -759,7 +759,7 @@
+         },
+         "largefile": {
+             "label": "Large file support",
+-            "condition": "!config.android && !config.integrity && !config.winrt",
++            "condition": "!config.integrity && !config.winrt",
+             "output": [
+                 "privateConfig",
+                 { "type": "define", "name": "QT_LARGEFILE_SUPPORT", "value": 64 }
+-- 
+2.20.1
+

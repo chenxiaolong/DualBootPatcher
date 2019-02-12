@@ -1,0 +1,393 @@
+From b8df0fd4f97a1b373858529aa1d297d00a91df80 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
+Date: Mon, 18 Feb 2019 22:50:07 -0500
+Subject: [PATCH 5/5] linuxfb: Add support for several pixel formats used by
+ Android
+
+Signed-off-by: Andrew Gunnerson <andrewgunnerson@gmail.com>
+---
+ .../platforms/linuxfb/qlinuxfbscreen.cpp      | 239 ++++++++++++++++--
+ .../platforms/linuxfb/qlinuxfbscreen.h        |   3 +
+ 2 files changed, 222 insertions(+), 20 deletions(-)
+
+diff --git a/src/plugins/platforms/linuxfb/qlinuxfbscreen.cpp b/src/plugins/platforms/linuxfb/qlinuxfbscreen.cpp
+index 3647dfc3c7..e0bc1bfb20 100644
+--- a/src/plugins/platforms/linuxfb/qlinuxfbscreen.cpp
++++ b/src/plugins/platforms/linuxfb/qlinuxfbscreen.cpp
+@@ -48,6 +48,7 @@
+ #include <qimage.h>
+ #include <qdebug.h>
+ 
++#include <endian.h>
+ #include <unistd.h>
+ #include <stdlib.h>
+ #include <sys/ioctl.h>
+@@ -67,6 +68,12 @@ QT_BEGIN_NAMESPACE
+ 
+ Q_LOGGING_CATEGORY(lcQpaLinuxFb, "qt.qpa.linuxfb")
+ 
++struct FramebufferFormat
++{
++    QImage::Format format;
++    QLinuxFbConversionFn convert;
++};
++
+ static int openFramebufferDevice(const QString &dev)
+ {
+     int fd = -1;
+@@ -159,12 +166,79 @@ static QSizeF determinePhysicalSize(const fb_var_screeninfo &vinfo, const QSize
+     return QSize(mmWidth, mmHeight);
+ }
+ 
+-static QImage::Format determineFormat(const fb_var_screeninfo &info, int depth)
++// 32-bit byte swap
++static void convertByteSwap32(QImage &image)
++{
++    Q_ASSERT(image.format() == QImage::Format_RGB32
++            || image.format() == QImage::Format_RGBA8888);
++
++    for (int i = 0; i < image.height(); i++) {
++        uint *cur = reinterpret_cast<uint *>(image.scanLine(i));
++        uint *end = cur + image.width();
++
++        while (cur < end) {
++            ushort v = *cur;
++            *cur = __builtin_bswap32(v);
++            ++cur;
++        }
++    }
++}
++
++// 24-bit byte swap
++static void convertByteSwap24(QImage &image)
++{
++    Q_ASSERT(image.format() == QImage::Format_RGB888);
++
++    for (int i = 0; i < image.height(); i++) {
++        uchar *ptr = image.scanLine(i);
++
++        for (int j = 0; j < image.width(); j += 3) {
++            std::swap(ptr[j], ptr[j + 2]);
++        }
++    }
++}
++
++// Native endian RGB565 to native endian BGR565
++static void convertRgb16ToNeBgr565(QImage &image)
++{
++    Q_ASSERT(image.format() == QImage::Format_RGB16);
++
++    for (int i = 0; i < image.height(); i++) {
++        ushort *cur = reinterpret_cast<ushort *>(image.scanLine(i));
++        ushort *end = cur + image.width();
++
++        while (cur < end) {
++            ushort v = *cur;
++            *cur = ((v << 11) & 0xf800) | ((v >> 11) & 0x1f) | (v & 0x7e0);
++            ++cur;
++        }
++    }
++}
++
++// Big endian RGB555 to big endian BGR555
++static void convertRgb555ToBeBgr555(QImage &image)
++{
++    Q_ASSERT(image.format() == QImage::Format_RGB555);
++
++    for (int i = 0; i < image.height(); i++) {
++        ushort *cur = reinterpret_cast<ushort *>(image.scanLine(i));
++        ushort *end = cur + image.width();
++
++        while (cur < end) {
++            ushort v = *cur;
++            *cur = ((v << 10) & 0x7c00) | ((v >> 10) & 0x1f) | (v & 0x3e0);
++            ++cur;
++        }
++    }
++}
++
++static FramebufferFormat determineFormat(const fb_var_screeninfo &info, int depth)
+ {
+     const fb_bitfield rgba[4] = { info.red, info.green,
+                                   info.blue, info.transp };
+ 
+-    QImage::Format format = QImage::Format_Invalid;
++    FramebufferFormat format{QImage::Format_Invalid, nullptr};
++    bool fallback = false;
+ 
+     switch (depth) {
+     case 32: {
+@@ -172,13 +246,40 @@ static QImage::Format determineFormat(const fb_var_screeninfo &info, int depth)
+                                          {0, 8, 0}, {24, 8, 0}};
+         const fb_bitfield abgr8888[4] = {{0, 8, 0}, {8, 8, 0},
+                                          {16, 8, 0}, {24, 8, 0}};
++        const fb_bitfield bgra8888[4] = {{8, 8, 0}, {16, 8, 0},
++                                         {24, 8, 0}, {0, 8, 0}};
++        const fb_bitfield rgba8888[4] = {{24, 8, 0}, {16, 8, 0},
++                                         {8, 8, 0}, {0, 8, 0}};
++        const fb_bitfield rgbx8888[4] = {{24, 8, 0}, {16, 8, 0},
++                                         {8, 8, 0}, {0, 0, 0}};
+         if (memcmp(rgba, argb8888, 4 * sizeof(fb_bitfield)) == 0) {
+-            format = QImage::Format_ARGB32;
++            // ARGB (finfo) -> ARGB (native endian)
++            format.format = QImage::Format_ARGB32;
+         } else if (memcmp(rgba, argb8888, 3 * sizeof(fb_bitfield)) == 0) {
+-            format = QImage::Format_RGB32;
++            // XRGB (finfo) -> XRGB (native endian)
++            format.format = QImage::Format_RGB32;
++        } else if (memcmp(rgba, abgr8888, 4 * sizeof(fb_bitfield)) == 0) {
++            // ABGR (finfo) -> ABGR (big endian)
++            format.format = QImage::Format_RGBA8888;
++            format.convert = convertByteSwap32;
+         } else if (memcmp(rgba, abgr8888, 3 * sizeof(fb_bitfield)) == 0) {
+-            format = QImage::Format_RGB32;
+-            // pixeltype = BGRPixel;
++            // BGRX (finfo) -> BGRX (native endian)
++            format.format = QImage::Format_RGB32;
++            format.convert = convertByteSwap32;
++        } else if (memcmp(rgba, bgra8888, 4 * sizeof(fb_bitfield)) == 0) {
++            // BGRA (finfo) -> BGRA (native endian)
++            format.format = QImage::Format_ARGB32;
++            format.convert = convertByteSwap32;
++        } else if (memcmp(rgba, rgba8888, 4 * sizeof(fb_bitfield)) == 0) {
++            // RGBA (finfo) -> RGBA (big endian)
++            format.format = QImage::Format_RGBA8888_Premultiplied;
++        } else if (memcmp(rgba, rgbx8888, 4 * sizeof(fb_bitfield)) == 0) {
++            // RGBX (finfo) -> RGBX (big endian)
++            format.format = QImage::Format_RGBX8888;
++        } else {
++            // Assume RGBX (like Android's recovery)
++            format.format = QImage::Format_RGBX8888;
++            fallback = true;
+         }
+         break;
+     }
+@@ -188,10 +289,12 @@ static QImage::Format determineFormat(const fb_var_screeninfo &info, int depth)
+         const fb_bitfield bgr888[4] = {{0, 8, 0}, {8, 8, 0},
+                                        {16, 8, 0}, {0, 0, 0}};
+         if (memcmp(rgba, rgb888, 3 * sizeof(fb_bitfield)) == 0) {
+-            format = QImage::Format_RGB888;
++            // RGB (finfo) -> RGB (big endian)
++            format.format = QImage::Format_RGB888;
+         } else if (memcmp(rgba, bgr888, 3 * sizeof(fb_bitfield)) == 0) {
+-            format = QImage::Format_RGB888;
+-            // pixeltype = BGRPixel;
++            // BGR (finfo) -> BGR (big endian)
++            format.format = QImage::Format_RGB888;
++            format.convert = convertByteSwap24;
+         }
+         break;
+     }
+@@ -199,7 +302,7 @@ static QImage::Format determineFormat(const fb_var_screeninfo &info, int depth)
+         const fb_bitfield rgb666[4] = {{12, 6, 0}, {6, 6, 0},
+                                        {0, 6, 0}, {0, 0, 0}};
+         if (memcmp(rgba, rgb666, 3 * sizeof(fb_bitfield)) == 0)
+-            format = QImage::Format_RGB666;
++            format.format = QImage::Format_RGB666;
+         break;
+     }
+     case 16: {
+@@ -208,10 +311,16 @@ static QImage::Format determineFormat(const fb_var_screeninfo &info, int depth)
+         const fb_bitfield bgr565[4] = {{0, 5, 0}, {5, 6, 0},
+                                        {11, 5, 0}, {0, 0, 0}};
+         if (memcmp(rgba, rgb565, 3 * sizeof(fb_bitfield)) == 0) {
+-            format = QImage::Format_RGB16;
++            // RGB (finfo) -> RGB (native endian)
++            format.format = QImage::Format_RGB16;
+         } else if (memcmp(rgba, bgr565, 3 * sizeof(fb_bitfield)) == 0) {
+-            format = QImage::Format_RGB16;
+-            // pixeltype = BGRPixel;
++            // BGR (finfo) -> BGR (native endian)
++            format.format = QImage::Format_RGB16;
++            format.convert = convertRgb16ToNeBgr565;
++        } else {
++            // Assume RGB565 (like Android's recovery)
++            format.format = QImage::Format_RGB16;
++            fallback = true;
+         }
+         break;
+     }
+@@ -221,10 +330,12 @@ static QImage::Format determineFormat(const fb_var_screeninfo &info, int depth)
+         const fb_bitfield bgr1555[4] = {{0, 5, 0}, {5, 5, 0},
+                                         {10, 5, 0}, {15, 1, 0}};
+         if (memcmp(rgba, rgb1555, 3 * sizeof(fb_bitfield)) == 0) {
+-            format = QImage::Format_RGB555;
++            // ARGB (finfo) -> RGB (big endian)
++            format.format = QImage::Format_RGB555;
+         } else if (memcmp(rgba, bgr1555, 3 * sizeof(fb_bitfield)) == 0) {
+-            format = QImage::Format_RGB555;
+-            // pixeltype = BGRPixel;
++            // ABGR (finfo) -> BGR (big endian)
++            format.format = QImage::Format_RGB555;
++            format.convert = convertRgb555ToBeBgr555;
+         }
+         break;
+     }
+@@ -232,18 +343,22 @@ static QImage::Format determineFormat(const fb_var_screeninfo &info, int depth)
+         const fb_bitfield rgb444[4] = {{8, 4, 0}, {4, 4, 0},
+                                        {0, 4, 0}, {0, 0, 0}};
+         if (memcmp(rgba, rgb444, 3 * sizeof(fb_bitfield)) == 0)
+-            format = QImage::Format_RGB444;
++            format.format = QImage::Format_RGB444;
+         break;
+     }
+     case 8:
+         break;
+     case 1:
+-        format = QImage::Format_Mono; //###: LSB???
++        format.format = QImage::Format_Mono; //###: LSB???
+         break;
+     default:
+         break;
+     }
+ 
++    qCDebug(lcQpaLinuxFb) << "Format:" << format.format;
++    qCDebug(lcQpaLinuxFb) << "Conversion required:" << !!format.convert;
++    qCDebug(lcQpaLinuxFb) << "Fallback:" << fallback;
++
+     return format;
+ }
+ 
+@@ -288,8 +403,81 @@ static void blankScreen(int fd, bool on)
+     ioctl(fd, FBIOBLANK, on ? VESA_POWERDOWN : VESA_NO_BLANKING);
+ }
+ 
++static void debugLogFScreenInfo(const fb_fix_screeninfo &fi)
++{
++    char id[sizeof(fi.id) + 1] = {0};
++    memcpy(id, fi.id, sizeof(fi.id));
++
++    qCDebug(lcQpaLinuxFb, "fb_fix_screeninfo:");
++    qCDebug(lcQpaLinuxFb) << "- id:          " << id;
++    qCDebug(lcQpaLinuxFb) << "- smem_start:  " << hex << fi.smem_start;
++    qCDebug(lcQpaLinuxFb) << "- smem_len:    " << fi.smem_len;
++    qCDebug(lcQpaLinuxFb) << "- type:        " << fi.type;
++    qCDebug(lcQpaLinuxFb) << "- type_aux:    " << fi.type_aux;
++    qCDebug(lcQpaLinuxFb) << "- visual:      " << fi.visual;
++    qCDebug(lcQpaLinuxFb) << "- xpanstep:    " << fi.xpanstep;
++    qCDebug(lcQpaLinuxFb) << "- ypanstep:    " << fi.ypanstep;
++    qCDebug(lcQpaLinuxFb) << "- ywrapstep:   " << fi.ywrapstep;
++    qCDebug(lcQpaLinuxFb) << "- line_length: " << fi.line_length;
++    qCDebug(lcQpaLinuxFb) << "- mmio_start:  " << hex << fi.mmio_start;
++    qCDebug(lcQpaLinuxFb) << "- mmio_len:    " << fi.mmio_len;
++    qCDebug(lcQpaLinuxFb) << "- accel:       " << fi.accel;
++    qCDebug(lcQpaLinuxFb) << "- capabilities:" << fi.capabilities;
++    qCDebug(lcQpaLinuxFb) << "- reserved[0]: " << hex << fi.reserved[0];
++    qCDebug(lcQpaLinuxFb) << "- reserved[1]: " << hex << fi.reserved[1];
++}
++
++static void debugLogVScreenInfo(const fb_var_screeninfo &vi)
++{
++    qCDebug(lcQpaLinuxFb, "fb_var_screeninfo:");
++    qCDebug(lcQpaLinuxFb) << "- xres:          " << vi.xres;
++    qCDebug(lcQpaLinuxFb) << "- yres:          " << vi.yres;
++    qCDebug(lcQpaLinuxFb) << "- xres_virtual:  " << vi.xres_virtual;
++    qCDebug(lcQpaLinuxFb) << "- yres_virtual:  " << vi.yres_virtual;
++    qCDebug(lcQpaLinuxFb) << "- xoffset:       " << vi.xoffset;
++    qCDebug(lcQpaLinuxFb) << "- yoffset:       " << vi.yoffset;
++    qCDebug(lcQpaLinuxFb) << "- bits_per_pixel:" << vi.bits_per_pixel;
++    qCDebug(lcQpaLinuxFb) << "- grayscale:     " << vi.grayscale;
++    qCDebug(lcQpaLinuxFb) << "- red:";
++    qCDebug(lcQpaLinuxFb) << "  - offset:      " << vi.red.offset;
++    qCDebug(lcQpaLinuxFb) << "  - length:      " << vi.red.length;
++    qCDebug(lcQpaLinuxFb) << "  - msb_right:   " << vi.red.msb_right;
++    qCDebug(lcQpaLinuxFb) << "- green:";
++    qCDebug(lcQpaLinuxFb) << "  - offset:      " << vi.green.offset;
++    qCDebug(lcQpaLinuxFb) << "  - length:      " << vi.green.length;
++    qCDebug(lcQpaLinuxFb) << "  - msb_right:   " << vi.green.msb_right;
++    qCDebug(lcQpaLinuxFb) << "- blue:";
++    qCDebug(lcQpaLinuxFb) << "  - offset:      " << vi.blue.offset;
++    qCDebug(lcQpaLinuxFb) << "  - length:      " << vi.blue.length;
++    qCDebug(lcQpaLinuxFb) << "  - msb_right:   " << vi.blue.msb_right;
++    qCDebug(lcQpaLinuxFb) << "- transp:";
++    qCDebug(lcQpaLinuxFb) << "  - offset:      " << vi.transp.offset;
++    qCDebug(lcQpaLinuxFb) << "  - length:      " << vi.transp.length;
++    qCDebug(lcQpaLinuxFb) << "  - msb_right:   " << vi.transp.msb_right;
++    qCDebug(lcQpaLinuxFb) << "- nonstd:        " << vi.nonstd;
++    qCDebug(lcQpaLinuxFb) << "- activate:      " << vi.activate;
++    qCDebug(lcQpaLinuxFb) << "- height:        " << vi.height;
++    qCDebug(lcQpaLinuxFb) << "- width:         " << vi.width;
++    qCDebug(lcQpaLinuxFb) << "- accel_flags:   " << vi.accel_flags;
++    qCDebug(lcQpaLinuxFb) << "- pixclock:      " << vi.pixclock;
++    qCDebug(lcQpaLinuxFb) << "- left_margin:   " << vi.left_margin;
++    qCDebug(lcQpaLinuxFb) << "- right_margin:  " << vi.right_margin;
++    qCDebug(lcQpaLinuxFb) << "- upper_margin:  " << vi.upper_margin;
++    qCDebug(lcQpaLinuxFb) << "- lower_margin:  " << vi.lower_margin;
++    qCDebug(lcQpaLinuxFb) << "- hsync_len:     " << vi.hsync_len;
++    qCDebug(lcQpaLinuxFb) << "- vsync_len:     " << vi.vsync_len;
++    qCDebug(lcQpaLinuxFb) << "- sync:          " << vi.sync;
++    qCDebug(lcQpaLinuxFb) << "- vmode:         " << vi.vmode;
++    qCDebug(lcQpaLinuxFb) << "- rotate:        " << vi.rotate;
++    qCDebug(lcQpaLinuxFb) << "- colorspace:    " << vi.colorspace;
++    qCDebug(lcQpaLinuxFb) << "- reserved[0]:   " << hex << vi.reserved[0];
++    qCDebug(lcQpaLinuxFb) << "- reserved[1]:   " << hex << vi.reserved[1];
++    qCDebug(lcQpaLinuxFb) << "- reserved[2]:   " << hex << vi.reserved[2];
++    qCDebug(lcQpaLinuxFb) << "- reserved[3]:   " << hex << vi.reserved[3];
++}
++
+ QLinuxFbScreen::QLinuxFbScreen(const QStringList &args)
+-    : mArgs(args), mFbFd(-1), mTtyFd(-1), mBlitter(0)
++    : mArgs(args), mFbFd(-1), mTtyFd(-1), mBlitter(0), mConvert(nullptr)
+ {
+     mMmap.data = 0;
+ }
+@@ -366,16 +554,22 @@ bool QLinuxFbScreen::initialize()
+         return false;
+     }
+ 
++    debugLogFScreenInfo(finfo);
++
+     if (ioctl(mFbFd, FBIOGET_VSCREENINFO, &vinfo)) {
+         qErrnoWarning(errno, "Error reading variable information");
+         return false;
+     }
+ 
++    debugLogVScreenInfo(vinfo);
++
+     mDepth = determineDepth(vinfo);
+     mBytesPerLine = finfo.line_length;
+     QRect geometry = determineGeometry(vinfo, userGeometry);
+     mGeometry = QRect(QPoint(0, 0), geometry.size());
+-    mFormat = determineFormat(vinfo, mDepth);
++    FramebufferFormat format = determineFormat(vinfo, mDepth);
++    mFormat = format.format;
++    mConvert = format.convert;
+     mPhysicalSize = determinePhysicalSize(vinfo, userMmSize, geometry.size());
+ 
+     bool ok;
+@@ -431,6 +625,11 @@ QRegion QLinuxFbScreen::doRedraw()
+         mBlitter = new QPainter(&mFbScreenImage);
+ 
+     mBlitter->setCompositionMode(QPainter::CompositionMode_Source);
++
++    if (mConvert) {
++        mConvert(mScreenImage);
++    }
++
+     for (const QRect &rect : touched)
+         mBlitter->drawImage(rect, mScreenImage, rect);
+ 
+diff --git a/src/plugins/platforms/linuxfb/qlinuxfbscreen.h b/src/plugins/platforms/linuxfb/qlinuxfbscreen.h
+index a02abe46d2..251e8a6cf6 100644
+--- a/src/plugins/platforms/linuxfb/qlinuxfbscreen.h
++++ b/src/plugins/platforms/linuxfb/qlinuxfbscreen.h
+@@ -51,6 +51,8 @@ Q_DECLARE_LOGGING_CATEGORY(lcQpaLinuxFb)
+ class QPainter;
+ class QFbCursor;
+ 
++using QLinuxFbConversionFn = void (*)(QImage &image);
++
+ class QLinuxFbScreen : public QFbScreen
+ {
+     Q_OBJECT
+@@ -81,6 +83,7 @@ private:
+     } mMmap;
+ 
+     QPainter *mBlitter;
++    QLinuxFbConversionFn mConvert;
+ 
+     qreal mPhysicalDpi;
+     qreal mReferenceDpi;
+-- 
+2.20.1
+

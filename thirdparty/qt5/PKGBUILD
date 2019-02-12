@@ -1,0 +1,110 @@
+# Copyright (C) 2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=qt5
+pkgver=5.12.1
+pkgrel=1
+pkgdesc='A cross-platform application and UI framework'
+arch=(armv7 aarch64 x86 x86_64)
+url='https://www.qt.io'
+license=(GPL3 LGPL3 FDL custom)
+source=("https://download.qt.io/official_releases/qt/${pkgver%.*}/${pkgver}/single/qt-everywhere-src-${pkgver}.tar.xz"
+        0001-Android-doesn-t-have-sys-kd.h.patch
+        0002-Enable-LFS-support-on-Android.patch
+        0003-Enable-android-embedded.patch
+        0004-linuxfb-Add-pixelDensity-for-HiDPI-support.patch
+        0005-linuxfb-Add-support-for-several-pixel-formats-used-b.patch)
+# https://download.qt.io/official_releases/qt/5.12/5.12.1/single/md5sums.txt
+md5sums=(6a37466c8c40e87d4a19c3f286ec2542
+         324adb31392fb3c88e3de7f23e6e1834
+         195ab2c4525c82b57858916acff43aa5
+         9ac90bc18976a71a2bafdf2a1603b1bd
+         d927813ef9904586c04af140c705647c
+         8c6dad566a65deb3bf46c72056c17a54)
+
+prepare() {
+    cd "qt-everywhere-src-${pkgver}"
+
+    pushd qtbase
+    patch -p1 -i ../../0001-Android-doesn-t-have-sys-kd.h.patch
+    patch -p1 -i ../../0002-Enable-LFS-support-on-Android.patch
+    patch -p1 -i ../../0003-Enable-android-embedded.patch
+    patch -p1 -i ../../0004-linuxfb-Add-pixelDensity-for-HiDPI-support.patch
+    patch -p1 -i ../../0005-linuxfb-Add-support-for-several-pixel-formats-used-b.patch
+    popd
+
+    # Only build what we use
+    local modules=(
+        qtbase
+        qtdeclarative
+        qtgraphicaleffects
+        qtquickcontrols2
+    )
+
+    sed -i "1iQT_BUILD_MODULES = ${modules[*]}" qt.pro
+}
+
+build() {
+    cd "qt-everywhere-src-${pkgver}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    local args=(
+        # Licensing
+        -opensource
+        -confirm-license
+        # Install options
+        -prefix /
+        # Build options
+        -ccache
+        -gc-binaries
+        -no-rpath
+        -no-shared
+        -static
+        # Android cross-compilation
+        -android-sdk "${ANDROID_HOME}"
+        -android-ndk "${ANDROID_NDK_HOME}"
+        -android-ndk-platform android-28
+        -android-ndk-host linux-x86_64
+        -android-arch "${abi}"
+        -android-toolchain-version 4.9
+        -xplatform android-clang
+        # Components
+        -nomake tests
+        -nomake examples
+        # Android build options
+        -no-appstore-compliant
+        # OpenGL
+        -no-opengl
+        # Image formats
+        -no-gif
+        -no-ico
+        -no-libjpeg
+        # Platform backends
+        -linuxfb
+        # Input backends
+        -evdev
+    )
+
+    ./configure "${args[@]}"
+    make
+}
+
+package() {
+    cd "qt-everywhere-src-${pkgver}"
+
+    make install INSTALL_ROOT="${pkgdir}"
+}
