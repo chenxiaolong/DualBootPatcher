@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -26,9 +26,9 @@
 
 #include "mbcommon/common.h"
 #include "mbcommon/flags.h"
+#include "mbcommon/outcome.h"
 #include "mbdevice/device.h"
 
-#include "util/legacy_property_service.h"
 #include "util/roms.h"
 
 namespace mb
@@ -87,7 +87,6 @@ protected:
     int _output_fd;
     InstallerFlags _flags;
     bool _passthrough;
-    unsigned long _api_ver;
 
     device::Device _device;
     std::string _detected_device;
@@ -103,8 +102,8 @@ protected:
     std::unordered_map<std::string, std::string> _chroot_prop;
     std::unordered_map<std::string, std::string> _cached_prop;
 
+    bool _use_aroma;
     bool _use_legacy_props;
-    LegacyPropertyService _legacy_prop_svc;
 
     std::string _temp_image_path;
     bool _has_block_image;
@@ -116,12 +115,12 @@ protected:
 
     std::string in_chroot(const std::string &path) const;
 
-    static bool is_aroma(const std::string &path);
-    static bool is_legacy_props(const std::string &path);
-
 
 private:
     bool _ran;
+
+    static oc::result<bool> is_aroma(const std::string &path);
+    static oc::result<bool> is_legacy_props(const std::string &path);
 
     void output_cb(std::string_view line, bool error);
     int run_command(const std::vector<std::string> &argv);

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "boot/property_service.h"
+#include "util/property_service.h"
 
 #include <chrono>
 #include <string_view>
@@ -50,7 +50,7 @@
 
 #include "util/multiboot.h"
 
-#define LOG_TAG "mbtool/boot/property_service"
+#define LOG_TAG "mbtool/util/property_service"
 
 class SocketConnection
 {

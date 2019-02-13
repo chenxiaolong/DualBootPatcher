@@ -232,7 +232,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
 
 Installer::ProceedState RomInstaller::on_pre_install()
 {
-    if (is_aroma(_temp + "/updater")) {
+    if (_use_aroma) {
         display_msg("ZIP files using the AROMA installer can only be flashed "
                     "from recovery");
         return ProceedState::Cancel;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "mbcommon/outcome.h"
@@ -31,6 +32,8 @@ oc::result<void> create_empty_file(const std::string &path);
 oc::result<std::string> file_first_line(const std::string &path);
 oc::result<void> file_write_data(const std::string &path,
                                  const void *data, size_t size);
+oc::result<void> file_write_string(const std::string &path,
+                                   std::string_view contents);
 oc::result<bool> file_find_one_of(const std::string &path,
                                   const std::vector<std::string> &items);
 oc::result<std::string> file_read_all(const std::string &path);
