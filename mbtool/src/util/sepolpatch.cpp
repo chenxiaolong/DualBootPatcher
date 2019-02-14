@@ -271,21 +271,56 @@ SELinuxResult selinux_raw_set_attribute(policydb_t *pdb,
         changed = true;
     }
 
-    // Update MLS constraints
-
-    // Constraints are applied per class
-    // See constraint_expr_to_string() in libsepol/src/module_to_cil.c
-    for (uint32_t class_val = 1; class_val <= pdb->p_classes.nprim;
-            ++class_val) {
+    // As of 5.0-rc6, the kernel doesn't use expr->type_names in
+    // constraint_expr_eval(), even if pdb->policyvers >=
+    // POLICYDB_VERSION_CONSTRAINT_NAMES. This loop will check every constraint
+    // and toggle the bit corresponding to `type_val` in expr->names if the bit
+    // corresponding to `attr_val` is toggled in expr->type_names->types. Note
+    // that this only works if the source policy version is new enough. Older
+    // policies do not retain attribute information in the constraints.
+    for (uint32_t class_val = 1; class_val <= pdb->p_classes.nprim; ++class_val) {
         class_datum_t *clazz = pdb->class_val_to_struct[class_val - 1];
 
-        for (constraint_node_t *node = clazz->constraints; node;
-                node = node->next) {
-            for (constraint_expr_t *expr = node->expr; expr;
-                    expr = expr->next) {
-                if (expr->expr_type == CEXPR_NAMES && ebitmap_get_bit(
-                        &expr->type_names->types, attr_val - 1)) {
+        for (constraint_node_t *node = clazz->constraints; node; node = node->next) {
+            for (constraint_expr_t *expr = node->expr; expr; expr = expr->next) {
+                if (expr->expr_type == CEXPR_NAMES && expr->attr & CEXPR_TYPE
+                        && ebitmap_get_bit(&expr->type_names->types, attr_val - 1)) {
                     if (ebitmap_set_bit(&expr->names, type_val - 1, 1) < 0) {
+                        return SELinuxResult::Error;
+                    }
+
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    return changed ? SELinuxResult::Changed : SELinuxResult::Unchanged;
+}
+
+/*!
+ * \brief Copy constraints that affect one type to affect another type
+ *
+ * \param pdb Policy object
+ * \param source_type_val Value of source type (NOT attribute)
+ * \param target_type_val Value of target type (NOT attribute)
+ *
+ * \return Whether any constraint was updated
+ */
+SELinuxResult selinux_raw_copy_constraints(policydb_t *pdb,
+                                           uint16_t source_type_val,
+                                           uint16_t target_type_val)
+{
+    bool changed = false;
+
+    for (uint32_t class_val = 1; class_val <= pdb->p_classes.nprim; ++class_val) {
+        class_datum_t *clazz = pdb->class_val_to_struct[class_val - 1];
+
+        for (constraint_node_t *node = clazz->constraints; node; node = node->next) {
+            for (constraint_expr_t *expr = node->expr; expr; expr = expr->next) {
+                if (expr->expr_type == CEXPR_NAMES && expr->attr & CEXPR_TYPE
+                        && ebitmap_get_bit(&expr->names, source_type_val - 1)) {
+                    if (ebitmap_set_bit(&expr->names, target_type_val - 1, 1) < 0) {
                         return SELinuxResult::Error;
                     }
 
@@ -937,6 +972,44 @@ static bool copy_attributes(policydb_t *pdb,
     return true;
 }
 
+static bool copy_constraints(policydb_t *pdb,
+                             const char *source_type,
+                             const char *target_type)
+{
+    if (strcmp(source_type, target_type) == 0) {
+        LOGE("Source and target types are the same: %s", source_type);
+        return false;
+    }
+
+    auto source = find_type(pdb, source_type);
+    if (!source) {
+        LOGE("Source type %s does not exist", source_type);
+        return false;
+    }
+
+    auto target = find_type(pdb, target_type);
+    if (!target) {
+        LOGE("Target type %s does not exist", target_type);
+        return false;
+    }
+
+    auto ret = selinux_raw_copy_constraints(
+            pdb, static_cast<uint16_t>(source->s.value),
+            static_cast<uint16_t>(target->s.value));
+    switch (ret) {
+    case SELinuxResult::Changed:
+    case SELinuxResult::Unchanged:
+        break;
+    case SELinuxResult::Error:
+        LOGE("Failed to copy constraints for: %s -> %s",
+             pdb->p_type_val_to_name[source->s.value - 1],
+             pdb->p_type_val_to_name[target->s.value - 1]);
+        return false;
+    }
+
+    return true;
+}
+
 static bool copy_avtab_rules(policydb_t *pdb,
                              const char *source_type,
                              const char *target_type)
@@ -1029,6 +1102,8 @@ static bool fix_data_media_rules(policydb_t *pdb)
         return errno == ENOENT;
     }
 
+    LOGV("Context of %s: %s", INTERNAL_STORAGE_ROOT, context.value().c_str());
+
     std::vector<std::string> pieces = split(context.value(), ':');
     if (pieces.size() < 3) {
         LOGE("%s: Malformed context string: %s",
@@ -1043,15 +1118,16 @@ static bool fix_data_media_rules(policydb_t *pdb)
         if (!find_type(pdb, type.c_str())) {
             LOGV("Type %s does not exist. Creating it", type.c_str());
             ff(selinux_create_type(pdb, type.c_str()) != SELinuxResult::Error);
-            ff(copy_attributes(pdb, expected_type, type.c_str()));
         }
 
-        LOGV("Copying %s rules to %s because of improper %s SELinux label",
-             expected_type, type.c_str(), INTERNAL_STORAGE_ROOT);
-        ff(copy_avtab_rules(pdb, expected_type, type.c_str()));
+        LOGV("Copying %s attributes to %s", expected_type, type.c_str());
+        ff(copy_attributes(pdb, expected_type, type.c_str()));
 
-        // Required for MLS on Android 7.1
-        ff(selinux_set_attribute(pdb, type.c_str(), "mlstrustedobject"));
+        LOGV("Copying %s constraints to %s", expected_type, type.c_str());
+        ff(copy_constraints(pdb, expected_type, type.c_str()));
+
+        LOGV("Copying %s avtab rules to %s", expected_type, type.c_str());
+        ff(copy_avtab_rules(pdb, expected_type, type.c_str()));
     }
 
     return true;

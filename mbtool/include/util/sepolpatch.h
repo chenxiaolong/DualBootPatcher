@@ -57,6 +57,9 @@ SELinuxResult selinux_raw_set_permissive(policydb_t *pdb,
 SELinuxResult selinux_raw_set_attribute(policydb_t *pdb,
                                         uint16_t type_val,
                                         uint16_t attr_val);
+SELinuxResult selinux_raw_copy_constraints(policydb_t *pdb,
+                                           uint16_t source_type_val,
+                                           uint16_t target_type_val);
 SELinuxResult selinux_raw_add_to_role(policydb_t *pdb,
                                       uint16_t role_val,
                                       uint16_t type_val);
