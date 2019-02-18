@@ -53,9 +53,9 @@
     external_sd:
     - /dev/block/mmcblk1p1
     
-     extra:
+    extra:
      - /dev/block/platform/soc.0/7824900.sdhci
-     -
+     
     
     #external_sd |  | Size: 0MB Used: 0MB Free: 0MB Backup Size: 0MB
    #Flags: Can_Be_Mounted Can_Be_Wiped Wipe_Available_in_GUI Removable Is_Storage 
@@ -83,7 +83,7 @@
     pixel_format: RGBA_8888
 
     force_pixel_format: NONE
-    GGL_PIXEL_FORMAT_RGBA_8888
+    
     
     brightness_path: '/sys/class/leds/lcd-backlight/brightness'
 
