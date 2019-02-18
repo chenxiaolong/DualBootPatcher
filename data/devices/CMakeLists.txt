@@ -20,6 +20,7 @@ set(files
     doogee.yml
     elephone.yml
     energy_sistem.yml
+    fly.yml
     ginzzu.yml
     gionee.yml
     google.yml

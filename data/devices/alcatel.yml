@@ -43,6 +43,7 @@
   id: Pixi4-5
   codenames:
     - Pixi4-5
+    - PIXI4-5
     - pixi4-5
     - pixi4_5
     - 5010G
@@ -121,12 +122,19 @@
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
-- name: Alcatel Pop 3(5)
-  id: pixi3_5
+- name: Alcatel POP 3(5) PIXI3-5
+  id: PIXI3-5
   codenames:
     - pixi3_5
+    - PIXI3-5
+    - PIXI3_5
+    - 5015d
+    - 5015a
+    - 5015e
+    - Alcatel 5015D
     - '5015'
     - 5015A
+    - TCL 5015D
     - 5015D
     - 5015E
     - 5015X
@@ -138,38 +146,28 @@
   block_devs:
     base_dirs:
       - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name
     system:
       - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/system
       - /dev/block/mmcblk0p20
     cache:
       - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/cache
       - /dev/block/mmcblk0p21
     data:
       - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/userdata
       - /dev/block/mmcblk0p22
     boot:
       - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/boot
       - /dev/block/mmcblk0p08
     recovery:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/recovery
       - /dev/block/mmcblk0p09
     extra:
       - /dev/block/platform/mtk-msdc.0/by-name/custpack
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/vendor
       - /dev/block/mmcblk0p13
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_PREFER_LCD_BACKLIGHT
-    pixel_format: DEFAULT
-    force_pixel_format: NONE
-    overscan_percent: 0
-    default_x_offset: 0
-    default_y_offset: 0
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
-    max_brightness: 255
-    default_brightness: 128
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
