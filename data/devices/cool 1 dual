@@ -50,26 +50,13 @@
     - /dev/block/bootdevice/by-name/system
     - /dev/block/mmcblk0p27
     
-    external_sd:
-    - /dev/block/mmcblk1p1
+  
     
     extra:
      - /dev/block/platform/soc.0/7824900.sdhci
      
     
-    #external_sd |  | Size: 0MB Used: 0MB Free: 0MB Backup Size: 0MB
-   #Flags: Can_Be_Mounted Can_Be_Wiped Wipe_Available_in_GUI Removable Is_Storage 
-  # Primary_Block_Device: /dev/block/mmcblk1p1
-  # Display_Name: external_sd
-  # Storage_Name: external_sd
-  # Backup_Path: /external_sd
-  # Backup_Name: external_sd
-  # Backup_Display_Name: external_sd
-  #  Storage_Path: /external_sd
- #  Current_File_System: vfat
- #  Fstab_File_System: vfat
- #  Backup_Method: files
- #  MTP_Storage_ID: 65538
+    
 
   boot_ui:
     
