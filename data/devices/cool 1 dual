@@ -22,6 +22,7 @@
       - /dev/block/bootdevice/by-name
       - /dev/block/dm-0
       - /dev/block/platform/soc.0/7824900.sdhci
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
     system:
       - /dev/block/bootdevice/by-name/system
       - /dev/block/mmcblk0p27
@@ -50,10 +51,13 @@
     - /dev/block/bootdevice/by-name/system
     - /dev/block/mmcblk0p27
     
-  
+    external_sd:
+    - /dev/block/mmcblk1p1
     
     extra:
      - /dev/block/platform/soc.0/7824900.sdhci
+     - /dev/block/platform/soc.0/7824900.sdhci/by-name
+     - /dev/block/bootdevice/by-name/config
      
     
     
