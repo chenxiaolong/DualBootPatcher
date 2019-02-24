@@ -48,7 +48,6 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
     include(cmake/dependencies/lz4.cmake)
     include(cmake/dependencies/minizip.cmake)
     include(cmake/dependencies/qt5.cmake)
-    include(cmake/dependencies/safe-iop.cmake)
     include(cmake/dependencies/zlib.cmake)
 
     set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_OLD})
