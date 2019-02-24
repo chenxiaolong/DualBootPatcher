@@ -33,15 +33,13 @@ static void reboot_usage(FILE *stream)
             "Usage: reboot [OPTION...]\n\n"
             "Options:\n"
             "  -a, --argument <arg>\n"
-            "                   Reboot argument (init and direct reboot only)\n"
-            "  -c, --confirm    Ask for user confirmation before reboot (framework reboot only)\n"
+            "                   Reboot argument\n"
             "  -m, --method <method>\n"
-            "                   Reboot method (framework, init, or direct)\n"
+            "                   Reboot method (init or direct)\n"
             "                   (Default: init)\n"
             "  -h, --help       Display this help message\n"
             "\n"
             "Reboot methods:\n"
-            "  - framework: Use Android framework to reboot. Behaves the same as the power menu.\n"
             "  - init: Use init (pid 1) to reboot. Same as \"adb reboot [<arg>]\".\n"
             "  - direct: Reboot directly by remounting filesystems as read-only and issuing the reboot syscall.\n");
 }
@@ -51,15 +49,12 @@ static void shutdown_usage(FILE *stream)
     fprintf(stream,
             "Usage: shutdown [OPTION...]\n\n"
             "Options:\n"
-            "  -c, --confirm    Ask for user confirmation before shutting down\n"
-            "                   (framework shut down only)\n"
             "  -m, --method <method>\n"
-            "                   Shut down method (framework, init, or direct)\n"
+            "                   Shut down method (init or direct)\n"
             "                   (Default: init)\n"
             "  -h, --help       Display this help message\n"
             "\n"
             "Reboot types:\n"
-            "  - framework: Use Android framework to shut down. Behaves the same as the power menu.\n"
             "  - init: Use init (pid 1) to shut down. Same as \"adb reboot -p\".\n"
             "  - direct: Shut down directly by remounting filesystems as read-only and issuing the reboot syscall.\n");
 }
@@ -68,10 +63,9 @@ int reboot_main(int argc, char *argv[])
 {
     int opt;
 
-    static const char *short_options = "a:cm:h";
+    static const char *short_options = "a:m:h";
     static struct option long_options[] = {
         {"argument", required_argument, 0, 'a'},
-        {"confirm",  no_argument,       0, 'c'},
         {"method",   required_argument, 0, 'm'},
         {"help",     no_argument,       0, 'h'},
         {0, 0, 0, 0}
@@ -110,19 +104,9 @@ int reboot_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!argument.empty() && method == "framework") {
-        fprintf(stderr, "Reboot arguments are not supported for framework reboots\n");
-        return EXIT_FAILURE;
-    } else if (confirm && method != "framework") {
-        fprintf(stderr, "Reboot confirmation is only supported for framework reboots\n");
-        return EXIT_FAILURE;
-    }
-
     bool ret;
 
-    if (method == "framework") {
-        ret = util::reboot_via_framework(confirm);
-    } else if (method == "init") {
+    if (method == "init") {
         ret = util::reboot_via_init(argument);
     } else if (method == "direct") {
         ret = util::reboot_via_syscall(argument);
@@ -138,9 +122,8 @@ int shutdown_main(int argc, char *argv[])
 {
     int opt;
 
-    static const char *short_options = "cm:h";
+    static const char *short_options = "m:h";
     static struct option long_options[] = {
-        {"confirm",  no_argument,       0, 'c'},
         {"method",   required_argument, 0, 'm'},
         {"help",     no_argument,       0, 'h'},
         {0, 0, 0, 0}
@@ -148,15 +131,11 @@ int shutdown_main(int argc, char *argv[])
 
     int long_index = 0;
 
-    bool confirm = false;
     std::string method;
 
     while ((opt = getopt_long(argc, argv, short_options,
                               long_options, &long_index)) != -1) {
         switch (opt) {
-        case 'c':
-            confirm = true;
-            break;
         case 'm':
             method = optarg;
             break;
@@ -175,16 +154,9 @@ int shutdown_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (confirm && method != "framework") {
-        fprintf(stderr, "Shutdown confirmation is only supported for framework shutdowns\n");
-        return EXIT_FAILURE;
-    }
-
     bool ret;
 
-    if (method == "framework") {
-        ret = util::shutdown_via_framework(confirm);
-    } else if (method == "init") {
+    if (method == "init") {
         ret = util::shutdown_via_init();
     } else if (method == "direct") {
         ret = util::shutdown_via_syscall();

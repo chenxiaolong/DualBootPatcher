@@ -1148,29 +1148,6 @@ static bool create_mbtool_types(policydb_t *pdb)
         //"dyntransition",
     }));
 
-    // Allow zygote to write to our stdout pipe when rebooting
-    ff(add_rules(pdb, "zygote", "init", "fifo_file", { "write" }));
-
-    // Allow rebooting via the android.intent.action.REBOOT intent
-    if (find_type(pdb, "activity_service")) {
-        ff(add_rules(pdb, "zygote", "activity_service", "service_manager", { "find" }));
-    }
-    if (find_type(pdb, "system_server")) {
-        ff(add_rules(pdb, "zygote", "system_server", "binder", { "call" }));
-    }
-
-    ff(add_rules(pdb, "zygote", "init", "unix_stream_socket", { "read", "write" }));
-    ff(add_rules(pdb, "zygote", "servicemanager", "binder", { "call" }));
-
-    ff(add_rules(pdb, "servicemanager", "mb_exec", "binder", { "transfer" }));
-    ff(add_rules(pdb, "servicemanager", "mb_exec", "dir", { "search" }));
-    ff(add_rules(pdb, "servicemanager", "mb_exec", "file", { "open", "read" }));
-    ff(add_rules(pdb, "servicemanager", "mb_exec", "process", { "getattr" }));
-    ff(add_rules(pdb, "servicemanager", "zygote", "dir", { "search" }));
-    ff(add_rules(pdb, "servicemanager", "zygote", "file", { "open" }));
-    ff(add_rules(pdb, "servicemanager", "zygote", "file", { "read" }));
-    ff(add_rules(pdb, "servicemanager", "zygote", "process", { "getattr" }));
-
     // For in-app flashing
     ff(add_rules(pdb, "rootfs", "tmpfs", "filesystem", { "associate" }));
     ff(add_rules(pdb, "tmpfs",  "rootfs", "filesystem", { "associate" }));
