@@ -1,9 +1,0 @@
-namespace mbtool.daemon.v3;
-
-table CryptoDecryptRequest {
-    password : string (deprecated);
-}
-
-table CryptoDecryptResponse {
-    success : bool (deprecated);
-}

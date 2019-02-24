@@ -1,9 +1,0 @@
-namespace mbtool.daemon.v3;
-
-table MbGetBootedRomIdRequest {
-    // No parameters
-}
-
-table MbGetBootedRomIdResponse {
-    rom_id : string;
-}
