@@ -61,8 +61,6 @@ foreach(variant ${variants})
         src/device.cpp
         src/json.cpp
         src/schema.cpp
-        src/capi/device.cpp
-        src/capi/json.cpp
         ${generated_dir}/schemas_gen.cpp
     )
 
@@ -115,7 +113,6 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/main.cpp
         # Tests
         tests/test_device.cpp
-        tests/test_flags.cpp
         tests/test_json.cpp
     )
 
