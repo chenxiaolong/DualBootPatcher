@@ -51,7 +51,6 @@ foreach(variant ${variants})
     add_library(
         ${lib_target}
         ${uvariant}
-        src/capi/util.cpp
         src/common.cpp
         src/error.cpp
         src/error_code.cpp
