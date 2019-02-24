@@ -121,6 +121,7 @@ if(MBP_TOP_LEVEL_BUILD)
         )
 
         set(result_files
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/app
             ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool
             ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool_recovery
             ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/odinupdater
