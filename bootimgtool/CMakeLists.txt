@@ -27,6 +27,7 @@ foreach(variant ${variants})
     # Set binary name
     set_target_properties(${bin_target} PROPERTIES OUTPUT_NAME bootimgtool)
 
+    # Link dependencies
     target_link_libraries(
         ${bin_target}
         interface.global.CXXVersion
@@ -37,18 +38,7 @@ foreach(variant ${variants})
         rapidjson
     )
 
-    # Link dependencies
-    if(${variant} STREQUAL shared)
-        # Set rpath for portable build
-        if (${MBP_PORTABLE})
-            set_target_properties(
-                ${bin_target}
-                PROPERTIES
-                BUILD_WITH_INSTALL_RPATH OFF
-                INSTALL_RPATH "\$ORIGIN/lib"
-            )
-        endif()
-    elseif(${variant} STREQUAL static)
+    if(${variant} STREQUAL static)
         unix_link_executable_statically(${bin_target})
     endif()
 

@@ -9,8 +9,6 @@
     * [`MBP_ENABLE_QEMU`](#mbp_enable_qemu)
 * [Signing](#signing)
     * [`MBP_SIGN_CONFIG_PATH`](#mbp_sign_config_path)
-* [Desktop options](#desktop-options)
-    * [`MBP_PORTABLE`](#mbp_portable)
 * [Prebuilts paths](#prebuilts-paths)
     * [`MBP_PREBUILTS_DIR`](#mbp_prebuilts_dir)
     * [`MBP_PREBUILTS_BINARY_DIR`](#mbp_prebuilts_binary_dir)
@@ -139,27 +137,6 @@ Path to the signing config file containing the keystore path, keystore passphras
 ##### Required:
 
 Only in non-debug builds.
-
-
-## Desktop options
-
-#### `MBP_PORTABLE`
-
-##### Description:
-
-If set to true, the application will be built to be self-contained. The path to the `data` directory will be a relative path. On Linux, the RPATH value will be set to a relative path so the linker can find the libraries. Also, on Linux, the icon and desktop file will not be included in the resulting archive.
-
-##### Valid values:
-
-Boolean value.
-
-##### Default value:
-
-OFF
-
-##### Required:
-
-No
 
 
 ## Prebuilts paths
