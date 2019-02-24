@@ -17,8 +17,7 @@ _prebuilts='https://dbp.noobdev.io/repo/prebuilts'
 _ver_liblzma=5.2.4-1
 _ver_lz4=1.8.3-1
 
-pkgbase=libarchive
-pkgname=(libarchive libarchive-lowapi)
+pkgname=libarchive
 pkgver=3.3.3
 pkgrel=1
 pkgdesc="Multi-format archive and compression library"
@@ -41,7 +40,7 @@ noextract=("liblzma-${_ver_liblzma}-${CARCH}.pkg.tar.xz"
 validpgpkeys=('2233C479609BDCEC43BE9232F6A3B19090EFF32C')
 
 prepare() {
-    pushd "${pkgbase}"
+    pushd "${pkgname}"
 
     git am ../0001-Force-UTF-8-as-the-default-charset-on-Android-since-.patch
     git am ../0002-NDK-unified-headers-uses-f_flags-for-struct-statfs.patch
@@ -61,29 +60,14 @@ prepare() {
 }
 
 build() {
-    cd "${pkgbase}"
+    cd "${pkgname}"
 
     # For android.toolchain.cmake
     export ANDROID_NDK=${ANDROID_NDK_HOME}
 
-    local abi api lowapi
+    local abi api
     abi=$(android_get_abi_name)
     api=android-28
-
-    case "${abi}" in
-    armeabi-v7a)
-        lowapi=android-17
-        ;;
-    arm64-v8a)
-        lowapi=android-21
-        ;;
-    x86)
-        lowapi=android-17
-        ;;
-    x86_64)
-        lowapi=android-21
-        ;;
-    esac
 
     args=(
         -DENABLE_TAR=OFF
@@ -94,38 +78,23 @@ build() {
         -DCMAKE_FIND_ROOT_PATH="${srcdir}/common/liblzma;${srcdir}/common/lz4"
         -DCMAKE_TOOLCHAIN_FILE="${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake"
         -DANDROID_ABI="${abi}"
+        -DANDROID_PLATFORM="${api}"
     )
 
     mkdir -p build
-    mkdir -p build_lowapi
+    cd build
 
-    pushd build
-    cmake .. "${args[@]}" -DANDROID_PLATFORM="${api}"
-    make VERBOSE=1
-    popd
-
-    pushd build_lowapi
-    cmake .. "${args[@]}" -DANDROID_PLATFORM="${lowapi}"
+    cmake .. "${args[@]}"
     make
-    popd
 }
 
-package_libarchive() {
-    cd "${pkgbase}"
+package() {
+    cd "${pkgname}"
 
     install -dm755 "${pkgdir}"/{lib,include}/
     install -m644 libarchive/archive{,_entry}.h "${pkgdir}"/include/
     install -m644 contrib/android/include/android_lf.h "${pkgdir}"/include/
     install -m644 build/libarchive/libarchive.a "${pkgdir}"/lib/
-}
-
-package_libarchive-lowapi() {
-    cd "${pkgbase}"
-
-    install -dm755 "${pkgdir}"/{lib,include}/
-    install -m644 libarchive/archive{,_entry}.h "${pkgdir}"/include/
-    install -m644 contrib/android/include/android_lf.h "${pkgdir}"/include/
-    install -m644 build_lowapi/libarchive/libarchive.a "${pkgdir}"/lib/
 }
 
 sha512sums=('SKIP'
