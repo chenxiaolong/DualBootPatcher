@@ -48,7 +48,6 @@ foreach(variant ${variants})
         src/properties.cpp
         src/reboot.cpp
         src/selinux.cpp
-        src/socket.cpp
         src/string.cpp
         src/time.cpp
         src/vibrate.cpp
