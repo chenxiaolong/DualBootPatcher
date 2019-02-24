@@ -46,18 +46,15 @@ Specifies the build type.
 For release builds:
 - Meant for distribution to users
 - Must be signed with a valid key using the `MBP_SIGN_CONFIG_PATH` option below
-- Android app is built with gradle's `assembleRelease` task
 
 For debug builds:
 - Meant for development and testing
 - Automatically signed with Android SDK's debug key. If the debug keystore does does not exist (`$HOME/.android/debug.keystore` or `%USERPROFILE%\.android\debug.keystore`), it will be created automatically.
-- Android app is built with gradle's `assembleDebug` task
 
 For CI builds:
 - Meant to be built by continuous integration systems, like Jenkins
 - Version number can be overridden by specifying `MBP_CI_VERSION` so that relavent build information, such as the git commit can be included in the version number.
 - Must be signed with a valid key using the `MBP_SIGN_CONFIG_PATH` option below
-- Android app is built with gradle's `assembleCi` task
 
 ##### Valid values:
 
