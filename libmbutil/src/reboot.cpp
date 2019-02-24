@@ -34,7 +34,6 @@
 
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
-#include "mbutil/command.h"
 #include "mbutil/file.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
@@ -46,25 +45,6 @@ namespace mb::util
 {
 
 constexpr char ANDROID_RB_PROPERTY[] = "sys.powerctl";
-
-static void log_output(std::string_view line, bool error)
-{
-    (void) error;
-
-    if (!line.empty() && line.back() == '\n') {
-        line.remove_suffix(1);
-    }
-
-    LOGD("Reboot command output: %.*s",
-         static_cast<int>(line.size()), line.data());
-}
-
-static bool run_command_and_log(const std::vector<std::string> &args)
-{
-    int status = run_command(args[0], args, {}, {}, &log_output);
-
-    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
-}
 
 static bool remount_ro_and_unmount()
 {
@@ -141,17 +121,6 @@ static void pre_shutdown_tasks()
     LOGV("Ready for shutdown");
 }
 
-bool reboot_via_framework(bool show_confirm_dialog)
-{
-    return run_command_and_log({
-        "am", "start",
-        //"-W",
-        "--ez", "android.intent.extra.KEY_CONFIRM",
-            show_confirm_dialog ? "true" : "false",
-        "-a", "android.intent.action.REBOOT",
-    });
-}
-
 bool reboot_via_init(const std::string &reboot_arg)
 {
     std::string prop_value{"reboot,"};
@@ -179,27 +148,6 @@ bool reboot_via_syscall(const std::string &reboot_arg)
     }
 
     return true;
-}
-
-bool shutdown_via_framework(bool show_confirm_dialog)
-{
-    for (auto const &action : {
-        "com.android.internal.intent.action.REQUEST_SHUTDOWN",
-        "android.intent.action.ACTION_REQUEST_SHUTDOWN",
-    }) {
-        if (run_command_and_log({
-            "am", "start",
-            //"-W",
-            "--ez", "android.intent.extra.KEY_CONFIRM",
-                show_confirm_dialog ? "true" : "false",
-            "--ez", "android.intent.extra.USER_REQUESTED_SHUTDOWN", "true",
-            "-a", action,
-        })) {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 bool shutdown_via_init()

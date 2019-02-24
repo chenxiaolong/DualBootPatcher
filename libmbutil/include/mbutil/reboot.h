@@ -24,10 +24,8 @@
 namespace mb::util
 {
 
-bool reboot_via_framework(bool show_confirm_dialog);
 bool reboot_via_init(const std::string &reboot_arg);
 bool reboot_via_syscall(const std::string &reboot_arg);
-bool shutdown_via_framework(bool show_confirm_dialog);
 bool shutdown_via_init();
 bool shutdown_via_syscall();
 
