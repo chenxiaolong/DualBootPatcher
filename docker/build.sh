@@ -2,7 +2,7 @@
 
 set -eu
 
-variants=(base android mingw linux)
+variants=(base android linux)
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 source common.sh

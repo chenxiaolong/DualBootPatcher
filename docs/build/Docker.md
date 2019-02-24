@@ -21,7 +21,7 @@ and then run the following command to build the actual images:
 ./docker/build.sh
 ```
 
-Note that building the docker images will take a long time and consume a lot of bandwidth--multiple gigabytes at the very least. It will download all the dependencies for building DualBootPatcher for all supported targets. For example, the Android SDK will be downloaded for the `android` image and the mingw-w64 dependencies will be downloaded for the `mingw` image.
+Note that building the docker images will take a long time and consume a lot of bandwidth--multiple gigabytes at the very least. It will download all the dependencies for building DualBootPatcher for all supported targets. For example, the Android SDK will be downloaded for the `android` image.
 
 Once the images have been built, the resulting image tags are written to `docker/generated/images.properties`. It will look something like the following:
 
@@ -29,17 +29,15 @@ Once the images have been built, the resulting image tags are written to `docker
 android=chenxiaolong/dualbootpatcher:9.3.0-14-android
 base=chenxiaolong/dualbootpatcher:9.3.0-14-base
 linux=chenxiaolong/dualbootpatcher:9.3.0-14-linux
-mingw=chenxiaolong/dualbootpatcher:9.3.0-14-mingw
 ```
 
 The following table describes the images that are built:
 
-| Image               | Description                                                           |
-|---------------------|-----------------------------------------------------------------------|
-| `<version>-base`    | Base image for the other images. Contains common dependencies         |
-| `<version>-android` | Contains dependencies for building the Android app                    |
-| `<version>-linux`   | Contains dependencies for building the desktop app for Linux          |
-| `<version>-mingw`   | Contains dependencies for cross-compiling the desktop app for Windows |
+| Image               | Description                                                   |
+|---------------------|---------------------------------------------------------------|
+| `<version>-base`    | Base image for the other images. Contains common dependencies |
+| `<version>-android` | Contains dependencies for building the Android app            |
+| `<version>-linux`   | Contains dependencies for building the desktop app for Linux  |
 
 
 ## Using the docker images
