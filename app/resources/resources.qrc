@@ -1,0 +1,63 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qtquickcontrols2.conf</file>
+
+        <file>fonts/NotoSans-Regular.ttf</file>
+
+        <file>icons/dbp/20x20@2/back.png</file>
+        <file>icons/dbp/20x20@2/drawer.png</file>
+        <file>icons/dbp/20x20@2/menu.png</file>
+        <file>icons/dbp/20x20@3/back.png</file>
+        <file>icons/dbp/20x20@3/drawer.png</file>
+        <file>icons/dbp/20x20@3/menu.png</file>
+        <file>icons/dbp/20x20@4/back.png</file>
+        <file>icons/dbp/20x20@4/drawer.png</file>
+        <file>icons/dbp/20x20@4/menu.png</file>
+        <file>icons/dbp/20x20/back.png</file>
+        <file>icons/dbp/20x20/drawer.png</file>
+        <file>icons/dbp/20x20/menu.png</file>
+
+        <file>icons/dbp/24x24/check.png</file>
+        <file>icons/dbp/24x24/power.png</file>
+        <file>icons/dbp/24x24/sd_storage.png</file>
+        <file>icons/dbp/24x24/settings.png</file>
+        <file>icons/dbp/24x24/system_update.png</file>
+
+        <file>icons/dbp/36x36/check.png</file>
+        <file>icons/dbp/36x36/power.png</file>
+        <file>icons/dbp/36x36/sd_storage.png</file>
+        <file>icons/dbp/36x36/settings.png</file>
+        <file>icons/dbp/36x36/system_update.png</file>
+
+        <file>icons/dbp/48x48/check.png</file>
+        <file>icons/dbp/48x48/power.png</file>
+        <file>icons/dbp/48x48/sd_storage.png</file>
+        <file>icons/dbp/48x48/settings.png</file>
+        <file>icons/dbp/48x48/system_update.png</file>
+
+        <file>icons/dbp/72x72/check.png</file>
+        <file>icons/dbp/72x72/power.png</file>
+        <file>icons/dbp/72x72/sd_storage.png</file>
+        <file>icons/dbp/72x72/settings.png</file>
+        <file>icons/dbp/72x72/system_update.png</file>
+
+        <file>icons/dbp/96x96/check.png</file>
+        <file>icons/dbp/96x96/power.png</file>
+        <file>icons/dbp/96x96/sd_storage.png</file>
+        <file>icons/dbp/96x96/settings.png</file>
+        <file>icons/dbp/96x96/system_update.png</file>
+
+        <file>icons/dbp/index.theme</file>
+
+        <file>images/logo.png</file>
+
+        <file>main.qml</file>
+        <file>pages/FlashFilePage.qml</file>
+        <file>pages/RebootPage.qml</file>
+        <file>pages/RomsPage.qml</file>
+        <file>pages/SettingsPage.qml</file>
+        <file>pages/VolumesPage.qml</file>
+
+        <file>pages/ScrollablePage.qml</file>
+    </qresource>
+</RCC>

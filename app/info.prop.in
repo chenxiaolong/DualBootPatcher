@@ -1,0 +1,2 @@
+app.version=@MBP_VERSION@
+app.git-version=@GIT_VERSION@

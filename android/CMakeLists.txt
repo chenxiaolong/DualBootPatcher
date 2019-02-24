@@ -212,26 +212,20 @@ if(MBP_TOP_LEVEL_BUILD)
             # Copy main binary
             ${CMAKE_COMMAND}
                 -E copy
-                ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbbootui
+                ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/app
                 ${ARCHIVE_TEMP_DIR}/exec
-
-            # Copy themes
-            COMMAND ${CMAKE_COMMAND}
-                -E copy_directory
-                ${CMAKE_SOURCE_DIR}/mbbootui/theme
-                ${ARCHIVE_TEMP_DIR}/theme
 
             # Copy info.prop
             COMMAND ${CMAKE_COMMAND}
                  -E copy
-                 ${CMAKE_BINARY_DIR}/mbbootui/info.prop
+                 ${CMAKE_BINARY_DIR}/app/info.prop
                  ${ARCHIVE_TEMP_DIR}/info.prop
 
             # Create archive
             COMMAND ${CMAKE_COMMAND}
                 -E tar cvf ${ARCHIVE_OUTPUT} --format=zip --
                 exec
-                theme
+                #theme
                 info.prop
 
             # Delete temporary directory
