@@ -4,8 +4,7 @@ if(MBP_TARGET_HAS_BUILDS
         AND NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
     list(APPEND variants static)
 endif()
-if(${MBP_BUILD_TARGET} STREQUAL android-app
-        OR ${MBP_BUILD_TARGET} STREQUAL desktop)
+if(${MBP_BUILD_TARGET} STREQUAL desktop)
     list(APPEND variants shared)
 endif()
 

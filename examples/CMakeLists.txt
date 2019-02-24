@@ -44,7 +44,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
 endif()
 
-if(${MBP_BUILD_TARGET} STREQUAL desktop OR ${MBP_BUILD_TARGET} STREQUAL android-app)
+if(${MBP_BUILD_TARGET} STREQUAL desktop)
     # boot image compare tool
 
     add_executable(

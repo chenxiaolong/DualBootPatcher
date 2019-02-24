@@ -20,8 +20,6 @@ set(MBP_SYSTEM_BUILD_TYPE "release"
 # Build types:
 # - desktop: Standard build for PCs
 # - android: Standard build for Android
-# - android-app: Build libraries to be used for the Android app
-#                (not to be built manually)
 # - android-system: Build executables to be included in the distrbution
 #                   (not to be built manually)
 # - hosttools: Builds tools needed on the host when cross-compiling
@@ -30,7 +28,6 @@ set(MBP_SYSTEM_BUILD_TYPE "release"
 # Verify build target and type
 if(NOT ${MBP_BUILD_TARGET} STREQUAL desktop
         AND NOT ${MBP_BUILD_TARGET} STREQUAL android
-        AND NOT ${MBP_BUILD_TARGET} STREQUAL android-app
         AND NOT ${MBP_BUILD_TARGET} STREQUAL android-system
         AND NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
     message(FATAL_ERROR "Invalid build target: ${MBP_BUILD_TARGET}")
@@ -46,8 +43,7 @@ if(NOT ${MBP_SYSTEM_BUILD_TYPE} STREQUAL release
 endif()
 
 # Android NDK
-if(${MBP_BUILD_TARGET} STREQUAL android-app
-        OR ${MBP_BUILD_TARGET} STREQUAL android-system)
+if(${MBP_BUILD_TARGET} STREQUAL android-system)
     # FIXME: Due to https://github.com/android-ndk/ndk/issues/222, we need a
     # custom toolchain file. Since we can't guarantee that the custom toolchain
     # file will work with newer versions of the NDK, we'll depend on an exact
@@ -119,11 +115,6 @@ elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
     set(MBP_TOP_LEVEL_BUILD TRUE)
     set(MBP_INTERNAL_BUILD FALSE)
     set(MBP_TARGET_HAS_BUILDS TRUE)
-elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
-    set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroidApp.cmake)
-    set(MBP_TOP_LEVEL_BUILD FALSE)
-    set(MBP_INTERNAL_BUILD TRUE)
-    set(MBP_TARGET_HAS_BUILDS TRUE)
 elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroidSystem.cmake)
     set(MBP_TOP_LEVEL_BUILD FALSE)
@@ -140,8 +131,7 @@ endif()
 # /etc/debian_version exists, but we need lib64 in the library search path
 # because the x86_64 NDK libraries are in:
 #   <ndk>/platforms/android-21/arch-x86_64/usr/lib64/
-if(${MBP_BUILD_TARGET} STREQUAL android-app
-        OR ${MBP_BUILD_TARGET} STREQUAL android-system)
+if(${MBP_BUILD_TARGET} STREQUAL android-system)
     set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 endif()
 

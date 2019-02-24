@@ -63,58 +63,45 @@ if(MBP_TOP_LEVEL_BUILD)
     set(ENV{ANDROID_NDK} "${ndk_path}")
 
     foreach(abi ${ANDROID_ABIS})
-        set(INTERNAL_COMMON_OPTIONS
+        set(cmake_options
+            -DCMAKE_BUILD_TYPE=${MBP_SYSTEM_CMAKE_BUILD_TYPE}
             -DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/android.toolchain.cmake
             #-DCMAKE_TOOLCHAIN_FILE=${ndk_path}/build/cmake/android.toolchain.cmake
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DANDROID_ABI=${abi}
+            -DANDROID_PIE=OFF
+            -DANDROID_PLATFORM=android-28
+            -DANDROID_STL=c++_static
+            -DMBP_BUILD_TARGET=android-system
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
             -DMBP_ENABLE_TESTS=${MBP_ENABLE_TESTS}
             -DMBP_PREBUILTS_BINARY_DIR=${MBP_PREBUILTS_BINARY_DIR}
             -DMBP_SIGN_CONFIG_PATH=${MBP_SIGN_CONFIG_PATH}
             -DJAVA_KEYTOOL=${JAVA_KEYTOOL}
+            -DMBSYSTRACE_HEADERSGEN_COMMAND=${MBSYSTRACE_HEADERSGEN_COMMAND}
             -DSCHEMAS2CPP_COMMAND=${SCHEMAS2CPP_COMMAND}
         )
 
         if(MBP_ANDROID_ENABLE_CCACHE)
-            list(APPEND INTERNAL_COMMON_OPTIONS
+            list(APPEND cmake_options
                  "-DANDROID_CCACHE=${MBP_CCACHE_PATH}")
         endif()
 
         if(MBP_CI_VERSION)
-            list(APPEND INTERNAL_COMMON_OPTIONS
+            list(APPEND cmake_options
                  "-DMBP_CI_VERSION=${MBP_CI_VERSION}")
         endif()
-
-        set(INTERNAL_ANDROID_APP_OPTIONS
-            ${INTERNAL_COMMON_OPTIONS}
-            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-            -DANDROID_PIE=ON
-            -DANDROID_PLATFORM=android-17
-            -DANDROID_STL=c++_shared
-            -DMBP_BUILD_TARGET=android-app
-        )
-
-        set(INTERNAL_ANDROID_SYSTEM_OPTIONS
-            ${INTERNAL_COMMON_OPTIONS}
-            -DCMAKE_BUILD_TYPE=${MBP_SYSTEM_CMAKE_BUILD_TYPE}
-            -DANDROID_PIE=OFF
-            -DANDROID_PLATFORM=android-28
-            -DANDROID_STL=c++_static
-            -DMBP_BUILD_TARGET=android-system
-            -DMBSYSTRACE_HEADERSGEN_COMMAND=${MBSYSTRACE_HEADERSGEN_COMMAND}
-        )
 
         if(MBP_ENABLE_QEMU)
             android_abi_to_qemu_arch("${abi}" qemu_arch)
 
-            list(APPEND INTERNAL_ANDROID_SYSTEM_OPTIONS
+            list(APPEND cmake_options
                  "-DMBP_ENABLE_QEMU=${MBP_ENABLE_QEMU}"
                  "-DQEMU_SYSTEM_COMMAND=${QEMU_SYSTEM_${qemu_arch}}")
         endif()
 
         message(STATUS "Recursive CMake build for Android system components (${abi}):")
-        foreach(_option ${INTERNAL_ANDROID_SYSTEM_OPTIONS})
+        foreach(_option ${cmake_options})
             message(STATUS "  ${_option}")
         endforeach()
 
@@ -123,7 +110,7 @@ if(MBP_TOP_LEVEL_BUILD)
             android-system_${abi}
             SOURCE_DIR ${CMAKE_SOURCE_DIR}
             INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/result
-            CMAKE_ARGS ${INTERNAL_ANDROID_SYSTEM_OPTIONS}
+            CMAKE_ARGS ${cmake_options}
             BUILD_ALWAYS 1
             INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target ${system_install_target}
             VERBATIM
@@ -168,32 +155,6 @@ if(MBP_TOP_LEVEL_BUILD)
             DESTINATION ${DATA_INSTALL_DIR}/binaries/android/${abi}/
             COMPONENT Libraries
         )
-
-        # Build app components only if we're targeting Android
-        if(${MBP_BUILD_TARGET} STREQUAL android)
-            message(STATUS "Recursive CMake build for Android app components (${abi}):")
-            foreach(_option ${INTERNAL_ANDROID_APP_OPTIONS})
-                message(STATUS "  ${_option}")
-            endforeach()
-
-            ExternalProject_Add(
-                android-app_${abi}
-                SOURCE_DIR ${CMAKE_SOURCE_DIR}
-                INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/result
-                CMAKE_ARGS ${INTERNAL_ANDROID_APP_OPTIONS}
-                BUILD_ALWAYS 1
-                INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target ${app_install_target}
-                VERBATIM
-            )
-
-            add_dependencies(
-                android-app_${abi}
-                hosttools
-            )
-
-            create_project_wrapper_script("android-app_${abi}")
-            expose_project_target("android-app_${abi}" clean)
-        endif()
 
         set(ARCHIVE_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bootui/${abi}/bootui.zip)
         set(ARCHIVE_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/bootui/${abi}/temp)
@@ -258,32 +219,4 @@ if(MBP_TOP_LEVEL_BUILD)
             COMPONENT Libraries
         )
     endforeach()
-elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
-    # Install libc++. We do this in the android-app target because we have
-    # access to the CMAKE_LINKER variable.
-    set(stl_source "$ENV{ANDROID_NDK}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libc++_shared.so")
-    set(stl_target "${CMAKE_CURRENT_BINARY_DIR}/libc++_shared.stripped.so")
-
-    add_custom_command(
-        OUTPUT "${stl_target}"
-        COMMAND "${CMAKE_STRIP}" -s "${stl_source}" -o "${stl_target}"
-        COMMENT "Strip libc++_shared library"
-        VERBATIM
-    )
-
-    add_custom_target(
-        strip_stl_shared
-        ALL
-        DEPENDS "${stl_target}"
-    )
-
-    install(
-        FILES "${stl_target}"
-        DESTINATION ${LIB_INSTALL_DIR}
-        RENAME libc++_shared.so
-        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-                    GROUP_EXECUTE             GROUP_READ
-                    WORLD_EXECUTE             WORLD_READ
-        COMPONENT Libraries
-    )
 endif()
