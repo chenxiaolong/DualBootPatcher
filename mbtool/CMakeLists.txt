@@ -13,13 +13,6 @@ set_source_files_properties(
 )
 
 set_source_files_properties(
-    src/boot/daemon_v3.cpp
-    PROPERTIES
-    COMPILE_FLAGS
-    "-Wno-missing-declarations"
-)
-
-set_source_files_properties(
     src/boot/packages.cpp
     PROPERTIES
     COMPILE_FLAGS
@@ -81,8 +74,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbtool
         src/boot/audit/libaudit.cpp
         src/boot/auditd.cpp
-        src/boot/daemon.cpp
-        src/boot/daemon_v3.cpp
         src/boot/emergency.cpp
         src/boot/init.cpp
         src/boot/init/cutils/uevent.cpp
@@ -119,7 +110,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             ${target}
             PRIVATE
             include
-            ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
             ${CMAKE_SOURCE_DIR}/external/minizip
             ${CMAKE_SOURCE_DIR}/external/pugixml/src
         )

@@ -1148,28 +1148,8 @@ static bool create_mbtool_types(policydb_t *pdb)
         //"dyntransition",
     }));
 
-    // Allow apps to connect to the daemon
-    for (uint32_t type_val = 1; type_val <= pdb->p_types.nprim; ++type_val) {
-        auto const &name = pdb->p_type_val_to_name[type_val - 1];
-        int dummy;
-
-        if (strcmp(name, "untrusted_app") == 0
-                || (starts_with(name, "untrusted_app_")
-                        && str_to_num(name + 14, 10, dummy))) {
-            ff(add_rules(pdb, name, "mb_exec", "unix_stream_socket", {
-                "connectto",
-            }));
-        }
-    }
-
     // Allow zygote to write to our stdout pipe when rebooting
     ff(add_rules(pdb, "zygote", "init", "fifo_file", { "write" }));
-
-    // Allow 'am' to use fds (eg. pipes) inherited from the daemon
-    if (find_type(pdb, "system_server")) {
-        ff(add_rules(pdb, "system_server", "mb_exec", "fd", { "use" }));
-        ff(add_rules(pdb, "system_server", "mb_exec", "fifo_file", { "write" }));
-    }
 
     // Allow rebooting via the android.intent.action.REBOOT intent
     if (find_type(pdb, "activity_service")) {

@@ -34,7 +34,6 @@
 #include <sys/klog.h>
 #include <sys/mount.h>
 #include <sys/sysmacros.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
 #include "mz.h"
@@ -61,7 +60,6 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
-#include "boot/daemon.h"
 #include "boot/emergency.h"
 #include "boot/mount_fstab.h"
 #include "boot/uevent_thread.h"
@@ -90,8 +88,6 @@ namespace mb
 using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
-static pid_t daemon_pid = -1;
-
 static PropertyService g_property_service;
 
 static void init_usage(FILE *stream)
@@ -109,90 +105,6 @@ static void init_usage(FILE *stream)
             "expected to be located at /init.orig in the ramdisk. mbtool will\n"
             "remove the /init -> /mbtool symlink and rename /init.orig to /init.\n"
             "/init will then be launched with no arguments.\n");
-}
-
-static int wait_for_pid(const char *name, pid_t pid)
-{
-    int status;
-
-    do {
-        if (waitpid(pid, &status, 0) < 0) {
-            LOGE("%s (pid: %d): Failed to waitpid(): %s",
-                 name, pid, strerror(errno));
-            return -1;
-        }
-    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-
-    if (WIFEXITED(status)) {
-        LOGV("%s (pid: %d): Exited with status: %d",
-             name, pid, WEXITSTATUS(status));
-    } else if (WIFSIGNALED(status)) {
-        LOGV("%s (pid: %d): Killed by signal: %d",
-             name, pid, WTERMSIG(status));
-    }
-
-    return status;
-}
-
-static bool start_daemon()
-{
-    if (daemon_pid >= 0) {
-        return true;
-    }
-
-    LOGV("Starting daemon...");
-
-    daemon_pid = fork();
-    if (daemon_pid == 0) {
-        execl("/proc/self/exe",
-              "daemon",
-              "--allow-root-client",
-              "--no-patch-sepolicy",
-              "--sigstop-when-ready",
-              "--log-to-kmsg",
-              "--no-unshare",
-              nullptr);
-        LOGE("Failed to exec daemon: %s", strerror(errno));
-        _exit(127);
-    } else if (daemon_pid > 0) {
-        LOGV("Started daemon (pid: %d)", daemon_pid);
-        LOGV("Waiting for SIGSTOP ready signal");
-
-        // Wait for SIGSTOP to indicate that the daemon is ready
-        int status;
-        if (waitpid(daemon_pid, &status, WUNTRACED) < 0) {
-            LOGW("Failed to waidpid for daemon's SIGSTOP: %s",
-                 strerror(errno));
-        } else if (!WIFSTOPPED(status)) {
-            LOGW("waitpid returned non-SIGSTOP status");
-        } else {
-            LOGV("Daemon sent SIGSTOP; sending SIGCONT");
-            kill(daemon_pid, SIGCONT);
-        }
-
-        return true;
-    } else {
-        LOGE("Failed to fork: %s", strerror(errno));
-        return false;
-    }
-}
-
-static bool stop_daemon()
-{
-    if (daemon_pid < 0) {
-        return true;
-    }
-
-    LOGV("Stopping daemon...");
-
-    // Clear pid when returning
-    auto clear_pid = finally([]{
-        daemon_pid = -1;
-    });
-
-    kill(daemon_pid, SIGTERM);
-
-    return wait_for_pid("daemon", daemon_pid) != -1;
 }
 
 static bool set_kernel_properties()
@@ -479,13 +391,7 @@ static bool add_mbtool_services()
         return false;
     }
 
-    static const char *daemon_service =
-            "service mbtooldaemon /mbtool daemon\n"
-            "    class main\n"
-            "    user root\n"
-            "    oneshot\n"
-            "    seclabel " MB_EXEC_CONTEXT "\n"
-            "\n"
+    static const char *properties_service =
             "service mbtoolprops /mbtool properties set-file " DBP_PROP_PATH "\n"
             "    class core\n"
             "    user root\n"
@@ -493,7 +399,7 @@ static bool add_mbtool_services()
             "    seclabel " MB_EXEC_CONTEXT "\n"
             "\n";
 
-    fputs(daemon_service, fp_multiboot.get());
+    fputs(properties_service, fp_multiboot.get());
 
     fchmod(fileno(fp_multiboot.get()), 0750);
 
@@ -983,8 +889,6 @@ static bool launch_boot_menu()
         return false;
     }
 
-    start_daemon();
-
     std::vector<std::string> argv{ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH };
     int ret = util::run_command(argv[0], argv, {}, {}, {});
     if (ret < 0) {
@@ -998,10 +902,8 @@ static bool launch_boot_menu()
     // NOTE: Always continue regardless of how the boot UI exits. If the current
     // ROM should be booted, the UI simply exits. If the UI crashes or doesn't
     // work for whatever reason, the current ROM should still be booted. If the
-    // user switches to another ROM, then the boot UI will instruct the daemon
-    // to switch ROMs and reboot (ie. the UI will not exit).
-
-    stop_daemon();
+    // user switches to another ROM, then the boot UI will switch ROMs and
+    // reboot (ie. the UI will not exit).
 
     return true;
 }

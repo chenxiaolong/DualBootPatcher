@@ -33,7 +33,6 @@
 #include "recovery/update_binary_tool.h"
 #else
 #include "boot/auditd.h"
-#include "boot/daemon.h"
 #include "boot/init.h"
 #include "boot/properties.h"
 #include "boot/reboot.h"
@@ -69,7 +68,6 @@ static Tool g_tools[] = {
     { "update-binary-tool", mb::update_binary_tool_main },
 #else
     { "auditd", mb::auditd_main },
-    { "daemon", mb::daemon_main },
     { "init", mb::init_main },
     { "properties", mb::properties_main },
     { "reboot", mb::reboot_main },
