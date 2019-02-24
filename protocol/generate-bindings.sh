@@ -39,4 +39,3 @@ files=(
 mkdir -p ../mbtool/include/protocol
 
 flatc -c -I "$(pwd)" -o ../mbtool/include/protocol "${files[@]}"
-flatc -j -I "$(pwd)" -o ../Android_GUI/src/main/java "${files[@]}"
