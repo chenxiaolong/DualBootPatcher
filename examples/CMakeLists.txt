@@ -1,20 +1,4 @@
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
-    # libmbpatcher tester
-
-    add_executable(
-        libmbpatcher_test
-        libmbpatcher_test.cpp
-    )
-    target_link_libraries(
-        libmbpatcher_test
-        PRIVATE
-        interface.global.CXXVersion
-        mbpatcher-shared
-        mbpio-shared
-        mbdevice-shared
-        mblog-shared
-    )
-
     # desparse tool
 
     add_executable(

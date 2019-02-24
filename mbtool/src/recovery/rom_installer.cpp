@@ -169,7 +169,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
 {
     // /sbin is not going to be populated with anything useful in a normal boot
     // image. We can almost guarantee that a recovery image is going to be
-    // installed though, so we'll open the recovery partition with libmbpatcher
+    // installed though, so we'll open the recovery partition with libmbbootimg
     // and extract its /sbin with libarchive into the chroot's /sbin.
 
     std::string block_dev(_recovery_block_dev);
