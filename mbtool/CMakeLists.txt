@@ -113,7 +113,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         src/recovery/rom_installer.cpp
         src/recovery/update_binary.cpp
         src/recovery/update_binary_tool.cpp
-        src/recovery/utilities.cpp
     )
 
     foreach(target mbtool-util mbtool mbtool_recovery)

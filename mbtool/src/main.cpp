@@ -31,7 +31,6 @@
 #include "recovery/rom_installer.h"
 #include "recovery/update_binary.h"
 #include "recovery/update_binary_tool.h"
-#include "recovery/utilities.h"
 #else
 #include "boot/appsync.h"
 #include "boot/auditd.h"
@@ -69,7 +68,6 @@ static Tool g_tools[] = {
     { "updater", mb::update_binary_main }, // TWRP
     { "update_binary", mb::update_binary_main }, // CWM, Philz
     { "update-binary-tool", mb::update_binary_tool_main },
-    { "utilities", mb::utilities_main },
 #else
     { "appsync", mb::appsync_main },
     { "auditd", mb::auditd_main },
