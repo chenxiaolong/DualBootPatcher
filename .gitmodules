@@ -1,9 +1,6 @@
 [submodule "external/pugixml"]
 	path = external/pugixml
 	url = https://github.com/zeux/pugixml.git
-[submodule "external/flatbuffers"]
-	path = external/flatbuffers
-	url = https://github.com/google/flatbuffers.git
 [submodule "external/minizip"]
 	path = external/minizip
 	url = https://github.com/chenxiaolong/minizip.git
