@@ -28,7 +28,6 @@
 
 #ifdef RECOVERY
 #include "recovery/backup.h"
-#include "recovery/rom_installer.h"
 #include "recovery/update_binary.h"
 #else
 #include "boot/auditd.h"
@@ -61,7 +60,6 @@ static Tool g_tools[] = {
 #ifdef RECOVERY
     { "backup", mb::backup_main },
     { "restore", mb::restore_main },
-    { "rom-installer", mb::rom_installer_main },
     { "updater", mb::update_binary_main }, // TWRP
     { "update_binary", mb::update_binary_main }, // CWM, Philz
 #else

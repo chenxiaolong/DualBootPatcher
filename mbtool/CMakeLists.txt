@@ -83,7 +83,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         src/recovery/installer.cpp
         src/recovery/installer_util.cpp
         src/recovery/ramdisk_patcher.cpp
-        src/recovery/rom_installer.cpp
         src/recovery/update_binary.cpp
     )
 
