@@ -276,31 +276,6 @@ elseif(ANDROID)
 endif()
 
 ################################################################################
-# AOSP system/core libraries
-################################################################################
-
-set(ANDROID_SYSTEM_CORE_VER "8.1.0_r2-2")
-
-if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} armeabi-v7a SHA512=71997359175ccd1b6885c0ee1e4fda00f21e6c7185fc1941c5fa5ecb018fd0fbc329063d01672af2868342ce689874c87aebba1c9fedd4b7fdd09d634db58d79)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} arm64-v8a   SHA512=3a1acd557e3d6bb111b565d43b19e917488b6ab733056112ab8d9bf56d7dd4dbb7e08e59493d207ff008ddcaeff841f1b8ec82568c0093523b0934d7a2633bdd)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86         SHA512=9f44f98e7ea48980b6a4e44a471c9f73581816bb8120923c7caac5753a42f91c8bf255a6a8b98c4b19c7ed93f2c8d5c4cb81048bfec3a5175b8452152e0a50e3)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86_64      SHA512=c0ee56e5a5bc05f7bfeab2ca794631dae50b6289e1987ace4041c81afc18c328213955f2dee34434df7a34f33163b8adf8b3f6ef987a2caeef7a729ffef025a3)
-elseif(ANDROID)
-    set(android_system_core_root "${MBP_PREBUILTS_BINARY_DIR}/android-system-core/${ANDROID_SYSTEM_CORE_VER}/${ANDROID_ABI}")
-    list(APPEND CMAKE_FIND_ROOT_PATH "${android_system_core_root}")
-
-    set(ANDROID_LIBCUTILS_INCLUDE_DIR    "${android_system_core_root}/include"               CACHE INTERNAL "")
-    set(ANDROID_LIBCUTILS_LIBRARY        "${android_system_core_root}/lib/libcutils.a"       CACHE INTERNAL "")
-    set(ANDROID_LIBLOG_INCLUDE_DIR       "${android_system_core_root}/include"               CACHE INTERNAL "")
-    set(ANDROID_LIBLOG_LIBRARY           "${android_system_core_root}/lib/liblog.a"          CACHE INTERNAL "")
-    set(ANDROID_LIBUTILS_INCLUDE_DIR     "${android_system_core_root}/include"               CACHE INTERNAL "")
-    set(ANDROID_LIBUTILS_LIBRARY         "${android_system_core_root}/lib/libutils.a"        CACHE INTERNAL "")
-    set(ANDROID_PIXELFLINGER_INCLUDE_DIR "${android_system_core_root}/include"               CACHE INTERNAL "")
-    set(ANDROID_PIXELFLINGER_LIBRARY     "${android_system_core_root}/lib/libpixelflinger.a" CACHE INTERNAL "")
-endif()
-
-################################################################################
 # boringssl for Android
 ################################################################################
 
