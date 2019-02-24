@@ -31,6 +31,4 @@ if(MBP_TOP_LEVEL_BUILD)
         sign_scripts
         ${source_files}
     )
-
-    add_subdirectory(devices)
 endif()
