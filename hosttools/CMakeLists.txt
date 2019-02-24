@@ -31,7 +31,6 @@ if(MBP_TOP_LEVEL_BUILD)
     )
 
     set(hosttools_binaries
-        devicesgen
         mbsystrace-headersgen
         schemas2cpp
         signtool

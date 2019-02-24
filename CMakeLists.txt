@@ -181,7 +181,6 @@ add_subdirectory(misc)
 add_subdirectory(bootimgtool)
 add_subdirectory(examples)
 add_subdirectory(signtool)
-add_subdirectory(devicesgen)
 add_subdirectory(android)
 
 # Must go after signtool since it references SIGNTOOL_COMMAND
