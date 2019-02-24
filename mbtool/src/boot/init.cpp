@@ -416,18 +416,7 @@ static bool fix_binary_file_contexts(const char *path)
     return replace_file(path, new_path.c_str());
 }
 
-static bool is_completely_whitespace(const char *str)
-{
-    while (*str) {
-        if (!isspace(*str)) {
-            return false;
-        }
-        ++str;
-    }
-    return true;
-}
-
-static bool add_mbtool_services(bool enable_appsync)
+static bool add_mbtool_services()
 {
     ScopedFILE fp_old(fopen("/init.rc", "rbe"), fclose);
     if (!fp_old) {
@@ -455,24 +444,10 @@ static bool add_mbtool_services(bool enable_appsync)
     });
 
     bool has_init_multiboot_rc = false;
-    bool has_disabled_installd = false;
-    bool inside_service = false;
 
     while ((read = getline(&line, &len, fp_old.get())) >= 0) {
         if (strstr(line, "import /init.multiboot.rc")) {
             has_init_multiboot_rc = true;
-        }
-
-        if (enable_appsync) {
-            if (starts_with(line, "service")) {
-                inside_service = strstr(line, "installd") != nullptr;
-            } else if (inside_service && is_completely_whitespace(line)) {
-                inside_service = false;
-            }
-
-            if (inside_service && strstr(line, "disabled")) {
-                has_disabled_installd = true;
-            }
         }
     }
 
@@ -489,14 +464,6 @@ static bool add_mbtool_services(bool enable_appsync)
                 != static_cast<size_t>(read)) {
             LOGE("Failed to write to /init.rc.new: %s", strerror(errno));
             return false;
-        }
-
-        // Disable installd. mbtool's appsync will spawn it on demand
-        if (enable_appsync
-                && !has_disabled_installd
-                && starts_with(line, "service")
-                && strstr(line, "installd")) {
-            fputs("    disabled\n", fp_new.get());
         }
     }
 
@@ -525,17 +492,8 @@ static bool add_mbtool_services(bool enable_appsync)
             "    oneshot\n"
             "    seclabel " MB_EXEC_CONTEXT "\n"
             "\n";
-    static const char *appsync_service =
-            "service appsync /mbtool appsync\n"
-            "    class main\n"
-            "    socket installd stream 600 system system\n"
-            "    seclabel " MB_EXEC_CONTEXT "\n"
-            "\n";
 
     fputs(daemon_service, fp_multiboot.get());
-    if (enable_appsync) {
-        fputs(appsync_service, fp_multiboot.get());
-    }
 
     fchmod(fileno(fp_multiboot.get()), 0750);
 
@@ -825,31 +783,6 @@ static bool create_layout_version()
             "u:object_r:install_data_file:s0"); !ret) {
         LOGE("%s: Failed to set SELinux context: %s",
              "/data/.layout_version", ret.error().message().c_str());
-        return false;
-    }
-
-    return true;
-}
-
-static bool disable_installd()
-{
-    static constexpr char installd_init[] = "/system/etc/init/installd.rc";
-
-    if (access(installd_init, R_OK) < 0) {
-        if (errno == ENOENT) {
-            LOGV("%s: installd init file not found", installd_init);
-            return true;
-        } else {
-            LOGE("%s: Failed to access file: %s",
-                 installd_init, strerror(errno));
-            return false;
-        }
-    }
-
-    if (auto ret = util::mount(
-            "/dev/null", installd_init, "", MS_BIND | MS_RDONLY, ""); !ret) {
-        LOGE("%s: Failed to bind mount /dev/null: %s",
-             installd_init, ret.error().message().c_str());
         return false;
     }
 
@@ -1245,8 +1178,6 @@ int init_main(int argc, char *argv[])
              config_path.c_str(), rom->id.c_str());
     }
 
-    LOGD("Enable appsync: %d", config.indiv_app_sharing);
-
     // Make runtime ramdisk modifications
     if (access(FILE_CONTEXTS, R_OK) == 0) {
         fix_file_contexts(FILE_CONTEXTS);
@@ -1255,13 +1186,8 @@ int init_main(int argc, char *argv[])
         fix_binary_file_contexts(FILE_CONTEXTS_BIN);
     }
     write_fstab_hack(fstab.c_str());
-    add_mbtool_services(config.indiv_app_sharing);
+    add_mbtool_services();
     strip_manual_mounts();
-
-    // Disable installd on Android 7.0+
-    if (config.indiv_app_sharing) {
-        disable_installd();
-    }
 
     // Data modifications
     create_layout_version();

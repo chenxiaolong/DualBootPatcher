@@ -32,7 +32,6 @@
 #include "recovery/update_binary.h"
 #include "recovery/update_binary_tool.h"
 #else
-#include "boot/appsync.h"
 #include "boot/auditd.h"
 #include "boot/daemon.h"
 #include "boot/init.h"
@@ -69,7 +68,6 @@ static Tool g_tools[] = {
     { "update_binary", mb::update_binary_main }, // CWM, Philz
     { "update-binary-tool", mb::update_binary_tool_main },
 #else
-    { "appsync", mb::appsync_main },
     { "auditd", mb::auditd_main },
     { "daemon", mb::daemon_main },
     { "init", mb::init_main },

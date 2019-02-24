@@ -1148,20 +1148,6 @@ static bool create_mbtool_types(policydb_t *pdb)
         //"dyntransition",
     }));
 
-    // Allow installd to connect to appsync's socket
-    ff(add_rules(pdb, "installd", "mb_exec", "unix_stream_socket", {
-        "accept", "listen", "read", "write",
-    }));
-    if (find_type(pdb, "system_server")) {
-        ff(add_rules(pdb, "system_server", "mb_exec", "unix_stream_socket", {
-            "connectto",
-        }));
-    } else {
-        ff(add_rules(pdb, "system", "mb_exec", "unix_stream_socket", {
-            "connectto",
-        }));
-    }
-
     // Allow apps to connect to the daemon
     for (uint32_t type_val = 1; type_val <= pdb->p_types.nprim; ++type_val) {
         auto const &name = pdb->p_type_val_to_name[type_val - 1];

@@ -79,8 +79,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
 
     add_executable(
         mbtool
-        src/boot/appsync.cpp
-        src/boot/appsyncmanager.cpp
         src/boot/audit/libaudit.cpp
         src/boot/auditd.cpp
         src/boot/daemon.cpp

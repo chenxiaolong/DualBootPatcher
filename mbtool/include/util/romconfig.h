@@ -21,24 +21,15 @@
 
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 namespace mb
 {
-
-struct SharedPackage
-{
-    std::string pkg_id;
-    bool share_data;
-};
 
 struct RomConfig
 {
     std::string id;
     std::string name;
     std::unordered_map<std::string, std::string> cached_props;
-    bool indiv_app_sharing = false;
-    std::vector<SharedPackage> shared_pkgs;
 
     bool load_file(const std::string &path);
     bool save_file(const std::string &path);
