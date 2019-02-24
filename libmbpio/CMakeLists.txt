@@ -17,24 +17,9 @@ foreach(variant ${variants})
     add_library(
         ${lib_target}
         ${uvariant}
-        src/delete.cpp
         src/directory.cpp
         src/path.cpp
     )
-
-    if(WIN32)
-        target_sources(
-            ${lib_target}
-            PRIVATE
-            src/win32/delete.cpp
-        )
-    else()
-        target_sources(
-            ${lib_target}
-            PRIVATE
-            src/posix/delete.cpp
-        )
-    endif()
 
     # Includes
     target_include_directories(${lib_target} PUBLIC include)
