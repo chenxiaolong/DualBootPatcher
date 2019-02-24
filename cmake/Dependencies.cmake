@@ -43,8 +43,6 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
 
     set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_OLD})
     unset(CMAKE_FIND_LIBRARY_SUFFIXES_OLD)
-elseif(${MBP_BUILD_TARGET} STREQUAL hosttools)
-    include(cmake/dependencies/yaml-cpp.cmake)
 endif()
 
 # Needed for every target
