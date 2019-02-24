@@ -1,18 +1,12 @@
 [submodule "external/pugixml"]
 	path = external/pugixml
 	url = https://github.com/zeux/pugixml.git
-[submodule "external/Android-Terminal-Emulator"]
-	path = external/Android-Terminal-Emulator
-	url = https://github.com/chenxiaolong/Android-Terminal-Emulator.git
 [submodule "external/flatbuffers"]
 	path = external/flatbuffers
 	url = https://github.com/google/flatbuffers.git
 [submodule "external/minizip"]
 	path = external/minizip
 	url = https://github.com/chenxiaolong/minizip.git
-[submodule "external/RootShell"]
-	path = external/RootShell
-	url = https://github.com/chenxiaolong/RootShell.git
 [submodule "external/googletest"]
 	path = external/googletest
 	url = https://github.com/chenxiaolong/googletest.git
