@@ -20,9 +20,8 @@
 #include "util/validcerts.h"
 
 /*
- * Android's "signatures" in /data/system/packages.xml and also in the Java
- * class android.content.pm.Signature are just hexadecimal representations of
- * the signing key's certificate.
+ * The certificate string is just the hexadecimal representations of the signing
+ * key's certificate.
  *
  * To get this "signature" from the keystore, run the following command:
  *

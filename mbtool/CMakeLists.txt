@@ -13,13 +13,6 @@ set_source_files_properties(
 )
 
 set_source_files_properties(
-    src/boot/packages.cpp
-    PROPERTIES
-    COMPILE_FLAGS
-    "-Wno-format-nonliteral"
-)
-
-set_source_files_properties(
     src/util/legacy_property_service.cpp
     PROPERTIES
     COMPILE_FLAGS
@@ -38,13 +31,6 @@ set_source_files_properties(
     PROPERTIES
     COMPILE_FLAGS
     "-Wno-keyword-macro"
-)
-
-set_source_files_properties(
-    ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
-    PROPERTIES
-    COMPILE_FLAGS
-    "-Wno-double-promotion -Wno-sign-conversion"
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
@@ -80,13 +66,11 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         src/boot/init/devices.cpp
         src/boot/init/uevent_listener.cpp
         src/boot/mount_fstab.cpp
-        src/boot/packages.cpp
         src/boot/properties.cpp
         src/boot/reboot.cpp
         src/boot/uevent_dump.cpp
         src/boot/uevent_thread.cpp
         src/main.cpp
-        ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
     )
 
     add_executable(
@@ -111,16 +95,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             PRIVATE
             include
             ${CMAKE_SOURCE_DIR}/external/minizip
-            ${CMAKE_SOURCE_DIR}/external/pugixml/src
-        )
-
-        # Disable some pugixml features
-        target_compile_definitions(
-            ${target}
-            PRIVATE
-            -DPUGIXML_NO_EXCEPTIONS
-            -DPUGIXML_NO_STL
-            -DPUGIXML_NO_XPATH
         )
     endforeach()
 

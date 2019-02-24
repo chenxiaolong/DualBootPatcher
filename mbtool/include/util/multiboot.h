@@ -30,8 +30,6 @@
 
 #define UNIVERSAL_BY_NAME_DIR           "/dev/block/by-name"
 
-#define PACKAGES_XML                    "/data/system/packages.xml"
-
 #define BUILD_PROP_PATH                 "/system/build.prop"
 #define DEFAULT_PROP_PATH               "/default.prop"
 #define DBP_PROP_PATH                   "/dbp.prop"
