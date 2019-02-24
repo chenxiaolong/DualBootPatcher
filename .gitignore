@@ -24,8 +24,8 @@
 # CMake toolchain files
 /cmake/toolchain-*.cmake
 
-# Generated Dockerfiles
-/docker/generated/
+# Docker image tag
+/docker/image.txt
 
 # makepkg custom configuration file
 /thirdparty/makepkg.local.conf

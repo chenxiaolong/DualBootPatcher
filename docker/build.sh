@@ -2,20 +2,14 @@
 
 set -eu
 
-variants=(base linux)
-
 cd "$(dirname "${BASH_SOURCE[0]}")"
 source common.sh
 
-if [[ ! -d generated ]]; then
-    echo >&2 "Run generate.sh first"
-    exit 1
-fi
+image=${repo}:${version}-${release}
 
-for variant in "${variants[@]}"; do
-    docker build \
-        --force-rm \
-        -f "generated/Dockerfile.${variant}" \
-        -t "${repo}:${version}-${release}-${variant}" \
-        .
-done
+docker build \
+    --force-rm \
+    -t "${image}" \
+    .
+
+echo "${image}" > image.txt

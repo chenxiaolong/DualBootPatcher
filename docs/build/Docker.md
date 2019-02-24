@@ -1,41 +1,27 @@
 # Docker Setup
 
-DualBootPatcher provides official docker images containing the necessary components to build the software. This allows for making consistent builds regardless of which computer they're built on. It also completely self contained and doesn't pollute the host with all the build dependencies.
+DualBootPatcher provides an official docker image containing the necessary components to build the software. This allows for making consistent builds regardless of which computer they're built on. It also completely self contained and doesn't pollute the host with all the build dependencies.
 
 This guide assumes that you already have docker installed.
 
 
-## Building the docker images
+## Building the docker image
 
-Since the images are very large, they are not available in Docker Hub. They will need to be built on your local machine.
+Since the image is very large, it is not available on Docker Hub. It will need to be built on your local machine.
 
-To build the docker images, simply run the following command to generate the `Dockerfile`s:
-
-```sh
-./docker/generate.sh
-```
-
-and then run the following command to build the actual images:
+To build the docker image, simply run the following command:
 
 ```sh
 ./docker/build.sh
 ```
 
-Note that building the docker images will take a long time and consume a lot of bandwidth--multiple gigabytes at the very least. It will download all the dependencies for building DualBootPatcher for all supported targets.
+Note that building the docker image will take a long time and consume a lot of bandwidth--multiple gigabytes at the very least. It will download all the dependencies for building DualBootPatcher for all supported targets.
 
-Once the images have been built, the resulting image tags are written to `docker/generated/images.properties`. It will look something like the following:
+Once the image has been built, the resulting image tag is written to `docker/image.txt`. It will look something like the following:
 
-```dosini
-base=chenxiaolong/dualbootpatcher:9.3.0-14-base
-linux=chenxiaolong/dualbootpatcher:9.3.0-14-linux
 ```
-
-The following table describes the images that are built:
-
-| Image               | Description                                                   |
-|---------------------|---------------------------------------------------------------|
-| `<version>-base`    | Base image for the other images. Contains common dependencies |
-| `<version>-linux`   | Contains dependencies for building the desktop app for Linux  |
+chenxiaolong/dualbootpatcher:9.3.0-15
+```
 
 
 ## Using the docker images
@@ -49,7 +35,7 @@ docker run --rm -it \
     -v "$(pwd):/builder/DualBootPatcher:rw,z" \
     -v "${HOME}/.android:/builder/.android:rw,z" \
     -v "${HOME}/.ccache:/builder/.ccache:rw,z" \
-    chenxiaolong/dualbootpatcher:9.3.0-14-base \
+    "$(<docker/image.txt)" \
     bash
 ```
 
