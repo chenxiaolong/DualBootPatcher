@@ -1,5 +1,6 @@
 # Install paths
 set(BIN_INSTALL_DIR .)
+set(DATA_INSTALL_DIR .)
 
 # CPack
 

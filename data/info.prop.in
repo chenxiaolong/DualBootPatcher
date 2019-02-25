@@ -1,0 +1,2 @@
+mb.version=@MBP_VERSION@
+mb.git-version=@GIT_VERSION@
