@@ -23,7 +23,6 @@ foreach(variant ${variants})
         target_sources(
             ${lib_target}
             PRIVATE
-            src/android_logger.cpp
             src/kmsg_logger.cpp
         )
     endif()
@@ -57,13 +56,6 @@ foreach(variant ${variants})
         interface.mbcommon.library
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
     )
-
-    if(ANDROID AND ${variant} STREQUAL shared)
-        target_link_libraries(
-            ${lib_target}
-            PUBLIC log
-        )
-    endif()
 
     # Install shared library
     if(${variant} STREQUAL shared)
