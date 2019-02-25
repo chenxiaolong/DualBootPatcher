@@ -1,10 +1,7 @@
 set(variants)
 
-if(MBP_TARGET_HAS_BUILDS
-        AND NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
-    list(APPEND variants static)
-endif()
-if(${MBP_BUILD_TARGET} STREQUAL desktop)
+list(APPEND variants static)
+if(${MBP_BUILD_TARGET} STREQUAL system)
     list(APPEND variants shared)
 endif()
 

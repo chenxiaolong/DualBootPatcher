@@ -24,12 +24,12 @@ Specifies the target system to build for.
 
 ##### Valid values:
 
-- `desktop` Build for conventional desktop operating systems
-- `android` Build for Android
+- `device` - Build for target Android device
+- `system` - Build for current system (only includes some command-line utilities)
 
 ##### Default value:
 
-`desktop`
+`device`
 
 ##### Required:
 

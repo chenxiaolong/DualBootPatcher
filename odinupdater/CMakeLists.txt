@@ -1,4 +1,4 @@
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
+if(${MBP_BUILD_TARGET} STREQUAL device)
     add_executable(odinupdater odinupdater.cpp)
     add_executable(fuse-sparse fuse-sparse.cpp)
 

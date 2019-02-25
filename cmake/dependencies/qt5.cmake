@@ -1,7 +1,4 @@
-find_package(Qt5Core 5.10 REQUIRED)
-find_package(Qt5Widgets 5.10 REQUIRED)
-
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
+if(${MBP_BUILD_TARGET} STREQUAL device)
     # The CMake files for static Qt5 builds for Android don't include all
     # required dependencies.
     #

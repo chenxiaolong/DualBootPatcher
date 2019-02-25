@@ -2,7 +2,7 @@
 # be cross-compiling, but the host tools should always be compiled for the host
 # as they need to run during build-time.
 
-if(MBP_TOP_LEVEL_BUILD)
+if(NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
     include(ExternalProject)
 
     set(HOSTTOOLS_OPTIONS
@@ -11,7 +11,6 @@ if(MBP_TOP_LEVEL_BUILD)
         -DMBP_BUILD_TARGET=hosttools
         -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
         -DMBP_ENABLE_TESTS=OFF
-        -DMBP_PREBUILTS_BINARY_DIR=${MBP_PREBUILTS_BINARY_DIR}
     )
 
     message(STATUS "Recursive CMake build for hosttools:")

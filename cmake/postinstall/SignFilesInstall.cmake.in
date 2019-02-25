@@ -1,0 +1,41 @@
+cmake_minimum_required(VERSION 3.1)
+
+# Sign every file that gets installed because there's no way to reliably do this
+# per-target without knowing the install locations of the targets. The upcoming
+# generator expression support in install(CODE ...) blocks may help with this.
+#
+# See:
+#   - https://gitlab.kitware.com/cmake/cmake/issues/15785
+#   - https://gitlab.kitware.com/cmake/cmake/issues/18435
+
+include("@CMAKE_SOURCE_DIR@/cmake/SigningConfigReader.cmake")
+read_signing_config(MBP_SIGN_JAVA_ "@MBP_SIGN_CONFIG_PATH@")
+
+set(ENV{MBSIGN_PASSPHRASE} "${MBP_SIGN_JAVA_KEYSTORE_PASSPHRASE}")
+
+set(signature_files)
+
+foreach(file ${CMAKE_INSTALL_MANIFEST_FILES})
+    set(path "$ENV{DESTDIR}${file}")
+
+    if(EXISTS "${path}.sig" AND "${path}.sig" IS_NEWER_THAN "${path}")
+        message(STATUS "Up-to-date: ${path}.sig")
+    else()
+        message(STATUS "Signing: ${path}")
+        execute_process(
+            COMMAND
+            "@SIGNTOOL_COMMAND@"
+            "@PKCS12_KEYSTORE_PATH@"
+            "${path}"
+            "${path}.sig"
+            RESULT_VARIABLE ret
+        )
+        if(NOT ret EQUAL 0)
+            message(FATAL_ERROR "Failed to sign: ${path}")
+        endif()
+    endif()
+
+    list(APPEND signature_files "${file}.sig")
+endforeach()
+
+list(APPEND CMAKE_INSTALL_MANIFEST_FILES ${signature_files})

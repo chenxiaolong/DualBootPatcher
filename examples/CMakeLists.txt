@@ -1,4 +1,4 @@
-if(${MBP_BUILD_TARGET} STREQUAL desktop)
+if(${MBP_BUILD_TARGET} STREQUAL system)
     # desparse tool
 
     add_executable(
@@ -26,9 +26,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         interface.global.CXXVersion
         mbcommon-shared
     )
-endif()
 
-if(${MBP_BUILD_TARGET} STREQUAL desktop)
     # boot image compare tool
 
     add_executable(
@@ -43,8 +41,8 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
 endif()
 
-if(UNIX AND (${MBP_BUILD_TARGET} STREQUAL desktop
-        OR ${MBP_BUILD_TARGET} STREQUAL android-system))
+if(UNIX AND (${MBP_BUILD_TARGET} STREQUAL system
+        OR ${MBP_BUILD_TARGET} STREQUAL device))
     # Simple frontend to libmbsystrace
 
     add_executable(

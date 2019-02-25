@@ -1,9 +1,7 @@
 set(variants)
 
-if(MBP_TARGET_HAS_BUILDS)
-    list(APPEND variants static)
-endif()
-if(${MBP_BUILD_TARGET} STREQUAL desktop)
+list(APPEND variants static)
+if(${MBP_BUILD_TARGET} STREQUAL system)
     list(APPEND variants shared)
 endif()
 
@@ -77,7 +75,7 @@ if(variants AND MBP_ENABLE_TESTS)
         gtest_main
     )
 
-    if(${MBP_BUILD_TARGET} STREQUAL android-system)
+    if(${MBP_BUILD_TARGET} STREQUAL device)
         unix_link_executable_statically(mbsparse_tests)
     endif()
 

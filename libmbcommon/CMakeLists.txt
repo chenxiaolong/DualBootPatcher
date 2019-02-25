@@ -34,10 +34,8 @@ set_source_files_properties(
 
 set(variants)
 
-if(MBP_TARGET_HAS_BUILDS)
-    list(APPEND variants static)
-endif()
-if(${MBP_BUILD_TARGET} STREQUAL desktop
+list(APPEND variants static)
+if(${MBP_BUILD_TARGET} STREQUAL system
         OR ${MBP_BUILD_TARGET} STREQUAL hosttools)
     list(APPEND variants shared)
 endif()
@@ -161,7 +159,7 @@ if(variants AND MBP_ENABLE_TESTS)
         gmock_main
     )
 
-    if(${MBP_BUILD_TARGET} STREQUAL android-system)
+    if(${MBP_BUILD_TARGET} STREQUAL device)
         unix_link_executable_statically(mbcommon_tests)
     endif()
 

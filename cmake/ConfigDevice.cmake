@@ -1,0 +1,9 @@
+# Install paths
+set(BIN_INSTALL_DIR .)
+
+# CPack
+
+set(CPACK_PACKAGE_NAME "DualBootPatcher")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A tool for multibooting Android ROMs")
+set(CPACK_GENERATOR "ZIP")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}_${ANDROID_ABI}")

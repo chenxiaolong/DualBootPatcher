@@ -14,7 +14,7 @@ set_source_files_properties(
 
 set(variants)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
+if(${MBP_BUILD_TARGET} STREQUAL device)
     list(APPEND variants static)
 endif()
 # No shared version
@@ -117,7 +117,7 @@ if(variants AND MBP_ENABLE_TESTS)
         gmock_main
     )
 
-    if(${MBP_BUILD_TARGET} STREQUAL android-system)
+    if(${MBP_BUILD_TARGET} STREQUAL device)
         unix_link_executable_statically(mbutil_tests)
     endif()
 

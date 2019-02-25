@@ -2,20 +2,14 @@ include(CheckCXXSymbolExists)
 
 add_subdirectory(headersgen)
 
-if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system
-        AND NOT (${MBP_BUILD_TARGET} STREQUAL desktop AND UNIX))
+if(NOT ${MBP_BUILD_TARGET} STREQUAL device
+        AND NOT (${MBP_BUILD_TARGET} STREQUAL system AND UNIX))
     return()
 endif()
 
 if(NOT CMAKE_COMPILER_IS_GNUCXX
         AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     message(FATAL_ERROR "libmbsystrace requires gcc/clang")
-endif()
-
-if(${MBP_BUILD_TARGET} STREQUAL desktop)
-    set(headersgen_deps hosttools)
-else()
-    set(headersgen_deps)
 endif()
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include")
@@ -89,7 +83,7 @@ function(add_signals_target)
             -o "${target_file}"
             --
             ${compiler_cmd}
-        DEPENDS ${headersgen_deps}
+        DEPENDS hosttools
         COMMENT "Generating signals list"
         VERBATIM
     )
@@ -163,9 +157,7 @@ endif()
 
 set(variants)
 
-if(MBP_TARGET_HAS_BUILDS)
-    list(APPEND variants static)
-endif()
+list(APPEND variants static)
 # No shared version
 
 # Build libraries
@@ -270,7 +262,7 @@ if(variants AND MBP_ENABLE_TESTS)
         )
     endif()
 
-    if(${MBP_BUILD_TARGET} STREQUAL android-system)
+    if(${MBP_BUILD_TARGET} STREQUAL device)
         unix_link_executable_statically(mbsystrace_tests)
     endif()
 

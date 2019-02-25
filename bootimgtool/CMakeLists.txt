@@ -1,8 +1,8 @@
 set(variants)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
+if(${MBP_BUILD_TARGET} STREQUAL device)
     list(APPEND variants static)
-elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
+elseif(${MBP_BUILD_TARGET} STREQUAL system)
     list(APPEND variants shared)
 endif()
 

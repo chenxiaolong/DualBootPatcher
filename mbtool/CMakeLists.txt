@@ -33,7 +33,7 @@ set_source_files_properties(
     "-Wno-keyword-macro"
 )
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
+if(${MBP_BUILD_TARGET} STREQUAL device)
     # Generate validcerts.cpp
     configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/util/validcerts.cpp.in

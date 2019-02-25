@@ -6,7 +6,7 @@ set(USE_AES OFF CACHE BOOL "Enables building with AES library" FORCE)
 
 backup_variable(BUILD_SHARED_LIBS)
 
-if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system)
+if(NOT ${MBP_BUILD_TARGET} STREQUAL device)
     set(BUILD_SHARED_LIBS TRUE)
 endif()
 
