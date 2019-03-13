@@ -73,6 +73,7 @@ set(files
     zoji.yml
     zte.yml
     zuk.yml
+    xiaomi.yml
 )
 
 set(target_file "${CMAKE_CURRENT_BINARY_DIR}/devices.json")
