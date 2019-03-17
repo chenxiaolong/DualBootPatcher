@@ -312,3 +312,16 @@ TEST(SpanTest, CheckAsBytes)
     ASSERT_EQ(buf[1], 0xdddddddd);
     ASSERT_EQ(buf[2], 0xcccccccc);
 }
+
+TEST(SpanTest, CheckAsBytesExtension)
+{
+    std::array buf{1, 2, 3};
+
+    auto s = as_bytes(buf);
+    ASSERT_EQ(static_cast<const void *>(s.data()), static_cast<void *>(&buf));
+    ASSERT_EQ(s.size(), sizeof(buf));
+
+    auto s2 = as_writable_bytes(buf);
+    ASSERT_EQ(static_cast<void *>(s2.data()), static_cast<void *>(&buf));
+    ASSERT_EQ(s2.size(), sizeof(buf));
+}

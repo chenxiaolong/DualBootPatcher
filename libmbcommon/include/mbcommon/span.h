@@ -415,6 +415,33 @@ span(Container &) -> span<typename Container::value_type>;
 template<class Container>
 span(const Container &) -> span<const typename Container::value_type>;
 
+// libmbcommon-specific additions to convert an object to a byte span
+
+template<
+    class T,
+    class = std::enable_if_t<std::is_trivial_v<T>>
+>
+inline constexpr span<const std::byte, sizeof(T)>
+as_bytes(const T &t) noexcept
+{
+    return span<const std::byte, sizeof(t)>(
+            reinterpret_cast<const std::byte *>(&t), sizeof(t));
+}
+
+template<
+    class T,
+    class = std::void_t<
+        std::enable_if_t<std::is_trivial_v<T>>,
+        std::enable_if_t<!std::is_const_v<T>>
+    >
+>
+inline constexpr span<std::byte, sizeof(T)>
+as_writable_bytes(T &t) noexcept
+{
+    return span<std::byte, sizeof(t)>(
+            reinterpret_cast<std::byte *>(&t), sizeof(t));
+}
+
 }
 
 namespace mb
