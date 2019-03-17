@@ -52,6 +52,7 @@ foreach(variant ${variants})
         src/common.cpp
         src/error.cpp
         src/error_code.cpp
+        src/file/buffered.cpp
         src/file/fd.cpp
         src/file/memory.cpp
         src/file/open_mode.cpp
@@ -123,6 +124,7 @@ if(variants AND MBP_ENABLE_TESTS)
         # Helpers
         tests/main.cpp
         # Tests
+        tests/file/test_buffered.cpp
         tests/file/test_fd.cpp
         tests/file/test_memory.cpp
         tests/file/test_posix.cpp
