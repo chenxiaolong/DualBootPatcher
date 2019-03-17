@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2018-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,8 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Implementation of C++20's std::span, except with the following proposal
-// included: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1089r2.pdf
+// Implementation of C++20's std::span
 
 #pragma once
 
@@ -280,6 +279,20 @@ public:
     [[nodiscard]] constexpr bool empty() const noexcept
     {
         return size() == 0;
+    }
+
+    // https://en.cppreference.com/w/cpp/container/span/front
+
+    constexpr reference front() const noexcept
+    {
+        return *begin();
+    }
+
+    // https://en.cppreference.com/w/cpp/container/span/back
+
+    constexpr reference back() const noexcept
+    {
+        return *(end() - 1);
     }
 
     // https://en.cppreference.com/w/cpp/container/span/operator_at

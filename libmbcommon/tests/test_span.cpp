@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2018-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -144,6 +144,15 @@ TEST(SpanTest, CheckIterators)
     ASSERT_EQ(*buf.crbegin(), 'c');
     ASSERT_EQ(*(buf.rend() - 1), 'a');
     ASSERT_EQ(*(buf.crend() - 1), 'a');
+}
+
+TEST(SpanTest, CheckFrontBack)
+{
+    std::array buf{'a', 'b', 'c'};
+    span s(buf);
+
+    ASSERT_EQ(s.front(), 'a');
+    ASSERT_EQ(s.back(), 'c');
 }
 
 TEST(SpanTest, CheckIndexingOperators)
