@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,10 +19,15 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <cstddef>
 
 namespace mb
 {
+
+template<auto fn>
+using TypeFn = std::integral_constant<decltype(fn), fn>;
 
 // Based on https://stackoverflow.com/a/43526780
 
