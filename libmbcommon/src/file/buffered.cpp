@@ -451,6 +451,124 @@ span<unsigned char> BufferedFile::wbuf()
 }
 
 /*!
+ * \brief Read line from file until delimiter is found
+ *
+ * \param f Callback to receive line data
+ * \param max_size Maximum size of line
+ * \param delim Delimiter
+ *
+ * \return If successful, the number of bytes read, including the trailing
+ *         newline if one exists. If 0 is returned, then EOF is reached.
+ *         Otherwise, the error code of fill_rbuf().
+ */
+oc::result<size_t> BufferedFile::get_delim(const GetDelimFn &f,
+                                           std::optional<size_t> max_size,
+                                           unsigned char delim)
+{
+    size_t read = 0;
+
+    while (!max_size || *max_size > 0) {
+        OUTCOME_TRYV(fill_rbuf());
+        auto read_buf = rbuf();
+        bool done = false;
+
+        // If we have a size limit, only search within the boundary
+        if (max_size && read_buf.size() > *max_size) {
+            read_buf = read_buf.subspan(0, *max_size);
+        }
+
+        // Search for delimiter
+        if (auto ptr = reinterpret_cast<unsigned char *>(
+                memchr(read_buf.data(), delim, read_buf.size()))) {
+            read_buf = read_buf.subspan(
+                    0, static_cast<size_t>(ptr - read_buf.data() + 1));
+            done = true;
+        }
+
+        // Call user-provided append function
+        f(as_bytes(read_buf));
+
+        // Consume used bytes
+        consume_rbuf(read_buf.size());
+        read += read_buf.size();
+        if (max_size) {
+            *max_size -= read_buf.size();
+        }
+
+        // Stop if delimiter found or EOF is reached
+        if (done || read_buf.empty()) {
+            break;
+        }
+    }
+
+    return read;
+}
+
+/*!
+ * \fn BufferedFile::read_line(Container &, unsigned char)
+ *
+ * \brief Read line into dynamically sized container
+ *
+ * \warning Do NOT use this function with a file containing untrusted data. A
+ *          long line can cause a DOS attack where all available memory is used
+ *          up.
+ *
+ * \param[in,out] buf Container to read line into
+ * \param[in] delim Delimiter
+ *
+ * \return If successful, the number of bytes read, including the trailing
+ *         newline if one exists. If 0 is returned, then EOF is reached.
+ *         Otherwise, the error code of fill_rbuf().
+ */
+
+/*!
+ * \fn BufferedFile::read_sized_line(Container &, size_t, unsigned char)
+ *
+ * \brief Read line into dynamically sized container with maximum size
+ *
+ * Read line into dynamically sized container until \p delim is found or
+ * \p max_size is reached, whichever comes first. This is better than calling
+ *
+ * \code{.cpp}
+ * container.resize(max_size);
+ * buf_file.read_sized_line(span(container), delim);
+ * \endcode
+ *
+ * because it doesn't require allocating the maximum size of the line being read
+ * is small.
+ *
+ * \param[in,out] buf Container to read line into
+ * \param[in] max_size Maximum size of line
+ * \param[in] delim Delimiter
+ *
+ * \return If successful, the number of bytes read, including the trailing
+ *         newline if one exists. If 0 is returned, then EOF is reached.
+ *         Otherwise, the error code of fill_rbuf().
+ */
+
+/*!
+ * \brief Read line into fixed size span
+ *
+ * Read line into \buf until \p delim is found or `buf.size()` is reached,
+ * whichever comes first.
+ *
+ * \param[in,out] buf Buffer to read line into
+ * \param[in] delim Delimiter
+ *
+ * \return If successful, the number of bytes read, including the trailing
+ *         newline if one exists. If 0 is returned, then EOF is reached.
+ *         Otherwise, the error code of fill_rbuf().
+ */
+oc::result<size_t> BufferedFile::read_sized_line(span<std::byte> buf,
+                                                 unsigned char delim)
+{
+    return get_delim([&buf](span<const std::byte> data) {
+        memcpy(buf.data(), data.data(), data.size());
+        buf = buf.subspan(data.size());
+    }, buf.size(), delim);
+}
+
+/*!
  * \brief Read underlying file
  *
  * \post \ref m_fpos is incremented by the number of bytes read

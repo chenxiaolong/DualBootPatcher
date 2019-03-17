@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <functional>
+#include <optional>
+#include <type_traits>
 #include <vector>
 
 #include "mbcommon/file.h"
@@ -31,6 +34,7 @@ class MB_EXPORT BufferedFile : public File
 {
 public:
     static inline size_t DEFAULT_BUFFER_SIZE = 8 * 1024;
+    static inline unsigned char DEFAULT_DELIM = '\n';
 
     BufferedFile(size_t buf_size = DEFAULT_BUFFER_SIZE);
     BufferedFile(File &file, size_t buf_size = DEFAULT_BUFFER_SIZE);
@@ -61,9 +65,48 @@ public:
     span<unsigned char> rbuf();
     span<unsigned char> wbuf();
 
-    // TODO: read_until
-    // TODO: read_line
-    // TODO: read_delim
+    template<
+        typename Container,
+        class = std::void_t<
+            std::enable_if_t<sizeof(std::byte)
+                    == sizeof(typename Container::value_type)>,
+            std::enable_if_t<std::alignment_of_v<std::byte>
+                    == std::alignment_of_v<typename Container::value_type>>
+        >
+    >
+    oc::result<size_t> read_line(Container &buf,
+                                 unsigned char delim = DEFAULT_DELIM)
+    {
+        using V = typename Container::value_type;
+
+        return get_delim([&buf](span<const std::byte> data) {
+            buf.insert(buf.end(), reinterpret_cast<const V *>(data.begin()),
+                       reinterpret_cast<const V *>(data.end()));
+        }, std::nullopt, delim);
+    }
+
+    template<
+        typename Container,
+        class = std::void_t<
+            std::enable_if_t<sizeof(std::byte)
+                    == sizeof(typename Container::value_type)>,
+            std::enable_if_t<std::alignment_of_v<std::byte>
+                    == std::alignment_of_v<typename Container::value_type>>
+        >
+    >
+    oc::result<size_t> read_sized_line(Container &buf, size_t max_size,
+                                       unsigned char delim = DEFAULT_DELIM)
+    {
+        using V = typename Container::value_type;
+
+        return get_delim([&buf](span<const std::byte> data) {
+            buf.insert(buf.end(), reinterpret_cast<const V *>(data.begin()),
+                       reinterpret_cast<const V *>(data.end()));
+        }, max_size, delim);
+    }
+
+    oc::result<size_t> read_sized_line(span<std::byte> buf,
+                                       unsigned char delim = DEFAULT_DELIM);
 
 private:
     /*! \cond INTERNAL */
@@ -71,6 +114,12 @@ private:
     oc::result<size_t> write_underlying(const void *buf, size_t size);
     oc::result<void> write_exact_underlying(const void *buf, size_t size);
     oc::result<uint64_t> seek_underlying(int64_t offset, int whence);
+
+    using GetDelimFn = std::function<void(span<const std::byte>)>;
+
+    oc::result<size_t> get_delim(const GetDelimFn &f,
+                                 std::optional<size_t> max_size,
+                                 unsigned char delim = DEFAULT_DELIM);
 
     void clear() noexcept;
 

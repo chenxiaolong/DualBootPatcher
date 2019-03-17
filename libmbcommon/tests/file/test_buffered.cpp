@@ -595,3 +595,136 @@ TEST_F(FileBufferedTest, FillRbufFailure)
 
     ASSERT_EQ(_buf_file.fill_rbuf(), oc::failure(std::errc::io_error));
 }
+
+TEST_F(FileBufferedTest, ReadLineToContainer)
+{
+    char data[] = "\n\nabcdefghijklmnopqrstuvwxyz\n\000123456789";
+    _buf_file.set_buf_size(2);
+    open_mem(data, sizeof(data) - 1);
+
+    std::string buf;
+
+    ASSERT_EQ(_buf_file.read_line(buf), oc::success(1u));
+    ASSERT_EQ(buf, "\n");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_line(buf), oc::success(1u));
+    ASSERT_EQ(buf, "\n");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_line(buf), oc::success(27u));
+    ASSERT_EQ(buf, "abcdefghijklmnopqrstuvwxyz\n");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_line(buf), oc::success(10u));
+    ASSERT_THAT(buf, ElementsAre(0, '1', '2', '3', '4', '5', '6', '7', '8', '9'));
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_line(buf), oc::success(0u));
+    ASSERT_EQ(buf, "");
+}
+
+TEST_F(FileBufferedTest, ReadLineToSizedContainer)
+{
+    char data[] = "\n\nabcdefghijklmnopqrstuvwxyz\n\000123456789";
+    _buf_file.set_buf_size(2);
+    open_mem(data, sizeof(data) - 1);
+
+    std::string buf;
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(1u));
+    ASSERT_EQ(buf, "\n");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(1u));
+    ASSERT_EQ(buf, "\n");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(5u));
+    ASSERT_EQ(buf, "abcde");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(5u));
+    ASSERT_EQ(buf, "fghij");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(5u));
+    ASSERT_EQ(buf, "klmno");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(5u));
+    ASSERT_EQ(buf, "pqrst");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(5u));
+    ASSERT_EQ(buf, "uvwxy");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(2u));
+    ASSERT_EQ(buf, "z\n");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(5u));
+    ASSERT_THAT(buf, ElementsAre(0, '1', '2', '3', '4'));
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(5u));
+    ASSERT_EQ(buf, "56789");
+    buf.clear();
+
+    ASSERT_EQ(_buf_file.read_sized_line(buf, 5), oc::success(0u));
+    ASSERT_EQ(buf, "");
+}
+
+TEST_F(FileBufferedTest, ReadLineToSizedSpan)
+{
+    char data[] = "\n\nabcdefghijklmnopqrstuvwxyz\n\000123456789";
+    _buf_file.set_buf_size(2);
+    open_mem(data, sizeof(data) - 1);
+
+    char buf[6] = {};
+    span s = as_writable_bytes(span(buf, sizeof(buf) - 1));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(1u));
+    ASSERT_STREQ(buf, "\n");
+    memset(buf, 0, sizeof(buf));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(1u));
+    ASSERT_STREQ(buf, "\n");
+    memset(buf, 0, sizeof(buf));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(5u));
+    ASSERT_STREQ(buf, "abcde");
+    memset(buf, 0, sizeof(buf));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(5u));
+    ASSERT_STREQ(buf, "fghij");
+    memset(buf, 0, sizeof(buf));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(5u));
+    ASSERT_STREQ(buf, "klmno");
+    memset(buf, 0, sizeof(buf));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(5u));
+    ASSERT_STREQ(buf, "pqrst");
+    memset(buf, 0, sizeof(buf));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(5u));
+    ASSERT_STREQ(buf, "uvwxy");
+    memset(buf, 0, sizeof(buf));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(2u));
+    ASSERT_STREQ(buf, "z\n");
+    memset(buf, 0, sizeof(buf));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(5u));
+    ASSERT_THAT(buf, ElementsAre(0, '1', '2', '3', '4', 0));
+    memset(buf, 0, sizeof(buf));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(5u));
+    ASSERT_STREQ(buf, "56789");
+    memset(buf, 0, sizeof(buf));
+
+    ASSERT_EQ(_buf_file.read_sized_line(s), oc::success(0u));
+    ASSERT_STREQ(buf, "");
+}
