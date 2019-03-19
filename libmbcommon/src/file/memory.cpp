@@ -305,6 +305,12 @@ oc::result<void> MemoryFile::truncate(uint64_t size)
         // Cannot truncate fixed buffer
         return FileError::UnsupportedTruncate;
     } else {
+#if UINT64_MAX > SIZE_MAX
+        if (size > SIZE_MAX) {
+            return FileError::ArgumentOutOfRange;
+        }
+#endif
+
         void *new_data = realloc(m_data, static_cast<size_t>(size));
         if (!new_data && size != 0) {
             return ec_from_errno();
