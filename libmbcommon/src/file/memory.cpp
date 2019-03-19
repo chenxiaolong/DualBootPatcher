@@ -306,7 +306,7 @@ oc::result<void> MemoryFile::truncate(uint64_t size)
         return FileError::UnsupportedTruncate;
     } else {
         void *new_data = realloc(m_data, static_cast<size_t>(size));
-        if (!new_data) {
+        if (!new_data && size != 0) {
             return ec_from_errno();
         }
 

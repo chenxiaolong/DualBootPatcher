@@ -479,3 +479,20 @@ TEST(FileDynamicMemoryTest, TruncateFile)
 
     free(in);
 }
+
+TEST(FileDynamicMemoryTest, TruncateFileToEmpty)
+{
+    void *in = strdup("x");
+    size_t in_size = 1;
+
+    MemoryFile file(&in, &in_size);
+    ASSERT_TRUE(file.is_open());
+
+    ASSERT_TRUE(file.truncate(0));
+    ASSERT_EQ(in_size, 0u);
+
+    ASSERT_TRUE(file.write("xyz", 3));
+    ASSERT_EQ(in_size, 3u);
+
+    free(in);
+}
