@@ -30,3 +30,4 @@ endif()
 # Needed for every target
 include(cmake/dependencies/openssl.cmake)
 include(cmake/dependencies/outcome.cmake)
+include(cmake/dependencies/sodium.cmake)
