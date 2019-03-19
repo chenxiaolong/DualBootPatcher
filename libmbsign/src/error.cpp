@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2018-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -50,28 +50,32 @@ const char * ErrorCategory::name() const noexcept
 std::string ErrorCategory::message(int ev) const
 {
     switch (static_cast<Error>(ev)) {
-    case Error::InvalidKeyFormat:
-        return "invalid key format";
-    case Error::InvalidSignatureVersion:
-        return "invalid signature version";
-    case Error::InvalidSignatureMagic:
-        return "invalid signature magic";
-    case Error::BadSignature:
-        return "bad signature";
-    case Error::PrivateKeyLoadError:
-        return "failed to load private key";
-    case Error::PublicKeyLoadError:
-        return "failed to load public key";
-    case Error::Pkcs12LoadError:
-        return "failed to load PKCS12 file";
-    case Error::Pkcs12MacVerifyError:
-        return "failed to verify MAC in PKCS12 file";
-    case Error::IoError:
-        return "I/O error";
-    case Error::OpensslError:
-        return "OpenSSL error";
-    case Error::InternalError:
-        return "internal error";
+    case Error::Base64DecodeError:
+        return "base64 decode error";
+    case Error::IncorrectChecksum:
+        return "incorrect checksum";
+    case Error::InvalidPayloadSize:
+        return "invalid data payload size";
+    case Error::InvalidGlobalSigSize:
+        return "invalid global signature size";
+    case Error::InvalidUntrustedComment:
+        return "invalid untrusted comment";
+    case Error::InvalidTrustedComment:
+        return "invalid trusted comment";
+    case Error::MismatchedKey:
+        return "mismatched key";
+    case Error::UnsupportedSigAlg:
+        return "unsupported signature algorithm";
+    case Error::UnsupportedKdfAlg:
+        return "unsupported key derivation function";
+    case Error::UnsupportedChkAlg:
+        return "unsupported checksum algorithm";
+    case Error::ComputeSigFailed:
+        return "failed to compute signature";
+    case Error::DataFileTooLarge:
+        return "data file is too large";
+    case Error::SignatureVerifyFailed:
+        return "signature verification failed";
     default:
         return "(unknown sign/verify error)";
     }

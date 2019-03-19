@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,10 +17,21 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gtest/gtest.h>
+#include "mbsign/memory.h"
 
-int main(int argc, char *argv[])
+#include <sodium/utils.h>
+
+namespace mb::sign
 {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+
+void * secure_alloc(size_t size) noexcept
+{
+    return sodium_malloc(size);
+}
+
+void secure_free(void *ptr) noexcept
+{
+    return sodium_free(ptr);
+}
+
 }

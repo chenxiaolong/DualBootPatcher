@@ -15,6 +15,9 @@ foreach(variant ${variants})
         ${lib_target}
         ${uvariant}
         src/error.cpp
+        src/detail/file_format.cpp
+        src/detail/raw_file.cpp
+        src/memory.cpp
         src/sign.cpp
     )
 
@@ -37,11 +40,11 @@ foreach(variant ${variants})
         ${lib_target}
         PUBLIC
         mbcommon-${variant}
-        OpenSSL::Crypto
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
+        sodium
     )
 
     # Install shared library
@@ -63,6 +66,7 @@ if(variants AND MBP_ENABLE_TESTS)
         # Helpers
         tests/main.cpp
         # Tests
+        tests/test_raw_file.cpp
         tests/test_sign.cpp
     )
 

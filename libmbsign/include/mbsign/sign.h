@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,36 +21,43 @@
 
 #include "mbcommon/common.h"
 
-#include <memory>
+#include "mbcommon/file.h"
 
-#include <openssl/evp.h>
-
-#include "mbsign/error.h"
+#include "mbsign/defs.h"
+#include "mbsign/memory.h"
 
 namespace mb::sign
 {
 
-using ScopedEVP_PKEY = std::unique_ptr<EVP_PKEY, decltype(EVP_PKEY_free) *>;
+MB_EXPORT oc::result<KeyPair>
+generate_keypair() noexcept;
 
-enum class KeyFormat
-{
-    Pem,
-    Pkcs12,
-};
+MB_EXPORT oc::result<void>
+save_secret_key(File &file, const SecretKey &key, const char *passphrase,
+                KdfSecurityLevel kdf_sec = KdfSecurityLevel::Sensitive) noexcept;
+MB_EXPORT oc::result<SecretKey>
+load_secret_key(File &file, const char *passphrase) noexcept;
 
-MB_EXPORT Result<ScopedEVP_PKEY>
-load_private_key(BIO &bio_key, KeyFormat format, const char *pass);
-MB_EXPORT Result<ScopedEVP_PKEY>
-load_private_key_from_file(const char *file, KeyFormat format, const char *pass);
+MB_EXPORT oc::result<void>
+save_public_key(File &file, const PublicKey &key) noexcept;
+MB_EXPORT oc::result<PublicKey>
+load_public_key(File &file) noexcept;
 
-MB_EXPORT Result<ScopedEVP_PKEY>
-load_public_key(BIO &bio_key, KeyFormat format, const char *pass);
-MB_EXPORT Result<ScopedEVP_PKEY>
-load_public_key_from_file(const char *file, KeyFormat format, const char *pass);
+MB_EXPORT oc::result<void>
+save_signature(File &file, const Signature &sig) noexcept;
+MB_EXPORT oc::result<Signature>
+load_signature(File &file) noexcept;
 
-MB_EXPORT Result<void>
-sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey);
-MB_EXPORT Result<void>
-verify_data(BIO &bio_data_in, BIO &bio_sig_in, EVP_PKEY &pkey);
+MB_EXPORT oc::result<Signature>
+sign_file(File &file, const SecretKey &key) noexcept;
+MB_EXPORT oc::result<void>
+verify_file(File &file, const Signature &sig, const PublicKey &key) noexcept;
+
+// Helper functions
+
+MB_EXPORT oc::result<void>
+update_global_signature(Signature &sig, const SecretKey &key) noexcept;
+MB_EXPORT oc::result<void>
+verify_global_signature(const Signature &sig, const PublicKey &key) noexcept;
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2018-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -27,48 +27,24 @@ namespace mb::sign
 
 enum class Error
 {
-    InvalidKeyFormat        = 10,
-    InvalidSignatureVersion = 11,
-    InvalidSignatureMagic   = 12,
-
-    BadSignature            = 20,
-
-    PrivateKeyLoadError     = 30,
-    PublicKeyLoadError      = 31,
-    Pkcs12LoadError         = 32,
-    Pkcs12MacVerifyError    = 33,
-
-    IoError                 = 40,
-
-    OpensslError            = 50,
-
-    InternalError           = 60,
+    Base64DecodeError = 1,
+    IncorrectChecksum,
+    InvalidPayloadSize,
+    InvalidGlobalSigSize,
+    InvalidUntrustedComment,
+    InvalidTrustedComment,
+    MismatchedKey,
+    UnsupportedSigAlg,
+    UnsupportedKdfAlg,
+    UnsupportedChkAlg,
+    ComputeSigFailed,
+    DataFileTooLarge,
+    SignatureVerifyFailed,
 };
 
 MB_EXPORT std::error_code make_error_code(Error e);
 
 MB_EXPORT const std::error_category & error_category();
-
-struct ErrorInfo
-{
-    std::error_code ec;
-    bool has_openssl_error;
-};
-
-inline const std::error_code & make_error_code(const ErrorInfo &ei)
-{
-    return ei.ec;
-}
-
-// https://github.com/ned14/outcome/issues/118
-inline void outcome_throw_as_system_error_with_payload(const ErrorInfo &ei)
-{
-    (void) ei;
-    OUTCOME_THROW_EXCEPTION(std::system_error(make_error_code(ei)));
-}
-
-template <typename T>
-using Result = oc::result<T, ErrorInfo>;
 
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,490 +19,474 @@
 
 #include "mbsign/sign.h"
 
-#include <memory>
-#include <string>
+#include <algorithm>
+#include <chrono>
 
+#include <cinttypes>
 #include <cstring>
 
-#ifdef __clang__
-#  pragma GCC diagnostic push
-#  if __has_warning("-Wold-style-cast")
-#    pragma GCC diagnostic ignored "-Wold-style-cast"
-#  endif
-#endif
+#include <sodium/core.h>
+#include <sodium/crypto_generichash_blake2b.h>
+#include <sodium/crypto_pwhash_scryptsalsa208sha256.h>
+#include <sodium/crypto_sign_ed25519.h>
+#include <sodium/randombytes.h>
+#include <sodium/utils.h>
 
-#ifdef OPENSSL_IS_BORINGSSL
-#include <openssl/mem.h>
-#endif
-#include <openssl/pem.h>
-#include <openssl/pkcs12.h>
+#include "mbcommon/endian.h"
+#include "mbcommon/error_code.h"
+#include "mbcommon/file/buffered.h"
+#include "mbcommon/file_util.h"
+#include "mbcommon/string.h"
 
-#ifdef __clang__
-#  pragma GCC diagnostic pop
-#endif
-
-#include "mbcommon/finally.h"
-
-constexpr char MAGIC[]                      = "!MBSIGN!";
-constexpr size_t MAGIC_SIZE                 = 8;
-
-constexpr uint32_t VERSION_1_SHA512_DGST    = 1u;
-constexpr uint32_t VERSION_LATEST           = VERSION_1_SHA512_DGST;
-
-// NOTE: All integers are stored in little endian form
-struct SigHeader
-{
-    char magic[MAGIC_SIZE];
-    uint32_t version;
-    uint32_t flags;
-    uint32_t unused;
-};
+#include "mbsign/detail/file_format.h"
+#include "mbsign/detail/raw_file.h"
+#include "mbsign/error.h"
 
 namespace mb::sign
 {
 
-template <typename T>
-using ScopedMallocable = std::unique_ptr<T, decltype(free) *>;
-
-using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
-using ScopedPKCS12 = std::unique_ptr<PKCS12, decltype(PKCS12_free) *>;
+using namespace detail;
 
 /*!
- * \brief Password callback
- *
- * \param buf Password output buffer
- * \param size Password output buffer size
- * \param rwflag Read/write flag (0 when reading, 1 when writing)
- * \param userdata User-provided callback data
- *
- * \return Number of characters in password (excluding NULL-terminator) or 0 on
- *         error (\a userdata is null)
+ * \brief Initialize libsodium if it's not already initialized
  */
-static int password_callback(char *buf, int size, int rwflag, void *userdata)
+static void initialize_libsodium() noexcept
 {
-    (void) rwflag;
+    static bool initialized = false;
 
-    if (userdata) {
-        const char *password = static_cast<const char *>(userdata);
-
-        int res = static_cast<int>(strlen(password));
-        if (res > size) {
-            res = size;
+    if (!initialized) {
+        if (sodium_init() < 0) {
+            abort();
         }
-        memcpy(buf, password, static_cast<size_t>(res));
-        return res;
+        initialized = true;
     }
-    return 0;
-}
-
-static void openssl_free_wrapper(void *ptr) noexcept
-{
-    OPENSSL_free(ptr);
 }
 
 /*!
- * \brief Load PKCS12 structure from a BIO stream
+ * \brief Generate ed25519 keypair
  *
- * \note \a pkey, \a cert, and \a ca must be freed with the appropriate
- *       functions if this function returns success.
- *
- * \param[in] bio_pkcs12 Input stream for PKCS12 structure
- * \param[in] pem_cb Password callback
- * \param[in] cb_data User-provided data to pass to password callback
- * \param[out] pkey Output private key
- * \param[out] cert Output certificate corresponding to \a pkey
- * \param[out] ca Output pointer for list of additional certificates
- *
- * \return Whether the PKCS12 structure was successfully loaded
+ * \return
+ *   * The ed25519 keypair if successful
+ *   * `std::errc::not_enough_memory` if secure memory allocation fails
  */
-static Result<void>
-load_pkcs12(BIO &bio_pkcs12, pem_password_cb &pem_cb, void *cb_data,
-            EVP_PKEY *&pkey, X509 *&cert, STACK_OF(X509) **ca)
+oc::result<KeyPair> generate_keypair() noexcept
 {
-    // Load PKCS12 from stream
-    ScopedPKCS12 p12(d2i_PKCS12_bio(&bio_pkcs12, nullptr), PKCS12_free);
-    if (!p12) {
-        return ErrorInfo{Error::Pkcs12LoadError, true};
+    initialize_libsodium();
+
+    KeyPair kp;
+    kp.skey.key = make_secure_unique_ptr<RawSecretKey>();
+    if (!kp.skey.key) {
+        return std::errc::not_enough_memory;
     }
 
-    char buf[PEM_BUFSIZE];
-    const char *pass;
+    // Generate friendly key ID
+    randombytes_buf(&kp.skey.id, sizeof kp.skey.id);
+    kp.pkey.id = kp.skey.id;
 
-    // Try empty password
-    if (PKCS12_verify_mac(p12.get(), "", 0)
-            || PKCS12_verify_mac(p12.get(), nullptr, 0)) {
-        pass = "";
-    } else {
-        // Otherwise, get password from callback
-        int len = pem_cb(buf, sizeof(buf), 0, cb_data);
-        if (len < 0) {
-            return ErrorInfo{Error::InternalError, false};
-        }
-        if (len < static_cast<int>(sizeof(buf))) {
-            buf[len] = '\0';
-        }
-        if (!PKCS12_verify_mac(p12.get(), buf, len)) {
-            return ErrorInfo{Error::Pkcs12MacVerifyError, true};
-        }
-        pass = buf;
-    }
+    // Generate keypair
+    crypto_sign_ed25519_keypair(kp.pkey.key.data(), kp.skey.key->data());
 
-    if (!PKCS12_parse(p12.get(), pass, &pkey, &cert, ca)) {
-        return ErrorInfo{Error::Pkcs12LoadError, true};
-    }
+    // Write comments
+    snprintf(kp.skey.untrusted.data(), kp.skey.untrusted.size(),
+             "libmbsign secret key %" PRIX64, kp.skey.id);
+    snprintf(kp.pkey.untrusted.data(), kp.pkey.untrusted.size(),
+             "libmbsign public key %" PRIX64, kp.pkey.id);
 
-    return oc::success();
+    return std::move(kp);
 }
 
 /*!
- * \brief Load private key from BIO stream
+ * \brief Write encrypted secret key to file
  *
- * \note The return value must be freed with EVP_PKEY_free()
+ * \param file Output file
+ * \param key Secret key to save
+ * \param passphrase Passphrase for encryption
+ * \param kdf_sec Key derivation function security level
  *
- * \param bio_key Input stream for private key
- * \param format Format of input stream
- * \param pass Passphrase (can be null)
- *
- * \return EVP_PKEY object for the private key
+ * \return
+ *   * Nothing if successful
+ *   * `std::errc::not_enough_memory` if memory allocation fails
+ *   * Error::InvalidUntrustedComment if the untrusted comment contains newlines
+ *   * Otherwise, a specific I/O error code
  */
-Result<ScopedEVP_PKEY>
-load_private_key(BIO &bio_key, KeyFormat format, const char *pass)
+oc::result<void>
+save_secret_key(File &file, const SecretKey &key, const char *passphrase,
+                KdfSecurityLevel kdf_sec) noexcept
 {
-    EVP_PKEY *pkey;
+    initialize_libsodium();
 
-    switch (format) {
-    case KeyFormat::Pem:
-        pkey = PEM_read_bio_PrivateKey(&bio_key, nullptr, &password_callback,
-                                       const_cast<char *>(pass));
-        break;
-    case KeyFormat::Pkcs12: {
-        X509 *x509 = nullptr;
-
-        auto free_x509 = finally([&x509] {
-            X509_free(x509);
-        });
-
-        OUTCOME_TRYV(load_pkcs12(bio_key, password_callback,
-                                 const_cast<char *>(pass), pkey, x509,
-                                 nullptr));
-
-        break;
-    }
-    default:
-        return ErrorInfo{Error::InvalidKeyFormat, false};
+    auto payload = make_secure_unique_ptr<SKPayload>();
+    if (!payload) {
+        return std::errc::not_enough_memory;
     }
 
-    if (!pkey) {
-        return ErrorInfo{Error::PrivateKeyLoadError, true};
-    }
-    return {pkey, EVP_PKEY_free};
+    payload->sig_alg = SIG_ALG;
+    payload->kdf_alg = KDF_ALG;
+    payload->chk_alg = CHK_ALG;
+    randombytes_buf(payload->kdf_salt.data(), payload->kdf_salt.size());
+    set_kdf_limits(*payload, kdf_sec);
+    payload->enc.id = mb_htole64(key.id);
+    payload->enc.key = *key.key;
+    payload->enc.chk = compute_checksum(*payload);
+
+    OUTCOME_TRYV(apply_xor_cipher(*payload, passphrase));
+
+    return save_raw_file(file, as_bytes(*payload), key.untrusted, nullptr,
+                         nullptr);
 }
 
 /*!
- * \brief Load private key from file
+ * \brief Load encrypted secret key from file
  *
- * \note The return value must be freed with EVP_PKEY_free()
+ * \param file Input file
+ * \param passphrase Passphrase for decryption
  *
- * \param file Private key file
- * \param format Format of key file
- * \param pass Passphrase (can be null)
- *
- * \return EVP_PKEY object for the private key
+ * \return
+ *   * Secret key if successful
+ *   * `std::errc::not_enough_memory` if memory allocation fails
+ *   * Error::InvalidUntrustedComment if the untrusted comment is too long
+ *   * Error::Base64DecodeError if invalid base64 data is encountered
+ *   * Error::InvalidPayloadSize if the payload size is incorrect
+ *   * Otherwise, a specific I/O error code
  */
-Result<ScopedEVP_PKEY>
-load_private_key_from_file(const char *file, KeyFormat format, const char *pass)
+oc::result<SecretKey>
+load_secret_key(File &file, const char *passphrase) noexcept
 {
-    ScopedBIO bio_key(BIO_new_file(file, "rb"), BIO_free);
-    if (!bio_key) {
-        return ErrorInfo{Error::IoError, true};
+    initialize_libsodium();
+
+    auto payload = make_secure_unique_ptr<SKPayload>();
+    if (!payload) {
+        return std::errc::not_enough_memory;
     }
 
-    return load_private_key(*bio_key, format, pass);
+    SecretKey key;
+
+    OUTCOME_TRYV(load_raw_file(file, as_writable_bytes(*payload), key.untrusted,
+                               nullptr, nullptr));
+
+    if (payload->sig_alg != SIG_ALG) {
+        return Error::UnsupportedSigAlg;
+    }
+
+    if (payload->kdf_alg != KDF_ALG) {
+        return Error::UnsupportedKdfAlg;
+    }
+
+    if (payload->chk_alg != CHK_ALG) {
+        return Error::UnsupportedChkAlg;
+    }
+
+    OUTCOME_TRYV(apply_xor_cipher(*payload, passphrase));
+
+    auto checksum = compute_checksum(*payload);
+
+    if (checksum != payload->enc.chk) {
+        return Error::IncorrectChecksum;
+    }
+
+    key.key = make_secure_unique_ptr<RawSecretKey>();
+    if (!key.key) {
+        return std::errc::not_enough_memory;
+    }
+
+    key.id = mb_le64toh(payload->enc.id);
+    *key.key = payload->enc.key;
+
+    return std::move(key);
 }
 
 /*!
- * \brief Load public key from BIO stream
+ * \brief Write public key to file
  *
- * \note The return value must be freed with EVP_PKEY_free()
+ * \param file Output file
+ * \param key Public key to save
  *
- * \param bio_key Input stream for public key
- * \param format Format of input stream
- * \param pass Passphrase (can be null)
- *
- * \return EVP_PKEY object for the public key
+ * \return
+ *   * Nothing if successful
+ *   * `std::errc::not_enough_memory` if memory allocation fails
+ *   * Error::InvalidUntrustedComment if the untrusted comment contains newlines
+ *   * Otherwise, a specific I/O error code
  */
-Result<ScopedEVP_PKEY>
-load_public_key(BIO &bio_key, KeyFormat format, const char *pass)
+oc::result<void>
+save_public_key(File &file, const PublicKey &key) noexcept
 {
-    EVP_PKEY *pkey = nullptr;
+    initialize_libsodium();
 
-    switch (format) {
-    case KeyFormat::Pem:
-        pkey = PEM_read_bio_PUBKEY(&bio_key, nullptr, &password_callback,
-                                   const_cast<char *>(pass));
-        break;
-    case KeyFormat::Pkcs12: {
-        EVP_PKEY *private_key = nullptr;
+    PKPayload payload = {};
+    payload.sig_alg = SIG_ALG;
+    payload.id = mb_htole64(key.id);
+    payload.key = key.key;
 
-        auto free_public_key = finally([&private_key] {
-            EVP_PKEY_free(private_key);
-        });
-
-        X509 *x509 = nullptr;
-
-        auto free_x509 = finally([&x509] {
-            X509_free(x509);
-        });
-
-        OUTCOME_TRYV(load_pkcs12(bio_key, password_callback,
-                                 const_cast<char *>(pass), private_key, x509,
-                                 nullptr));
-
-        if (x509) {
-            pkey = X509_get_pubkey(x509);
-        }
-
-        break;
-    }
-    default:
-        return ErrorInfo{Error::InvalidKeyFormat, false};
-    }
-
-    if (!pkey) {
-        return ErrorInfo{Error::PublicKeyLoadError, true};
-    }
-    return {pkey, EVP_PKEY_free};
+    return save_raw_file(file, as_bytes(payload), key.untrusted, nullptr,
+                         nullptr);
 }
 
 /*!
  * \brief Load public key from file
  *
- * \note The return value must be freed with EVP_PKEY_free()
+ * \param file Input file
  *
- * \param file Public key file
- * \param format Format of key file
- * \param pass Passphrase (can be null)
- *
- * \return EVP_PKEY object for the public key
+ * \return
+ *   * Public key if successful
+ *   * `std::errc::not_enough_memory` if memory allocation fails
+ *   * Error::InvalidUntrustedComment if the untrusted comment is too long
+ *   * Error::Base64DecodeError if invalid base64 data is encountered
+ *   * Error::InvalidPayloadSize if the payload size is incorrect
+ *   * Otherwise, a specific I/O error code
  */
-Result<ScopedEVP_PKEY>
-load_public_key_from_file(const char *file, KeyFormat format, const char *pass)
+oc::result<PublicKey>
+load_public_key(File &file) noexcept
 {
-    ScopedBIO bio_key(BIO_new_file(file, "rb"), BIO_free);
-    if (!bio_key) {
-        return ErrorInfo{Error::IoError, true};
+    initialize_libsodium();
+
+    PKPayload payload;
+    PublicKey key;
+
+    OUTCOME_TRYV(load_raw_file(file, as_writable_bytes(payload), key.untrusted,
+                               nullptr, nullptr));
+
+    if (payload.sig_alg != SIG_ALG) {
+        return Error::UnsupportedSigAlg;
     }
 
-    return load_public_key(*bio_key, format, pass);
+    key.id = mb_le64toh(payload.id);
+    key.key = payload.key;
+
+    return std::move(key);
 }
 
 /*!
- * \brief Sign data from stream
+ * \brief Write signature to file
  *
- * \param bio_data_in Input stream for data
- * \param bio_sig_out Output stream for signature
- * \param pkey Private key
+ * \param file Output file
+ * \param sig Signature to save
  *
- * \return Whether the signing operation was successful
+ * \return
+ *   * Nothing if successful
+ *   * `std::errc::not_enough_memory` if memory allocation fails
+ *   * Error::InvalidUntrustedComment if the untrusted comment contains newlines
+ *   * Error::InvalidTrustedComment if the trusted comment contains newlines
+ *   * Otherwise, a specific I/O error code
  */
-Result<void> sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
+oc::result<void>
+save_signature(File &file, const Signature &sig) noexcept
 {
-    constexpr unsigned int version = VERSION_LATEST;
-    const EVP_MD *md_type = nullptr;
-    EVP_MD_CTX *mctx = nullptr;
+    initialize_libsodium();
 
-    if (version == VERSION_1_SHA512_DGST) {
-        md_type = EVP_sha512();
-    } else {
-        return ErrorInfo{Error::InvalidSignatureVersion, false};
+    SigPayload payload = {};
+    payload.sig_alg = SIG_ALG;
+    payload.id = mb_htole64(sig.id);
+    payload.sig = sig.sig;
+
+    return save_raw_file(file, as_bytes(payload), sig.untrusted, &sig.trusted,
+                         &sig.global_sig);
+}
+
+/*!
+ * \brief Load signature from file
+ *
+ * \param file Input file
+ *
+ * \return
+ *   * Signature if successful
+ *   * `std::errc::not_enough_memory` if memory allocation fails
+ *   * Error::InvalidUntrustedComment if the untrusted comment is too long
+ *   * Error::InvalidTrustedComment if the trusted comment is too long
+ *   * Error::Base64DecodeError if invalid base64 data is encountered
+ *   * Error::InvalidPayloadSize if the payload size is incorrect
+ *   * Otherwise, a specific I/O error code
+ */
+oc::result<Signature>
+load_signature(File &file) noexcept
+{
+    initialize_libsodium();
+
+    SigPayload payload;
+    Signature sig;
+
+    OUTCOME_TRYV(load_raw_file(file, as_writable_bytes(payload), sig.untrusted,
+                               &sig.trusted, &sig.global_sig));
+
+    if (payload.sig_alg != SIG_ALG) {
+        return Error::UnsupportedSigAlg;
     }
 
-#ifdef OPENSSL_IS_BORINGSSL
-    EVP_MD_CTX ctx;
-    EVP_MD_CTX_init(&ctx);
+    sig.id = mb_le64toh(payload.id);
+    sig.sig = payload.sig;
 
-    auto free_ctx = finally([&ctx] {
-        EVP_MD_CTX_cleanup(&ctx);
-    });
+    return std::move(sig);
+}
 
-    mctx = &ctx;
-#else
-    ScopedBIO bio_md(BIO_new(BIO_f_md()), BIO_free);
-    if (!bio_md) {
-        return ErrorInfo{Error::OpensslError, true};
+static void set_default_trusted_comment(TrustedComment &trusted)
+{
+    using namespace std::chrono;
+
+    auto tp = system_clock::now().time_since_epoch();
+    auto t = duration_cast<seconds>(tp);
+
+    snprintf(trusted.data(), trusted.size(), "timestamp:%lu",
+             static_cast<unsigned long>(t.count()));
+}
+
+static oc::result<std::vector<unsigned char>> read_to_memory(File &file)
+{
+    std::vector<unsigned char> data;
+
+    OUTCOME_TRY(size, file.seek(0, SEEK_END));
+
+    if (size > 1ul << 30) {
+        return Error::DataFileTooLarge;
     }
 
-    if (!BIO_get_md_ctx(bio_md.get(), &mctx)) {
-        return ErrorInfo{Error::OpensslError, true};
-    }
-#endif
+    data.reserve(size);
+    data.resize(size);
 
-    if (!EVP_DigestSignInit(mctx, nullptr, md_type, nullptr, &pkey)) {
-        return ErrorInfo{Error::OpensslError, true};
-    }
+    OUTCOME_TRYV(file.seek(0, SEEK_SET));
+    OUTCOME_TRYV(file_read_exact(file, data.data(), data.size()));
 
-    constexpr size_t buf_size = 8192;
-    ScopedMallocable<unsigned char> buf(
-            static_cast<unsigned char *>(OPENSSL_malloc(buf_size)),
-            openssl_free_wrapper);
-    if (!buf) {
-        return ErrorInfo{Error::OpensslError, true};
-    }
+    return std::move(data);
+}
 
-#ifdef OPENSSL_IS_BORINGSSL
-    BIO *bio_input = &bio_data_in;
-#else
-    BIO *bio_input = BIO_push(bio_md.get(), &bio_data_in);
-#endif
+/*!
+ * \brief Compute signature of file
+ *
+ * The untrusted comment will default to a message including the key ID and
+ * trusted comment will default to a message containing the current timestamp.
+ * Both comments can be changed by updating Signature::untrusted or
+ * Signature::trusted. If Signature::trusted is updated, the
+ * update_global_signature() must be called to recompute Signature::global_sig.
+ *
+ * \param file Input file
+ * \param key Secret key to use for signing
+ *
+ * \return
+ *   * Signature if successful
+ *   * Error::ComputeSigFailed if signature computation fails
+ *   * Otherwise, a specific I/O error code
+ */
+oc::result<Signature>
+sign_file(File &file, const SecretKey &key) noexcept
+{
+    initialize_libsodium();
 
-    while (true) {
-        int n = BIO_read(bio_input, buf.get(), buf_size);
-        if (n < 0) {
-            return ErrorInfo{Error::IoError, true};
+    Signature sig;
+    sig.id = key.id;
+
+    // Set default untrusted comment
+    snprintf(sig.untrusted.data(), sig.untrusted.size(),
+             "libmbsign signature signed by secret key %" PRIX64, key.id);
+
+    // Set default trusted comment
+    set_default_trusted_comment(sig.trusted);
+
+    {
+        OUTCOME_TRY(data, read_to_memory(file));
+
+        if (crypto_sign_ed25519_detached(sig.sig.data(), nullptr, data.data(),
+                                         data.size(), key.key->data()) != 0) {
+            return Error::ComputeSigFailed;
         }
-        if (n == 0) {
-            break;
+    }
+
+    OUTCOME_TRYV(update_global_signature(sig, key));
+
+    return std::move(sig);
+}
+
+/*!
+ * \brief Verify signature of file
+ *
+ * \param file Input file
+ * \param sig Signature to verify
+ * \param key Public key to verify signature against
+ *
+ * \return
+ *   * Nothing if successful
+ *   * Error::MismatchedKey if the key ID in \p sig does not match the key ID of
+ *     \p key
+ *   * Error::SignatureVerifyFailed if signature verification fails
+ *   * Otherwise, a specific I/O error code
+ */
+oc::result<void>
+verify_file(File &file, const Signature &sig, const PublicKey &key) noexcept
+{
+    initialize_libsodium();
+
+    if (key.id != sig.id) {
+        return Error::MismatchedKey;
+    }
+
+    {
+        OUTCOME_TRY(data, read_to_memory(file));
+
+        if (crypto_sign_ed25519_verify_detached(
+                sig.sig.data(), data.data(), data.size(), key.key.data()) != 0) {
+            return Error::SignatureVerifyFailed;
         }
-#ifdef OPENSSL_IS_BORINGSSL
-        if (!EVP_DigestUpdate(mctx, buf.get(), static_cast<size_t>(n))) {
-            return ErrorInfo{Error::OpensslError, true};
-        }
-#endif
     }
 
-    size_t len = buf_size;
-    if (!EVP_DigestSignFinal(mctx, buf.get(), &len)) {
-        return ErrorInfo{Error::OpensslError, true};
-    }
+    return verify_global_signature(sig, key);
+}
 
-    // Write header
-    SigHeader hdr = {};
-    memcpy(hdr.magic, MAGIC, MAGIC_SIZE);
-    hdr.version = version;
+/*!
+ * \brief Update Signature::global_sig
+ *
+ * This function must be called if the trusted comment is updated. The
+ * \p global_sig is a signature of the file signature concatenated with the
+ * trusted comment.
+ *
+ * \param[in,out] sig Signature object to update \p global_sig field
+ * \param[in] key Secret key to use for signing
+ *
+ * \return
+ *   * Nothing if successful
+ *   * Error::ComputeSigFailed if signature computation fails
+ */
+oc::result<void>
+update_global_signature(Signature &sig, const SecretKey &key) noexcept
+{
+    GlobalSigPayload payload;
+    payload.sig = sig.sig;
+    payload.trusted = sig.trusted;
 
-    if (BIO_write(&bio_sig_out, &hdr, static_cast<int>(sizeof(hdr)))
-            != static_cast<int>(sizeof(hdr))) {
-        return ErrorInfo{Error::IoError, true};
-    }
+    auto trusted_size = strlen(sig.trusted.data());
 
-    if (BIO_write(&bio_sig_out, buf.get(), static_cast<int>(len))
-            != static_cast<int>(len)) {
-        return ErrorInfo{Error::IoError, true};
+    if (crypto_sign_ed25519_detached(sig.global_sig.data(), nullptr,
+                                     reinterpret_cast<unsigned char *>(&payload),
+                                     sizeof(payload.sig) + trusted_size,
+                                     key.key->data()) != 0) {
+        return Error::ComputeSigFailed;
     }
 
     return oc::success();
 }
 
 /*!
- * \brief Verify signature of data from stream
+ * \brief Verify Signature::global_sig
  *
- * \param bio_data_in Input stream for data
- * \param bio_sig_in Input stream for signature
- * \param pkey Public key
+ * \param sig Signature object to verify \p global_sig field
+ * \param key Public key to verify signature against
  *
- * \return Whether the verification operation completed successfully. If the
- *         signature is invalid, the error code will be set to
- *         Error::BadSignature.
+ * \return
+ *   * Nothing if successful
+ *   * Error::SignatureVerifyFailed if signature verification fails
  */
-Result<void>
-verify_data(BIO &bio_data_in, BIO &bio_sig_in, EVP_PKEY &pkey)
+oc::result<void>
+verify_global_signature(const Signature &sig, const PublicKey &key) noexcept
 {
-    EVP_MD_CTX *mctx = nullptr;
+    GlobalSigPayload payload;
+    payload.sig = sig.sig;
+    payload.trusted = sig.trusted;
 
-#ifdef OPENSSL_IS_BORINGSSL
-    EVP_MD_CTX ctx;
-    EVP_MD_CTX_init(&ctx);
+    auto trusted_size = strlen(sig.trusted.data());
 
-    auto free_ctx = finally([&ctx] {
-        EVP_MD_CTX_cleanup(&ctx);
-    });
-
-    mctx = &ctx;
-#else
-    ScopedBIO bio_md(BIO_new(BIO_f_md()), BIO_free);
-    if (!bio_md) {
-        return ErrorInfo{Error::OpensslError, true};
+    if (crypto_sign_ed25519_verify_detached(
+            sig.global_sig.data(), reinterpret_cast<unsigned char *>(&payload),
+            sizeof(payload.sig) + trusted_size, key.key.data()) != 0) {
+        return Error::SignatureVerifyFailed;
     }
 
-    if (!BIO_get_md_ctx(bio_md.get(), &mctx)) {
-        return ErrorInfo{Error::OpensslError, true};
-    }
-#endif
-
-    // Read header from signature file
-    SigHeader hdr;
-    if (BIO_read(&bio_sig_in, &hdr, static_cast<int>(sizeof(hdr)))
-            != static_cast<int>(sizeof(hdr))) {
-        return ErrorInfo{Error::IoError, true};
-    }
-
-    // Verify header
-    if (memcmp(hdr.magic, MAGIC, MAGIC_SIZE) != 0) {
-        return ErrorInfo{Error::InvalidSignatureMagic, false};
-    }
-
-    // Verify version
-    const EVP_MD *md_type = nullptr;
-    if (hdr.version == VERSION_1_SHA512_DGST) {
-        md_type = EVP_sha512();
-    } else {
-        return ErrorInfo{Error::InvalidSignatureVersion, false};
-    }
-
-    if (!EVP_DigestVerifyInit(mctx, nullptr, md_type, nullptr, &pkey)) {
-        return ErrorInfo{Error::OpensslError, true};
-    }
-
-    constexpr size_t buf_size = 8192;
-    ScopedMallocable<unsigned char> buf(
-            static_cast<unsigned char *>(OPENSSL_malloc(buf_size)),
-            openssl_free_wrapper);
-    if (!buf) {
-        return ErrorInfo{Error::OpensslError, true};
-    }
-
-    int siglen = EVP_PKEY_size(&pkey);
-    ScopedMallocable<unsigned char> sigbuf(static_cast<unsigned char *>(
-            OPENSSL_malloc(static_cast<size_t>(siglen))),
-            openssl_free_wrapper);
-    if (!sigbuf) {
-        return ErrorInfo{Error::OpensslError, true};
-    }
-    siglen = BIO_read(&bio_sig_in, sigbuf.get(), siglen);
-    if (siglen <= 0) {
-        return ErrorInfo{Error::IoError, true};
-    }
-
-#ifdef OPENSSL_IS_BORINGSSL
-    BIO *bio_input = &bio_data_in;
-#else
-    BIO *bio_input = BIO_push(bio_md.get(), &bio_data_in);
-#endif
-
-    while (true) {
-        int n = BIO_read(bio_input, buf.get(), buf_size);
-        if (n < 0) {
-            return ErrorInfo{Error::IoError, true};
-        }
-        if (n == 0) {
-            break;
-        }
-#ifdef OPENSSL_IS_BORINGSSL
-        if (!EVP_DigestUpdate(mctx, buf.get(), static_cast<size_t>(n))) {
-            return ErrorInfo{Error::OpensslError, true};
-        }
-#endif
-    }
-
-    int n = EVP_DigestVerifyFinal(mctx, sigbuf.get(),
-                                  static_cast<size_t>(siglen));
-    if (n == 1) {
-        return oc::success();
-    } else if (n == 0) {
-        return ErrorInfo{Error::BadSignature, false};
-    } else {
-        return ErrorInfo{Error::OpensslError, true};
-    }
+    return oc::success();
 }
 
 }

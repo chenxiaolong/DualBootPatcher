@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,157 +19,336 @@
 
 #include <gtest/gtest.h>
 
-#include <memory>
+#include <string_view>
 
-#include <openssl/err.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
+#include <cinttypes>
 
+#include "mbcommon/endian.h"
+#include "mbcommon/file/memory.h"
+#include "mbcommon/span.h"
+#include "mbcommon/string.h"
+
+#include "mbsign/detail/file_format.h"
+#include "mbsign/detail/raw_file.h"
+#include "mbsign/error.h"
 #include "mbsign/sign.h"
 
-using ScopedBIGNUM = std::unique_ptr<BIGNUM, decltype(BN_free) *>;
-using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
-using ScopedRSA = std::unique_ptr<RSA, decltype(RSA_free) *>;
-
+using namespace mb;
 using namespace mb::sign;
+using namespace mb::sign::detail;
+using namespace testing;
 
-static void generate_keys(ScopedEVP_PKEY &private_key_out,
-                          ScopedEVP_PKEY &public_key_out)
+// Make ASSERT_EQ happy
+namespace mb::sign
 {
-    ScopedEVP_PKEY private_key(EVP_PKEY_new(), EVP_PKEY_free);
-    ScopedEVP_PKEY public_key(EVP_PKEY_new(), EVP_PKEY_free);
-    ScopedRSA rsa(RSA_new(), RSA_free);
-    ScopedBIGNUM e(BN_new(), BN_free);
 
-    ASSERT_TRUE(!!private_key) << "Failed to allocate private key";
-    ASSERT_TRUE(!!public_key) << "Failed to allocate public key";
-    ASSERT_TRUE(!!rsa) << "Failed to allocate RSA";
-    ASSERT_TRUE(!!e) << "Failed to allocate BIGNUM";
-
-    BN_set_word(e.get(), RSA_F4);
-
-    ASSERT_TRUE(RSA_generate_key_ex(rsa.get(), 2048, e.get(), nullptr))
-            << "RSA_generate_key_ex() failed";
-
-    ASSERT_TRUE(EVP_PKEY_assign_RSA(private_key.get(),
-                                    RSAPrivateKey_dup(rsa.get())))
-            << "EVP_PKEY_assign_RSA() failed for private key";
-
-    ASSERT_TRUE(EVP_PKEY_assign_RSA(public_key.get(),
-                                    RSAPublicKey_dup(rsa.get())))
-            << "EVP_PKEY_assign_RSA() failed for public key";
-
-    private_key_out = std::move(private_key);
-    public_key_out = std::move(public_key);
+static std::ostream & operator<<(std::ostream &out, const SecretKey &)
+{
+    return out;
 }
 
-TEST(SignTest, TestLoadInvalidPemKeys)
+static std::ostream & operator<<(std::ostream &out, const PublicKey &)
 {
-    ScopedBIO bio_private_key(BIO_new(BIO_s_mem()), BIO_free);
-    ASSERT_TRUE(!!bio_private_key);
-    ScopedBIO bio_public_key(BIO_new(BIO_s_mem()), BIO_free);
-    ASSERT_TRUE(!!bio_public_key);
-
-    // Fill with garbage
-    ASSERT_EQ(BIO_write(bio_private_key.get(),
-                        "abcdefghijklmnopqrstuvwxyz", 26), 26);
-    ASSERT_EQ(BIO_write(bio_public_key.get(),
-                        "zyxwvutsrqponmlkjihgfedcba", 26), 26);
-
-    auto private_key = load_private_key(
-            *bio_private_key, KeyFormat::Pem, nullptr);
-    ASSERT_FALSE(private_key);
-
-    auto public_key = load_public_key(
-            *bio_public_key, KeyFormat::Pem, nullptr);
-    ASSERT_FALSE(public_key);
+    return out;
 }
 
-TEST(SignTest, TestLoadInvalidPkcs12PrivateKey)
+static std::ostream & operator<<(std::ostream &out, const Signature &)
 {
-    ScopedBIO bio_private_key(BIO_new(BIO_s_mem()), BIO_free);
-    ASSERT_TRUE(!!bio_private_key);
-    ScopedBIO bio_public_key(BIO_new(BIO_s_mem()), BIO_free);
-    ASSERT_TRUE(!!bio_public_key);
-
-    // Fill with garbage
-    ASSERT_EQ(BIO_write(bio_private_key.get(),
-                        "abcdefghijklmnopqrstuvwxyz", 26), 26);
-    ASSERT_EQ(BIO_write(bio_public_key.get(),
-                        "zyxwvutsrqponmlkjihgfedcba", 26), 26);
-
-    auto private_key = load_private_key(
-            *bio_private_key, KeyFormat::Pkcs12, nullptr);
-    ASSERT_FALSE(private_key);
-
-    auto public_key = load_public_key(
-            *bio_public_key, KeyFormat::Pkcs12, nullptr);
-    ASSERT_FALSE(public_key);
+    return out;
 }
 
-TEST(SignTest, TestLoadValidPemKeys)
-{
-    ScopedEVP_PKEY private_key(nullptr, EVP_PKEY_free);
-    ScopedEVP_PKEY public_key(nullptr, EVP_PKEY_free);
-
-    ScopedBIO bio_private_key_enc(BIO_new(BIO_s_mem()), BIO_free);
-    ASSERT_TRUE(!!bio_private_key_enc);
-    ScopedBIO bio_private_key_noenc(BIO_new(BIO_s_mem()), BIO_free);
-    ASSERT_TRUE(!!bio_private_key_noenc);
-    ScopedBIO bio_public_key(BIO_new(BIO_s_mem()), BIO_free);
-    ASSERT_TRUE(!!bio_public_key);
-
-    // Generate keys
-    generate_keys(private_key, public_key);
-
-    // Write keys
-    ASSERT_TRUE(PEM_write_bio_PrivateKey(bio_private_key_enc.get(),
-                                         private_key.get(), EVP_des_ede3_cbc(),
-                                         nullptr, 0, nullptr,
-                                         const_cast<char *>("testing")));
-    ASSERT_TRUE(PEM_write_bio_PrivateKey(bio_private_key_noenc.get(),
-                                         private_key.get(), nullptr, nullptr, 0,
-                                         nullptr, nullptr));
-    ASSERT_TRUE(PEM_write_bio_PUBKEY(bio_public_key.get(), public_key.get()));
-
-    // Read back the keys
-    auto private_key_enc_read = load_private_key(
-            *bio_private_key_enc, KeyFormat::Pem, "testing");
-    ASSERT_TRUE(!!private_key_enc_read);
-    auto private_key_noenc_read = load_private_key(
-            *bio_private_key_noenc, KeyFormat::Pem, nullptr);
-    ASSERT_TRUE(!!private_key_noenc_read);
-    auto public_key_read = load_public_key(
-            *bio_public_key, KeyFormat::Pem, "testing");
-    ASSERT_TRUE(!!public_key_read);
-
-    // Compare keys
-    EXPECT_EQ(EVP_PKEY_cmp(private_key.get(),
-                           private_key_enc_read.value().get()), 1);
-    EXPECT_EQ(EVP_PKEY_cmp(private_key.get(),
-                           private_key_noenc_read.value().get()), 1);
-    EXPECT_EQ(EVP_PKEY_cmp(public_key.get(),
-                           public_key_read.value().get()), 1);
 }
 
-TEST(SignTest, TestLoadValidPemKeysWithInvalidPassphrase)
+struct SignTest : Test
 {
-    ScopedEVP_PKEY private_key(nullptr, EVP_PKEY_free);
-    ScopedEVP_PKEY public_key(nullptr, EVP_PKEY_free);
+    KeyPair _kp;
+    MemoryFile _file;
+    void *_file_data = nullptr;
+    size_t _file_size = 0;
+    MemoryFile _data_file;
+    void *_data_file_data = nullptr;
+    size_t _data_file_size = 0;
 
-    ScopedBIO bio(BIO_new(BIO_s_mem()), BIO_free);
-    ASSERT_TRUE(!!bio);
+    ~SignTest()
+    {
+        free(_file_data);
+        free(_data_file_data);
+    }
 
-    // Generate keys
-    generate_keys(private_key, public_key);
+    void SetUp() override
+    {
+        auto kp = generate_keypair();
+        ASSERT_TRUE(kp);
+        ASSERT_TRUE(kp.value().skey.key);
+        _kp = std::move(kp.value());
+    }
 
-    // Write key
-    ASSERT_TRUE(PEM_write_bio_PrivateKey(bio.get(), private_key.get(),
-                                         EVP_des_ede3_cbc(), nullptr, 0,
-                                         nullptr,
-                                         const_cast<char *>("testing")));
+    void open_file()
+    {
+        ASSERT_TRUE(_file.open(&_file_data, &_file_size));
+    }
 
-    // Read back the key using invalid password
-    auto private_key_read = load_private_key(*bio, KeyFormat::Pem, "gnitset");
-    ASSERT_FALSE(private_key_read);
+    void rewind_file()
+    {
+        ASSERT_TRUE(_file.seek(0, SEEK_SET));
+    }
+
+    void clear_file()
+    {
+        rewind_file();
+        ASSERT_TRUE(_file.truncate(0));
+    }
+
+    void open_data_file()
+    {
+        ASSERT_TRUE(_data_file.open(&_data_file_data, &_data_file_size));
+    }
+
+    void rewind_data_file()
+    {
+        ASSERT_TRUE(_data_file.seek(0, SEEK_SET));
+    }
+};
+
+TEST_F(SignTest, GenerateKeypair)
+{
+    ASSERT_EQ(_kp.skey.id, _kp.pkey.id);
+
+    auto id_str = format("%" PRIX64, _kp.skey.id);
+    ASSERT_NE(std::string_view(_kp.pkey.untrusted.data()).find(id_str),
+              std::string_view::npos);
+    ASSERT_NE(std::string_view(_kp.skey.untrusted.data()).find(id_str),
+              std::string_view::npos);
+}
+
+TEST_F(SignTest, RoundTripSecretKey)
+{
+    open_file();
+
+    ASSERT_TRUE(save_secret_key(_file, _kp.skey, "test",
+                                KdfSecurityLevel::Interactive));
+    rewind_file();
+
+    auto key = load_secret_key(_file, "test");
+    ASSERT_TRUE(key);
+
+    ASSERT_EQ(_kp.skey.id, key.value().id);
+    ASSERT_EQ(*_kp.skey.key, *key.value().key);
+    ASSERT_STREQ(_kp.skey.untrusted.data(), key.value().untrusted.data());
+}
+
+TEST_F(SignTest, LoadSecretKeyFailureUnsupportedAlgorithms)
+{
+    open_file();
+
+    SKPayload payload = {};
+    payload.sig_alg = SIG_ALG;
+    payload.kdf_alg = KDF_ALG;
+    payload.chk_alg = CHK_ALG;
+    payload.kdf_salt = {};
+    set_kdf_limits(payload, KdfSecurityLevel::Interactive);
+    payload.enc.id = mb_htole64(_kp.skey.id);
+    payload.enc.key = *_kp.skey.key;
+    payload.enc.chk = compute_checksum(payload);
+
+    ASSERT_TRUE(apply_xor_cipher(payload, "test"));
+
+    // Invalid signature algorithm
+    payload.sig_alg = {};
+    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
+    rewind_file();
+    ASSERT_EQ(load_secret_key(_file, "test"),
+              oc::failure(Error::UnsupportedSigAlg));
+    clear_file();
+    payload.sig_alg = SIG_ALG;
+
+    // Invalid KDF algorithm
+    payload.kdf_alg = {};
+    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
+    rewind_file();
+    ASSERT_EQ(load_secret_key(_file, "test"),
+              oc::failure(Error::UnsupportedKdfAlg));
+    clear_file();
+    payload.kdf_alg = KDF_ALG;
+
+    // Invalid checksum algorithm
+    payload.chk_alg = {};
+    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
+    rewind_file();
+    ASSERT_EQ(load_secret_key(_file, "test"),
+              oc::failure(Error::UnsupportedChkAlg));
+    clear_file();
+    payload.chk_alg = CHK_ALG;
+}
+
+TEST_F(SignTest, LoadSecretKeyFailureIncorrectChecksum)
+{
+    open_file();
+
+    SKPayload payload = {};
+    payload.sig_alg = SIG_ALG;
+    payload.kdf_alg = KDF_ALG;
+    payload.chk_alg = CHK_ALG;
+    payload.kdf_salt = {};
+    set_kdf_limits(payload, KdfSecurityLevel::Interactive);
+    payload.enc.id = mb_htole64(_kp.skey.id);
+    payload.enc.key = *_kp.skey.key;
+    payload.enc.chk = compute_checksum(payload);
+    ++payload.enc.chk[0];
+
+    ASSERT_TRUE(apply_xor_cipher(payload, "test"));
+
+    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
+    rewind_file();
+    ASSERT_EQ(load_secret_key(_file, "test"),
+              oc::failure(Error::IncorrectChecksum));
+}
+
+TEST_F(SignTest, RoundTripPublicKey)
+{
+    open_file();
+
+    ASSERT_TRUE(save_public_key(_file, _kp.pkey));
+    rewind_file();
+
+    auto key = load_public_key(_file);
+    ASSERT_TRUE(key);
+
+    ASSERT_EQ(_kp.pkey.id, key.value().id);
+    ASSERT_EQ(_kp.pkey.key, key.value().key);
+    ASSERT_STREQ(_kp.pkey.untrusted.data(), key.value().untrusted.data());
+}
+
+TEST_F(SignTest, LoadPublicKeyFailureUnsupportedAlgorithms)
+{
+    open_file();
+
+    PKPayload payload = {};
+    payload.sig_alg = {};
+    payload.id = mb_htole64(_kp.pkey.id);
+    payload.key = _kp.pkey.key;
+
+    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
+    rewind_file();
+    ASSERT_EQ(load_public_key(_file), oc::failure(Error::UnsupportedSigAlg));
+}
+
+TEST_F(SignTest, RoundTripSignature)
+{
+    open_file();
+
+    Signature sig;
+    sig.id = _kp.pkey.id;
+    strcpy(sig.untrusted.data(), "untrusted");
+    strcpy(sig.trusted.data(), "trusted");
+
+    for (size_t i = 0; i < sig.sig.size(); ++i) {
+        sig.sig[i] = static_cast<unsigned char>(i % 256);
+        sig.global_sig[i] = static_cast<unsigned char>(255 - i % 256);
+    }
+
+    ASSERT_TRUE(save_signature(_file, sig));
+    rewind_file();
+
+    auto sig2 = load_signature(_file);
+    ASSERT_TRUE(sig2) << sig2.error().message();
+
+    ASSERT_EQ(sig.id, sig2.value().id);
+    ASSERT_EQ(sig.sig, sig2.value().sig);
+    ASSERT_STREQ(sig.untrusted.data(), sig2.value().untrusted.data());
+    ASSERT_STREQ(sig.trusted.data(), sig2.value().trusted.data());
+    ASSERT_EQ(sig.global_sig, sig2.value().global_sig);
+}
+
+TEST_F(SignTest, LoadSignatureFailureUnsupportedAlgorithms)
+{
+    open_file();
+
+    SigPayload payload = {};
+    payload.sig_alg = {};
+    payload.id = mb_htole64(_kp.pkey.id);
+    payload.sig = {};
+
+    TrustedComment trusted = {};
+    RawSignature global_sig = {};
+
+    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, &trusted,
+                              &global_sig));
+    rewind_file();
+    ASSERT_EQ(load_signature(_file), oc::failure(Error::UnsupportedSigAlg));
+}
+
+TEST_F(SignTest, SignVerifySuccess)
+{
+    open_file();
+    open_data_file();
+
+    ASSERT_TRUE(_data_file.write("hello", 5));
+    rewind_data_file();
+
+    auto sig = sign_file(_data_file, _kp.skey);
+    ASSERT_TRUE(sig);
+
+    auto id_str = format("%" PRIX64, _kp.skey.id);
+    ASSERT_NE(std::string_view(sig.value().untrusted.data()).find(id_str),
+              std::string_view::npos);
+    ASSERT_NE(std::string_view(sig.value().trusted.data()).find("timestamp:"),
+              std::string_view::npos);
+
+    rewind_data_file();
+    ASSERT_TRUE(verify_file(_data_file, sig.value(), _kp.pkey));
+}
+
+TEST_F(SignTest, VerifyFailureMismatchedKey)
+{
+    open_file();
+    open_data_file();
+
+    ASSERT_TRUE(_data_file.write("hello", 5));
+    rewind_data_file();
+
+    auto sig = sign_file(_data_file, _kp.skey);
+    ASSERT_TRUE(sig);
+
+    ++sig.value().id;
+
+    rewind_data_file();
+    ASSERT_EQ(verify_file(_data_file, sig.value(), _kp.pkey),
+              oc::failure(Error::MismatchedKey));
+}
+
+TEST_F(SignTest, VerifyFailureBadSignature)
+{
+    open_file();
+    open_data_file();
+
+    ASSERT_TRUE(_data_file.write("hello", 5));
+    rewind_data_file();
+
+    auto sig = sign_file(_data_file, _kp.skey);
+    ASSERT_TRUE(sig);
+
+    ASSERT_TRUE(_data_file.write("world", 5));
+
+    rewind_data_file();
+    ASSERT_EQ(verify_file(_data_file, sig.value(), _kp.pkey),
+              oc::failure(Error::SignatureVerifyFailed));
+}
+
+TEST_F(SignTest, VerifyFailureBadGlobalSignature)
+{
+    open_file();
+    open_data_file();
+
+    ASSERT_TRUE(_data_file.write("hello", 5));
+    rewind_data_file();
+
+    auto sig = sign_file(_data_file, _kp.skey);
+    ASSERT_TRUE(sig);
+
+    strcpy(sig.value().trusted.data(), "foo");
+
+    rewind_data_file();
+    ASSERT_EQ(verify_file(_data_file, sig.value(), _kp.pkey),
+              oc::failure(Error::SignatureVerifyFailed));
 }

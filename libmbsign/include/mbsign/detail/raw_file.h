@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,10 +17,23 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gtest/gtest.h>
+#pragma once
 
-int main(int argc, char *argv[])
+#include "mbcommon/span.h"
+
+#include "mbsign/sign.h"
+
+namespace mb::sign::detail
 {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+
+oc::result<void>
+save_raw_file(File &file, span<const std::byte> payload,
+              const UntrustedComment &untrusted,
+              const TrustedComment * const trusted,
+              const RawSignature * const global_sig) noexcept;
+oc::result<void>
+load_raw_file(File &file, span<std::byte> payload,
+              UntrustedComment &untrusted, TrustedComment *trusted,
+              RawSignature *global_sig) noexcept;
+
 }
