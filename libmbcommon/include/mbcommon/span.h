@@ -106,7 +106,8 @@ public:
     // https://en.cppreference.com/w/cpp/container/span/span
 
     template<
-        class = std::enable_if_t<Extent == 0 || Extent == dynamic_extent>
+        bool B = Extent == 0 || Extent == dynamic_extent,
+        class = std::enable_if_t<B>
     >
     constexpr span() noexcept
         : data_(nullptr)
