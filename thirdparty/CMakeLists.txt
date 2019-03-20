@@ -197,6 +197,25 @@ set(LIBSEPOL_INCLUDE_DIR "${libsepol_root}/include"        CACHE INTERNAL "")
 set(LIBSEPOL_LIBRARY     "${libsepol_root}/lib/libsepol.a" CACHE INTERNAL "")
 
 ################################################################################
+# libsodium for Android
+################################################################################
+
+get_prebuilt(
+    NAME             libsodium
+    VERSION          "1.0.17-1"
+    HASH_armeabi-v7a SHA512=238cac4dfc248533822771abd3507169013f124c39f4fe814f7dd4bbf6a8794769ab7ae7abbea6a280a3fbbd0f42b2d82f2938583e5c4fb38f9402a977a2e7e6
+    HASH_arm64-v8a   SHA512=467ede020d3090413f6e358c533704e8df4037c91b867c0d4aa2051ac6cbae4d21119796ae52b320debd5a7885aaa7dfdd36c4467a159688733808d7ee181c36
+    HASH_x86         SHA512=9a348f815aa52dd431b23010df7ca52e160f3174559faa7cd79b34d61f92b7ee99ae7d9f037868f71676fb7ca3550400eca41d07acb6375301c65c5377ed4c8f
+    HASH_x86_64      SHA512=ad1df3cc5bce69a9244e5e77d64ec5aaa29a1c1b0425f1396b8ffa14329ce4eeab6cc9aca9a44721d2b480e46218e293c259866b229796fd59669b0e0d85722b
+)
+
+list(APPEND CMAKE_FIND_ROOT_PATH "${libsodium_root}")
+
+set(sodium_INCLUDE_DIR     "${libsodium_root}/include"         CACHE INTERNAL "")
+set(sodium_LIBRARY_DEBUG   "${libsodium_root}/lib/libsodium.a" CACHE INTERNAL "")
+set(sodium_LIBRARY_RELEASE "${libsodium_root}/lib/libsodium.a" CACHE INTERNAL "")
+
+################################################################################
 # boringssl for Android
 ################################################################################
 
