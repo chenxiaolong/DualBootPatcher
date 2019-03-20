@@ -318,8 +318,8 @@ static oc::result<std::vector<unsigned char>> read_to_memory(File &file)
         return Error::DataFileTooLarge;
     }
 
-    data.reserve(size);
-    data.resize(size);
+    data.reserve(static_cast<size_t>(size));
+    data.resize(static_cast<size_t>(size));
 
     OUTCOME_TRYV(file.seek(0, SEEK_SET));
     OUTCOME_TRYV(file_read_exact(file, data.data(), data.size()));

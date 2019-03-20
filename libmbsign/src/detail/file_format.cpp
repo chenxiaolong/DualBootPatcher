@@ -128,7 +128,7 @@ apply_xor_cipher(SKPayload &payload, const char *passphrase) noexcept
     if (crypto_pwhash_scryptsalsa208sha256(
             enc_key->data(), enc_key->size(), passphrase, strlen(passphrase),
             payload.kdf_salt.data(), from_le64(payload.kdf_opslimit),
-            from_le64(payload.kdf_memlimit)) != 0) {
+            static_cast<size_t>(from_le64(payload.kdf_memlimit))) != 0) {
         return ec_from_errno();
     }
 
