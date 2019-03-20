@@ -115,6 +115,7 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         mblog-static
         mbcommon-static
         rapidjson
+        OpenSSL::Crypto
     )
 
     target_link_libraries(
