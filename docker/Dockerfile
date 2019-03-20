@@ -71,7 +71,7 @@ RUN dnf -y install \
         ccache cmake findutils gcc-c++ git make procps-ng unzip zip \
         ncurses-compat-libs \
         java-1.8.0-openjdk-headless transifex-client \
-        libsodium-devel openssl-devel \
+        libsodium-devel \
         qemu-system-aarch64-core qemu-system-arm-core qemu-system-x86-core \
     && dnf clean all
 
