@@ -208,7 +208,6 @@ foreach(variant ${variants})
         ${lib_target}
         PUBLIC
         mbcommon-${variant}
-        OpenSSL::Crypto
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library
