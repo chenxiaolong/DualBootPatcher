@@ -45,18 +45,15 @@ namespace mb::sign
 using namespace detail;
 
 /*!
- * \brief Initialize libsodium if it's not already initialized
+ * \brief Initialize global state in underlying crypto library
+ *
+ * \return Whether the underlying crypto library successfully initialized. If
+ *         false is returned, do NOT call any other functions in this library or
+ *         else the whole program might abort.
  */
-static void initialize_libsodium() noexcept
+bool initialize() noexcept
 {
-    static bool initialized = false;
-
-    if (!initialized) {
-        if (sodium_init() < 0) {
-            abort();
-        }
-        initialized = true;
-    }
+    return sodium_init() >= 0;
 }
 
 /*!
@@ -68,8 +65,6 @@ static void initialize_libsodium() noexcept
  */
 oc::result<KeyPair> generate_keypair() noexcept
 {
-    initialize_libsodium();
-
     KeyPair kp;
     kp.skey.key = make_secure_unique_ptr<RawSecretKey>();
     if (!kp.skey.key) {
@@ -110,8 +105,6 @@ oc::result<void>
 save_secret_key(File &file, const SecretKey &key, const char *passphrase,
                 KdfSecurityLevel kdf_sec) noexcept
 {
-    initialize_libsodium();
-
     auto payload = make_secure_unique_ptr<SKPayload>();
     if (!payload) {
         return std::errc::not_enough_memory;
@@ -149,8 +142,6 @@ save_secret_key(File &file, const SecretKey &key, const char *passphrase,
 oc::result<SecretKey>
 load_secret_key(File &file, const char *passphrase) noexcept
 {
-    initialize_libsodium();
-
     auto payload = make_secure_unique_ptr<SKPayload>();
     if (!payload) {
         return std::errc::not_enough_memory;
@@ -207,8 +198,6 @@ load_secret_key(File &file, const char *passphrase) noexcept
 oc::result<void>
 save_public_key(File &file, const PublicKey &key) noexcept
 {
-    initialize_libsodium();
-
     PKPayload payload = {};
     payload.sig_alg = SIG_ALG;
     payload.id = to_le64(key.id);
@@ -234,8 +223,6 @@ save_public_key(File &file, const PublicKey &key) noexcept
 oc::result<PublicKey>
 load_public_key(File &file) noexcept
 {
-    initialize_libsodium();
-
     PKPayload payload;
     PublicKey key;
 
@@ -268,8 +255,6 @@ load_public_key(File &file) noexcept
 oc::result<void>
 save_signature(File &file, const Signature &sig) noexcept
 {
-    initialize_libsodium();
-
     SigPayload payload = {};
     payload.sig_alg = SIG_ALG;
     payload.id = to_le64(sig.id);
@@ -296,8 +281,6 @@ save_signature(File &file, const Signature &sig) noexcept
 oc::result<Signature>
 load_signature(File &file) noexcept
 {
-    initialize_libsodium();
-
     SigPayload payload;
     Signature sig;
 
@@ -364,8 +347,6 @@ static oc::result<std::vector<unsigned char>> read_to_memory(File &file)
 oc::result<Signature>
 sign_file(File &file, const SecretKey &key) noexcept
 {
-    initialize_libsodium();
-
     Signature sig;
     sig.id = key.id;
 
@@ -407,8 +388,6 @@ sign_file(File &file, const SecretKey &key) noexcept
 oc::result<void>
 verify_file(File &file, const Signature &sig, const PublicKey &key) noexcept
 {
-    initialize_libsodium();
-
     if (key.id != sig.id) {
         return Error::MismatchedKey;
     }

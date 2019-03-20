@@ -29,6 +29,9 @@
 namespace mb::sign
 {
 
+MB_EXPORT bool
+initialize() noexcept;
+
 MB_EXPORT oc::result<KeyPair>
 generate_keypair() noexcept;
 

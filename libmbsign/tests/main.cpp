@@ -19,8 +19,14 @@
 
 #include <gtest/gtest.h>
 
+#include "mbsign/sign.h"
+
 int main(int argc, char *argv[])
 {
+    if (!mb::sign::initialize()) {
+        abort();
+    }
+
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
