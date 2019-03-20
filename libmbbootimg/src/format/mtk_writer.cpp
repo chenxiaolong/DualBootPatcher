@@ -26,8 +26,6 @@
 #include <cstdio>
 #include <cstring>
 
-#include <openssl/sha.h>
-
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
@@ -37,6 +35,7 @@
 #include "mbbootimg/format/android_error.h"
 #include "mbbootimg/format/mtk_error.h"
 #include "mbbootimg/header.h"
+#include "mbbootimg/sha1_p.h"
 #include "mbbootimg/writer_p.h"
 
 
@@ -61,18 +60,17 @@ _mtk_header_update_size(File &file, uint64_t offset, uint32_t size)
 }
 
 static oc::result<void>
-_mtk_compute_sha1(SegmentWriter &seg, File &file,
-                  unsigned char digest[SHA_DIGEST_LENGTH])
+_mtk_compute_sha1(SegmentWriter &seg, File &file, span<std::byte> digest_out)
 {
-    SHA_CTX sha_ctx;
+    if (digest_out.size() < detail::SHA1::HASH_LENGTH) {
+        return std::errc::invalid_argument;
+    }
+
+    detail::SHA1 sha1;
     char buf[10240];
 
     uint32_t kernel_mtkhdr_size = 0;
     uint32_t ramdisk_mtkhdr_size = 0;
-
-    if (!SHA1_Init(&sha_ctx)) {
-        return android::AndroidError::Sha1InitError;
-    }
 
     for (auto const &entry : seg.entries()) {
         uint64_t remain = *entry.size;
@@ -81,13 +79,12 @@ _mtk_compute_sha1(SegmentWriter &seg, File &file,
 
         // Update checksum with data
         while (remain > 0) {
-            auto to_read = std::min<uint64_t>(remain, sizeof(buf));
+            auto to_read = static_cast<size_t>(
+                    std::min<uint64_t>(remain, sizeof(buf)));
 
-            OUTCOME_TRYV(file_read_exact(file, buf, static_cast<size_t>(to_read)));
+            OUTCOME_TRYV(file_read_exact(file, buf, to_read));
 
-            if (!SHA1_Update(&sha_ctx, buf, static_cast<size_t>(to_read))) {
-                return android::AndroidError::Sha1UpdateError;
-            }
+            sha1.update(as_bytes(span(buf, to_read)));
 
             remain -= to_read;
         }
@@ -121,14 +118,11 @@ _mtk_compute_sha1(SegmentWriter &seg, File &file,
             continue;
         }
 
-        if (!SHA1_Update(&sha_ctx, &le32_size, sizeof(le32_size))) {
-            return android::AndroidError::Sha1UpdateError;
-        }
+        sha1.update(as_bytes(le32_size));
     }
 
-    if (!SHA1_Final(digest, &sha_ctx)) {
-        return android::AndroidError::Sha1UpdateError;
-    }
+    auto digest = sha1.final();
+    memcpy(digest_out.data(), digest.data(), digest.size());
 
     return oc::success();
 }
@@ -192,8 +186,7 @@ oc::result<void> MtkFormatWriter::close(File &file)
             // them. Thus, if we calculated the SHA1sum during write, it would
             // be incorrect.
             OUTCOME_TRYV(_mtk_compute_sha1(
-                    *m_seg, file,
-                    reinterpret_cast<unsigned char *>(m_hdr.id)));
+                    *m_seg, file, as_writable_bytes(m_hdr.id)));
 
             // Convert fields back to little-endian
             android_fix_header_byte_order(m_hdr);

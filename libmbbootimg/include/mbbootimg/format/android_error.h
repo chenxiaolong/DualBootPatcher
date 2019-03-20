@@ -43,10 +43,6 @@ enum class AndroidError
 
     // Samsung SEAndroid errors
     SamsungMagicNotFound    = 30,
-
-    // SHA1 errors
-    Sha1InitError           = 40,
-    Sha1UpdateError         = 41,
 };
 
 MB_EXPORT std::error_code make_error_code(AndroidError e);

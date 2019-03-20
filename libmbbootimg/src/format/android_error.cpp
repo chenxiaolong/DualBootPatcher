@@ -68,10 +68,6 @@ std::string AndroidErrorCategory::message(int ev) const
         return "bump magic not found";
     case AndroidError::SamsungMagicNotFound:
         return "Samsung SEAndroid magic not found";
-    case AndroidError::Sha1InitError:
-        return "SHA1 hash initialization error";
-    case AndroidError::Sha1UpdateError:
-        return "failed to update SHA1 hash";
     default:
         return "(unknown Android format error)";
     }

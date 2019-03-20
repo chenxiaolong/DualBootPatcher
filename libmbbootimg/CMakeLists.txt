@@ -39,6 +39,8 @@ foreach(variant ${variants})
         src/format/sony_elf_error.cpp
         src/format/sony_elf_reader.cpp
         src/format/sony_elf_writer.cpp
+        # Third-party SHA1
+        src/sha1.cpp
     )
 
     # Includes
@@ -62,7 +64,6 @@ foreach(variant ${variants})
         interface.mbcommon.library
         interface.mbbootimg.private-headers
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
-        OpenSSL::Crypto
     )
 
     # Install shared library
@@ -110,7 +111,6 @@ if(variants AND MBP_ENABLE_TESTS)
         mbcommon-static
         gtest
         gtest_main
-        OpenSSL::Crypto
     )
 
     if(${MBP_BUILD_TARGET} STREQUAL device)

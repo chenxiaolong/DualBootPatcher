@@ -26,8 +26,6 @@
 #include <cstdio>
 #include <cstring>
 
-#include <openssl/sha.h>
-
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
@@ -50,7 +48,6 @@ constexpr size_t MAX_ABOOT_SIZE = 2 * 1024 * 1024;
 LokiFormatWriter::LokiFormatWriter() noexcept
     : FormatWriter()
     , m_hdr()
-    , m_sha_ctx()
 {
 }
 
@@ -65,10 +62,6 @@ oc::result<void> LokiFormatWriter::open(File &file)
 {
     (void) file;
 
-    if (!SHA1_Init(&m_sha_ctx)) {
-        return android::AndroidError::Sha1InitError;
-    }
-
     m_seg = SegmentWriter();
 
     return oc::success();
@@ -79,7 +72,7 @@ oc::result<void> LokiFormatWriter::close(File &file)
     auto reset_state = finally([&] {
         m_hdr = {};
         m_aboot.clear();
-        m_sha_ctx = {};
+        m_sha1.init();
         m_seg = {};
     });
 
@@ -94,11 +87,8 @@ oc::result<void> LokiFormatWriter::close(File &file)
             OUTCOME_TRYV(file.truncate(file_size));
 
             // Set ID
-            unsigned char digest[SHA_DIGEST_LENGTH];
-            if (!SHA1_Final(digest, &m_sha_ctx)) {
-                return android::AndroidError::Sha1UpdateError;
-            }
-            memcpy(m_hdr.id, digest, SHA_DIGEST_LENGTH);
+            auto digest = m_sha1.final();
+            memcpy(m_hdr.id, digest.data(), digest.size());
 
             // Convert fields back to little-endian
             android_fix_header_byte_order(m_hdr);
@@ -234,9 +224,7 @@ LokiFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
 
         // We always include the image in the hash. The size is sometimes
         // included and is handled in finish_entry().
-        if (!SHA1_Update(&m_sha_ctx, buf, n)) {
-            return android::AndroidError::Sha1UpdateError;
-        }
+        m_sha1.update(span(reinterpret_cast<const std::byte *>(buf), n));
 
         return n;
     }
@@ -252,16 +240,14 @@ oc::result<void> LokiFormatWriter::finish_entry(File &file)
     uint32_t le32_size = mb_htole32(*swentry->size);
 
     // Include fake 0 size for unsupported secondboot image
-    if (swentry->type == EntryType::DeviceTree
-            && !SHA1_Update(&m_sha_ctx, "\x00\x00\x00\x00", 4)) {
-        return android::AndroidError::Sha1UpdateError;
+    if (swentry->type == EntryType::DeviceTree) {
+        m_sha1.update(as_bytes(span("\x00\x00\x00\x00", 4)));
     }
 
     // Include size for everything except empty DT images
     if (swentry->type != EntryType::Aboot
-            && (swentry->type != EntryType::DeviceTree || *swentry->size > 0)
-            && !SHA1_Update(&m_sha_ctx, &le32_size, sizeof(le32_size))) {
-        return android::AndroidError::Sha1UpdateError;
+            && (swentry->type != EntryType::DeviceTree || *swentry->size > 0)) {
+        m_sha1.update(as_bytes(le32_size));
     }
 
     switch (swentry->type) {

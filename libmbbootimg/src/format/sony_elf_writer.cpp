@@ -26,8 +26,6 @@
 #include <cstdio>
 #include <cstring>
 
-#include <openssl/sha.h>
-
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"

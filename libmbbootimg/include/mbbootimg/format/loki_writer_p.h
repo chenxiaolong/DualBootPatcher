@@ -24,10 +24,9 @@
 #include <optional>
 #include <vector>
 
-#include <openssl/sha.h>
-
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
+#include "mbbootimg/sha1_p.h"
 #include "mbbootimg/writer_p.h"
 
 
@@ -60,7 +59,7 @@ private:
 
     std::vector<unsigned char> m_aboot;
 
-    SHA_CTX m_sha_ctx;
+    detail::SHA1 m_sha1;
 
     std::optional<SegmentWriter> m_seg;
 };
