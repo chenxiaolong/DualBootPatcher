@@ -19,15 +19,5 @@
 
 #include "util/validcerts.h"
 
-/*
- * The certificate string is just the hexadecimal representations of the signing
- * key's certificate.
- *
- * To get this "signature" from the keystore, run the following command:
- *
- *   $ keytool -alias YOUR_KEY_ALIAS -keystore YOUR_KEYSTORE_FILE -exportcert \
- *         | hexdump -ve '1/1 "%.2x"'; echo
- */
-
-// Certificate for key specified at build time
-const char *signing_cert = "@MBP_SIGN_JAVA_CERT_HEX@";
+// Public key specified at build time
+const char *signing_key = "@MBP_SIGN_PUBLIC_KEY_HEX@";

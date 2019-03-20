@@ -19,165 +19,92 @@
 
 #include "util/signature.h"
 
+#include <vector>
+
 #include <cstdlib>
 #include <cstring>
 
 #include <getopt.h>
 
-#ifdef __clang__
-#  pragma GCC diagnostic push
-#  if __has_warning("-Wold-style-cast")
-#    pragma GCC diagnostic ignored "-Wold-style-cast"
-#  endif
-#endif
+#include <sodium/utils.h>
 
-#include <openssl/err.h>
-#include <openssl/x509.h>
-
-#ifdef __clang__
-#  pragma GCC diagnostic pop
-#endif
-
+#include "mbcommon/file/memory.h"
+#include "mbcommon/file/standard.h"
 #include "mblog/logging.h"
+#include "mbsign/error.h"
 #include "mbsign/sign.h"
 
 #include "util/validcerts.h"
 
 #define LOG_TAG "mbtool/util/signature"
 
-#define COMPILE_ERROR_STRINGS 0
-
-using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
-using mb::sign::ScopedEVP_PKEY;
-using ScopedX509 = std::unique_ptr<X509, decltype(X509_free) *>;
-
 namespace mb
 {
 
-static inline bool hex2num(char c, char *out)
+static oc::result<sign::PublicKey> load_embedded_public_key()
 {
-    if (c >= 'a' && c <= 'f') {
-        *out = c - 'a' + 10;
-    } else if (c >= 'A' && c <= 'F') {
-        *out = c - 'A' + 10;
-    } else if (c >= '0' && c <= '9') {
-        *out = c - '0';
-    } else {
-        return false;
-    }
-    return true;
-}
+    std::string_view hex = signing_key;
+    std::vector<unsigned char> data((hex.size() + 1) / 2);
 
-static inline bool hex2bin(const std::string &source, std::string &out)
-{
-    std::string result;
-    result.reserve((source.size() + 1) / 2);
-
-    char temp1;
-    char temp2;
-
-    if (source.size() % 2 == 1) {
-        return false;
+    if (sodium_hex2bin(data.data(), data.size(), hex.data(), hex.size(),
+                       "\r\n", nullptr, nullptr) != 0) {
+        return std::errc::invalid_argument;
     }
 
-    for (size_t i = 0; i < source.size(); i += 2) {
-        if (!hex2num(source[i], &temp1) || !hex2num(source[i + 1], &temp2)) {
-            return false;
-        }
-        result += static_cast<char>(temp1 << 4 | temp2);
-    }
+    MemoryFile file;
 
-    out.swap(result);
-    return true;
+    OUTCOME_TRYV(file.open(data.data(), data.size()));
+
+    return sign::load_public_key(file);
 }
 
-static int log_callback(const char *str, size_t len, void *userdata)
+static oc::result<sign::Signature> load_signature(const char *path)
 {
-    (void) userdata;
+    StandardFile file;
 
-    // Strip newline
-    LOGE("%s", std::string(str, len > 0 ? len - 1 : len).c_str());
+    OUTCOME_TRYV(file.open(path, FileOpenMode::ReadOnly));
 
-    return static_cast<int>(len);
+    return sign::load_signature(file);
 }
 
-static void openssl_log_errors()
+static oc::result<void> verify_signature(const char *path,
+                                         const sign::Signature &sig,
+                                         const sign::PublicKey &key)
 {
-    ERR_print_errors_cb(&log_callback, nullptr);
+    StandardFile file;
+
+    OUTCOME_TRYV(file.open(path, FileOpenMode::ReadOnly));
+
+    return sign::verify_file(file, sig, key);
 }
 
-static SigVerifyResult verify_signature_with_key(const char *path,
-                                                 const char *sig_path,
-                                                 EVP_PKEY &public_key)
+SigVerifyResult verify_signature(const char *path, const char *sig_path)
 {
-    ScopedBIO bio_data_in(BIO_new_file(path, "rb"), BIO_free);
-    if (!bio_data_in) {
-        LOGE("%s: Failed to open input file", path);
-        openssl_log_errors();
+    auto key = load_embedded_public_key();
+    if (!key) {
+        LOGE("Failed to load embedded public key: %s",
+             key.error().message().c_str());
         return SigVerifyResult::Failure;
     }
 
-    ScopedBIO bio_sig_in(BIO_new_file(sig_path, "rb"), BIO_free);
-    if (!bio_sig_in) {
-        LOGE("%s: Failed to open signature file", sig_path);
-        openssl_log_errors();
+    auto sig = load_signature(sig_path);
+    if (!sig) {
+        LOGE("%s: Failed to load signature: %s",
+             sig_path, sig.error().message().c_str());
         return SigVerifyResult::Failure;
     }
 
-    auto ret = sign::verify_data(*bio_data_in, *bio_sig_in, public_key);
-    if (!ret) {
-        if (ret.error().ec == sign::Error::BadSignature) {
+    if (auto r = verify_signature(path, sig.value(), key.value()); !r) {
+        if (r.error() == sign::Error::SignatureVerifyFailed) {
             return SigVerifyResult::Invalid;
         } else {
-            LOGE("%s: Failed to verify signature: %s", sig_path,
-                 ret.error().ec.message().c_str());
-            if (ret.error().has_openssl_error) {
-                openssl_log_errors();
-            }
+            LOGE("%s: Failed to verify signature: %s",
+                 path, r.error().message().c_str());
             return SigVerifyResult::Failure;
         }
     }
 
     return SigVerifyResult::Valid;
-}
-
-SigVerifyResult verify_signature(const char *path, const char *sig_path)
-{
-    std::string der;
-    if (!hex2bin(signing_cert, der)) {
-        LOGE("Failed to convert hex-encoded certificate to binary: %s",
-             signing_cert);
-        return SigVerifyResult::Failure;
-    }
-
-    // Cast to (void *) is okay since BIO_new_mem_buf() creates a read-only
-    // BIO object
-    ScopedBIO bio_x509_cert(BIO_new_mem_buf(
-            der.data(), static_cast<int>(der.size())), BIO_free);
-    if (!bio_x509_cert) {
-        LOGE("Failed to create BIO for X509 certificate: %s", signing_cert);
-        openssl_log_errors();
-        return SigVerifyResult::Failure;
-    }
-
-    // Load DER-encoded certificate
-    ScopedX509 cert(d2i_X509_bio(bio_x509_cert.get(), nullptr), X509_free);
-    if (!cert) {
-        LOGE("Failed to load X509 certificate: %s", signing_cert);
-        openssl_log_errors();
-        return SigVerifyResult::Failure;
-    }
-
-    // Get public key from certificate
-    ScopedEVP_PKEY public_key(X509_get_pubkey(cert.get()), EVP_PKEY_free);
-    if (!public_key) {
-        LOGE("Failed to load public key from X509 certificate: %s",
-             signing_cert);
-        openssl_log_errors();
-        return SigVerifyResult::Failure;
-    }
-
-    return verify_signature_with_key(path, sig_path, *public_key);
 }
 
 static void sigverify_usage(FILE *stream)
@@ -225,13 +152,13 @@ int sigverify_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-#if COMPILE_ERROR_STRINGS
-    ERR_load_crypto_strings();
-    OpenSSL_add_all_algorithms();
-#endif
-
     const char *path = argv[optind];
     const char *sig_path = argv[optind + 1];
+
+    if (!sign::initialize()) {
+        LOGE("Failed to initialize libmbsign");
+        return EXIT_FAILURE;
+    }
 
     SigVerifyResult result = verify_signature(path, sig_path);
 

@@ -19,4 +19,4 @@
 
 #pragma once
 
-extern const char *signing_cert;
+extern const char *signing_key;
