@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,86 +23,121 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <openssl/err.h>
+#include "mbcommon/file/standard.h"
 
-// libmbsign
 #include "mbsign/sign.h"
 
-using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
+using namespace mb;
+using namespace mb::sign;
 
-static void openssl_log_errors()
-{
-    ERR_print_errors_fp(stderr);
-}
-
-static void usage(FILE *stream)
+static void usage(FILE *stream) noexcept
 {
     fprintf(stream,
-            "Usage: signtool <PKCS12 file> <input file> <output signature file>\n\n"
+            "Usage: signtool <secret key file> [[<input file> <output signature file>] ...]\n\n"
             "NOTE: This is not a general purpose tool for signing files!\n"
-            "It is only meant for use with mbtool.\n");
+            "It is only meant for use during the build process.\n");
+}
+
+static SecureUniquePtr<char> get_passphrase() noexcept
+{
+    char *pass = getenv("MBSIGN_PASSPHRASE");
+    if (!pass) {
+        return nullptr;
+    }
+
+    size_t pass_size = strlen(pass);
+
+    auto result = make_secure_array<char>(pass_size + 1);
+    if (!result) {
+        return nullptr;
+    }
+
+    strcpy(result.get(), pass);
+    memset(pass, '*', pass_size);
+
+    return result;
+}
+
+static oc::result<SecretKey> load_secret_key(const char *filename,
+                                             const char *passphrase)
+{
+    StandardFile file;
+
+    OUTCOME_TRYV(file.open(filename, FileOpenMode::ReadOnly));
+
+    return load_secret_key(file, passphrase);
 }
 
 int main(int argc, char *argv[])
 {
-    ERR_load_crypto_strings();
-    OpenSSL_add_all_algorithms();
+    if (!mb::sign::initialize()) {
+        fprintf(stderr, "Failed to initialize libmbsign\n");
+        return EXIT_FAILURE;
+    }
 
-    if (argc != 4) {
+    if (argc < 4 || argc & 1) {
         usage(stderr);
         return EXIT_FAILURE;
     }
 
-    const char *file_pkcs12 = argv[1];
-    const char *file_input = argv[2];
-    const char *file_output = argv[3];
+    const char *file_skey = argv[1];
 
-    const char *pass = getenv("MBSIGN_PASSPHRASE");
+    auto pass = get_passphrase();
     if (!pass) {
         fprintf(stderr,
                 "The MBSIGN_PASSPHRASE environment variable is not set\n");
         return EXIT_FAILURE;
     }
 
-    auto private_key = mb::sign::load_private_key_from_file(
-            file_pkcs12, mb::sign::KeyFormat::Pkcs12, pass);
-    if (!private_key) {
+    auto skey = load_secret_key(file_skey, pass.get());
+    if (!skey) {
+        fprintf(stderr, "%s: Failed to load secret key: %s\n",
+                file_skey, skey.error().message().c_str());
         return EXIT_FAILURE;
     }
 
-    ScopedBIO bio_data_in(BIO_new_file(file_input, "rb"), BIO_free);
-    if (!bio_data_in) {
-        fprintf(stderr, "%s: Failed to open input file\n", file_input);
-        openssl_log_errors();
-        return EXIT_FAILURE;
-    }
-    ScopedBIO bio_sig_out(BIO_new_file(file_output, "wb"), BIO_free);
-    if (!bio_sig_out) {
-        fprintf(stderr, "%s: Failed to open output file\n", file_output);
-        openssl_log_errors();
-        return EXIT_FAILURE;
-    }
+    for (int i = 2; i < argc; i += 2) {
+        const char *file_input = argv[i];
+        const char *file_output = argv[i + 1];
 
-    if (auto ret = mb::sign::sign_data(
-            *bio_data_in, *bio_sig_out, *private_key.value()); !ret) {
-        fprintf(stderr, "Failed to sign data: %s\n",
-                ret.error().ec.message().c_str());
-        if (ret.error().has_openssl_error) {
-            openssl_log_errors();
+        StandardFile file;
+
+        if (auto r = file.open(file_input, FileOpenMode::ReadOnly); !r) {
+            fprintf(stderr, "%s: Failed to open for reading: %s\n",
+                    file_input, r.error().message().c_str());
+            return EXIT_FAILURE;
         }
-        return EXIT_FAILURE;
-    }
 
-    if (!BIO_free(bio_data_in.release())) {
-        fprintf(stderr, "%s: Failed to close input file\n", file_input);
-        openssl_log_errors();
-        return EXIT_FAILURE;
-    }
+        auto sig = sign_file(file, skey.value());
+        if (!sig) {
+            fprintf(stderr, "%s: Failed to sign file: %s\n",
+                    file_input, sig.error().message().c_str());
+            return EXIT_FAILURE;
+        }
 
-    if (!BIO_free(bio_sig_out.release())) {
-        fprintf(stderr, "%s: Failed to close output file\n", file_output);
-        openssl_log_errors();
-        return EXIT_FAILURE;
+        if (auto r = file.close(); !r) {
+            fprintf(stderr, "%s: Failed to close file: %s\n",
+                    file_input, r.error().message().c_str());
+            return EXIT_FAILURE;
+        }
+
+        if (auto r = file.open(file_output, FileOpenMode::WriteOnly); !r) {
+            fprintf(stderr, "%s: Failed to open for writing: %s\n",
+                    file_output, r.error().message().c_str());
+            return EXIT_FAILURE;
+        }
+
+        if (auto r = save_signature(file, sig.value()); !r) {
+            fprintf(stderr, "%s: Failed to write signature: %s\n",
+                    file_output, r.error().message().c_str());
+            return EXIT_FAILURE;
+        }
+
+        if (auto r = file.close(); !r) {
+            fprintf(stderr, "%s: Failed to close file: %s\n",
+                    file_output, r.error().message().c_str());
+            return EXIT_FAILURE;
+        }
     }
 
     return EXIT_SUCCESS;
