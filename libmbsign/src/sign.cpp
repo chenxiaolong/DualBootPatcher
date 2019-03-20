@@ -26,13 +26,10 @@
 #include <cstring>
 
 #include <sodium/core.h>
-#include <sodium/crypto_generichash_blake2b.h>
-#include <sodium/crypto_pwhash_scryptsalsa208sha256.h>
 #include <sodium/crypto_sign_ed25519.h>
 #include <sodium/randombytes.h>
 #include <sodium/utils.h>
 
-#include "mbcommon/endian.h"
 #include "mbcommon/error_code.h"
 #include "mbcommon/file/buffered.h"
 #include "mbcommon/file_util.h"
@@ -125,7 +122,7 @@ save_secret_key(File &file, const SecretKey &key, const char *passphrase,
     payload->chk_alg = CHK_ALG;
     randombytes_buf(payload->kdf_salt.data(), payload->kdf_salt.size());
     set_kdf_limits(*payload, kdf_sec);
-    payload->enc.id = mb_htole64(key.id);
+    payload->enc.id = to_le64(key.id);
     payload->enc.key = *key.key;
     payload->enc.chk = compute_checksum(*payload);
 
@@ -189,7 +186,7 @@ load_secret_key(File &file, const char *passphrase) noexcept
         return std::errc::not_enough_memory;
     }
 
-    key.id = mb_le64toh(payload->enc.id);
+    key.id = from_le64(payload->enc.id);
     *key.key = payload->enc.key;
 
     return std::move(key);
@@ -214,7 +211,7 @@ save_public_key(File &file, const PublicKey &key) noexcept
 
     PKPayload payload = {};
     payload.sig_alg = SIG_ALG;
-    payload.id = mb_htole64(key.id);
+    payload.id = to_le64(key.id);
     payload.key = key.key;
 
     return save_raw_file(file, as_bytes(payload), key.untrusted, nullptr,
@@ -249,7 +246,7 @@ load_public_key(File &file) noexcept
         return Error::UnsupportedSigAlg;
     }
 
-    key.id = mb_le64toh(payload.id);
+    key.id = from_le64(payload.id);
     key.key = payload.key;
 
     return std::move(key);
@@ -275,7 +272,7 @@ save_signature(File &file, const Signature &sig) noexcept
 
     SigPayload payload = {};
     payload.sig_alg = SIG_ALG;
-    payload.id = mb_htole64(sig.id);
+    payload.id = to_le64(sig.id);
     payload.sig = sig.sig;
 
     return save_raw_file(file, as_bytes(payload), sig.untrusted, &sig.trusted,
@@ -311,7 +308,7 @@ load_signature(File &file) noexcept
         return Error::UnsupportedSigAlg;
     }
 
-    sig.id = mb_le64toh(payload.id);
+    sig.id = from_le64(payload.id);
     sig.sig = payload.sig;
 
     return std::move(sig);

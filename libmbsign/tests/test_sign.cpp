@@ -23,7 +23,6 @@
 
 #include <cinttypes>
 
-#include "mbcommon/endian.h"
 #include "mbcommon/file/memory.h"
 #include "mbcommon/span.h"
 #include "mbcommon/string.h"
@@ -147,7 +146,7 @@ TEST_F(SignTest, LoadSecretKeyFailureUnsupportedAlgorithms)
     payload.chk_alg = CHK_ALG;
     payload.kdf_salt = {};
     set_kdf_limits(payload, KdfSecurityLevel::Interactive);
-    payload.enc.id = mb_htole64(_kp.skey.id);
+    payload.enc.id = to_le64(_kp.skey.id);
     payload.enc.key = *_kp.skey.key;
     payload.enc.chk = compute_checksum(payload);
 
@@ -191,7 +190,7 @@ TEST_F(SignTest, LoadSecretKeyFailureIncorrectChecksum)
     payload.chk_alg = CHK_ALG;
     payload.kdf_salt = {};
     set_kdf_limits(payload, KdfSecurityLevel::Interactive);
-    payload.enc.id = mb_htole64(_kp.skey.id);
+    payload.enc.id = to_le64(_kp.skey.id);
     payload.enc.key = *_kp.skey.key;
     payload.enc.chk = compute_checksum(payload);
     ++payload.enc.chk[0];
@@ -225,7 +224,7 @@ TEST_F(SignTest, LoadPublicKeyFailureUnsupportedAlgorithms)
 
     PKPayload payload = {};
     payload.sig_alg = {};
-    payload.id = mb_htole64(_kp.pkey.id);
+    payload.id = to_le64(_kp.pkey.id);
     payload.key = _kp.pkey.key;
 
     ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
@@ -266,7 +265,7 @@ TEST_F(SignTest, LoadSignatureFailureUnsupportedAlgorithms)
 
     SigPayload payload = {};
     payload.sig_alg = {};
-    payload.id = mb_htole64(_kp.pkey.id);
+    payload.id = to_le64(_kp.pkey.id);
     payload.sig = {};
 
     TrustedComment trusted = {};

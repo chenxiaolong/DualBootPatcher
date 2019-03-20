@@ -21,7 +21,6 @@
 
 #include <cstring>
 
-#include "mbcommon/endian.h"
 #include "mbcommon/error_code.h"
 
 namespace mb::sign::detail
@@ -66,15 +65,15 @@ void set_kdf_limits(SKPayload &payload, KdfSecurityLevel kdf_sec) noexcept
 {
     switch (kdf_sec) {
     case KdfSecurityLevel::Sensitive:
-        payload.kdf_opslimit = mb_htole64(
+        payload.kdf_opslimit = to_le64(
                 crypto_pwhash_scryptsalsa208sha256_OPSLIMIT_SENSITIVE);
-        payload.kdf_memlimit = mb_htole64(
+        payload.kdf_memlimit = to_le64(
                 crypto_pwhash_scryptsalsa208sha256_MEMLIMIT_SENSITIVE);
         break;
     case KdfSecurityLevel::Interactive:
-        payload.kdf_opslimit = mb_htole64(
+        payload.kdf_opslimit = to_le64(
                 crypto_pwhash_scryptsalsa208sha256_OPSLIMIT_INTERACTIVE);
-        payload.kdf_memlimit = mb_htole64(
+        payload.kdf_memlimit = to_le64(
                 crypto_pwhash_scryptsalsa208sha256_MEMLIMIT_INTERACTIVE);
         break;
     default:
@@ -128,8 +127,8 @@ apply_xor_cipher(SKPayload &payload, const char *passphrase) noexcept
 
     if (crypto_pwhash_scryptsalsa208sha256(
             enc_key->data(), enc_key->size(), passphrase, strlen(passphrase),
-            payload.kdf_salt.data(), mb_le64toh(payload.kdf_opslimit),
-            mb_le64toh(payload.kdf_memlimit)) != 0) {
+            payload.kdf_salt.data(), from_le64(payload.kdf_opslimit),
+            from_le64(payload.kdf_memlimit)) != 0) {
         return ec_from_errno();
     }
 

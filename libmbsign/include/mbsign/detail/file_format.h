@@ -91,11 +91,40 @@ using KdfSalt = std::array<
     crypto_pwhash_scryptsalsa208sha256_SALTBYTES
 >;
 
+//! Array to hold little-endian 64-bit integer
+using LittleEndian64 = std::array<unsigned char, 8>;
+
+inline uint64_t from_le64(const LittleEndian64 &le64)
+{
+    return static_cast<uint64_t>(le64[0])
+            | (static_cast<uint64_t>(le64[1]) << 8)
+            | (static_cast<uint64_t>(le64[2]) << 16)
+            | (static_cast<uint64_t>(le64[3]) << 24)
+            | (static_cast<uint64_t>(le64[4]) << 32)
+            | (static_cast<uint64_t>(le64[5]) << 40)
+            | (static_cast<uint64_t>(le64[6]) << 48)
+            | (static_cast<uint64_t>(le64[7]) << 56);
+}
+
+inline LittleEndian64 to_le64(const uint64_t n)
+{
+    return {
+        static_cast<unsigned char>(n),
+        static_cast<unsigned char>(n >> 8),
+        static_cast<unsigned char>(n >> 16),
+        static_cast<unsigned char>(n >> 24),
+        static_cast<unsigned char>(n >> 32),
+        static_cast<unsigned char>(n >> 40),
+        static_cast<unsigned char>(n >> 48),
+        static_cast<unsigned char>(n >> 56),
+    };
+}
+
 //! Encrypted portion of secret key payload
 struct EncSKPayload
 {
     //! Unique key ID (little endian)
-    uint64_t id;
+    LittleEndian64 id;
     //! Raw secret key
     RawSecretKey key;
     //! Checksum
@@ -114,9 +143,9 @@ struct SKPayload
     //! Salt for the key derivation algorithm
     KdfSalt kdf_salt;
     //! CPU operations limit for the key derivation algorithm (little endian)
-    uint64_t kdf_opslimit;
+    LittleEndian64 kdf_opslimit;
     //! Memory limit for the key derivation algorithm (little endian)
-    uint64_t kdf_memlimit;
+    LittleEndian64 kdf_memlimit;
     //! Encrypted portion of secret key payload
     EncSKPayload enc;
 };
@@ -130,7 +159,7 @@ struct PKPayload
     //! Two bytes representing the signature algorithm
     AlgId sig_alg;
     //! Unique key ID (little endian)
-    uint64_t id;
+    LittleEndian64 id;
     //! Raw public key
     RawPublicKey key;
 };
@@ -141,7 +170,7 @@ struct SigPayload
     //! Two bytes representing the signature algorithm
     AlgId sig_alg;
     //! Unique key ID (little endian)
-    uint64_t id;
+    LittleEndian64 id;
     //! Raw signature
     RawSignature sig;
 };
