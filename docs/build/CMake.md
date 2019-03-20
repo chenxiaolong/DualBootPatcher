@@ -4,7 +4,6 @@
 
 * [Main options](#main-options)
     * [`MBP_BUILD_TARGET`](#mbp_build_target)
-    * [`MBP_BUILD_TYPE`](#mbp_build_type)
     * [`MBP_ENABLE_TESTS`](#mbp_enable_tests)
     * [`MBP_ENABLE_QEMU`](#mbp_enable_qemu)
 * [Signing](#signing)
@@ -30,41 +29,6 @@ Specifies the target system to build for.
 ##### Default value:
 
 `device`
-
-##### Required:
-
-No
-
----
-
-#### `MBP_BUILD_TYPE`
-
-##### Description:
-
-Specifies the build type.
-
-For release builds:
-- Meant for distribution to users
-- Must be signed with a valid key using the `MBP_SIGN_CONFIG_PATH` option below
-
-For debug builds:
-- Meant for development and testing
-- Must be signed with a valid key using the `MBP_SIGN_CONFIG_PATH` option below
-
-For CI builds:
-- Meant to be built by continuous integration systems, like Jenkins
-- Version number can be overridden by specifying `MBP_CI_VERSION` so that relavent build information, such as the git commit can be included in the version number.
-- Must be signed with a valid key using the `MBP_SIGN_CONFIG_PATH` option below
-
-##### Valid values:
-
-- `release` - Release build
-- `debug` - Debug build
-- `ci` - Continuous integration build
-
-##### Default value:
-
-`debug`
 
 ##### Required:
 

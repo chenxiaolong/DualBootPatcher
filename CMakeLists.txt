@@ -3,11 +3,9 @@ cmake_minimum_required(VERSION 3.8)
 # Add our custom module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
-# Build target and type
+# Build target
 set(MBP_BUILD_TARGET "device"
     CACHE STRING "Target platform (device, system, or hosttools)")
-set(MBP_BUILD_TYPE "debug"
-    CACHE STRING "Target build type (release, debug, or ci)")
 
 # Build types:
 # - device: Build for the target Android device
@@ -20,11 +18,6 @@ if(NOT ${MBP_BUILD_TARGET} STREQUAL device
         AND NOT ${MBP_BUILD_TARGET} STREQUAL system
         AND NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
     message(FATAL_ERROR "Invalid build target: ${MBP_BUILD_TARGET}")
-endif()
-if(NOT ${MBP_BUILD_TYPE} STREQUAL release
-        AND NOT ${MBP_BUILD_TYPE} STREQUAL debug
-        AND NOT ${MBP_BUILD_TYPE} STREQUAL ci)
-    message(FATAL_ERROR "Invalid build type: ${MBP_BUILD_TYPE}")
 endif()
 
 # Set up cross compiling if targeting device
@@ -74,31 +67,6 @@ set(MBP_VERSION "9.3.0" CACHE STRING "Version")
 
 # CPack versions
 set(CPACK_PACKAGE_VERSION ${MBP_VERSION})
-
-# Ensure CMAKE_BUILD_TYPE is set
-if(NOT CMAKE_BUILD_TYPE)
-    if(${MBP_BUILD_TYPE} STREQUAL release)
-        set(NEW_CMAKE_BUILD_TYPE Release)
-    elseif(${MBP_BUILD_TYPE} STREQUAL debug)
-        set(NEW_CMAKE_BUILD_TYPE Debug)
-    elseif(${MBP_BUILD_TYPE} STREQUAL ci)
-        set(NEW_CMAKE_BUILD_TYPE Release)
-    endif()
-
-    message(STATUS "Setting CMAKE_BUILD_TYPE to ${NEW_CMAKE_BUILD_TYPE} because it wasn't explicitly specified")
-    set(CMAKE_BUILD_TYPE ${NEW_CMAKE_BUILD_TYPE} CACHE STRING
-        "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel."
-        FORCE)
-    unset(NEW_CMAKE_BUILD_TYPE)
-endif()
-
-# Ensure CMAKE_BUILD_TYPE is set to Release or Debug when targeting Android as
-# the NDK toolchain file does not support other build types
-if(${MBP_BUILD_TARGET} STREQUAL android
-        AND NOT ${CMAKE_BUILD_TYPE} STREQUAL Release
-        AND NOT ${CMAKE_BUILD_TYPE} STREQUAL Debug)
-    message(FATAL_ERROR "CMAKE_BUILD_TYPE must be set to Release or Debug for the 'android' target")
-endif()
 
 # Config file for the current build target
 if(${MBP_BUILD_TARGET} STREQUAL device)
