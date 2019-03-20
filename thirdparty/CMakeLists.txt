@@ -216,25 +216,6 @@ set(sodium_LIBRARY_DEBUG   "${libsodium_root}/lib/libsodium.a" CACHE INTERNAL ""
 set(sodium_LIBRARY_RELEASE "${libsodium_root}/lib/libsodium.a" CACHE INTERNAL "")
 
 ################################################################################
-# boringssl for Android
-################################################################################
-
-get_prebuilt(
-    NAME             boringssl
-    VERSION          "r5501.dc3322053-1"
-    HASH_armeabi-v7a SHA512=f0f3b1ab6df3d762b94a289e6d26a21b7bf4f5e5dda7279f34b6f4309ccd1c2926bef92c6b97c92c1b8317f14562427d5cccf847cad430ceccc5e23c1bd69398
-    HASH_arm64-v8a   SHA512=f3bbe3d3db1141ea63ad079c96b102d32ff90a3396de62843383a859069d20a5fec3f66f21fc7d9688754c4fabfb54372c31352bf9e39e700957a78a52bd20d1
-    HASH_x86         SHA512=df034552e70a55a0c575cdd2a989c5e530e88f31c9d05886064f319403cebd91e9f6512cfaaff37d78abafb6eba727360bd06a4ee3a59624f17d9a1df41fb586
-    HASH_x86_64      SHA512=f5a4d2dc49fe8b2bc2ee7515c68d706d0e20ae2bd6bcfd61f6fcc83e829aff2836be2e972ded15623243e41af55671400ca781d4953c84b8f291e953c5e14512
-)
-
-list(APPEND CMAKE_FIND_ROOT_PATH "${boringssl_root}")
-
-set(OPENSSL_INCLUDE_DIR    "${boringssl_root}/include"         CACHE INTERNAL "")
-set(OPENSSL_CRYPTO_LIBRARY "${boringssl_root}/lib/libcrypto.a" CACHE INTERNAL "")
-set(OPENSSL_SSL_LIBRARY    "${boringssl_root}/lib/libssl.a"    CACHE INTERNAL "")
-
-################################################################################
 # FUSE for Android
 ################################################################################
 
