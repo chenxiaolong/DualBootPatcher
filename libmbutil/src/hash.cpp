@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,13 +23,16 @@
 
 #include <cstdio>
 
+#include <sodium/crypto_hash_sha512.h>
+
 #include "mbcommon/error_code.h"
+#include "mbcommon/type_traits.h"
 
 
 namespace mb::util
 {
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 /*!
  * \brief Compute SHA512 hash of a file
@@ -40,7 +43,7 @@ using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
  */
 oc::result<Sha512Digest> sha512_hash(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"));
     if (!fp) {
         return ec_from_errno();
     }
@@ -48,13 +51,13 @@ oc::result<Sha512Digest> sha512_hash(const std::string &path)
     std::array<unsigned char, 10240> buf;
     size_t n;
 
-    SHA512_CTX ctx;
-    if (!SHA512_Init(&ctx)) {
+    crypto_hash_sha512_state s;
+    if (crypto_hash_sha512_init(&s) != 0) {
         return std::errc::io_error;
     }
 
     while ((n = fread(buf.data(), 1, buf.size(), fp.get())) > 0) {
-        if (!SHA512_Update(&ctx, buf.data(), n)) {
+        if (crypto_hash_sha512_update(&s, buf.data(), n) != 0) {
             return std::errc::io_error;
         }
         if (n < buf.size()) {
@@ -68,7 +71,7 @@ oc::result<Sha512Digest> sha512_hash(const std::string &path)
 
     Sha512Digest digest;
 
-    if (!SHA512_Final(digest.data(), &ctx)) {
+    if (crypto_hash_sha512_final(&s, digest.data()) != 0) {
         return std::errc::io_error;
     }
 

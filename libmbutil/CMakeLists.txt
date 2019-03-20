@@ -82,7 +82,7 @@ foreach(variant ${variants})
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
         mblog-${variant}
         LibArchive::LibArchive
-        OpenSSL::Crypto
+        sodium
     )
 
     # Install shared library

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,14 +22,12 @@
 #include <array>
 #include <string>
 
-#include <openssl/sha.h>
-
 #include "mbcommon/outcome.h"
 
 namespace mb::util
 {
 
-using Sha512Digest = std::array<unsigned char, SHA512_DIGEST_LENGTH>;
+using Sha512Digest = std::array<unsigned char, 64>;
 
 oc::result<Sha512Digest> sha512_hash(const std::string &path);
 
