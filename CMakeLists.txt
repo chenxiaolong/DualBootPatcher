@@ -68,24 +68,11 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
 endif()
 
 project(DualBootPatcher CXX C ASM)
-set(MBP_VERSION_MAJOR 9)
-set(MBP_VERSION_MINOR 3)
-set(MBP_VERSION_PATCH 0)
-set(MBP_VERSION "${MBP_VERSION_MAJOR}.${MBP_VERSION_MINOR}.${MBP_VERSION_PATCH}")
 
-# Allow version to be overridden in Jenkins
-set(MBP_CI_VERSION "" CACHE STRING "Override version (continuous integration)")
-if(MBP_CI_VERSION)
-    if(NOT ${MBP_BUILD_TYPE} STREQUAL ci)
-        message(FATAL_ERROR "Cannot override version number for non-CI builds")
-    endif()
-    set(MBP_VERSION ${MBP_CI_VERSION})
-endif()
+# Allow overriding the version for CI builds
+set(MBP_VERSION "9.3.0" CACHE STRING "Version")
 
 # CPack versions
-set(CPACK_PACKAGE_VERSION_MAJOR ${MBP_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${MBP_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${MBP_VERSION_PATCH})
 set(CPACK_PACKAGE_VERSION ${MBP_VERSION})
 
 # Ensure CMAKE_BUILD_TYPE is set
