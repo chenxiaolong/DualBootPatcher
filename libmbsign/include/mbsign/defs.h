@@ -21,6 +21,8 @@
 
 #include "mbcommon/common.h"
 
+#include <array>
+
 #include <cstdint>
 
 #include "mbsign/memory.h"
