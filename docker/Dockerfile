@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2017-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ RUN dnf -y install \
         ccache cmake findutils gcc-c++ git make procps-ng unzip zip \
         ncurses-compat-libs \
         java-1.8.0-openjdk-headless transifex-client \
-        openssl-devel \
+        libsodium-devel openssl-devel \
         qemu-system-aarch64-core qemu-system-arm-core qemu-system-x86-core \
     && dnf clean all
 
