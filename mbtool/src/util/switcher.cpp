@@ -29,7 +29,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include <openssl/sha.h>
+#include <sodium/crypto_hash_sha512.h>
 
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
@@ -357,9 +357,10 @@ SwitchRomResult switch_rom(const std::string &id,
         }
 
         // Get actual sha512sum
-        std::array<unsigned char, SHA512_DIGEST_LENGTH> digest;
-        SHA512(reinterpret_cast<const unsigned char *>(f.data.data()),
-               f.data.size(), digest.data());
+        std::array<unsigned char, crypto_hash_sha512_BYTES> digest;
+        crypto_hash_sha512(digest.data(),
+                           reinterpret_cast<const unsigned char *>(f.data.data()),
+                           f.data.size());
         f.hash = util::hex_string(digest.data(), digest.size());
 
         if (force_update_checksums) {
@@ -459,9 +460,10 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
     }
 
     // Get actual sha512sum
-    std::array<unsigned char, SHA512_DIGEST_LENGTH> digest;
-    SHA512(reinterpret_cast<const unsigned char *>(data.value().data()),
-           data.value().size(), digest.data());
+    std::array<unsigned char, crypto_hash_sha512_BYTES> digest;
+    crypto_hash_sha512(digest.data(),
+                       reinterpret_cast<const unsigned char *>(data.value().data()),
+                       data.value().size());
     std::string hash = util::hex_string(digest.data(), digest.size());
 
     // Add to checksums.prop
