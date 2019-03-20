@@ -443,6 +443,18 @@ as_writable_bytes(T &t) noexcept
             reinterpret_cast<std::byte *>(&t), sizeof(t));
 }
 
+inline constexpr span<const std::byte>
+as_bytes(const void *data, size_t size) noexcept
+{
+    return span<const std::byte>(static_cast<const std::byte *>(data), size);
+}
+
+inline constexpr span<std::byte>
+as_writable_bytes(void *data, size_t size) noexcept
+{
+    return span<std::byte>(static_cast<std::byte *>(data), size);
+}
+
 }
 
 namespace mb

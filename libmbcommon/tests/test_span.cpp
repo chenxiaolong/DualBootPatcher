@@ -324,4 +324,12 @@ TEST(SpanTest, CheckAsBytesExtension)
     auto s2 = as_writable_bytes(buf);
     ASSERT_EQ(static_cast<void *>(s2.data()), static_cast<void *>(&buf));
     ASSERT_EQ(s2.size(), sizeof(buf));
+
+    auto s3 = as_bytes(&buf, sizeof(buf));
+    ASSERT_EQ(static_cast<const void *>(s3.data()), static_cast<void *>(&buf));
+    ASSERT_EQ(s3.size(), sizeof(buf));
+
+    auto s4 = as_writable_bytes(&buf, sizeof(buf));
+    ASSERT_EQ(static_cast<void *>(s4.data()), static_cast<void *>(&buf));
+    ASSERT_EQ(s4.size(), sizeof(buf));
 }
