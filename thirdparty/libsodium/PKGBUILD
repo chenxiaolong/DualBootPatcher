@@ -1,0 +1,60 @@
+# Copyright (C) 2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+_commit_fuse=3ecfa58e23f723914cb479262dbf393ee4821295
+
+pkgname=libsodium
+pkgver=1.0.17
+pkgrel=1
+pkgdesc="Library for encryption, decryption, signatures, and password hashing"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://libsodium.gitbook.io/doc/"
+license=(custom:ISC)
+source=("https://download.libsodium.org/libsodium/releases/libsodium-${pkgver}.tar.gz")
+sha512sums=('7cc9e4f11e656008ce9dff735acea95acbcb91ae4936de4d26f7798093766a77c373e9bd4a7b45b60ef8a11de6c55bc8dcac13bebf8c23c671d0536430501da1')
+
+build() {
+    cd "${pkgname}-${pkgver}"
+
+    local abi api
+    abi=$(android_get_abi_name)
+    api=28
+
+    android_build_standalone_toolchain "${srcdir}/toolchain" "${api}"
+    export PATH="${srcdir}/toolchain/bin:${PATH}"
+
+    local triplet
+    triplet=("${srcdir}"/toolchain/bin/*-gcc)
+    triplet=${triplet##*/}
+    triplet=${triplet%-gcc}
+
+    ./configure \
+        --host="${triplet}" \
+        --prefix=/ \
+        --disable-shared \
+        --enable-static
+    make
+}
+
+package() {
+    cd "${pkgname}-${pkgver}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    make -j1 -C src install DESTDIR="${pkgdir}"
+
+    find "${pkgdir}" -name '*.la' -delete
+}
