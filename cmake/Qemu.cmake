@@ -38,7 +38,7 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
             "${qemu_binary}"
             DOC "Path to ${qemu_binary} binary"
         )
-        if(NOT QEMU_SYSTEM_${qemu_arch})
+        if(NOT QEMU_SYSTEM)
             message(FATAL_ERROR "MBP_ENABLE_QEMU is enabled, but ${qemu_binary} was not found")
         endif()
 
