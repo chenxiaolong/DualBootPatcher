@@ -12,14 +12,11 @@
 #
 # ---
 
-# Path to the Java keystore containing the signing key
-keystore=@REPLACE_ME_KEYSTORE_PATH@
+# Path to secret key
+secret_key_path=
 
-# Global passphrase for the keystore
-keystore_passphrase=@REPLACE_ME_KEYSTORE_PASSPHRASE@
+# Secret key passphrase
+secret_key_passphrase=
 
-# Key alias for the signing key
-key_alias=@REPLACE_ME_KEY_ALIAS@
-
-# Passphrase for the signing key
-key_passphrase=@REPLACE_ME_KEY_PASSPHRASE@
+# Path to public key
+public_key_path=

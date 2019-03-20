@@ -49,7 +49,7 @@ For release builds:
 
 For debug builds:
 - Meant for development and testing
-- Automatically signed with Android SDK's debug key. If the debug keystore does does not exist (`$HOME/.android/debug.keystore` or `%USERPROFILE%\.android\debug.keystore`), it will be created automatically.
+- Must be signed with a valid key using the `MBP_SIGN_CONFIG_PATH` option below
 
 For CI builds:
 - Meant to be built by continuous integration systems, like Jenkins
@@ -119,7 +119,7 @@ No
 
 ## Signing
 
-The following options specify the parameters for signing the Android APK. The options are also required in non-debug desktop builds because mbtool uses the certificate to verify the source of the socket connection for its daemon.
+The following options specify the parameters for signing all binaries. The signatures are verified at runtime when the DualBootPatcher UI or mbtool executes or loads one of the binaries.
 
 **NOTE:** The signing config must exist for the project to build. The paths and passwords are *not* cached by CMake.
 
@@ -129,11 +129,11 @@ The following options specify the parameters for signing the Android APK. The op
 
 ##### Description:
 
-Path to the signing config file containing the keystore path, keystore passphrase, key alias, and key passphrase to use for signing. See `cmake/SigningConfig.prop.in` for a sample config file. If a signing config is not provided for a debug build, then one will be generated automatically for the default Android SDK debug signing keystore.
+Path to the signing config file containing the secret key path, secret key passphrase, and public key path to use for signing. See `cmake/SigningConfig.prop.in` for a sample config file.
 
 ##### Required:
 
-Only in non-debug builds.
+Yes
 
 
 ## Prebuilts paths

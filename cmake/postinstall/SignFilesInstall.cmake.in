@@ -9,9 +9,10 @@ cmake_minimum_required(VERSION 3.1)
 #   - https://gitlab.kitware.com/cmake/cmake/issues/18435
 
 include("@CMAKE_SOURCE_DIR@/cmake/SigningConfigReader.cmake")
-read_signing_config(MBP_SIGN_JAVA_ "@MBP_SIGN_CONFIG_PATH@")
+read_signing_config(MBP_SIGN_ "@MBP_SIGN_CONFIG_PATH@")
 
-set(ENV{MBSIGN_PASSPHRASE} "${MBP_SIGN_JAVA_KEYSTORE_PASSPHRASE}")
+set(ENV{MBSIGN_PASSPHRASE} "${MBP_SIGN_SECRET_KEY_PASSPHRASE}")
+set(signtool_cmd "@SIGNTOOL_COMMAND@" "${MBP_SIGN_SECRET_KEY_PATH}")
 
 set(signature_files)
 
@@ -21,21 +22,17 @@ foreach(file ${CMAKE_INSTALL_MANIFEST_FILES})
     if(EXISTS "${path}.sig" AND "${path}.sig" IS_NEWER_THAN "${path}")
         message(STATUS "Up-to-date: ${path}.sig")
     else()
-        message(STATUS "Signing: ${path}")
-        execute_process(
-            COMMAND
-            "@SIGNTOOL_COMMAND@"
-            "@PKCS12_KEYSTORE_PATH@"
-            "${path}"
-            "${path}.sig"
-            RESULT_VARIABLE ret
-        )
-        if(NOT ret EQUAL 0)
-            message(FATAL_ERROR "Failed to sign: ${path}")
-        endif()
+        message(STATUS "Will sign: ${path}")
+        list(APPEND signtool_cmd "${path}" "${path}.sig")
     endif()
 
     list(APPEND signature_files "${file}.sig")
 endforeach()
+
+message(STATUS "Signing files")
+execute_process(COMMAND ${signtool_cmd} RESULT_VARIABLE ret)
+if(NOT ret EQUAL 0)
+    message(FATAL_ERROR "Failed to sign files")
+endif()
 
 list(APPEND CMAKE_INSTALL_MANIFEST_FILES ${signature_files})

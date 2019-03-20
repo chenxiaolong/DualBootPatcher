@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
 
 function(read_signing_config out_prefix path)
-    set(keystore)
-    set(keystore_passphrase)
-    set(key_alias)
-    set(key_passphrase)
+    set(secret_key_path)
+    set(secret_key_passphrase)
+    set(public_key_path)
 
     file(STRINGS ${path} contents)
     foreach(line ${contents})
@@ -22,38 +21,31 @@ function(read_signing_config out_prefix path)
         string(REPLACE "${left}" "" value ${line})
 
         # Parse key/value pairs
-        if("${key}" STREQUAL "keystore")
-            set(keystore "${value}")
-        elseif("${key}" STREQUAL "keystore_passphrase")
-            set(keystore_passphrase "${value}")
-        elseif("${key}" STREQUAL "key_alias")
-            set(key_alias "${value}")
-        elseif("${key}" STREQUAL "key_passphrase")
-            set(key_passphrase "${value}")
+        if("${key}" STREQUAL "secret_key_path")
+            set(secret_key_path "${value}")
+        elseif("${key}" STREQUAL "secret_key_passphrase")
+            set(secret_key_passphrase "${value}")
+        elseif("${key}" STREQUAL "public_key_path")
+            set(public_key_path "${value}")
         else()
             message(FATAL_ERROR "Invalid key in signing config: ${key}")
         endif()
     endforeach()
 
-    if(NOT keystore)
-        message(FATAL_ERROR "Missing keystore path in: ${path}")
+    if(NOT secret_key_path)
+        message(FATAL_ERROR "Missing secret key path in: ${path}")
     endif()
-    if(NOT keystore_passphrase)
-        message(FATAL_ERROR "Missing keystore passphrase in: ${path}")
+    if(NOT secret_key_passphrase)
+        message(FATAL_ERROR "Missing secret key passphrase in: ${path}")
     endif()
-    if(NOT key_alias)
-        message(FATAL_ERROR "Missing key alias in: ${path}")
-    endif()
-    if(NOT key_passphrase)
-        message(FATAL_ERROR "Missing key passphrase in: ${path}")
+    if(NOT public_key_path)
+        message(FATAL_ERROR "Missing public key path in: ${path}")
     endif()
 
-    set("${out_prefix}KEYSTORE_PATH"
-        "${keystore}" PARENT_SCOPE)
-    set("${out_prefix}KEYSTORE_PASSPHRASE"
-        "${keystore_passphrase}" PARENT_SCOPE)
-    set("${out_prefix}KEY_ALIAS"
-        "${key_alias}" PARENT_SCOPE)
-    set("${out_prefix}KEY_PASSPHRASE"
-        "${key_passphrase}" PARENT_SCOPE)
+    set("${out_prefix}SECRET_KEY_PATH"
+        "${secret_key_path}" PARENT_SCOPE)
+    set("${out_prefix}SECRET_KEY_PASSPHRASE"
+        "${secret_key_passphrase}" PARENT_SCOPE)
+    set("${out_prefix}PUBLIC_KEY_PATH"
+        "${public_key_path}" PARENT_SCOPE)
 endfunction()
