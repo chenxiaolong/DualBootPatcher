@@ -178,11 +178,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     endif()
 endif()
 
-# Remove some warnings caused by the BoringSSL headers on Android
-if(ANDROID AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    add_compile_options(-Wno-gnu-anonymous-struct -Wno-nested-anon-types)
-endif()
-
 add_library(interface.global.CVersion INTERFACE)
 add_library(interface.global.CXXVersion INTERFACE)
 
