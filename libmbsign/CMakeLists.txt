@@ -40,11 +40,11 @@ foreach(variant ${variants})
         ${lib_target}
         PUBLIC
         mbcommon-${variant}
+        sodium
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
-        sodium
     )
 
     # Install shared library
