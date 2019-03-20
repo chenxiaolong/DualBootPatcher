@@ -33,13 +33,14 @@
 
 #include "mbcommon/error_code.h"
 #include "mbcommon/integer.h"
+#include "mbcommon/type_traits.h"
 
 
 namespace mb::systrace::detail
 {
 
-using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedDIR = std::unique_ptr<DIR, TypeFn<closedir>>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 static oc::result<void> ensure_procfs(int fd)
 {
@@ -63,7 +64,7 @@ oc::result<pid_t> get_pid_status_field(pid_t pid, std::string_view name)
         return std::errc::filename_too_long;
     }
 
-    ScopedFILE fp(fopen(path, "re"), fclose);
+    ScopedFILE fp(fopen(path, "re"));
     if (!fp) {
         return ec_from_errno();
     }
@@ -115,7 +116,7 @@ for_each_tid(pid_t pid, std::function<oc::result<bool>(pid_t)> func,
         return std::errc::filename_too_long;
     }
 
-    ScopedDIR dp(opendir(path), closedir);
+    ScopedDIR dp(opendir(path));
     if (!dp) {
         return ec_from_errno();
     }

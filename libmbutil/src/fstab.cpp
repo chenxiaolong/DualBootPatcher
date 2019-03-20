@@ -34,6 +34,7 @@
 #include "mbcommon/finally.h"
 #include "mbcommon/integer.h"
 #include "mbcommon/string.h"
+#include "mbcommon/type_traits.h"
 #include "mblog/logging.h"
 #include "mbutil/string.h"
 
@@ -43,7 +44,7 @@
 namespace mb::util
 {
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 struct FstabErrorCategory : std::error_category
 {
@@ -211,7 +212,7 @@ parse_fs_mgr_options(std::string_view options)
 // Much simplified version of fs_mgr's fstab parsing code
 FstabResult<FstabRecs> read_fstab(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"));
     if (!fp) {
         return FstabErrorInfo{{}, ec_from_errno()};
     }
@@ -289,7 +290,7 @@ FstabResult<FstabRecs> read_fstab(const std::string &path)
 
 FstabResult<TwrpFstabRecs> read_twrp_fstab(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"));
     if (!fp) {
         return FstabErrorInfo{{}, ec_from_errno()};
     }

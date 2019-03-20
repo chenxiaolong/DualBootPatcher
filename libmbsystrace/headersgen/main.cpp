@@ -31,6 +31,7 @@
 
 #include "mbcommon/locale.h"
 #include "mbcommon/string.h"
+#include "mbcommon/type_traits.h"
 
 #ifdef _WIN32
 #  define MAIN_FUNC wmain
@@ -43,7 +44,7 @@
 
 using namespace mb;
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 static bool preprocess(const std::vector<NativeString> &compiler_args,
                        std::string_view in, std::string &out)
@@ -257,7 +258,7 @@ int MAIN_FUNC(int argc, NativeChar *argv[], NativeChar *envp[])
     }
 
     if (output_file) {
-        ScopedFILE fp(fopen(output_file, "wb"), fclose);
+        ScopedFILE fp(fopen(output_file, "wb"));
         if (!fp) {
             fprintf(stderr, "%s: Failed to open for writing: %s\n",
                     output_file, strerror(errno));

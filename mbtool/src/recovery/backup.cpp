@@ -35,6 +35,7 @@
 
 #include "mbcommon/integer.h"
 #include "mbcommon/string.h"
+#include "mbcommon/type_traits.h"
 #include "mblog/logging.h"
 #include "mbutil/archive.h"
 #include "mbutil/copy.h"
@@ -82,7 +83,7 @@ constexpr char BACKUP_NAME_THUMBNAIL[]     = "thumbnail.webp";
 // Max file size for FAT32
 constexpr uint64_t DEFAULT_ARCHIVE_SPLIT_SIZE = UINT32_MAX - 1;
 
-using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
+using ScopedDIR = std::unique_ptr<DIR, TypeFn<closedir>>;
 
 enum class Result
 {
@@ -190,7 +191,7 @@ static bool backup_directory(const std::string &output_file,
                              util::CompressionType compression,
                              uint64_t split_archive_size)
 {
-    ScopedDIR dp(opendir(directory.c_str()), closedir);
+    ScopedDIR dp(opendir(directory.c_str()));
     if (!dp) {
         LOGE("%s: Failed to open directory: %s",
              directory.c_str(), strerror(errno));
@@ -880,7 +881,7 @@ static bool remount_partitions_writable()
 
 static bool is_non_empty_dir(const std::string &path)
 {
-    ScopedDIR dp(opendir(path.c_str()), closedir);
+    ScopedDIR dp(opendir(path.c_str()));
     if (dp) {
         dirent *ent;
         while ((ent = readdir(dp.get()))) {

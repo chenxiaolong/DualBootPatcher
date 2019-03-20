@@ -75,6 +75,7 @@ foreach(variant ${variants})
     target_link_libraries(
         ${lib_target}
         PUBLIC
+        mbcommon-${variant}
         LibSepol::LibSepol
         PRIVATE
         interface.global.CXXVersion

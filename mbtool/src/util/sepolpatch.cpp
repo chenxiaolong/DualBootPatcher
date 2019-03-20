@@ -42,6 +42,7 @@
 #include "mbcommon/finally.h"
 #include "mbcommon/integer.h"
 #include "mbcommon/string.h"
+#include "mbcommon/type_traits.h"
 #include "mblog/logging.h"
 #include "mbutil/selinux.h"
 
@@ -56,7 +57,7 @@ extern "C" int policydb_index_decls(sepol_handle_t *handle, policydb_t *p);
 namespace mb
 {
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 /*!
  * Add or remove rule.
@@ -1273,7 +1274,7 @@ bool patch_sepolicy(const std::string &source,
 
 bool patch_loaded_sepolicy(SELinuxPatch patch)
 {
-    ScopedFILE fp(fopen(util::SELINUX_ENFORCE_FILE, "rbe"), fclose);
+    ScopedFILE fp(fopen(util::SELINUX_ENFORCE_FILE, "rbe"));
     if (!fp) {
         if (errno == ENOENT) {
             // If the file doesn't exist, then the kernel probably doesn't

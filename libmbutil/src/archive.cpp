@@ -28,6 +28,7 @@
 #include "mbcommon/file/standard.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
+#include "mbcommon/type_traits.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
 #include "mbutil/path.h"
@@ -52,9 +53,9 @@
 namespace mb::util
 {
 
-using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
+using ScopedArchive = std::unique_ptr<archive, TypeFn<archive_free>>;
 using ScopedLinkResolver = std::unique_ptr<archive_entry_linkresolver,
-        decltype(archive_entry_linkresolver_free) *>;
+        TypeFn<archive_entry_linkresolver_free>>;
 
 int libarchive_copy_data(archive *in, archive *out, archive_entry *entry)
 {
@@ -359,17 +360,17 @@ bool libarchive_tar_extract(const std::string &filename,
         return false;
     }
 
-    ScopedArchive matcher(archive_match_new(), archive_match_free);
+    ScopedArchive matcher(archive_match_new());
     if (!matcher) {
         LOGE("%s: Out of memory when creating matcher", __FUNCTION__);
         return false;
     }
-    ScopedArchive in(archive_read_new(), archive_read_free);
+    ScopedArchive in(archive_read_new());
     if (!in) {
         LOGE("%s: Out of memory when creating archive reader", __FUNCTION__);
         return false;
     }
-    ScopedArchive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive out(archive_write_disk_new());
     if (!out) {
         LOGE("%s: Out of memory when creating disk writer", __FUNCTION__);
         return false;
@@ -531,18 +532,17 @@ bool libarchive_tar_create(const std::string &filename,
         return false;
     }
 
-    ScopedArchive in(archive_read_disk_new(), archive_read_free);
+    ScopedArchive in(archive_read_disk_new());
     if (!in) {
         LOGE("%s: Out of memory when creating disk reader", __FUNCTION__);
         return false;
     }
-    ScopedArchive out(archive_write_new(), archive_write_free);
+    ScopedArchive out(archive_write_new());
     if (!out) {
         LOGE("%s: Out of memory when creating archive writer", __FUNCTION__);
         return false;
     }
-    ScopedLinkResolver resolver(archive_entry_linkresolver_new(),
-                                archive_entry_linkresolver_free);
+    ScopedLinkResolver resolver(archive_entry_linkresolver_new());
     if (!resolver) {
         LOGE("%s: Out of memory when creating link resolver", __FUNCTION__);
         return false;
@@ -781,8 +781,8 @@ static void set_up_output(archive *out)
 
 bool extract_archive(const std::string &filename, const std::string &target)
 {
-    ScopedArchive in(archive_read_new(), archive_read_free);
-    ScopedArchive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new());
+    ScopedArchive out(archive_write_disk_new());
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -843,8 +843,8 @@ bool extract_files(const std::string &filename, const std::string &target,
         return false;
     }
 
-    ScopedArchive in(archive_read_new(), archive_read_free);
-    ScopedArchive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new());
+    ScopedArchive out(archive_write_disk_new());
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -916,8 +916,8 @@ bool extract_files2(const std::string &filename,
         return false;
     }
 
-    ScopedArchive in(archive_read_new(), archive_read_free);
-    ScopedArchive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new());
+    ScopedArchive out(archive_write_disk_new());
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -971,7 +971,7 @@ bool archive_exists(const std::string &filename,
         return false;
     }
 
-    ScopedArchive in(archive_read_new(), archive_read_free);
+    ScopedArchive in(archive_read_new());
 
     if (!in) {
         LOGE("Out of memory");

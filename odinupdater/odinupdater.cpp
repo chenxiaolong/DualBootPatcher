@@ -41,6 +41,7 @@
 #include "mbcommon/finally.h"
 #include "mbcommon/integer.h"
 #include "mbcommon/string.h"
+#include "mbcommon/type_traits.h"
 
 // libmbsparse
 #include "mbsparse/sparse.h"
@@ -78,10 +79,11 @@
 #define PROP_SYSTEM_DEV         "system"
 #define PROP_BOOT_DEV           "boot"
 
-using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
-
+using namespace mb;
 using namespace mb::device;
+
+using ScopedArchive = std::unique_ptr<archive, TypeFn<archive_free>>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 enum class ExtractResult : uint8_t
 {
@@ -148,7 +150,7 @@ static void info(const char *fmt, ...)
 
 static bool run_command(const std::vector<std::string> &argv)
 {
-    int status = mb::util::run_command(argv[0], argv, {}, {}, {});
+    int status = util::run_command(argv[0], argv, {}, {}, {});
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
         return false;
@@ -215,7 +217,7 @@ static ExtractResult la_skip_to(archive *a, const char *filename,
 
 static bool load_sales_code()
 {
-    auto line = mb::util::file_first_line(EFS_SALES_CODE_FILE);
+    auto line = util::file_first_line(EFS_SALES_CODE_FILE);
     if (!line) {
         error("%s: Failed to read file: %s",
               EFS_SALES_CODE_FILE, line.error().message().c_str());
@@ -247,7 +249,7 @@ static bool load_block_devs()
             return false;
         }
 
-        auto close_archive = mb::finally([&]{
+        auto close_archive = finally([&]{
             archive_read_free(a);
         });
 
@@ -323,7 +325,7 @@ static bool load_block_devs()
     return true;
 }
 
-class LibArchiveEntryFile : public mb::File
+class LibArchiveEntryFile : public File
 {
 public:
     LibArchiveEntryFile(archive *a)
@@ -331,12 +333,12 @@ public:
     {
     }
 
-    mb::oc::result<void> close() override
+    oc::result<void> close() override
     {
-        return mb::oc::success();
+        return oc::success();
     }
 
-    mb::oc::result<size_t> read(void *buf, size_t size) override
+    oc::result<size_t> read(void *buf, size_t size) override
     {
         size_t total = 0;
 
@@ -345,7 +347,7 @@ public:
             if (n < 0) {
                 error("libarchive: Failed to read data: %s",
                       archive_error_string(m_archive));
-                return mb::ec_from_errno(archive_errno(m_archive));
+                return ec_from_errno(archive_errno(m_archive));
             } else if (n == 0) {
                 break;
             }
@@ -358,24 +360,24 @@ public:
         return total;
     }
 
-    mb::oc::result<size_t> write(const void *buf, size_t size) override
+    oc::result<size_t> write(const void *buf, size_t size) override
     {
         (void) buf;
         (void) size;
-        return mb::FileError::UnsupportedWrite;
+        return FileError::UnsupportedWrite;
     }
 
-    mb::oc::result<uint64_t> seek(int64_t offset, int whence) override
+    oc::result<uint64_t> seek(int64_t offset, int whence) override
     {
         (void) offset;
         (void) whence;
-        return mb::FileError::UnsupportedSeek;
+        return FileError::UnsupportedSeek;
     }
 
-    mb::oc::result<void> truncate(uint64_t size) override
+    oc::result<void> truncate(uint64_t size) override
     {
         (void) size;
-        return mb::FileError::UnsupportedTruncate;
+        return FileError::UnsupportedTruncate;
     }
 
     bool is_open() override
@@ -392,10 +394,10 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
 {
     using namespace std::placeholders;
 
-    ScopedArchive a{archive_read_new(), &archive_read_free};
+    ScopedArchive a{archive_read_new()};
     LibArchiveEntryFile file(a.get());
-    mb::sparse::SparseFile sparse_file;
-    mb::StandardFile out_file;
+    sparse::SparseFile sparse_file;
+    StandardFile out_file;
 
     if (!a) {
         error("Out of memory");
@@ -418,7 +420,7 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
         return ExtractResult::Error;
     }
 
-    if (auto r = out_file.open(out_filename, mb::FileOpenMode::WriteOnly); !r) {
+    if (auto r = out_file.open(out_filename, FileOpenMode::WriteOnly); !r) {
         error("%s: Failed to open for writing: %s",
               out_filename, r.error().message().c_str());
         return ExtractResult::Error;
@@ -477,7 +479,7 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
 static ExtractResult extract_raw_file(const char *zip_filename,
                                       const char *out_filename)
 {
-    ScopedArchive a{archive_read_new(), &archive_read_free};
+    ScopedArchive a{archive_read_new()};
     char buf[10240];
     la_ssize_t n;
     int fd;
@@ -511,7 +513,7 @@ static ExtractResult extract_raw_file(const char *zip_filename,
         return ExtractResult::Error;
     }
 
-    auto close_fd = mb::finally([fd]{
+    auto close_fd = finally([fd]{
         close(fd);
     });
 
@@ -552,7 +554,7 @@ static ExtractResult extract_raw_file(const char *zip_filename,
 static bool disable_vaultkeeper(const char *path)
 {
     // Open old properties file
-    ScopedFILE fp_old(fopen(path, "rbe"), fclose);
+    ScopedFILE fp_old(fopen(path, "rbe"));
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -574,15 +576,15 @@ static bool disable_vaultkeeper(const char *path)
         return false;
     }
 
-    auto unlink_new_path = mb::finally([&] {
+    auto unlink_new_path = finally([&] {
         unlink(new_path.c_str());
     });
 
-    auto close_fd = mb::finally([&] {
+    auto close_fd = finally([&] {
         close(fd);
     });
 
-    ScopedFILE fp_new(fdopen(fd, "wb"), fclose);
+    ScopedFILE fp_new(fdopen(fd, "wb"));
     if (!fp_new) {
         error("%s: Failed to open for writing: %s",
               new_path.c_str(), strerror(errno));
@@ -596,7 +598,7 @@ static bool disable_vaultkeeper(const char *path)
     size_t len = 0;
     ssize_t read = 0;
 
-    auto free_line = mb::finally([&] {
+    auto free_line = finally([&] {
         free(line);
     });
 
@@ -605,7 +607,7 @@ static bool disable_vaultkeeper(const char *path)
     bool changed = false;
 
     while ((read = getline(&line, &len, fp_old.get())) >= 0) {
-        if (mb::starts_with(line, prefix)) {
+        if (starts_with(line, prefix)) {
             changed = true;
 
             if (fprintf(fp_new.get(), "%s0\n", prefix) < 0) {
@@ -664,14 +666,14 @@ static bool kill_rlc()
         return false;
     }
 
-    auto unmount_system_dir = mb::finally([]{
+    auto unmount_system_dir = finally([]{
         umount_system();
     });
 
     bool ret = true;
 
     // Kill RLC app
-    if (auto r = mb::util::delete_recursive("/system/priv-app/Rlc"); !r) {
+    if (auto r = util::delete_recursive("/system/priv-app/Rlc"); !r) {
         ret = false;
     }
 
@@ -708,10 +710,10 @@ static bool copy_dir_if_exists(const char *source_dir,
         return false;
     }
 
-    auto ret = mb::util::copy_dir(source_dir, target_dir,
-                                  mb::util::CopyFlag::CopyAttributes
-                                | mb::util::CopyFlag::CopyXattrs
-                                | mb::util::CopyFlag::ExcludeTopLevel);
+    auto ret = util::copy_dir(source_dir, target_dir,
+                              util::CopyFlag::CopyAttributes
+                            | util::CopyFlag::CopyXattrs
+                            | util::CopyFlag::ExcludeTopLevel);
     if (!ret) {
         error("%s", ret.error().message().c_str());
     }
@@ -729,7 +731,7 @@ static bool retry_unmount(const char *mount_point, unsigned int attempts)
         info("[Attempt %d/%d] Unmounting %s",
              attempt + 1, attempts, mount_point);
 
-        if (!mb::util::umount(mount_point)) {
+        if (!util::umount(mount_point)) {
             error("WARNING: Failed to unmount %s: %s",
                   mount_point, strerror(errno));
             info("[Attempt %d/%d] Waiting 1 second before next attempt",
@@ -783,9 +785,9 @@ static bool apply_multi_csc()
 
 static bool flash_carrier_package_zip(const char *zip_path)
 {
-    ScopedArchive matcher{archive_match_new(), &archive_match_free};
-    ScopedArchive in{archive_read_new(), &archive_read_free};
-    ScopedArchive out{archive_write_disk_new(), &archive_write_free};
+    ScopedArchive matcher{archive_match_new()};
+    ScopedArchive in{archive_read_new()};
+    ScopedArchive out{archive_write_disk_new()};
 
     if (!matcher || !in || !out) {
         error("libarchive: Out of memory");
@@ -901,7 +903,7 @@ static ExtractResult flash_carrier_package()
         return ExtractResult::Error;
     }
 
-    auto unmount_fuse_file = mb::finally([]{
+    auto unmount_fuse_file = finally([]{
         retry_unmount(TEMP_CACHE_MOUNT_FILE, 5);
     });
 
@@ -910,15 +912,15 @@ static ExtractResult flash_carrier_package()
 
     // Mount image. libmbutil will automatically take care of associating a loop
     // device and mounting it
-    if (!mb::util::mount(TEMP_CACHE_MOUNT_FILE, TEMP_CACHE_MOUNT_DIR, "ext4",
-                         MS_RDONLY, "")) {
+    if (!util::mount(TEMP_CACHE_MOUNT_FILE, TEMP_CACHE_MOUNT_DIR, "ext4",
+                     MS_RDONLY, "")) {
         error("Failed to mount (%s) %s at %s: %s",
               TEMP_CACHE_MOUNT_FILE, "ext4", TEMP_CACHE_MOUNT_DIR,
               strerror(errno));
         return ExtractResult::Error;
     }
 
-    auto unmount_dir = mb::finally([]{
+    auto unmount_dir = finally([]{
         retry_unmount(TEMP_CACHE_MOUNT_DIR, 5);
     });
 
@@ -928,7 +930,7 @@ static ExtractResult flash_carrier_package()
         return ExtractResult::Error;
     }
 
-    auto unmount_system_dir = mb::finally([]{
+    auto unmount_system_dir = finally([]{
         umount_system();
     });
 
@@ -981,7 +983,7 @@ static bool flash_zip()
     }
 
     // Unmount system
-    if (mb::util::is_mounted("/system") && !umount_system()) {
+    if (util::is_mounted("/system") && !umount_system()) {
         ui_print("Failed to unmount /system");
         return false;
     }
@@ -1054,12 +1056,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!mb::str_to_num(argv[1], 10, interface)) {
+    if (!str_to_num(argv[1], 10, interface)) {
         error("Invalid interface: '%s'", argv[1]);
         return EXIT_FAILURE;
     }
 
-    if (!mb::str_to_num(argv[2], 10, output_fd)) {
+    if (!str_to_num(argv[2], 10, output_fd)) {
         error("Invalid output fd: '%s'", argv[2]);
         return EXIT_FAILURE;
     }

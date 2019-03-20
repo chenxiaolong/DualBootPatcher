@@ -37,6 +37,7 @@
 #include "mbcommon/error_code.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
+#include "mbcommon/type_traits.h"
 #include "mblog/logging.h"
 #include "mbutil/blkid.h"
 #include "mbutil/directory.h"
@@ -55,7 +56,7 @@ static constexpr char PROC_MOUNTS[] = "/proc/mounts";
 static constexpr char PROC_MOUNTINFO[] = "/proc/self/mountinfo";
 static constexpr std::string_view DELETED_SUFFIX = " (deleted)";
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 struct MountErrorCategory : std::error_category
 {
@@ -168,7 +169,7 @@ oc::result<std::vector<MountEntry>> get_mount_entries()
     });
 
     {
-        ScopedFILE fp(fopen(PROC_MOUNTINFO, "re"), fclose);
+        ScopedFILE fp(fopen(PROC_MOUNTINFO, "re"));
         if (fp) {
             while (getline(&line, &len, fp.get()) != -1) {
                 MountEntry &entry = entries.emplace_back();
@@ -249,7 +250,7 @@ oc::result<std::vector<MountEntry>> get_mount_entries()
     }
 
     {
-        ScopedFILE fp(fopen(PROC_MOUNTS, "re"), fclose);
+        ScopedFILE fp(fopen(PROC_MOUNTS, "re"));
         if (fp) {
             while (getline(&line, &len, fp.get()) != -1) {
                 MountEntry &entry = entries.emplace_back();

@@ -43,6 +43,7 @@
 // libmbcommon
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
+#include "mbcommon/type_traits.h"
 #include "mbcommon/version.h"
 
 // libmblog
@@ -108,8 +109,8 @@ using namespace mb::device;
 namespace mb
 {
 
-using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedDIR = std::unique_ptr<DIR, TypeFn<closedir>>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 const std::string Installer::CANCELLED = "cancelled";
 
@@ -430,7 +431,7 @@ bool Installer::destroy_chroot() const
     // Disassociate loop devices that the ROM installer may have assigned
     // (grr, SuperSU...)
     std::string dev_block_path(in_chroot("/dev/block"));
-    ScopedDIR dp(opendir(dev_block_path.c_str()), closedir);
+    ScopedDIR dp(opendir(dev_block_path.c_str()));
     if (dp) {
         std::string path;
         struct dirent *ent;
@@ -978,7 +979,7 @@ bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
         // Read program output in child process (stdout, stderr)
         char buf[1024];
 
-        ScopedFILE fp(fdopen(stdio_fd, "rb"), fclose);
+        ScopedFILE fp(fdopen(stdio_fd, "rb"));
         if (!fp) {
             _exit(EXIT_FAILURE);
         }
@@ -995,7 +996,7 @@ bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
         char *save_ptr;
 
         // Similar parsing to AOSP recovery
-        ScopedFILE fp(fdopen(command_fd, "rb"), fclose);
+        ScopedFILE fp(fdopen(command_fd, "rb"));
 
         while (fgets(buf, sizeof(buf), fp.get())) {
             char *cmd = strtok_r(buf, " \n", &save_ptr);

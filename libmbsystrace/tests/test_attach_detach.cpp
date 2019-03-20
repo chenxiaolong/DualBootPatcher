@@ -30,6 +30,7 @@
 
 #include "mbcommon/finally.h"
 #include "mbcommon/integer.h"
+#include "mbcommon/type_traits.h"
 
 #include "mbsystrace/procfs_p.h"
 #include "mbsystrace/syscalls.h"
@@ -40,7 +41,7 @@ using namespace mb;
 using namespace mb::systrace;
 using namespace mb::systrace::detail;
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 static pid_t get_tracer(pid_t pid)
 {

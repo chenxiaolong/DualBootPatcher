@@ -54,8 +54,6 @@ static std::vector<std::string> extsd_mount_points{
 namespace mb
 {
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
-
 std::string Rom::full_system_path()
 {
     std::string path = Roms::get_mountpoint(system_source);

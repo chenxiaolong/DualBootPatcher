@@ -35,11 +35,12 @@
 #include "mbcommon/error_code.h"
 #include "mbcommon/file_error.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/type_traits.h"
 
 namespace mb::util
 {
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 /*!
  * \brief Create empty file with 0666 permissions
@@ -73,7 +74,7 @@ oc::result<void> create_empty_file(const std::string &path)
  */
 oc::result<std::string> file_first_line(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"));
     if (!fp) {
         return ec_from_errno();
     }
@@ -116,7 +117,7 @@ oc::result<std::string> file_first_line(const std::string &path)
 oc::result<void> file_write_data(const std::string &path,
                                  const void *data, size_t size)
 {
-    ScopedFILE fp(fopen(path.c_str(), "wbe"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "wbe"));
     if (!fp) {
         return ec_from_errno();
     }
@@ -194,7 +195,7 @@ oc::result<bool> file_find_one_of(const std::string &path,
 
 oc::result<std::string> file_read_all(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "rbe"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "rbe"));
     if (!fp) {
         return ec_from_errno();
     }

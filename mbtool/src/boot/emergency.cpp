@@ -31,6 +31,7 @@
 #include "mbcommon/error_code.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/outcome.h"
+#include "mbcommon/type_traits.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
@@ -50,7 +51,7 @@ using namespace mb::device;
 namespace mb
 {
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 class BlockDevFinder : public util::FtsWrapper {
 public:
@@ -108,7 +109,7 @@ static oc::result<void> dump_kernel_log(const char *file)
         return ec_from_errno();
     }
 
-    ScopedFILE fp(fopen(file, "wbe"), fclose);
+    ScopedFILE fp(fopen(file, "wbe"));
     if (!fp) {
         return ec_from_errno();
     }

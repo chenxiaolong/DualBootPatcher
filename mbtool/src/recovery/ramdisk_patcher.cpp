@@ -32,6 +32,7 @@
 
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
+#include "mbcommon/type_traits.h"
 #include "mblog/logging.h"
 #include "mbutil/copy.h"
 #include "mbutil/path.h"
@@ -44,14 +45,14 @@
 namespace mb
 {
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 static bool _rp_write_rom_id(const std::string &dir, const std::string &rom_id)
 {
     std::string path(dir);
     path += "/romid";
 
-    ScopedFILE fp(fopen(path.c_str(), "wbe"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "wbe"));
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), strerror(errno));
@@ -92,7 +93,7 @@ static bool _rp_restore_default_prop(const std::string &dir)
     std::string path(dir);
     path += DEFAULT_PROP_PATH;
 
-    ScopedFILE fp_in(fopen(path.c_str(), "rbe"), fclose);
+    ScopedFILE fp_in(fopen(path.c_str(), "rbe"));
     if (!fp_in) {
         if (errno == ENOENT) {
             LOGV("%s: Ignoring non-existent file", path.c_str());
@@ -121,7 +122,7 @@ static bool _rp_restore_default_prop(const std::string &dir)
         close(tmp_fd);
     });
 
-    ScopedFILE fp_out(fdopen(tmp_fd, "wb"), fclose);
+    ScopedFILE fp_out(fdopen(tmp_fd, "wb"));
     if (!fp_out) {
         LOGE("%s: Failed to open for writing: %s",
              tmp_path.c_str(), strerror(errno));
@@ -179,7 +180,7 @@ static bool _rp_add_dbp_prop(const std::string &dir,
     std::string path(dir);
     path += DBP_PROP_PATH;
 
-    ScopedFILE fp(fopen(path.c_str(), "wbe"), fclose);
+    ScopedFILE fp(fopen(path.c_str(), "wbe"));
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), strerror(errno));

@@ -19,15 +19,19 @@
 
 #include <gtest/gtest.h>
 
+#include "mbcommon/type_traits.h"
+
 #include "mbutil/archive.h"
 
-using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
+using namespace mb;
+
+using ScopedArchive = std::unique_ptr<archive, TypeFn<archive_free>>;
 using ScopedArchiveEntry =
-        std::unique_ptr<archive_entry, decltype(archive_entry_free) *>;
+        std::unique_ptr<archive_entry, TypeFn<archive_entry_free>>;
 
 TEST(ArchiveTest, CheckUtf8FilenamesWork)
 {
-    ScopedArchive a(archive_write_new(), archive_write_free);
+    ScopedArchive a(archive_write_new());
     ASSERT_TRUE(a);
 
     // We don't care about the result, so just write to nowhere
@@ -46,7 +50,7 @@ TEST(ArchiveTest, CheckUtf8FilenamesWork)
     ASSERT_EQ(archive_write_open(a.get(), nullptr, nullptr, write_fn, nullptr),
               ARCHIVE_OK) << archive_error_string(a.get());
 
-    ScopedArchiveEntry entry(archive_entry_new(), archive_entry_free);
+    ScopedArchiveEntry entry(archive_entry_new());
     ASSERT_TRUE(entry);
 
     constexpr std::string_view data = "Hello, world!";

@@ -28,6 +28,8 @@
 #include <rapidjson/reader.h>
 #include <rapidjson/writer.h>
 
+#include "mbcommon/type_traits.h"
+
 #include "mblog/logging.h"
 
 #define LOG_TAG "mbtool/util/romconfig"
@@ -41,7 +43,7 @@ using namespace rapidjson;
 namespace mb
 {
 
-using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 /*
  * Example JSON structure:
@@ -122,7 +124,7 @@ static bool load_root(RomConfig &config, const Value &node)
 
 bool RomConfig::load_file(const std::string &path)
 {
-    ScopedFILE fp(fopen(path.c_str(), "re"), &fclose);
+    ScopedFILE fp(fopen(path.c_str(), "re"));
     if (!fp) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), strerror(errno));
@@ -170,7 +172,7 @@ bool RomConfig::save_file(const std::string &path)
         d.AddMember(KEY_CACHED_PROPERTIES, v_cached_props, alloc);
     }
 
-    ScopedFILE fp(fopen(path.c_str(), "we"), &fclose);
+    ScopedFILE fp(fopen(path.c_str(), "we"));
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), strerror(errno));
