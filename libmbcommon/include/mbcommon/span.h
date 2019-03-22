@@ -416,45 +416,6 @@ span(Container &) -> span<typename Container::value_type>;
 template<class Container>
 span(const Container &) -> span<const typename Container::value_type>;
 
-// libmbcommon-specific additions to convert an object to a byte span
-
-template<
-    class T,
-    class = std::enable_if_t<std::is_trivial_v<T>>
->
-inline constexpr span<const std::byte, sizeof(T)>
-as_bytes(const T &t) noexcept
-{
-    return span<const std::byte, sizeof(t)>(
-            reinterpret_cast<const std::byte *>(&t), sizeof(t));
-}
-
-template<
-    class T,
-    class = std::void_t<
-        std::enable_if_t<std::is_trivial_v<T>>,
-        std::enable_if_t<!std::is_const_v<T>>
-    >
->
-inline constexpr span<std::byte, sizeof(T)>
-as_writable_bytes(T &t) noexcept
-{
-    return span<std::byte, sizeof(t)>(
-            reinterpret_cast<std::byte *>(&t), sizeof(t));
-}
-
-inline constexpr span<const std::byte>
-as_bytes(const void *data, size_t size) noexcept
-{
-    return span<const std::byte>(static_cast<const std::byte *>(data), size);
-}
-
-inline constexpr span<std::byte>
-as_writable_bytes(void *data, size_t size) noexcept
-{
-    return span<std::byte>(static_cast<std::byte *>(data), size);
-}
-
 }
 
 namespace mb
@@ -466,5 +427,74 @@ using detail::span;
 
 using detail::as_bytes;
 using detail::as_writable_bytes;
+
+// libmbcommon-specific additions to convert an object to a byte span
+
+template<class T, std::size_t N>
+inline constexpr span<
+    const unsigned char,
+    ((N == dynamic_extent) ? dynamic_extent : (sizeof(T) * N))
+>
+as_uchars(span<T, N> spn) noexcept
+{
+    return {
+        reinterpret_cast<const unsigned char *>(spn.data()),
+        spn.size_bytes()
+    };
+}
+
+template<
+    class T, std::size_t N,
+    class = std::enable_if_t<!std::is_const_v<T>>
+>
+inline constexpr span<
+    unsigned char,
+    ((N == dynamic_extent) ? dynamic_extent : (sizeof(T) * N))
+>
+as_writable_uchars(span<T, N> s) noexcept
+{
+    return {
+        reinterpret_cast<unsigned char *>(s.data()),
+        s.size_bytes()
+    };
+}
+
+template<
+    class T,
+    class = std::enable_if_t<std::is_trivial_v<T>>
+>
+inline constexpr span<const unsigned char, sizeof(T)>
+as_uchars(const T &t) noexcept
+{
+    return span<const unsigned char, sizeof(t)>(
+            reinterpret_cast<const unsigned char *>(&t), sizeof(t));
+}
+
+template<
+    class T,
+    class = std::void_t<
+        std::enable_if_t<std::is_trivial_v<T>>,
+        std::enable_if_t<!std::is_const_v<T>>
+    >
+>
+inline constexpr span<unsigned char, sizeof(T)>
+as_writable_uchars(T &t) noexcept
+{
+    return span<unsigned char, sizeof(t)>(
+            reinterpret_cast<unsigned char *>(&t), sizeof(t));
+}
+
+inline constexpr span<const unsigned char>
+as_uchars(const void *data, size_t size) noexcept
+{
+    return span<const unsigned char>(
+            static_cast<const unsigned char *>(data), size);
+}
+
+inline constexpr span<unsigned char>
+as_writable_uchars(void *data, size_t size) noexcept
+{
+    return span<unsigned char>(static_cast<unsigned char *>(data), size);
+}
 
 }  // namespace nonstd

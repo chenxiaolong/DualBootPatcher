@@ -313,23 +313,23 @@ TEST(SpanTest, CheckAsBytes)
     ASSERT_EQ(buf[2], 0xcccccccc);
 }
 
-TEST(SpanTest, CheckAsBytesExtension)
+TEST(SpanTest, CheckAsUcharsExtension)
 {
     std::array buf{1, 2, 3};
 
-    auto s = as_bytes(buf);
+    auto s = as_uchars(buf);
     ASSERT_EQ(static_cast<const void *>(s.data()), static_cast<void *>(&buf));
     ASSERT_EQ(s.size(), sizeof(buf));
 
-    auto s2 = as_writable_bytes(buf);
+    auto s2 = as_writable_uchars(buf);
     ASSERT_EQ(static_cast<void *>(s2.data()), static_cast<void *>(&buf));
     ASSERT_EQ(s2.size(), sizeof(buf));
 
-    auto s3 = as_bytes(&buf, sizeof(buf));
+    auto s3 = as_uchars(&buf, sizeof(buf));
     ASSERT_EQ(static_cast<const void *>(s3.data()), static_cast<void *>(&buf));
     ASSERT_EQ(s3.size(), sizeof(buf));
 
-    auto s4 = as_writable_bytes(&buf, sizeof(buf));
+    auto s4 = as_writable_uchars(&buf, sizeof(buf));
     ASSERT_EQ(static_cast<void *>(s4.data()), static_cast<void *>(&buf));
     ASSERT_EQ(s4.size(), sizeof(buf));
 }
