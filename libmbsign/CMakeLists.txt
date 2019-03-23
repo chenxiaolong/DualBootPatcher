@@ -1,3 +1,13 @@
+set(generated_sources)
+
+if(NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/build_key.in.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/build_key.cpp
+    )
+    list(APPEND generated_sources "${CMAKE_CURRENT_BINARY_DIR}/build_key.cpp")
+endif()
+
 set(variants)
 
 list(APPEND variants static)
@@ -19,6 +29,7 @@ foreach(variant ${variants})
         src/detail/raw_file.cpp
         src/memory.cpp
         src/sign.cpp
+        ${generated_sources}
     )
 
     # Includes
@@ -66,6 +77,7 @@ if(variants AND MBP_ENABLE_TESTS)
         # Helpers
         tests/main.cpp
         # Tests
+        tests/test_build_key.cpp
         tests/test_raw_file.cpp
         tests/test_sign.cpp
     )

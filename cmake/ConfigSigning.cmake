@@ -20,6 +20,5 @@ read_signing_config(MBP_SIGN_ ${MBP_SIGN_CONFIG_PATH})
 file(
     READ
     ${MBP_SIGN_PUBLIC_KEY_PATH}
-    MBP_SIGN_PUBLIC_KEY_HEX
-    HEX
+    MBP_SIGN_PUBLIC_KEY
 )
