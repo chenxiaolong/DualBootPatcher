@@ -416,7 +416,7 @@ TEST_F(FileFdTest, WriteSuccess)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("x", 1)), oc::success(1u));
+    ASSERT_EQ(file.write("x"_uchars), oc::success(1u));
 }
 
 #if SIZE_MAX > SSIZE_MAX
@@ -449,7 +449,7 @@ TEST_F(FileFdTest, WriteEof)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("x", 1)), oc::success(0u));
+    ASSERT_EQ(file.write("x"_uchars), oc::success(0u));
 }
 
 TEST_F(FileFdTest, WriteFailure)
@@ -463,7 +463,7 @@ TEST_F(FileFdTest, WriteFailure)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("x", 1)), oc::failure(std::errc::io_error));
+    ASSERT_EQ(file.write("x"_uchars), oc::failure(std::errc::io_error));
 }
 
 TEST_F(FileFdTest, WriteFailureEINTR)
@@ -478,8 +478,7 @@ TEST_F(FileFdTest, WriteFailureEINTR)
     TestableFdFile file(&_funcs, 0, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("x", 1)),
-              oc::failure(std::errc::interrupted));
+    ASSERT_EQ(file.write("x"_uchars), oc::failure(std::errc::interrupted));
 }
 
 TEST_F(FileFdTest, SeekSuccess)

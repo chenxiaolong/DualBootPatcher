@@ -103,7 +103,7 @@ TEST_F(FileUtilTest, WriteRetryNormal)
             .Times(5)
             .WillRepeatedly(Return(2u));
 
-    ASSERT_EQ(file_write_retry(_file, as_uchars("xxxxxxxxxx", 10u)),
+    ASSERT_EQ(file_write_retry(_file, "xxxxxxxxxx"_uchars),
               oc::success(10u));
 }
 
@@ -117,7 +117,7 @@ TEST_F(FileUtilTest, WriteRetryEOF)
             .WillOnce(Return(2u))
             .WillOnce(Return(0u));
 
-    ASSERT_EQ(file_write_retry(_file, as_uchars("xxxxxxxxxx", 10u)),
+    ASSERT_EQ(file_write_retry(_file, "xxxxxxxxxx"_uchars),
               oc::success(8u));
 }
 
@@ -133,7 +133,7 @@ TEST_F(FileUtilTest, WriteRetryInterrupted)
             .WillOnce(Return(eintr))
             .WillOnce(Return(10u));
 
-    ASSERT_EQ(file_write_retry(_file, as_uchars("xxxxxxxxxx", 10u)),
+    ASSERT_EQ(file_write_retry(_file, "xxxxxxxxxx"_uchars),
               oc::success(10u));
 }
 
@@ -143,7 +143,7 @@ TEST_F(FileUtilTest, WriteRetryFailure)
             .Times(1)
             .WillOnce(Return(std::error_code()));
 
-    ASSERT_EQ(file_write_retry(_file, as_uchars("xxxxxxxxxx", 10u)),
+    ASSERT_EQ(file_write_retry(_file, "xxxxxxxxxx"_uchars),
               oc::failure(std::error_code()));
 }
 
@@ -192,7 +192,7 @@ TEST_F(FileUtilTest, WriteExactNormal)
             .Times(5)
             .WillRepeatedly(Return(2u));
 
-    ASSERT_TRUE(file_write_exact(_file, as_uchars("xxxxxxxxxx", 10)));
+    ASSERT_TRUE(file_write_exact(_file, "xxxxxxxxxx"_uchars));
 }
 
 TEST_F(FileUtilTest, WriteExactEOF)
@@ -205,7 +205,7 @@ TEST_F(FileUtilTest, WriteExactEOF)
             .WillOnce(Return(2u))
             .WillOnce(Return(0u));
 
-    ASSERT_EQ(file_write_exact(_file, as_uchars("xxxxxxxxxx", 10)),
+    ASSERT_EQ(file_write_exact(_file, "xxxxxxxxxx"_uchars),
               oc::failure(FileError::UnexpectedEof));
 }
 
@@ -219,7 +219,7 @@ TEST_F(FileUtilTest, WriteExactPartialFail)
             .WillOnce(Return(2u))
             .WillOnce(Return(std::error_code()));
 
-    ASSERT_EQ(file_write_exact(_file, as_uchars("xxxxxxxxxx", 10)),
+    ASSERT_EQ(file_write_exact(_file, "xxxxxxxxxx"_uchars),
               oc::failure(std::error_code()));
 }
 
@@ -275,7 +275,7 @@ TEST(FileSearchTest, FindAtBeginningOfBuffer)
     MemoryFile file(as_writable_uchars(span(buf)));
     ASSERT_TRUE(file.is_open());
 
-    FileSearcher searcher(&file, as_uchars("abcd", 4));
+    FileSearcher searcher(&file, "abcd"_uchars);
     // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
     ASSERT_TRUE(searcher.next() == oc::success(0));
     ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
@@ -288,7 +288,7 @@ TEST(FileSearchTest, FindAtEndOfBuffer)
     MemoryFile file(as_writable_uchars(span(buf)));
     ASSERT_TRUE(file.is_open());
 
-    FileSearcher searcher(&file, as_uchars("abcd", 4));
+    FileSearcher searcher(&file, "abcd"_uchars);
     // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
     ASSERT_TRUE(searcher.next() == oc::success(4));
     ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
@@ -303,7 +303,7 @@ TEST(FileSearchTest, FindOnBoundaryOfBuffer)
     MemoryFile file(as_writable_uchars(span(buf)));
     ASSERT_TRUE(file.is_open());
 
-    FileSearcher searcher(&file, as_uchars("abcd", 4));
+    FileSearcher searcher(&file, "abcd"_uchars);
     // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
     ASSERT_TRUE(searcher.next() == oc::success(DEFAULT_BUFFER_SIZE - 1));
     ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
@@ -319,7 +319,7 @@ TEST(FileSearchTest, FindAtBeginningOfNextBuffer)
     MemoryFile file(as_writable_uchars(span(buf)));
     ASSERT_TRUE(file.is_open());
 
-    FileSearcher searcher(&file, as_uchars("abcd", 4));
+    FileSearcher searcher(&file, "abcd"_uchars);
     // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
     ASSERT_TRUE(searcher.next() == oc::success(DEFAULT_BUFFER_SIZE - 3));
     ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
@@ -332,7 +332,7 @@ TEST(FileSearchTest, FindNonMatching)
     MemoryFile file(as_writable_uchars(span(buf)));
     ASSERT_TRUE(file.is_open());
 
-    FileSearcher searcher(&file, as_uchars("abcde", 5));
+    FileSearcher searcher(&file, "abcde"_uchars);
     // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
     ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
 }
@@ -347,7 +347,7 @@ TEST(FileSearchTest, FindNonMatchingAtBoundary)
     MemoryFile file(as_writable_uchars(span(buf)));
     ASSERT_TRUE(file.is_open());
 
-    FileSearcher searcher(&file, as_uchars("abcde", 5));
+    FileSearcher searcher(&file, "abcde"_uchars);
     // gtest fails to compile with ASSERT_EQ due to operator<<() shenanigans
     ASSERT_TRUE(searcher.next() == oc::success(std::nullopt));
 }

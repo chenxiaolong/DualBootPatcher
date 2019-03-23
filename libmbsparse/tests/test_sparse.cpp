@@ -103,7 +103,7 @@ struct SparseTest : testing::Test
 
         ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
         if (oversized) {
-            ASSERT_TRUE(_source_file.write(as_uchars("\xaa\xbb\xcc\xdd", 4)));
+            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd"_uchars));
         }
 
         ChunkHeader chdr;
@@ -117,9 +117,9 @@ struct SparseTest : testing::Test
 
         ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
         if (oversized) {
-            ASSERT_TRUE(_source_file.write(as_uchars("\xaa\xbb\xcc\xdd", 4)));
+            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd"_uchars));
         }
-        ASSERT_TRUE(_source_file.write(as_uchars("0123456789abcdef", 16)));
+        ASSERT_TRUE(_source_file.write("0123456789abcdef"_uchars));
 
         // [2/4] Add fill chunk header
         chdr = {};
@@ -131,7 +131,7 @@ struct SparseTest : testing::Test
 
         ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
         if (oversized) {
-            ASSERT_TRUE(_source_file.write(as_uchars("\xaa\xbb\xcc\xdd", 4)));
+            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd"_uchars));
         }
 
         uint32_t fill_val = mb_htole32(0x12345678);
@@ -146,7 +146,7 @@ struct SparseTest : testing::Test
 
         ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
         if (oversized) {
-            ASSERT_TRUE(_source_file.write(as_uchars("\xaa\xbb\xcc\xdd", 4)));
+            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd"_uchars));
         }
 
         // [4/4] Add CRC32 chunk header
@@ -159,9 +159,9 @@ struct SparseTest : testing::Test
 
         ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
         if (oversized) {
-            ASSERT_TRUE(_source_file.write(as_uchars("\xaa\xbb\xcc\xdd", 4)));
+            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd"_uchars));
         }
-        ASSERT_TRUE(_source_file.write(as_uchars("\x00\x00\x00\x00", 4)));
+        ASSERT_TRUE(_source_file.write("\x00\x00\x00\x00"_uchars));
 
         // Move back to beginning of the file
         ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
@@ -352,7 +352,7 @@ TEST_F(SparseTest, CheckInvalidRawChunkFailure)
     fix_chunk_header_byte_order(chdr);
 
     ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
-    ASSERT_TRUE(_source_file.write(as_uchars("1234", 4)));
+    ASSERT_TRUE(_source_file.write("1234"_uchars));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
@@ -570,7 +570,7 @@ TEST_F(SparseTest, CheckReadOversizedChunkDataFailure)
     fix_chunk_header_byte_order(chdr);
 
     ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
-    ASSERT_TRUE(_source_file.write(as_uchars("01234567", 8)));
+    ASSERT_TRUE(_source_file.write("01234567"_uchars));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
@@ -603,7 +603,7 @@ TEST_F(SparseTest, CheckReadUndersizedChunkDataFailure)
     fix_chunk_header_byte_order(chdr);
 
     ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
-    ASSERT_TRUE(_source_file.write(as_uchars("0123", 1)));
+    ASSERT_TRUE(_source_file.write("0"_uchars));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));

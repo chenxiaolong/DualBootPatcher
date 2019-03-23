@@ -86,7 +86,7 @@ protected:
             ASSERT_TRUE(_writer.write_entry(entry.value()));
 
             if (entry.value().type() & types) {
-                auto n = _writer.write_data(as_uchars("hello", 5));
+                auto n = _writer.write_data("hello"_uchars);
                 ASSERT_TRUE(n);
                 ASSERT_EQ(n.value(), 5u);
             }

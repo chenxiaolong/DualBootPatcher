@@ -282,7 +282,7 @@ TEST_F(SignTest, SignVerifySuccess)
     open_file();
     open_data_file();
 
-    ASSERT_TRUE(_data_file.write(as_uchars("hello", 5)));
+    ASSERT_TRUE(_data_file.write("hello"_uchars));
     rewind_data_file();
 
     auto sig = sign_file(_data_file, _kp.skey);
@@ -303,7 +303,7 @@ TEST_F(SignTest, VerifyFailureMismatchedKey)
     open_file();
     open_data_file();
 
-    ASSERT_TRUE(_data_file.write(as_uchars("hello", 5)));
+    ASSERT_TRUE(_data_file.write("hello"_uchars));
     rewind_data_file();
 
     auto sig = sign_file(_data_file, _kp.skey);
@@ -321,13 +321,13 @@ TEST_F(SignTest, VerifyFailureBadSignature)
     open_file();
     open_data_file();
 
-    ASSERT_TRUE(_data_file.write(as_uchars("hello", 5)));
+    ASSERT_TRUE(_data_file.write("hello"_uchars));
     rewind_data_file();
 
     auto sig = sign_file(_data_file, _kp.skey);
     ASSERT_TRUE(sig);
 
-    ASSERT_TRUE(_data_file.write(as_uchars("world", 5)));
+    ASSERT_TRUE(_data_file.write("world"_uchars));
 
     rewind_data_file();
     ASSERT_EQ(verify_file(_data_file, sig.value(), _kp.pkey),
@@ -339,7 +339,7 @@ TEST_F(SignTest, VerifyFailureBadGlobalSignature)
     open_file();
     open_data_file();
 
-    ASSERT_TRUE(_data_file.write(as_uchars("hello", 5)));
+    ASSERT_TRUE(_data_file.write("hello"_uchars));
     rewind_data_file();
 
     auto sig = sign_file(_data_file, _kp.skey);

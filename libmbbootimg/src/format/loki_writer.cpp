@@ -237,7 +237,7 @@ oc::result<void> LokiFormatWriter::finish_entry(File &file)
 
     // Include fake 0 size for unsupported secondboot image
     if (swentry->type == EntryType::DeviceTree) {
-        m_sha1.update(as_uchars("\x00\x00\x00\x00", 4));
+        m_sha1.update("\x00\x00\x00\x00"_uchars);
     }
 
     // Include size for everything except empty DT images

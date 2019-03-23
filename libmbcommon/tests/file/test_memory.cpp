@@ -114,7 +114,7 @@ TEST(FileStaticMemoryTest, WriteInBounds)
     MemoryFile file(in);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("y", 1)), oc::success(1u));
+    ASSERT_EQ(file.write("y"_uchars), oc::success(1u));
     ASSERT_EQ(in[0], 'y');
 }
 
@@ -126,7 +126,7 @@ TEST(FileStaticMemoryTest, WriteOutOfBounds)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
-    ASSERT_EQ(file.write(as_uchars("y", 1)), oc::success(0u));
+    ASSERT_EQ(file.write("y"_uchars), oc::success(0u));
 }
 
 TEST(FileStaticMemoryTest, WriteTooLarge)
@@ -136,7 +136,7 @@ TEST(FileStaticMemoryTest, WriteTooLarge)
     MemoryFile file(in);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("yz", 2)), oc::success(1u));
+    ASSERT_EQ(file.write("yz"_uchars), oc::success(1u));
     ASSERT_EQ(in[0], 'y');
 }
 
@@ -311,7 +311,7 @@ TEST(FileDynamicMemoryTest, WriteInBounds)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("y", 1)), oc::success(1u));
+    ASSERT_EQ(file.write("y"_uchars), oc::success(1u));
     ASSERT_EQ(static_cast<char *>(in)[0], 'y');
 
     free(in);
@@ -329,7 +329,7 @@ TEST(FileDynamicMemoryTest, WriteOutOfBounds)
 
     ASSERT_TRUE(file.seek(10, SEEK_SET));
 
-    ASSERT_EQ(file.write(as_uchars("y", 1)), oc::success(1u));
+    ASSERT_EQ(file.write("y"_uchars), oc::success(1u));
     ASSERT_EQ(in_size, 11u);
     ASSERT_NE(in, nullptr);
     ASSERT_EQ(static_cast<char *>(in)[10], 'y');
@@ -345,7 +345,7 @@ TEST(FileDynamicMemoryTest, WriteEmpty)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("x", 1)), oc::success(1u));
+    ASSERT_EQ(file.write("x"_uchars), oc::success(1u));
     ASSERT_EQ(in_size, 1u);
     ASSERT_NE(in, nullptr);
     ASSERT_EQ(static_cast<char *>(in)[0], 'x');
@@ -363,7 +363,7 @@ TEST(FileDynamicMemoryTest, WriteTooLarge)
     MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("yz", 2)), oc::success(2u));
+    ASSERT_EQ(file.write("yz"_uchars), oc::success(2u));
     ASSERT_EQ(in_size, 2u);
     ASSERT_NE(in, nullptr);
     ASSERT_EQ(memcmp(in, "yz", 2), 0);
@@ -474,7 +474,7 @@ TEST(FileDynamicMemoryTest, TruncateFileToEmpty)
     ASSERT_TRUE(file.truncate(0));
     ASSERT_EQ(in_size, 0u);
 
-    ASSERT_TRUE(file.write(as_uchars("xyz", 3)));
+    ASSERT_TRUE(file.write("xyz"_uchars));
     ASSERT_EQ(in_size, 3u);
 
     free(in);

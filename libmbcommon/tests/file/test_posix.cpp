@@ -408,7 +408,7 @@ TEST_F(FilePosixTest, WriteSuccess)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("x", 1)), oc::success(1u));
+    ASSERT_EQ(file.write("x"_uchars), oc::success(1u));
 }
 
 TEST_F(FilePosixTest, WriteEof)
@@ -421,7 +421,7 @@ TEST_F(FilePosixTest, WriteEof)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("x", 1)), oc::success(0u));
+    ASSERT_EQ(file.write("x"_uchars), oc::success(0u));
 }
 
 TEST_F(FilePosixTest, WriteFailure)
@@ -435,7 +435,7 @@ TEST_F(FilePosixTest, WriteFailure)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("x", 1)), oc::failure(std::errc::io_error));
+    ASSERT_EQ(file.write("x"_uchars), oc::failure(std::errc::io_error));
 }
 
 TEST_F(FilePosixTest, WriteFailureEINTR)
@@ -453,8 +453,7 @@ TEST_F(FilePosixTest, WriteFailureEINTR)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write(as_uchars("x", 1)),
-              oc::failure(std::errc::interrupted));
+    ASSERT_EQ(file.write("x"_uchars), oc::failure(std::errc::interrupted));
 }
 
 TEST_F(FilePosixTest, SeekSuccess)

@@ -82,7 +82,7 @@ save_raw_file(File &file, span<const unsigned char> payload,
                                       strlen(UNTRUSTED_PREFIX))));
         OUTCOME_TRYV(file_write_exact(buf_file, as_uchars(untrusted.data(),
                                       strlen(untrusted.data()))));
-        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars("\n", 1)));
+        OUTCOME_TRYV(file_write_exact(buf_file, "\n"_uchars));
     }
 
     // Write base64-encoded payload
@@ -103,7 +103,7 @@ save_raw_file(File &file, span<const unsigned char> payload,
         // and sodium_bin2base64() fills extra bytes in the buffer with zeros.
         OUTCOME_TRYV(file_write_exact(buf_file, as_uchars(base64_payload.get(),
                                       strlen(base64_payload.get()))));
-        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars("\n", 1)));
+        OUTCOME_TRYV(file_write_exact(buf_file, "\n"_uchars));
     }
 
     // Write trusted comment
@@ -112,7 +112,7 @@ save_raw_file(File &file, span<const unsigned char> payload,
                                       strlen(TRUSTED_PREFIX))));
         OUTCOME_TRYV(file_write_exact(buf_file, as_uchars(trusted->data(),
                                       strlen(trusted->data()))));
-        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars("\n", 1)));
+        OUTCOME_TRYV(file_write_exact(buf_file, "\n"_uchars));
     }
 
     // Write base64-encoded signature of signature and trusted comment
@@ -127,7 +127,7 @@ save_raw_file(File &file, span<const unsigned char> payload,
         // and sodium_bin2base64() fills extra bytes in the buffer with zeros.
         OUTCOME_TRYV(file_write_exact(buf_file, as_uchars(base64_raw_sig.data(),
                                       strlen(base64_raw_sig.data()))));
-        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars("\n", 1)));
+        OUTCOME_TRYV(file_write_exact(buf_file, "\n"_uchars));
     }
 
     OUTCOME_TRYV(buf_file.close());
