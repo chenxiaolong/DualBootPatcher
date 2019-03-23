@@ -75,7 +75,6 @@
 #define WRAPPED_BINARIES_DIR        "/wrapped"
 
 #define FSCK_WRAPPER                "/sbin/fsck-wrapper"
-#define FSCK_WRAPPER_SIG            "/sbin/fsck-wrapper.sig"
 
 
 using namespace mb::device;
@@ -252,11 +251,11 @@ static bool mount_exfat_fuse(const char *source, const char *target)
     uid_t uid = get_media_rw_uid();
 
     // Check signatures
-    if (!verify_signature("/sbin/fsck.exfat", "/sbin/fsck.exfat.sig")) {
+    if (!verify_signature("/sbin/fsck.exfat", nullptr)) {
         LOGE("Invalid fsck.exfat signature");
         return false;
     }
-    if (!verify_signature("/sbin/mount.exfat", "/sbin/mount.exfat.sig")) {
+    if (!verify_signature("/sbin/mount.exfat", nullptr)) {
         LOGE("Invalid mount.exfat signature");
         return false;
     }
@@ -624,7 +623,7 @@ static bool mount_all_system_images()
 
 static bool disable_fsck(const char *fsck_binary)
 {
-    if (!verify_signature(FSCK_WRAPPER, FSCK_WRAPPER_SIG)) {
+    if (!verify_signature(FSCK_WRAPPER, nullptr)) {
         LOGE("%s: Invalid signature", FSCK_WRAPPER);
         return false;
     }

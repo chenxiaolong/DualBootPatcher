@@ -632,7 +632,7 @@ bool Installer::extract_multiboot_files()
     };
 
     for (auto const &item : sigcheck) {
-        if (auto r = verify_signature(item.c_str(), (item + ".sig").c_str()); !r) {
+        if (auto r = verify_signature(item.c_str(), nullptr); !r) {
             LOGE("%s: Signature verification failed: %s",
                  item.c_str(), r.error().message().c_str());
             return false;

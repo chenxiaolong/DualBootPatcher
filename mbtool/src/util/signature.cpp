@@ -73,7 +73,7 @@ std::string SigVerifyErrorCategory::message(int ev) const
     }
 }
 
-static oc::result<sign::Signature> load_signature(const char *path)
+static oc::result<sign::Signature> load_signature(const std::string &path)
 {
     StandardFile file;
 
@@ -82,7 +82,7 @@ static oc::result<sign::Signature> load_signature(const char *path)
     return sign::load_signature(file);
 }
 
-static oc::result<void> verify_signature(const char *path,
+static oc::result<void> verify_signature(const std::string &path,
                                          const sign::Signature &sig,
                                          const sign::PublicKey &key)
 {
@@ -96,7 +96,15 @@ static oc::result<void> verify_signature(const char *path,
 oc::result<TrustedProps>
 verify_signature(const char *path, const char *sig_path, const char *version)
 {
-    OUTCOME_TRY(sig, load_signature(sig_path));
+    std::string real_sig_path;
+    if (sig_path) {
+        real_sig_path = sig_path;
+    } else {
+        real_sig_path = path;
+        real_sig_path += ".sig";
+    }
+
+    OUTCOME_TRY(sig, load_signature(real_sig_path));
     OUTCOME_TRYV(verify_signature(path, sig, sign::build_key()));
 
     TrustedProps props;
@@ -122,7 +130,7 @@ verify_signature(const char *path, const char *sig_path, const char *version)
 static void sigverify_usage(FILE *stream)
 {
     fprintf(stream,
-            "Usage: sigverify [option...] <input file> <signature file>\n\n"
+            "Usage: sigverify [option...] <input file> [<signature file>]\n\n"
             "Options:\n"
             "  -v, --version <VERSION>\n"
             "                   Check that trusted comment matches version\n"
@@ -177,13 +185,20 @@ int sigverify_main(int argc, char *argv[])
         }
     }
 
-    if (argc - optind != 2) {
+    const char *path = nullptr;
+    const char *sig_path = nullptr;
+
+    switch (argc - optind) {
+    case 2:
+        sig_path = argv[optind + 1];
+        [[fallthrough]];
+    case 1:
+        path = argv[optind];
+        break;
+    default:
         sigverify_usage(stderr);
         return EXIT_FAILURE;
     }
-
-    const char *path = argv[optind];
-    const char *sig_path = argv[optind + 1];
 
     if (!sign::initialize()) {
         LOGE("Failed to initialize libmbsign");

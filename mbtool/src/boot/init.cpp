@@ -286,8 +286,7 @@ static bool fix_binary_file_contexts(const char *path)
     tmp_path += ".tmp";
 
     // Check signature
-    if (auto r = verify_signature("/sbin/file-contexts-tool",
-                                  "/sbin/file-contexts-tool.sig"); !r) {
+    if (auto r = verify_signature("/sbin/file-contexts-tool", nullptr); !r) {
         LOGE("%s: Failed to verify signature: %s",
              "/sbin/file-contexts-tool", r.error().message().c_str());
         return false;
@@ -865,8 +864,7 @@ static bool launch_boot_menu()
     }
 
     // Verify boot UI signature
-    if (auto r = verify_signature(BOOT_UI_ZIP_PATH,
-                                  BOOT_UI_ZIP_PATH ".sig"); !r) {
+    if (auto r = verify_signature(BOOT_UI_ZIP_PATH, nullptr); !r) {
         LOGE("%s: Failed to verify signature: %s",
              BOOT_UI_ZIP_PATH, r.error().message().c_str());
         return false;
