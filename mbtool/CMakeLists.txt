@@ -34,12 +34,6 @@ set_source_files_properties(
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL device)
-    # Generate validcerts.cpp
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/util/validcerts.cpp.in
-        ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
-    )
-
     add_library(
         mbtool-util
         STATIC
@@ -53,7 +47,6 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         src/util/signature.cpp
         src/util/switcher.cpp
         src/util/wipe.cpp
-        ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
     )
 
     add_executable(

@@ -19,44 +19,20 @@
 
 #include "util/signature.h"
 
-#include <vector>
-
 #include <cstdlib>
-#include <cstring>
 
 #include <getopt.h>
 
-#include <sodium/utils.h>
-
-#include "mbcommon/file/memory.h"
 #include "mbcommon/file/standard.h"
 #include "mblog/logging.h"
+#include "mbsign/build_key.h"
 #include "mbsign/error.h"
 #include "mbsign/sign.h"
-
-#include "util/validcerts.h"
 
 #define LOG_TAG "mbtool/util/signature"
 
 namespace mb
 {
-
-static oc::result<sign::PublicKey> load_embedded_public_key()
-{
-    std::string_view hex = signing_key;
-    std::vector<unsigned char> data((hex.size() + 1) / 2);
-
-    if (sodium_hex2bin(data.data(), data.size(), hex.data(), hex.size(),
-                       "\r\n", nullptr, nullptr) != 0) {
-        return std::errc::invalid_argument;
-    }
-
-    MemoryFile file;
-
-    OUTCOME_TRYV(file.open(data));
-
-    return sign::load_public_key(file);
-}
 
 static oc::result<sign::Signature> load_signature(const char *path)
 {
@@ -80,13 +56,6 @@ static oc::result<void> verify_signature(const char *path,
 
 SigVerifyResult verify_signature(const char *path, const char *sig_path)
 {
-    auto key = load_embedded_public_key();
-    if (!key) {
-        LOGE("Failed to load embedded public key: %s",
-             key.error().message().c_str());
-        return SigVerifyResult::Failure;
-    }
-
     auto sig = load_signature(sig_path);
     if (!sig) {
         LOGE("%s: Failed to load signature: %s",
@@ -94,7 +63,7 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
         return SigVerifyResult::Failure;
     }
 
-    if (auto r = verify_signature(path, sig.value(), key.value()); !r) {
+    if (auto r = verify_signature(path, sig.value(), sign::build_key()); !r) {
         if (r.error() == sign::Error::SignatureVerifyFailed) {
             return SigVerifyResult::Invalid;
         } else {
