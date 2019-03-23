@@ -346,4 +346,10 @@ TEST(SpanTest, CheckUserDefinedLiterals)
     ASSERT_EQ(s2[2], 'l');
     ASSERT_EQ(s2[3], 'l');
     ASSERT_EQ(s2[4], 'o');
+
+    auto s3 = "\0\0\0"_uchars;
+    ASSERT_EQ(s3.size(), 3);
+    ASSERT_EQ(s3[0], 0);
+    ASSERT_EQ(s3[1], 0);
+    ASSERT_EQ(s3[2], 0);
 }
