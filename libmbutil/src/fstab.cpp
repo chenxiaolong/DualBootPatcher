@@ -35,10 +35,7 @@
 #include "mbcommon/integer.h"
 #include "mbcommon/string.h"
 #include "mbcommon/type_traits.h"
-#include "mblog/logging.h"
 #include "mbutil/string.h"
-
-#define LOG_TAG "mbutil/fstab"
 
 
 namespace mb::util
