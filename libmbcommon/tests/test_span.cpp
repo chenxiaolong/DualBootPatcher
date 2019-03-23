@@ -333,3 +333,17 @@ TEST(SpanTest, CheckAsUcharsExtension)
     ASSERT_EQ(static_cast<void *>(s4.data()), static_cast<void *>(&buf));
     ASSERT_EQ(s4.size(), sizeof(buf));
 }
+
+TEST(SpanTest, CheckUserDefinedLiterals)
+{
+    auto s = ""_uchars;
+    ASSERT_EQ(s.size(), 0);
+
+    auto s2 = "hello"_uchars;
+    ASSERT_EQ(s2.size(), 5);
+    ASSERT_EQ(s2[0], 'h');
+    ASSERT_EQ(s2[1], 'e');
+    ASSERT_EQ(s2[2], 'l');
+    ASSERT_EQ(s2[3], 'l');
+    ASSERT_EQ(s2[4], 'o');
+}

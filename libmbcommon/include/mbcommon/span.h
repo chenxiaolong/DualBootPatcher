@@ -497,4 +497,12 @@ as_writable_uchars(void *data, size_t size) noexcept
     return span<unsigned char>(static_cast<unsigned char *>(data), size);
 }
 
-}  // namespace nonstd
+// User-defined literals
+
+inline constexpr span<const unsigned char>
+operator "" _uchars(const char *data, size_t size)
+{
+    return as_uchars(data, size);
+}
+
+}
