@@ -165,11 +165,10 @@
  *
  * \brief Format reader callback to read entry data
  *
- * \note This function *must* read \p buf_size bytes unless EOF is reached.
+ * \note This function *must* read `buf.size()` bytes unless EOF is reached.
  *
  * \param[in] file Reference to file handle
  * \param[out] buf Output buffer to write data
- * \param[in] buf_size Size of output buffer
  *
  * \return
  *   * Return number of bytes read if the entry is successfully read
@@ -485,18 +484,18 @@ oc::result<Entry> Reader::go_to_entry(std::optional<EntryType> entry_type)
  * \brief Read current boot image entry data.
  *
  * \param[out] buf Output buffer
- * \param[in] size Size of output buffer
  *
  * \return Number of bytes read. If EOF is reached, the return value will be
- *         less than \p size. Otherwise, it's guaranteed to equal \p size. If an
- *         error occurs, a specific error code will be returned.
+ *         less than `buf.size()`. Otherwise, it's guaranteed to equal
+ *         `buf.size()`. If an error occurs, a specific error code will be
+ *         returned.
  */
-oc::result<size_t> Reader::read_data(void *buf, size_t size)
+oc::result<size_t> Reader::read_data(span<unsigned char> buf)
 {
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::Data);
 
     // Do not alter state. Stay in ReaderState::DATA
-    return m_format->read_data(*m_file, buf, size);
+    return m_format->read_data(*m_file, buf);
 }
 
 /*!

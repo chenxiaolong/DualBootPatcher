@@ -221,7 +221,7 @@ void SHA1::writebyte(uint8_t Data)
     addUncounted(Data);
 }
 
-void SHA1::update(span<const std::byte> Data)
+void SHA1::update(span<const unsigned char> Data)
 {
     for (auto &C : Data) {
         writebyte(static_cast<uint8_t>(C));
@@ -252,7 +252,7 @@ void SHA1::pad()
     addUncounted(static_cast<unsigned char>(InternalState.ByteCount << 3));
 }
 
-span<const std::byte> SHA1::final()
+span<const unsigned char> SHA1::final()
 {
     // Pad to complete the last block
     pad();
@@ -273,10 +273,10 @@ span<const std::byte> SHA1::final()
 #endif
 
     // Return pointer to hash (20 characters)
-    return as_bytes(HashResult);
+    return as_uchars(HashResult);
 }
 
-span<const std::byte> SHA1::result()
+span<const unsigned char> SHA1::result()
 {
     auto StateToRestore = InternalState;
 
@@ -289,7 +289,7 @@ span<const std::byte> SHA1::result()
     return Hash;
 }
 
-std::array<uint8_t, SHA1::HASH_LENGTH> SHA1::hash(span<const std::byte> Data)
+std::array<uint8_t, SHA1::HASH_LENGTH> SHA1::hash(span<const unsigned char> Data)
 {
     SHA1 Hash;
     Hash.update(Data);

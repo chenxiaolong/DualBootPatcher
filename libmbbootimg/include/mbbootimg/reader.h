@@ -28,6 +28,7 @@
 
 #include "mbcommon/common.h"
 #include "mbcommon/outcome.h"
+#include "mbcommon/span.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format.h"
@@ -64,7 +65,7 @@ public:
     oc::result<Header> read_header();
     oc::result<Entry> read_entry();
     oc::result<Entry> go_to_entry(std::optional<EntryType> entry_type);
-    oc::result<size_t> read_data(void *buf, size_t size);
+    oc::result<size_t> read_data(span<unsigned char> buf);
 
     // Format operations
     std::optional<Format> format();

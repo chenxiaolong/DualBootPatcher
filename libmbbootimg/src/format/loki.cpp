@@ -121,7 +121,7 @@ namespace mb::bootimg::loki
 {
 
 static bool _patch_shellcode(uint32_t header, uint32_t ramdisk,
-                             unsigned char patch[LOKI_SHELLCODE_SIZE])
+                             span<unsigned char, LOKI_SHELLCODE_SIZE> patch)
 {
     bool found_header = false;
     bool found_ramdisk = false;
@@ -148,7 +148,7 @@ _loki_read_android_header(File &file)
     OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
     android::AndroidHeader ahdr;
-    OUTCOME_TRYV(file_read_exact(file, &ahdr, sizeof(ahdr)));
+    OUTCOME_TRYV(file_read_exact(file, as_writable_uchars(ahdr)));
 
     android_fix_header_byte_order(ahdr);
 
@@ -162,7 +162,7 @@ _loki_write_android_header(File &file, android::AndroidHeader ahdr)
 
     OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
-    OUTCOME_TRYV(file_write_exact(file, &ahdr, sizeof(ahdr)));
+    OUTCOME_TRYV(file_write_exact(file, as_uchars(ahdr)));
 
     return oc::success();
 }
@@ -174,7 +174,7 @@ _loki_write_loki_header(File &file, LokiHeader lhdr)
 
     OUTCOME_TRYV(file.seek(LOKI_MAGIC_OFFSET, SEEK_SET));
 
-    OUTCOME_TRYV(file_write_exact(file, &lhdr, sizeof(lhdr)));
+    OUTCOME_TRYV(file_write_exact(file, as_uchars(lhdr)));
 
     return oc::success();
 }
@@ -194,20 +194,20 @@ _loki_move_dt_image(File &file, uint64_t aboot_offset, uint32_t fake_size,
 }
 
 static oc::result<void>
-_loki_write_aboot(File &file,
-                  const unsigned char *aboot, size_t aboot_size,
+_loki_write_aboot(File &file, span<const unsigned char> aboot,
                   uint64_t aboot_offset, size_t aboot_func_offset,
                   uint32_t fake_size)
 {
     if (aboot_func_offset > SIZE_MAX - fake_size
-            || aboot_func_offset + fake_size > aboot_size) {
+            || aboot_func_offset + fake_size > aboot.size()) {
         //DEBUG("aboot func offset + fake size out of range");
         return LokiError::AbootFunctionOutOfRange;
     }
 
     OUTCOME_TRYV(file.seek(static_cast<int64_t>(aboot_offset), SEEK_SET));
 
-    OUTCOME_TRYV(file_write_exact(file, aboot + aboot_func_offset, fake_size));
+    OUTCOME_TRYV(file_write_exact(
+            file, aboot.subspan(aboot_func_offset, fake_size)));
 
     return oc::success();
 }
@@ -215,12 +215,12 @@ _loki_write_aboot(File &file,
 static oc::result<void>
 _loki_write_shellcode(File &file,
                       uint64_t aboot_offset, uint32_t aboot_func_align,
-                      unsigned char patch[LOKI_SHELLCODE_SIZE])
+                      span<const unsigned char, LOKI_SHELLCODE_SIZE> patch)
 {
     OUTCOME_TRYV(file.seek(
             static_cast<int64_t>(aboot_offset + aboot_func_align), SEEK_SET));
 
-    OUTCOME_TRYV(file_write_exact(file, patch, LOKI_SHELLCODE_SIZE));
+    OUTCOME_TRYV(file_write_exact(file, patch));
 
     return oc::success();
 }
@@ -230,27 +230,25 @@ _loki_write_shellcode(File &file,
  *
  * \param file File handle
  * \param aboot aboot image
- * \param aboot_size Size of aboot image
  *
  * \return
  *   * Nothing if the boot image is successfully patched
  *   * A specific error code if a file operation fails
  */
-oc::result<void> _loki_patch_file(File &file,
-                                  const void *aboot, size_t aboot_size)
+oc::result<void> _loki_patch_file(File &file, span<const unsigned char> aboot)
 {
-    if (aboot_size < MIN_ABOOT_SIZE) {
+    if (aboot.size() < MIN_ABOOT_SIZE) {
         return LokiError::AbootImageTooSmall;
     }
 
-    auto aboot_ptr = reinterpret_cast<const unsigned char *>(aboot);
+    auto aboot_ptr = aboot.data();
     uint32_t aboot_base = mb_le32toh(*reinterpret_cast<const uint32_t *>(
             aboot_ptr + 12)) - 0x28;
     uint32_t target = 0;
 
     // Find the signature checking function via pattern matching
     for (const unsigned char *ptr = aboot_ptr;
-            ptr < aboot_ptr + aboot_size - ABOOT_SEARCH_LIMIT; ++ptr) {
+            ptr < aboot_ptr + aboot.size() - ABOOT_SEARCH_LIMIT; ++ptr) {
         if (memcmp(ptr, PATTERN1, ABOOT_PATTERN_SIZE) == 0
                 || memcmp(ptr, PATTERN2, ABOOT_PATTERN_SIZE) == 0
                 || memcmp(ptr, PATTERN3, ABOOT_PATTERN_SIZE) == 0
@@ -268,7 +266,7 @@ oc::result<void> _loki_patch_file(File &file,
 
     if (target == 0) {
         for (const unsigned char *ptr = aboot_ptr;
-                ptr < aboot_ptr + aboot_size - ABOOT_SEARCH_LIMIT; ++ptr) {
+                ptr < aboot_ptr + aboot.size() - ABOOT_SEARCH_LIMIT; ++ptr) {
             if (memcmp(ptr, PATTERN6, ABOOT_PATTERN_SIZE) == 0) {
                 target = static_cast<uint32_t>(
                         static_cast<size_t>(ptr - aboot_ptr) + aboot_base);
@@ -353,8 +351,8 @@ oc::result<void> _loki_patch_file(File &file,
                                      ahdr.dt_size));
 
     // Write aboot
-    OUTCOME_TRYV(_loki_write_aboot(file, aboot_ptr, aboot_size, aboot_offset,
-                                   aboot_func_offset, fake_size));
+    OUTCOME_TRYV(_loki_write_aboot(file, aboot, aboot_offset, aboot_func_offset,
+                                   fake_size));
 
     // Write shellcode
     OUTCOME_TRYV(_loki_write_shellcode(file, aboot_offset, offset, patch));

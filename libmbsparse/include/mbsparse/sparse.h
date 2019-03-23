@@ -46,8 +46,8 @@ public:
 
     oc::result<void> close() override;
 
-    oc::result<size_t> read(void *buf, size_t size) override;
-    oc::result<size_t> write(const void *buf, size_t size) override;
+    oc::result<size_t> read(span<unsigned char> buf) override;
+    oc::result<size_t> write(span<const unsigned char> buf) override;
     oc::result<uint64_t> seek(int64_t offset, int whence) override;
     oc::result<void> truncate(uint64_t size) override;
 
@@ -59,13 +59,12 @@ public:
 private:
     void clear() noexcept;
 
-    oc::result<void> wread(void *buf, size_t size) noexcept;
+    oc::result<void> wread(span<unsigned char> buf) noexcept;
     oc::result<void> wseek(int64_t offset) noexcept;
     oc::result<void> skip_bytes(uint64_t bytes) noexcept;
 
     oc::result<void>
-    process_sparse_header(const void *preread_data, size_t preread_size)
-        noexcept;
+    process_sparse_header(span<const unsigned char> preread) noexcept;
 
     oc::result<detail::ChunkInfo>
     process_raw_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset)

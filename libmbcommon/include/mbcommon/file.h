@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -25,6 +25,7 @@
 #include <cstdint>
 
 #include "mbcommon/outcome.h"
+#include "mbcommon/span.h"
 
 namespace mb
 {
@@ -41,8 +42,8 @@ public:
     virtual oc::result<void> close() = 0;
 
     // File operations
-    virtual oc::result<size_t> read(void *buf, size_t size) = 0;
-    virtual oc::result<size_t> write(const void *buf, size_t size) = 0;
+    virtual oc::result<size_t> read(span<unsigned char> buf) = 0;
+    virtual oc::result<size_t> write(span<const unsigned char> buf) = 0;
     virtual oc::result<uint64_t> seek(int64_t offset, int whence) = 0;
     virtual oc::result<void> truncate(uint64_t size) = 0;
 

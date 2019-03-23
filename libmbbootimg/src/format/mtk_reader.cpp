@@ -68,7 +68,7 @@ read_mtk_header(File &file, uint64_t offset)
 
     MtkHeader hdr;
 
-    auto ret = file_read_exact(file, &hdr, sizeof(hdr));
+    auto ret = file_read_exact(file, as_writable_uchars(hdr));
     if (!ret) {
         if (ret.error() == FileError::UnexpectedEof) {
             //DEBUG("MTK header not found at %" PRIu64, offset);
@@ -305,9 +305,9 @@ MtkFormatReader::go_to_entry(File &file, std::optional<EntryType> entry_type)
 }
 
 oc::result<size_t>
-MtkFormatReader::read_data(File &file, void *buf, size_t buf_size)
+MtkFormatReader::read_data(File &file, span<unsigned char> buf)
 {
-    return m_seg->read_data(file, buf, buf_size);
+    return m_seg->read_data(file, buf);
 }
 
 }

@@ -127,7 +127,7 @@ oc::result<Header> SonyElfFormatReader::read_header(File &file)
 
         OUTCOME_TRYV(file.seek(static_cast<int64_t>(pos), SEEK_SET));
 
-        OUTCOME_TRYV(file_read_exact(file, &phdr, sizeof(phdr)));
+        OUTCOME_TRYV(file_read_exact(file, as_writable_uchars(phdr)));
 
         // Account for program header
         pos += sizeof(phdr);
@@ -145,7 +145,8 @@ oc::result<Header> SonyElfFormatReader::read_header(File &file)
 
             OUTCOME_TRYV(file.seek(phdr.p_offset, SEEK_SET));
 
-            OUTCOME_TRYV(file_read_exact(file, cmdline, phdr.p_memsz));
+            OUTCOME_TRYV(file_read_exact(
+                    file, as_writable_uchars(cmdline, phdr.p_memsz)));
 
             // cmdline section may or may not contain null bytes
             cmdline[phdr.p_memsz] = '\0';
@@ -216,9 +217,9 @@ SonyElfFormatReader::go_to_entry(File &file, std::optional<EntryType> entry_type
 }
 
 oc::result<size_t>
-SonyElfFormatReader::read_data(File &file, void *buf, size_t buf_size)
+SonyElfFormatReader::read_data(File &file, span<unsigned char> buf)
 {
-    return m_seg->read_data(file, buf, buf_size);
+    return m_seg->read_data(file, buf);
 }
 
 /*!
@@ -246,7 +247,7 @@ SonyElfFormatReader::find_sony_elf_header(File &file)
 
     Sony_Elf32_Ehdr ehdr;
 
-    auto ret = file_read_exact(file, &ehdr, sizeof(ehdr));
+    auto ret = file_read_exact(file, as_writable_uchars(ehdr));
     if (!ret) {
         if (ret.error() == FileError::UnexpectedEof) {
             return SonyElfError::SonyElfHeaderTooSmall;

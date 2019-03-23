@@ -78,6 +78,7 @@
 
 namespace rj = rapidjson;
 
+using namespace mb;
 using namespace mb::bootimg;
 
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
@@ -603,13 +604,13 @@ static bool write_data_file_to_entry(const std::string &path, Writer &writer)
         }
     }
 
-    char buf[10240];
+    unsigned char buf[10240];
     size_t n;
 
     while (true) {
         n = fread(buf, 1, sizeof(buf), fp.get());
 
-        auto bytes_written = writer.write_data(buf, n);
+        auto bytes_written = writer.write_data(span(buf).subspan(0, n));
         if (!bytes_written) {
             fprintf(stderr, "Failed to write entry data: %s\n",
                     bytes_written.error().message().c_str());
@@ -638,10 +639,10 @@ static bool write_data_entry_to_file(const std::string &path, Reader &reader)
         return false;
     }
 
-    char buf[10240];
+    unsigned char buf[10240];
 
     while (true) {
-        auto n = reader.read_data(buf, sizeof(buf));
+        auto n = reader.read_data(buf);
         if (!n) {
             fprintf(stderr, "Failed to read entry data: %s\n",
                     n.error().message().c_str());
@@ -796,7 +797,7 @@ static bool unpack_main(int argc, char *argv[])
     if (no_prefix) {
         prefix.clear();
     } else if (prefix.empty()) {
-        prefix = mb::io::base_name(input_file);
+        prefix = io::base_name(input_file);
         prefix += "-";
     }
 
@@ -806,12 +807,12 @@ static bool unpack_main(int argc, char *argv[])
 
     for (auto const &s : sources) {
         if (paths.find(s.type) == paths.end()) {
-            paths[s.type] = mb::io::path_join({output_dir,
+            paths[s.type] = io::path_join({output_dir,
                     prefix + std::string(get_default_filename(s.type))});
         }
     }
 
-    if (auto r = mb::io::create_directories(output_dir); !r) {
+    if (auto r = io::create_directories(output_dir); !r) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
                 output_dir.c_str(), r.error().message().c_str());
         return false;
@@ -959,7 +960,7 @@ static bool pack_main(int argc, char *argv[])
     if (no_prefix) {
         prefix.clear();
     } else if (prefix.empty()) {
-        prefix = mb::io::base_name(output_file);
+        prefix = io::base_name(output_file);
         prefix += "-";
     }
 
@@ -969,7 +970,7 @@ static bool pack_main(int argc, char *argv[])
 
     for (auto const &s : sources) {
         if (paths.find(s.type) == paths.end()) {
-            paths[s.type] = mb::io::path_join({input_dir,
+            paths[s.type] = io::path_join({input_dir,
                     prefix + std::string(get_default_filename(s.type))});
         }
     }

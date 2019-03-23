@@ -139,11 +139,10 @@ SegmentReader::go_to_entry(File &file, std::optional<EntryType> entry_type)
     return move_to_entry(file, srentry);
 }
 
-oc::result<size_t> SegmentReader::read_data(File &file, void *buf,
-                                            size_t buf_size)
+oc::result<size_t> SegmentReader::read_data(File &file, span<unsigned char> buf)
 {
     auto to_copy = static_cast<size_t>(std::min<uint64_t>(
-            buf_size, m_read_end_offset - m_read_cur_offset));
+            buf.size(), m_read_end_offset - m_read_cur_offset));
 
     if (m_read_cur_offset > SIZE_MAX - to_copy) {
         //DEBUG("Current offset %" PRIu64 " with read size %" MB_PRIzu
@@ -152,7 +151,7 @@ oc::result<size_t> SegmentReader::read_data(File &file, void *buf,
     }
 
     // We allow truncation for certain things, so we can't use file_read_exact()
-    OUTCOME_TRY(n, file_read_retry(file, buf, to_copy));
+    OUTCOME_TRY(n, file_read_retry(file, buf.subspan(0, to_copy)));
 
     m_read_cur_offset += n;
 

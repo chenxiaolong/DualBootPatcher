@@ -97,11 +97,10 @@ oc::result<void> LokiFormatWriter::close(File &file)
             OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
             // Write header
-            OUTCOME_TRYV(file_write_exact(file, &m_hdr, sizeof(m_hdr)));
+            OUTCOME_TRYV(file_write_exact(file, as_uchars(m_hdr)));
 
             // Patch with Loki
-            OUTCOME_TRYV(_loki_patch_file(file, m_aboot.data(),
-                                          m_aboot.size()));
+            OUTCOME_TRYV(_loki_patch_file(file, m_aboot));
         }
     }
 
@@ -204,27 +203,24 @@ oc::result<void> LokiFormatWriter::write_entry(File &file, const Entry &entry)
 }
 
 oc::result<size_t>
-LokiFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
+LokiFormatWriter::write_data(File &file, span<const unsigned char> buf)
 {
     auto swentry = m_seg->entry();
 
     if (swentry->type == EntryType::Aboot) {
-        if (buf_size > MAX_ABOOT_SIZE - m_aboot.size()) {
+        if (buf.size() > MAX_ABOOT_SIZE - m_aboot.size()) {
             return LokiError::AbootImageTooLarge;
         }
 
-        size_t old_aboot_size = m_aboot.size();
-        m_aboot.resize(old_aboot_size + buf_size);
+        m_aboot.insert(m_aboot.end(), buf.begin(), buf.end());
 
-        memcpy(m_aboot.data() + old_aboot_size, buf, buf_size);
-
-        return buf_size;
+        return buf.size();
     } else {
-        OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size));
+        OUTCOME_TRY(n, m_seg->write_data(file, buf));
 
         // We always include the image in the hash. The size is sometimes
         // included and is handled in finish_entry().
-        m_sha1.update(span(reinterpret_cast<const std::byte *>(buf), n));
+        m_sha1.update(buf.subspan(0, n));
 
         return n;
     }
@@ -241,13 +237,13 @@ oc::result<void> LokiFormatWriter::finish_entry(File &file)
 
     // Include fake 0 size for unsupported secondboot image
     if (swentry->type == EntryType::DeviceTree) {
-        m_sha1.update(as_bytes(span("\x00\x00\x00\x00", 4)));
+        m_sha1.update(as_uchars("\x00\x00\x00\x00", 4));
     }
 
     // Include size for everything except empty DT images
     if (swentry->type != EntryType::Aboot
             && (swentry->type != EntryType::DeviceTree || *swentry->size > 0)) {
-        m_sha1.update(as_bytes(le32_size));
+        m_sha1.update(as_uchars(le32_size));
     }
 
     switch (swentry->type) {

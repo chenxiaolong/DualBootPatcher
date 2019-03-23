@@ -181,7 +181,6 @@ oc::result<void> BufferedFile::close()
  *       conditions. Make sure the caller does not treat short reads as EOF.
  *
  * \param[out] buf Buffer to read into
- * \param[in] size Buffer size
  *
  * \return
  *   * Number of bytes read if some bytes are successfully read or EOF is
@@ -189,20 +188,20 @@ oc::result<void> BufferedFile::close()
  *   * FileError::InvalidState if called after write() without flush() in between
  *   * Otherwise, the error code of file_read_retry() from the underlying file
  */
-oc::result<size_t> BufferedFile::read(void *buf, size_t size)
+oc::result<size_t> BufferedFile::read(span<unsigned char> buf)
 {
     if (!is_open() || !m_wbuf.empty()) return FileError::InvalidState;
 
     // If there's no data buffered and a large read is being done, then don't
     // bother buffering the data
-    if (m_rpos == m_rcap && size >= m_rbuf.size()) {
-        return read_underlying(buf, size);
+    if (m_rpos == m_rcap && buf.size() >= m_rbuf.size()) {
+        return read_underlying(buf);
     }
 
     OUTCOME_TRYV(fill_rbuf());
 
-    auto to_copy = std::min(m_rcap - m_rpos, size);
-    memcpy(buf, m_rbuf.data() + m_rpos, to_copy);
+    auto to_copy = std::min(m_rcap - m_rpos, buf.size());
+    memcpy(buf.data(), m_rbuf.data() + m_rpos, to_copy);
 
     consume_rbuf(to_copy);
 
@@ -216,7 +215,6 @@ oc::result<size_t> BufferedFile::read(void *buf, size_t size)
  *       then the data will be written directly to the file
  *
  * \param buf Buffer to write from
- * \param size Buffer size
  *
  * \return
  *   * Number of bytes written if some bytes are successfully written or EOF is
@@ -224,7 +222,7 @@ oc::result<size_t> BufferedFile::read(void *buf, size_t size)
  *   * FileError::UnexpectedEof if EOF is reached when flushing the write buffer
  *   * Otherwise, the error code of file_write_retry() from the underlying file
  */
-oc::result<size_t> BufferedFile::write(const void *buf, size_t size)
+oc::result<size_t> BufferedFile::write(span<const unsigned char> buf)
 {
     if (!is_open()) return FileError::InvalidState;
 
@@ -238,16 +236,16 @@ oc::result<size_t> BufferedFile::write(const void *buf, size_t size)
     // Clear read cache
     m_rpos = m_rcap;
 
-    if (m_wbuf.size() + size > m_wbuf.capacity()) {
+    if (m_wbuf.size() + buf.size() > m_wbuf.capacity()) {
         OUTCOME_TRYV(flush());
     }
 
-    if (size >= m_wbuf.capacity()) {
-        return write_underlying(buf, size);
+    if (buf.size() >= m_wbuf.capacity()) {
+        return write_underlying(buf);
     } else {
-        auto ptr = static_cast<const unsigned char *>(buf);
-        m_wbuf.insert(m_wbuf.end(), ptr, ptr + size);
-        return size;
+        auto ptr = reinterpret_cast<const unsigned char *>(buf.data());
+        m_wbuf.insert(m_wbuf.end(), ptr, ptr + buf.size());
+        return buf.size();
     }
 }
 
@@ -372,7 +370,7 @@ oc::result<void> BufferedFile::flush()
     if (!is_open()) return FileError::InvalidState;
 
     if (!m_wbuf.empty()) {
-        OUTCOME_TRYV(write_exact_underlying(m_wbuf.data(), m_wbuf.size()));
+        OUTCOME_TRYV(write_exact_underlying(m_wbuf));
         m_wbuf.clear();
     }
 
@@ -412,7 +410,7 @@ oc::result<void> BufferedFile::fill_rbuf()
     if (!is_open()) return FileError::InvalidState;
 
     if (m_rpos == m_rcap) {
-        OUTCOME_TRY(n, read_underlying(m_rbuf.data(), m_rbuf.size()));
+        OUTCOME_TRY(n, read_underlying(m_rbuf));
         m_rcap = n;
         m_rpos = 0;
     }
@@ -486,7 +484,7 @@ oc::result<size_t> BufferedFile::get_delim(const GetDelimFn &f,
         }
 
         // Call user-provided append function
-        f(as_bytes(read_buf));
+        f(read_buf);
 
         // Consume used bytes
         consume_rbuf(read_buf.size());
@@ -559,10 +557,10 @@ oc::result<size_t> BufferedFile::get_delim(const GetDelimFn &f,
  *         newline if one exists. If 0 is returned, then EOF is reached.
  *         Otherwise, the error code of fill_rbuf().
  */
-oc::result<size_t> BufferedFile::read_sized_line(span<std::byte> buf,
+oc::result<size_t> BufferedFile::read_sized_line(span<unsigned char> buf,
                                                  unsigned char delim)
 {
-    return get_delim([&buf](span<const std::byte> data) {
+    return get_delim([&buf](span<const unsigned char> data) {
         memcpy(buf.data(), data.data(), data.size());
         buf = buf.subspan(data.size());
     }, buf.size(), delim);
@@ -571,13 +569,13 @@ oc::result<size_t> BufferedFile::read_sized_line(span<std::byte> buf,
 /*!
  * \brief Read underlying file
  *
- * \post \ref m_fpos is incremented by the number of bytes read
+ * \post The \ref m_fpos field is incremented by the number of bytes read
  *
  * \return Result of file_read_retry()
  */
-oc::result<size_t> BufferedFile::read_underlying(void *buf, size_t size)
+oc::result<size_t> BufferedFile::read_underlying(span<unsigned char> buf)
 {
-    OUTCOME_TRY(n, file_read_retry(*m_file, buf, size));
+    OUTCOME_TRY(n, file_read_retry(*m_file, buf));
     m_fpos += n;
 
     return n;
@@ -586,13 +584,13 @@ oc::result<size_t> BufferedFile::read_underlying(void *buf, size_t size)
 /*!
  * \brief Write underlying file
  *
- * \post \ref m_fpos is incremented by the number of bytes written
+ * \post The \ref m_fpos field is incremented by the number of bytes written
  *
  * \return Result of file_write_retry()
  */
-oc::result<size_t> BufferedFile::write_underlying(const void *buf, size_t size)
+oc::result<size_t> BufferedFile::write_underlying(span<const unsigned char> buf)
 {
-    OUTCOME_TRY(n, file_write_retry(*m_file, buf, size));
+    OUTCOME_TRY(n, file_write_retry(*m_file, buf));
     m_fpos += n;
 
     return n;
@@ -601,14 +599,14 @@ oc::result<size_t> BufferedFile::write_underlying(const void *buf, size_t size)
 /*!
  * \brief Write underlying file (failing if EOF)
  *
- * \post \ref m_fpos is incremented by the number of bytes written
+ * \post The \ref m_fpos field is incremented by the number of bytes written
  *
  * \return Result of file_write_exact()
  */
-oc::result<void> BufferedFile::write_exact_underlying(const void *buf, size_t size)
+oc::result<void> BufferedFile::write_exact_underlying(span<const unsigned char> buf)
 {
-    OUTCOME_TRYV(file_write_exact(*m_file, buf, size));
-    m_fpos += size;
+    OUTCOME_TRYV(file_write_exact(*m_file, buf));
+    m_fpos += buf.size();
 
     return oc::success();
 }
@@ -616,8 +614,8 @@ oc::result<void> BufferedFile::write_exact_underlying(const void *buf, size_t si
 /*!
  * \brief Seek underlying file and clear buffer
  *
- * \post \ref m_fpos is updated with the result of the seek operation and the
- *       read buffer is cleared.
+ * \post The \ref m_fpos field is updated with the result of the seek operation
+ *       and the read buffer is cleared.
  *
  * \return Result of File::seek()
  */

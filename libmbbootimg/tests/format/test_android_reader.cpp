@@ -38,7 +38,7 @@ TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
-    MemoryFile file(&source, sizeof(source));
+    MemoryFile file(as_writable_uchars(source));
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(AndroidFormatReader::find_header(file, MAX_HEADER_OFFSET));
@@ -49,7 +49,7 @@ TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
-    MemoryFile file(&source, sizeof(source));
+    MemoryFile file(as_writable_uchars(source));
     ASSERT_TRUE(file.is_open());
 
     // Seek to bad location initially
@@ -60,7 +60,7 @@ TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
 
 TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldFail)
 {
-    MemoryFile file(static_cast<void *>(nullptr), 0);
+    MemoryFile file(span<unsigned char>{});
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_header(file, MAX_HEADER_OFFSET + 1);
@@ -70,7 +70,7 @@ TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldFail)
 
 TEST(FindAndroidHeaderTest, MissingMagicShouldFail)
 {
-    MemoryFile file(static_cast<void *>(nullptr), 0);
+    MemoryFile file(span<unsigned char>{});
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_header(file, MAX_HEADER_OFFSET);
@@ -80,7 +80,8 @@ TEST(FindAndroidHeaderTest, MissingMagicShouldFail)
 
 TEST(FindAndroidHeaderTest, TruncatedHeaderShouldFail)
 {
-    MemoryFile file(const_cast<unsigned char *>(BOOT_MAGIC), BOOT_MAGIC_SIZE);
+    MemoryFile file(span(
+            const_cast<unsigned char *>(BOOT_MAGIC), BOOT_MAGIC_SIZE));
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_header(file, MAX_HEADER_OFFSET);
@@ -108,7 +109,7 @@ TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
     data.insert(data.end(), SAMSUNG_SEANDROID_MAGIC,
                 SAMSUNG_SEANDROID_MAGIC + SAMSUNG_SEANDROID_MAGIC_SIZE);
 
-    MemoryFile file(data.data(), data.size());
+    MemoryFile file(data);
     ASSERT_TRUE(file.is_open());
 
     ASSERT_TRUE(AndroidFormatReader::find_samsung_seandroid_magic(
@@ -125,7 +126,7 @@ TEST(FindSEAndroidMagicTest, UndersizedImageShouldFail)
     source.dt_size = 0;
     source.page_size = 2048;
 
-    MemoryFile file(static_cast<void *>(nullptr), 0);
+    MemoryFile file(span<unsigned char>{});
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_samsung_seandroid_magic(
@@ -153,7 +154,7 @@ TEST(FindSEAndroidMagicTest, InvalidMagicShouldFail)
                 SAMSUNG_SEANDROID_MAGIC + SAMSUNG_SEANDROID_MAGIC_SIZE);
     data.back() = 'x';
 
-    MemoryFile file(data.data(), data.size());
+    MemoryFile file(data);
     ASSERT_TRUE(file.is_open());
 
     auto ret = AndroidFormatReader::find_samsung_seandroid_magic(
@@ -254,8 +255,7 @@ struct AndroidReaderGoToEntryTest : testing::Test
 
         ASSERT_TRUE(_reader.enable_formats(Format::Android));
 
-        (void) _file.open(_data.data(), _data.size());
-        ASSERT_TRUE(_file.is_open());
+        ASSERT_TRUE(_file.open(_data));
 
         ASSERT_TRUE(_reader.open(&_file));
 
@@ -267,12 +267,12 @@ struct AndroidReaderGoToEntryTest : testing::Test
 
 TEST_F(AndroidReaderGoToEntryTest, GoToShouldSucceed)
 {
-    char buf[50];
+    unsigned char buf[50];
 
     auto entry = _reader.go_to_entry(EntryType::Ramdisk);
     ASSERT_TRUE(entry);
     ASSERT_EQ(entry.value().type(), EntryType::Ramdisk);
-    auto n = _reader.read_data(buf, sizeof(buf));
+    auto n = _reader.read_data(buf);
     ASSERT_TRUE(n);
     ASSERT_EQ(n.value(), 7u);
     ASSERT_EQ(memcmp(buf, "ramdisk", n.value()), 0);
@@ -281,7 +281,7 @@ TEST_F(AndroidReaderGoToEntryTest, GoToShouldSucceed)
     entry = _reader.read_entry();
     ASSERT_TRUE(entry);
     ASSERT_EQ(entry.value().type(), EntryType::SecondBoot);
-    n = _reader.read_data(buf, sizeof(buf));
+    n = _reader.read_data(buf);
     ASSERT_TRUE(n);
     ASSERT_EQ(n.value(), 10u);
     ASSERT_EQ(memcmp(buf, "secondboot", n.value()), 0);
@@ -289,12 +289,12 @@ TEST_F(AndroidReaderGoToEntryTest, GoToShouldSucceed)
 
 TEST_F(AndroidReaderGoToEntryTest, GoToFirstEntryShouldSucceed)
 {
-    char buf[50];
+    unsigned char buf[50];
 
     auto entry = _reader.go_to_entry({});
     ASSERT_TRUE(entry);
     ASSERT_EQ(entry.value().type(), EntryType::Kernel);
-    auto n = _reader.read_data(buf, sizeof(buf));
+    auto n = _reader.read_data(buf);
     ASSERT_TRUE(n);
     ASSERT_EQ(n.value(), 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n.value()), 0);
@@ -302,12 +302,12 @@ TEST_F(AndroidReaderGoToEntryTest, GoToFirstEntryShouldSucceed)
 
 TEST_F(AndroidReaderGoToEntryTest, GoToPreviousEntryShouldSucceed)
 {
-    char buf[50];
+    unsigned char buf[50];
 
     auto entry = _reader.go_to_entry(EntryType::SecondBoot);
     ASSERT_TRUE(entry);
     ASSERT_EQ(entry.value().type(), EntryType::SecondBoot);
-    auto n = _reader.read_data(buf, sizeof(buf));
+    auto n = _reader.read_data(buf);
     ASSERT_TRUE(n);
     ASSERT_EQ(n.value(), 10u);
     ASSERT_EQ(memcmp(buf, "secondboot", n.value()), 0);
@@ -316,7 +316,7 @@ TEST_F(AndroidReaderGoToEntryTest, GoToPreviousEntryShouldSucceed)
     entry = _reader.go_to_entry(EntryType::Kernel);
     ASSERT_TRUE(entry);
     ASSERT_EQ(entry.value().type(), EntryType::Kernel);
-    n = _reader.read_data(buf, sizeof(buf));
+    n = _reader.read_data(buf);
     ASSERT_TRUE(n);
     ASSERT_EQ(n.value(), 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n.value()), 0);
@@ -324,7 +324,7 @@ TEST_F(AndroidReaderGoToEntryTest, GoToPreviousEntryShouldSucceed)
 
 TEST_F(AndroidReaderGoToEntryTest, GoToAfterEOFShouldSucceed)
 {
-    char buf[50];
+    unsigned char buf[50];
     oc::result<Entry> entry = std::error_code{};
 
     while ((entry = _reader.read_entry()));
@@ -333,7 +333,7 @@ TEST_F(AndroidReaderGoToEntryTest, GoToAfterEOFShouldSucceed)
     entry = _reader.go_to_entry(EntryType::Kernel);
     ASSERT_TRUE(entry);
     ASSERT_EQ(entry.value().type(), EntryType::Kernel);
-    auto n = _reader.read_data(buf, sizeof(buf));
+    auto n = _reader.read_data(buf);
     ASSERT_TRUE(n);
     ASSERT_EQ(n.value(), 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n.value()), 0);

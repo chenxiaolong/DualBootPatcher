@@ -184,9 +184,9 @@ AndroidFormatReader::go_to_entry(File &file, std::optional<EntryType> entry_type
 }
 
 oc::result<size_t>
-AndroidFormatReader::read_data(File &file, void *buf, size_t buf_size)
+AndroidFormatReader::read_data(File &file, span<unsigned char> buf)
 {
-    return m_seg->read_data(file, buf, buf_size);
+    return m_seg->read_data(file, buf);
 }
 
 /*!
@@ -223,9 +223,9 @@ AndroidFormatReader::find_header(File &file, uint64_t max_header_offset)
 
     unsigned char buf[MAX_HEADER_OFFSET + sizeof(AndroidHeader)];
 
-    OUTCOME_TRY(n, file_read_retry(file, buf,
+    OUTCOME_TRY(n, file_read_retry(file, span(buf,
                                    static_cast<size_t>(max_header_offset)
-                                       + sizeof(AndroidHeader)));
+                                       + sizeof(AndroidHeader))));
 
     auto buf_end = buf + n;
     auto it = std2::search(
@@ -290,7 +290,7 @@ AndroidFormatReader::find_samsung_seandroid_magic(File &file,
     OUTCOME_TRYV(file.seek(static_cast<int64_t>(pos), SEEK_SET));
 
     unsigned char buf[SAMSUNG_SEANDROID_MAGIC_SIZE];
-    OUTCOME_TRY(n, file_read_retry(file, buf, sizeof(buf)));
+    OUTCOME_TRY(n, file_read_retry(file, buf));
 
     if (n != SAMSUNG_SEANDROID_MAGIC_SIZE
             || memcmp(buf, SAMSUNG_SEANDROID_MAGIC, n) != 0) {
@@ -340,7 +340,7 @@ AndroidFormatReader::find_bump_magic(File &file, const AndroidHeader &ahdr)
     OUTCOME_TRYV(file.seek(static_cast<int64_t>(pos), SEEK_SET));
 
     unsigned char buf[bump::BUMP_MAGIC_SIZE];
-    OUTCOME_TRY(n, file_read_retry(file, buf, sizeof(buf)));
+    OUTCOME_TRY(n, file_read_retry(file, buf));
 
     if (n != bump::BUMP_MAGIC_SIZE
             || memcmp(buf, bump::BUMP_MAGIC, n) != 0) {

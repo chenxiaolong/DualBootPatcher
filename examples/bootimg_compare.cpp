@@ -175,18 +175,18 @@ int main(int argc, char *argv[])
             }
 
             // Compare data
-            char buf1[10240];
-            char buf2[10240];
+            unsigned char buf1[10240];
+            unsigned char buf2[10240];
 
             while (true) {
-                auto n1 = reader1.read_data(buf1, sizeof(buf1));
+                auto n1 = reader1.read_data(buf1);
                 if (!n1) {
                     fprintf(stderr, "%s: Failed to read data: %s\n", filename1,
                             n1.error().message().c_str());
                     return EXIT_FAILURE;
                 }
 
-                auto n2 = reader2.read_data(buf2, sizeof(buf2));
+                auto n2 = reader2.read_data(buf2);
                 if (!n2) {
                     fprintf(stderr, "%s: Failed to read data: %s\n", filename2,
                             n2.error().message().c_str());

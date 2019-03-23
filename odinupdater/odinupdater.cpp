@@ -38,6 +38,7 @@
 #include "mbcommon/error_code.h"
 #include "mbcommon/file/standard.h"
 #include "mbcommon/file_error.h"
+#include "mbcommon/file_util.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/integer.h"
 #include "mbcommon/string.h"
@@ -338,12 +339,12 @@ public:
         return oc::success();
     }
 
-    oc::result<size_t> read(void *buf, size_t size) override
+    oc::result<size_t> read(span<unsigned char> buf) override
     {
         size_t total = 0;
 
-        while (size > 0) {
-            la_ssize_t n = archive_read_data(m_archive, buf, size);
+        while (!buf.empty()) {
+            la_ssize_t n = archive_read_data(m_archive, buf.data(), buf.size());
             if (n < 0) {
                 error("libarchive: Failed to read data: %s",
                       archive_error_string(m_archive));
@@ -353,17 +354,15 @@ public:
             }
 
             total += static_cast<size_t>(n);
-            size -= static_cast<size_t>(n);
-            buf = static_cast<char *>(buf) + n;
+            buf = buf.subspan(static_cast<size_t>(n));
         }
 
         return total;
     }
 
-    oc::result<size_t> write(const void *buf, size_t size) override
+    oc::result<size_t> write(span<const unsigned char> buf) override
     {
         (void) buf;
-        (void) size;
         return FileError::UnsupportedWrite;
     }
 
@@ -426,7 +425,7 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
         return ExtractResult::Error;
     }
 
-    char buf[10240];
+    unsigned char buf[10240];
     uint64_t cur_bytes = 0;
     uint64_t max_bytes = sparse_file.size();
     uint64_t old_bytes = 0;
@@ -434,7 +433,7 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
     set_progress(0);
 
     while (true) {
-        auto n = sparse_file.read(buf, sizeof(buf));
+        auto n = sparse_file.read(buf);
         if (!n) {
             error("Failed to read sparse file %s: %s",
                   zip_filename, n.error().message().c_str());
@@ -451,19 +450,10 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
             old_bytes = cur_bytes;
         }
 
-        char *out_ptr = buf;
-
-        while (n.value() > 0) {
-            auto n_written = out_file.write(buf, n.value());
-            if (!n_written) {
-                error("%s: Failed to write file: %s",
-                      out_filename, n_written.error().message().c_str());
-                return ExtractResult::Error;
-            }
-
-            n.value() -= n_written.value();
-            out_ptr += n_written.value();
-            cur_bytes += n_written.value();
+        if (auto r = file_write_exact(out_file, span(buf, n.value())); !r) {
+            error("%s: Failed to write file: %s",
+                  out_filename, r.error().message().c_str());
+            return ExtractResult::Error;
         }
     }
 

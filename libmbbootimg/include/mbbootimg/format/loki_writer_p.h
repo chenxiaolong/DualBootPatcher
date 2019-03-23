@@ -50,7 +50,7 @@ public:
     oc::result<void> write_header(File &file, const Header &header) override;
     oc::result<Entry> get_entry(File &file) override;
     oc::result<void> write_entry(File &file, const Entry &entry) override;
-    oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size) override;
+    oc::result<size_t> write_data(File &file, span<const unsigned char> buf) override;
     oc::result<void> finish_entry(File &file) override;
 
 private:

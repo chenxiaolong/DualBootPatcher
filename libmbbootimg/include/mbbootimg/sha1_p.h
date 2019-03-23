@@ -30,22 +30,22 @@ public:
     void init();
 
     /// Digest more data.
-    void update(span<const std::byte> Data);
+    void update(span<const unsigned char> Data);
 
     /// Return a reference to the current raw 160-bits SHA1 for the digested
     /// data since the last call to init(). This call will add data to the
     /// internal state and as such is not suited for getting an intermediate
     /// result (see result()).
-    span<const std::byte> final();
+    span<const unsigned char> final();
 
     /// Return a reference to the current raw 160-bits SHA1 for the digested
     /// data since the last call to init(). This is suitable for getting the
     /// SHA1 at any time without invalidating the internal state so that more
     /// calls can be made into update.
-    span<const std::byte> result();
+    span<const unsigned char> result();
 
     /// Returns a raw 160-bit SHA1 hash for the given data.
-    static std::array<uint8_t, HASH_LENGTH> hash(span<const std::byte> Data);
+    static std::array<uint8_t, HASH_LENGTH> hash(span<const unsigned char> Data);
 
 private:
     static constexpr size_t BLOCK_LENGTH = 64;

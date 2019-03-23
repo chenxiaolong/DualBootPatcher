@@ -161,12 +161,11 @@
  *
  * \brief Format writer callback to write entry data
  *
- * \note The callback function *must* write \p buf_size bytes or return an error
- *       if it cannot do so.
+ * \note The callback function *must* write `buf.size()` bytes or return an
+ *       error if it cannot do so.
  *
  * \param file Reference to file handle
  * \param buf Input buffer
- * \param buf_size Size of input buffer
  *
  * \return
  *   * Return number of bytes written if the entry is successfully written
@@ -491,18 +490,17 @@ oc::result<void> Writer::write_entry(const Entry &entry)
  * \brief Write boot image entry data.
  *
  * \param[in] buf Input buffer
- * \param[in] size Size of input buffer
  *
  * \return Number of bytes written. If EOF is reached, FileError::UnexpectedEof
  *         will be returned. If any other error occurs, a specific error code
  *         will be returned.
  */
-oc::result<size_t> Writer::write_data(const void *buf, size_t size)
+oc::result<size_t> Writer::write_data(span<const unsigned char> buf)
 {
     ENSURE_STATE_OR_RETURN_ERROR(WriterState::Data);
 
     // Do not alter state. Stay in WriterState::DATA
-    return m_format->write_data(*m_file, buf, size);
+    return m_format->write_data(*m_file, buf);
 }
 
 /*!

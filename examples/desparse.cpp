@@ -24,6 +24,7 @@
 #include <cstdio>
 
 #include "mbcommon/file/standard.h"
+#include "mbcommon/file_util.h"
 #include "mbsparse/sparse.h"
 
 int main(int argc, char *argv[])
@@ -61,10 +62,10 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    char buf[10240];
+    unsigned char buf[10240];
 
     while (true) {
-        auto n_read = sparse_file.read(buf, sizeof(buf));
+        auto n_read = sparse_file.read(buf);
         if (!n_read) {
             fprintf(stderr, "%s: Failed to read file: %s\n",
                     input_path, n_read.error().message().c_str());
@@ -73,17 +74,11 @@ int main(int argc, char *argv[])
             break;
         }
 
-        char *ptr = buf;
-
-        while (n_read.value() > 0) {
-            auto n_written = output_file.write(buf, n_read.value());
-            if (!n_written) {
-                fprintf(stderr, "%s: Failed to write file: %s\n",
-                        output_path, n_written.error().message().c_str());
-                return EXIT_FAILURE;
-            }
-            n_read.value() -= n_written.value();
-            ptr += n_written.value();
+        if (auto r = mb::file_write_exact(
+                output_file, mb::span(buf, n_read.value())); !r) {
+            fprintf(stderr, "%s: Failed to write file: %s\n",
+                    output_path, r.error().message().c_str());
+            return EXIT_FAILURE;
         }
     }
 

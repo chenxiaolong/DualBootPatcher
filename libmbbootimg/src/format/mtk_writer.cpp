@@ -54,20 +54,20 @@ _mtk_header_update_size(File &file, uint64_t offset, uint32_t size)
     OUTCOME_TRYV(file.seek(
             static_cast<int64_t>(offset + offsetof(MtkHeader, size)), SEEK_SET));
 
-    OUTCOME_TRYV(file_write_exact(file, &le32_size, sizeof(le32_size)));
+    OUTCOME_TRYV(file_write_exact(file, as_uchars(le32_size)));
 
     return oc::success();
 }
 
 static oc::result<void>
-_mtk_compute_sha1(SegmentWriter &seg, File &file, span<std::byte> digest_out)
+_mtk_compute_sha1(SegmentWriter &seg, File &file, span<unsigned char> digest_out)
 {
     if (digest_out.size() < detail::SHA1::HASH_LENGTH) {
         return std::errc::invalid_argument;
     }
 
     detail::SHA1 sha1;
-    char buf[10240];
+    unsigned char buf[10240];
 
     uint32_t kernel_mtkhdr_size = 0;
     uint32_t ramdisk_mtkhdr_size = 0;
@@ -82,9 +82,9 @@ _mtk_compute_sha1(SegmentWriter &seg, File &file, span<std::byte> digest_out)
             auto to_read = static_cast<size_t>(
                     std::min<uint64_t>(remain, sizeof(buf)));
 
-            OUTCOME_TRYV(file_read_exact(file, buf, to_read));
+            OUTCOME_TRYV(file_read_exact(file, span(buf).subspan(0, to_read)));
 
-            sha1.update(as_bytes(span(buf, to_read)));
+            sha1.update(span(buf).subspan(0, to_read));
 
             remain -= to_read;
         }
@@ -118,7 +118,7 @@ _mtk_compute_sha1(SegmentWriter &seg, File &file, span<std::byte> digest_out)
             continue;
         }
 
-        sha1.update(as_bytes(le32_size));
+        sha1.update(as_uchars(le32_size));
     }
 
     auto digest = sha1.final();
@@ -186,7 +186,7 @@ oc::result<void> MtkFormatWriter::close(File &file)
             // them. Thus, if we calculated the SHA1sum during write, it would
             // be incorrect.
             OUTCOME_TRYV(_mtk_compute_sha1(
-                    *m_seg, file, as_writable_bytes(m_hdr.id)));
+                    *m_seg, file, as_writable_uchars(m_hdr.id)));
 
             // Convert fields back to little-endian
             android_fix_header_byte_order(m_hdr);
@@ -195,7 +195,7 @@ oc::result<void> MtkFormatWriter::close(File &file)
             OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
             // Write header
-            OUTCOME_TRYV(file_write_exact(file, &m_hdr, sizeof(m_hdr)));
+            OUTCOME_TRYV(file_write_exact(file, as_uchars(m_hdr)));
         }
     }
 
@@ -299,9 +299,9 @@ oc::result<void> MtkFormatWriter::write_entry(File &file, const Entry &entry)
 }
 
 oc::result<size_t>
-MtkFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
+MtkFormatWriter::write_data(File &file, span<const unsigned char> buf)
 {
-    return m_seg->write_data(file, buf, buf_size);
+    return m_seg->write_data(file, buf);
 }
 
 oc::result<void> MtkFormatWriter::finish_entry(File &file)

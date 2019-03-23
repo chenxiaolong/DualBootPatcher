@@ -25,6 +25,7 @@
 #include <cstddef>
 
 #include "mbcommon/common.h"
+#include "mbcommon/span.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format.h"
@@ -61,7 +62,7 @@ public:
     virtual oc::result<Entry>
     go_to_entry(File &file, std::optional<EntryType> entry_type);
     virtual oc::result<size_t>
-    read_data(File &file, void *buf, size_t buf_size) = 0;
+    read_data(File &file, span<unsigned char> buf) = 0;
 };
 
 enum class ReaderState : uint8_t

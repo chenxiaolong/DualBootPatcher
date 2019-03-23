@@ -89,7 +89,7 @@ oc::result<void> AndroidFormatWriter::close(File &file)
                 ? bump::BUMP_MAGIC_SIZE
                 : SAMSUNG_SEANDROID_MAGIC_SIZE;
 
-            OUTCOME_TRYV(file_write_exact(file, magic, magic_size));
+            OUTCOME_TRYV(file_write_exact(file, span(magic, magic_size)));
 
             // Set ID
             auto digest = m_sha1.final();
@@ -102,7 +102,7 @@ oc::result<void> AndroidFormatWriter::close(File &file)
             OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
             // Write header
-            OUTCOME_TRYV(file_write_exact(file, &m_hdr, sizeof(m_hdr)));
+            OUTCOME_TRYV(file_write_exact(file, as_uchars(m_hdr)));
         }
     }
 
@@ -206,13 +206,13 @@ oc::result<void> AndroidFormatWriter::write_entry(File &file,
 }
 
 oc::result<size_t>
-AndroidFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
+AndroidFormatWriter::write_data(File &file, span<const unsigned char> buf)
 {
-    OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size));
+    OUTCOME_TRY(n, m_seg->write_data(file, buf));
 
     // We always include the image in the hash. The size is sometimes included
     // and is handled in finish_entry().
-    m_sha1.update(span(reinterpret_cast<const std::byte *>(buf), n));
+    m_sha1.update(buf.subspan(0, n));
 
     return n;
 }
@@ -228,7 +228,7 @@ oc::result<void> AndroidFormatWriter::finish_entry(File &file)
 
     // Include size for everything except empty DT images
     if (swentry->type != EntryType::DeviceTree || *swentry->size > 0) {
-        m_sha1.update(as_bytes(le32_size));
+        m_sha1.update(as_uchars(le32_size));
     }
 
     switch (swentry->type) {

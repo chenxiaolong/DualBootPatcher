@@ -154,7 +154,7 @@ TEST_F(SignTest, LoadSecretKeyFailureUnsupportedAlgorithms)
 
     // Invalid signature algorithm
     payload.sig_alg = {};
-    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
+    ASSERT_TRUE(save_raw_file(_file, as_uchars(payload), {}, nullptr, nullptr));
     rewind_file();
     ASSERT_EQ(load_secret_key(_file, "test"),
               oc::failure(Error::UnsupportedSigAlg));
@@ -163,7 +163,7 @@ TEST_F(SignTest, LoadSecretKeyFailureUnsupportedAlgorithms)
 
     // Invalid KDF algorithm
     payload.kdf_alg = {};
-    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
+    ASSERT_TRUE(save_raw_file(_file, as_uchars(payload), {}, nullptr, nullptr));
     rewind_file();
     ASSERT_EQ(load_secret_key(_file, "test"),
               oc::failure(Error::UnsupportedKdfAlg));
@@ -172,7 +172,7 @@ TEST_F(SignTest, LoadSecretKeyFailureUnsupportedAlgorithms)
 
     // Invalid checksum algorithm
     payload.chk_alg = {};
-    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
+    ASSERT_TRUE(save_raw_file(_file, as_uchars(payload), {}, nullptr, nullptr));
     rewind_file();
     ASSERT_EQ(load_secret_key(_file, "test"),
               oc::failure(Error::UnsupportedChkAlg));
@@ -197,7 +197,7 @@ TEST_F(SignTest, LoadSecretKeyFailureIncorrectChecksum)
 
     ASSERT_TRUE(apply_xor_cipher(payload, "test"));
 
-    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
+    ASSERT_TRUE(save_raw_file(_file, as_uchars(payload), {}, nullptr, nullptr));
     rewind_file();
     ASSERT_EQ(load_secret_key(_file, "test"),
               oc::failure(Error::IncorrectChecksum));
@@ -227,7 +227,7 @@ TEST_F(SignTest, LoadPublicKeyFailureUnsupportedAlgorithms)
     payload.id = to_le64(_kp.pkey.id);
     payload.key = _kp.pkey.key;
 
-    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, nullptr, nullptr));
+    ASSERT_TRUE(save_raw_file(_file, as_uchars(payload), {}, nullptr, nullptr));
     rewind_file();
     ASSERT_EQ(load_public_key(_file), oc::failure(Error::UnsupportedSigAlg));
 }
@@ -271,7 +271,7 @@ TEST_F(SignTest, LoadSignatureFailureUnsupportedAlgorithms)
     TrustedComment trusted = {};
     RawSignature global_sig = {};
 
-    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), {}, &trusted,
+    ASSERT_TRUE(save_raw_file(_file, as_uchars(payload), {}, &trusted,
                               &global_sig));
     rewind_file();
     ASSERT_EQ(load_signature(_file), oc::failure(Error::UnsupportedSigAlg));
@@ -282,7 +282,7 @@ TEST_F(SignTest, SignVerifySuccess)
     open_file();
     open_data_file();
 
-    ASSERT_TRUE(_data_file.write("hello", 5));
+    ASSERT_TRUE(_data_file.write(as_uchars("hello", 5)));
     rewind_data_file();
 
     auto sig = sign_file(_data_file, _kp.skey);
@@ -303,7 +303,7 @@ TEST_F(SignTest, VerifyFailureMismatchedKey)
     open_file();
     open_data_file();
 
-    ASSERT_TRUE(_data_file.write("hello", 5));
+    ASSERT_TRUE(_data_file.write(as_uchars("hello", 5)));
     rewind_data_file();
 
     auto sig = sign_file(_data_file, _kp.skey);
@@ -321,13 +321,13 @@ TEST_F(SignTest, VerifyFailureBadSignature)
     open_file();
     open_data_file();
 
-    ASSERT_TRUE(_data_file.write("hello", 5));
+    ASSERT_TRUE(_data_file.write(as_uchars("hello", 5)));
     rewind_data_file();
 
     auto sig = sign_file(_data_file, _kp.skey);
     ASSERT_TRUE(sig);
 
-    ASSERT_TRUE(_data_file.write("world", 5));
+    ASSERT_TRUE(_data_file.write(as_uchars("world", 5)));
 
     rewind_data_file();
     ASSERT_EQ(verify_file(_data_file, sig.value(), _kp.pkey),
@@ -339,7 +339,7 @@ TEST_F(SignTest, VerifyFailureBadGlobalSignature)
     open_file();
     open_data_file();
 
-    ASSERT_TRUE(_data_file.write("hello", 5));
+    ASSERT_TRUE(_data_file.write(as_uchars("hello", 5)));
     rewind_data_file();
 
     auto sig = sign_file(_data_file, _kp.skey);

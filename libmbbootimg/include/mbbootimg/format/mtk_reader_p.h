@@ -47,7 +47,7 @@ public:
     oc::result<Entry> read_entry(File &file) override;
     oc::result<Entry> go_to_entry(File &file,
                                   std::optional<EntryType> entry_type) override;
-    oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
+    oc::result<size_t> read_data(File &file, span<unsigned char> buf) override;
 
 private:
     // Header values

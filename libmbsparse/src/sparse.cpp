@@ -280,9 +280,9 @@ oc::result<void> SparseFile::open(File *file)
         return seek_ret.as_failure();
     }
 
-    unsigned char first_byte;
+    unsigned char first_byte[1];
 
-    OUTCOME_TRY(n, m_file->read(&first_byte, 1));
+    OUTCOME_TRY(n, m_file->read(first_byte));
     if (n != 1) {
         DEBUG("Failed to read first byte of file");
         return FileError::UnexpectedEof;
@@ -298,7 +298,7 @@ oc::result<void> SparseFile::open(File *file)
         return seek_ret.as_failure();
     }
 
-    OUTCOME_TRYV(process_sparse_header(&first_byte, n));
+    OUTCOME_TRYV(process_sparse_header(span(first_byte, n)));
 
     reset.dismiss();
 
@@ -327,11 +327,11 @@ oc::result<void> SparseFile::close()
  * \brief Read sparse file
  *
  * This function will read the specified amount of bytes from the source file.
- * If this function returns a size count less than \p size, then the end of the
- * sparse file (EOF) has been reached. If any error occurs, the function will
- * return an error code and any further attempts to read or seek the sparse file
- * may produce invalid or unexpected results. It is not undefined behavior in
- * the C++ sense of the term.
+ * If this function returns a size count less than `buf.size()`, then the end of
+ * the sparse file (EOF) has been reached. If any error occurs, the function
+ * will return an error code and any further attempts to read or seek the sparse
+ * file may produce invalid or unexpected results. It is not undefined behavior
+ * in the C++ sense of the term.
  *
  * Some examples of failures include:
  * * Source reaching EOF before the end of the sparse file is reached
@@ -340,20 +340,19 @@ oc::result<void> SparseFile::close()
  * * Chunk header is invalid
  *
  * \param[out] buf Buffer to read data into
- * \param[in] size Number of bytes to read
  *
  * \return Number of bytes read if the specified number of bytes were
  *         successfully read. Otherwise, the error code.
  */
-oc::result<size_t> SparseFile::read(void *buf, size_t size)
+oc::result<size_t> SparseFile::read(span<unsigned char> buf)
 {
     if (!is_open()) return FileError::InvalidState;
 
-    OPER("read(buf, %" MB_PRIzu ")", size);
+    OPER("read(buf, %" MB_PRIzu ")", buf.size());
 
     uint64_t total_read = 0;
 
-    while (size > 0) {
+    while (!buf.empty()) {
         OUTCOME_TRYV(move_to_chunk(m_cur_tgt_offset));
 
         if (m_chunk == m_chunks.end()) {
@@ -367,7 +366,7 @@ oc::result<size_t> SparseFile::read(void *buf, size_t size)
         // Read until the end of the current chunk
         uint64_t n_read = 0;
         uint64_t to_read = std::min<uint64_t>(
-                size, m_chunk->end - m_cur_tgt_offset);
+                buf.size(), m_chunk->end - m_cur_tgt_offset);
 
         OPER("Reading %" PRIu64 " bytes from chunk %" MB_PRIzu,
              to_read, m_chunk - m_chunks.begin());
@@ -394,7 +393,7 @@ oc::result<size_t> SparseFile::read(void *buf, size_t size)
                 OUTCOME_TRYV(wseek(seek_offset));
             }
 
-            OUTCOME_TRYV(wread(buf, static_cast<size_t>(to_read)));
+            OUTCOME_TRYV(wread(buf.subspan(0, static_cast<size_t>(to_read))));
 
             n_read = to_read;
             break;
@@ -409,19 +408,19 @@ oc::result<size_t> SparseFile::read(void *buf, size_t size)
                 shifted[i] = reinterpret_cast<unsigned char *>(&fill_val)
                         [(i + shift) % sizeof(uint32_t)];
             }
-            unsigned char *temp_buf = reinterpret_cast<unsigned char *>(buf);
+            span temp_buf = buf;
             while (to_read > 0) {
                 size_t to_write = std::min<size_t>(
                         sizeof(shifted), static_cast<size_t>(to_read));
-                memcpy(temp_buf, &shifted, to_write);
+                memcpy(temp_buf.data(), &shifted, to_write);
                 n_read += to_write;
                 to_read -= to_write;
-                temp_buf += to_write;
+                temp_buf = temp_buf.subspan(to_write);
             }
             break;
         }
         case CHUNK_TYPE_DONT_CARE:
-            std::fill_n(reinterpret_cast<unsigned char *>(buf), to_read, 0);
+            std::fill_n(buf.data(), to_read, 0);
             n_read = to_read;
             break;
         default:
@@ -431,8 +430,7 @@ oc::result<size_t> SparseFile::read(void *buf, size_t size)
         OPER("Read %" PRIu64 " bytes", n_read);
         total_read += n_read;
         m_cur_tgt_offset += n_read;
-        size -= static_cast<size_t>(n_read);
-        buf = reinterpret_cast<unsigned char *>(buf) + n_read;
+        buf = buf.subspan(static_cast<size_t>(n_read));
     }
 
     return static_cast<size_t>(total_read);
@@ -442,14 +440,12 @@ oc::result<size_t> SparseFile::read(void *buf, size_t size)
  * \brief Not supported
  *
  * \param buf Buffer to write from
- * \param size Buffer size
  *
  * \return FileError::UnsupportedWrite
  */
-oc::result<size_t> SparseFile::write(const void *buf, size_t size)
+oc::result<size_t> SparseFile::write(span<const unsigned char> buf)
 {
     (void) buf;
-    (void) size;
     return FileError::UnsupportedWrite;
 }
 
@@ -557,11 +553,11 @@ void SparseFile::clear() noexcept
     m_chunk = m_chunks.end();
 }
 
-oc::result<void> SparseFile::wread(void *buf, size_t size) noexcept
+oc::result<void> SparseFile::wread(span<unsigned char> buf) noexcept
 {
-    OUTCOME_TRYV(file_read_exact(*m_file, buf, size));
+    OUTCOME_TRYV(file_read_exact(*m_file, buf));
 
-    m_cur_src_offset += size;
+    m_cur_src_offset += buf.size();
     return oc::success();
 }
 
@@ -628,23 +624,22 @@ oc::result<void> SparseFile::skip_bytes(uint64_t bytes) noexcept
  *       If the sparse header size, as specified by the \a file_hdr_sz field, is
  *       larger than the expected size, the extra bytes will be skipped as well.
  *
- * \param preread_data Data already read from the file (for seek checks)
- * \param preread_size Size of data already read from the file (must be less
- *                     than `sizeof(SparseHeader)`)
+ * \param preread Data already read from the file (for seek checks). The size of
+ *                data already read from the file must be less than
+ *                `sizeof(SparseHeader)`.
  *
  * \return Nothing if the sparse header is successfully read. Otherwise, the
  *         error code.
  */
 oc::result<void>
-SparseFile::process_sparse_header(const void *preread_data, size_t preread_size)
+SparseFile::process_sparse_header(span<const unsigned char> preread)
     noexcept
 {
-    assert(preread_size < sizeof(m_shdr));
+    assert(preread.size() < sizeof(m_shdr));
 
     // Read header
-    memcpy(&m_shdr, preread_data, preread_size);
-    OUTCOME_TRYV(wread(reinterpret_cast<char *>(&m_shdr) + preread_size,
-                 sizeof(m_shdr) - preread_size));
+    memcpy(&m_shdr, preread.data(), preread.size());
+    OUTCOME_TRYV(wread(as_writable_uchars(m_shdr).subspan(preread.size())));
 
     fix_sparse_header_byte_order(m_shdr);
 
@@ -750,7 +745,7 @@ SparseFile::process_fill_chunk(const ChunkHeader &chdr, uint64_t tgt_offset)
 
     uint64_t src_begin = m_cur_src_offset - m_shdr.chunk_hdr_sz;
 
-    OUTCOME_TRYV(wread(&fill_val, sizeof(fill_val)));
+    OUTCOME_TRYV(wread(as_writable_uchars(fill_val)));
 
     uint64_t src_end = m_cur_src_offset;
 
@@ -830,7 +825,7 @@ SparseFile::process_crc32_chunk(const ChunkHeader &chdr, uint64_t tgt_offset)
         return SparseFileError::InvalidCrc32Chunk;
     }
 
-    OUTCOME_TRYV(wread(&crc32, sizeof(crc32)));
+    OUTCOME_TRYV(wread(as_writable_uchars(crc32)));
 
     m_expected_crc32 = mb_le32toh(crc32);
 
@@ -955,7 +950,7 @@ oc::result<void> SparseFile::move_to_chunk(uint64_t offset) noexcept
 
         ChunkHeader chdr;
 
-        auto read_ret = wread(&chdr, sizeof(chdr));
+        auto read_ret = wread(as_writable_uchars(chdr));
         if (!read_ret) {
             DEBUG("Failed to read chunk header for chunk %" MB_PRIzu ": %s",
                   chunk_num, read_ret.error().message().c_str());

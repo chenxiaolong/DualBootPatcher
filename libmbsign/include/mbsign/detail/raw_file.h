@@ -27,12 +27,12 @@ namespace mb::sign::detail
 {
 
 oc::result<void>
-save_raw_file(File &file, span<const std::byte> payload,
+save_raw_file(File &file, span<const unsigned char> payload,
               const UntrustedComment &untrusted,
               const TrustedComment * const trusted,
               const RawSignature * const global_sig) noexcept;
 oc::result<void>
-load_raw_file(File &file, span<std::byte> payload,
+load_raw_file(File &file, span<unsigned char> payload,
               UntrustedComment &untrusted, TrustedComment *trusted,
               RawSignature *global_sig) noexcept;
 

@@ -45,14 +45,14 @@ constexpr size_t DEFAULT_BUFFER_SIZE = 8 * 1024 * 1024;
 }
 
 MB_EXPORT oc::result<size_t> file_read_retry(File &file,
-                                             void *buf, size_t size);
+                                             span<unsigned char> buf);
 MB_EXPORT oc::result<size_t> file_write_retry(File &file,
-                                              const void *buf, size_t size);
+                                              span<const unsigned char> buf);
 
 MB_EXPORT oc::result<void> file_read_exact(File &file,
-                                           void *buf, size_t size);
+                                           span<unsigned char> buf);
 MB_EXPORT oc::result<void> file_write_exact(File &file,
-                                            const void *buf, size_t size);
+                                            span<const unsigned char> buf);
 
 MB_EXPORT oc::result<uint64_t> file_read_discard(File &file, uint64_t size);
 
@@ -62,7 +62,7 @@ MB_EXPORT oc::result<uint64_t> file_move(File &file, uint64_t src,
 class MB_EXPORT FileSearcher final
 {
 public:
-    FileSearcher(File *file, const void *pattern, size_t pattern_size);
+    FileSearcher(File *file, span<const unsigned char> pattern);
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FileSearcher)
 
@@ -77,9 +77,8 @@ private:
     // File to search
     File *m_file;
     // Pattern to search for
-    const void *m_pattern;
-    size_t m_pattern_size;
-    // Boyer-Moore searcher (NOTE std::byte does not work on Android)
+    span<const unsigned char> m_pattern;
+    // Boyer-Moore searcher
     std::optional<detail::std2::boyer_moore_searcher<
             const unsigned char *>> m_searcher;
     // Search buffer

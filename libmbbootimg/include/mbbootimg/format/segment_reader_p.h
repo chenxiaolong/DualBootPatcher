@@ -27,6 +27,7 @@
 #include <cstdint>
 
 #include "mbcommon/file.h"
+#include "mbcommon/span.h"
 
 #include "mbbootimg/entry.h"
 
@@ -61,7 +62,7 @@ public:
 
     oc::result<Entry> read_entry(File &file);
     oc::result<Entry> go_to_entry(File &file, std::optional<EntryType> entry_type);
-    oc::result<size_t> read_data(File &file, void *buf, size_t buf_size);
+    oc::result<size_t> read_data(File &file, span<unsigned char> buf);
 
 private:
     SegmentReaderState m_state;

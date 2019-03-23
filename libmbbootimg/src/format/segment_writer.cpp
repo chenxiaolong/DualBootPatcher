@@ -129,24 +129,21 @@ oc::result<void> SegmentWriter::write_entry(File &file, const Entry &entry)
     return oc::success();
 }
 
-oc::result<size_t> SegmentWriter::write_data(File &file, const void *buf,
-                                             size_t buf_size)
+oc::result<size_t> SegmentWriter::write_data(File &file,
+                                             span<const unsigned char> buf)
 {
     // Check for overflow
-    if (buf_size > UINT32_MAX || m_entry_size > UINT32_MAX - buf_size
-            || *m_pos > UINT64_MAX - buf_size) {
+    if (buf.size() > UINT32_MAX || m_entry_size > UINT32_MAX - buf.size()
+            || *m_pos > UINT64_MAX - buf.size()) {
         return SegmentError::WriteWouldOverflowInteger;
     }
 
-    auto ret = file_write_exact(file, buf, buf_size);
-    if (!ret) {
-        return ret.as_failure();
-    }
+    OUTCOME_TRYV(file_write_exact(file, buf));
 
-    m_entry_size += static_cast<uint32_t>(buf_size);
-    *m_pos += buf_size;
+    m_entry_size += static_cast<uint32_t>(buf.size());
+    *m_pos += buf.size();
 
-    return buf_size;
+    return buf.size();
 }
 
 oc::result<void> SegmentWriter::finish_entry(File &file)

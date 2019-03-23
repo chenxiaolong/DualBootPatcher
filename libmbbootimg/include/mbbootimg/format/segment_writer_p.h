@@ -27,6 +27,7 @@
 #include <cstdint>
 
 #include "mbcommon/file.h"
+#include "mbcommon/span.h"
 
 #include "mbbootimg/entry.h"
 
@@ -62,7 +63,7 @@ public:
 
     oc::result<Entry> get_entry(File &file);
     oc::result<void> write_entry(File &file, const Entry &entry);
-    oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size);
+    oc::result<size_t> write_data(File &file, span<const unsigned char> buf);
     oc::result<void> finish_entry(File &file);
 
 private:

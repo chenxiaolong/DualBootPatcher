@@ -154,7 +154,7 @@ static int fuse_read_locked(context *ctx, char *buf, size_t size,
         return -extract_errno(new_offset.error()).value_or(EIO);
     }
 
-    auto n = ctx->sparse_file.read(buf, size);
+    auto n = ctx->sparse_file.read(mb::as_writable_uchars(buf, size));
     if (!n) {
         return -extract_errno(n.error()).value_or(EIO);
     }

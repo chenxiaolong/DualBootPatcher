@@ -28,7 +28,7 @@ class MB_EXPORT MemoryFile : public File
 {
 public:
     MemoryFile();
-    MemoryFile(void *buf, size_t size);
+    MemoryFile(span<unsigned char> buf);
     MemoryFile(void **buf_ptr, size_t *size_ptr);
     virtual ~MemoryFile();
 
@@ -37,13 +37,13 @@ public:
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MemoryFile)
 
-    oc::result<void> open(void *buf, size_t size);
+    oc::result<void> open(span<unsigned char> buf);
     oc::result<void> open(void **buf_ptr, size_t *size_ptr);
 
     oc::result<void> close() override;
 
-    oc::result<size_t> read(void *buf, size_t size) override;
-    oc::result<size_t> write(const void *buf, size_t size) override;
+    oc::result<size_t> read(span<unsigned char> buf) override;
+    oc::result<size_t> write(span<const unsigned char> buf) override;
     oc::result<uint64_t> seek(int64_t offset, int whence) override;
     oc::result<void> truncate(uint64_t size) override;
 
@@ -55,8 +55,7 @@ private:
 
     bool m_is_open;
 
-    void *m_data;
-    size_t m_size;
+    span<unsigned char> m_data;
 
     void **m_data_ptr;
     size_t *m_size_ptr;

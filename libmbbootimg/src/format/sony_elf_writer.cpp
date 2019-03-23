@@ -88,17 +88,16 @@ oc::result<void> SonyElfFormatWriter::close(File &file)
         if (swentry == m_seg->entries().end()) {
             // Write headers
             struct {
-                const void *ptr;
-                size_t size;
+                span<const unsigned char> data;
                 bool can_write;
             } headers[] = {
-                { &m_hdr, sizeof(m_hdr), true },
-                { &m_hdr_kernel, sizeof(m_hdr_kernel), m_hdr_kernel.p_filesz > 0 },
-                { &m_hdr_ramdisk, sizeof(m_hdr_ramdisk), m_hdr_ramdisk.p_filesz > 0 },
-                { &m_hdr_cmdline, sizeof(m_hdr_cmdline), m_hdr_cmdline.p_filesz > 0 },
-                { &m_hdr_ipl, sizeof(m_hdr_ipl), m_hdr_ipl.p_filesz > 0 },
-                { &m_hdr_rpm, sizeof(m_hdr_rpm), m_hdr_rpm.p_filesz > 0 },
-                { &m_hdr_appsbl, sizeof(m_hdr_appsbl), m_hdr_appsbl.p_filesz > 0 },
+                { as_uchars(m_hdr), true },
+                { as_uchars(m_hdr_kernel), m_hdr_kernel.p_filesz > 0 },
+                { as_uchars(m_hdr_ramdisk), m_hdr_ramdisk.p_filesz > 0 },
+                { as_uchars(m_hdr_cmdline), m_hdr_cmdline.p_filesz > 0 },
+                { as_uchars(m_hdr_ipl), m_hdr_ipl.p_filesz > 0 },
+                { as_uchars(m_hdr_rpm), m_hdr_rpm.p_filesz > 0 },
+                { as_uchars(m_hdr_appsbl), m_hdr_appsbl.p_filesz > 0 },
             };
 
             sony_elf_fix_ehdr_byte_order(m_hdr);
@@ -115,7 +114,7 @@ oc::result<void> SonyElfFormatWriter::close(File &file)
             // Write headers
             for (auto const &header : headers) {
                 if (header.can_write) {
-                    OUTCOME_TRYV(file_write_exact(file, header.ptr, header.size));
+                    OUTCOME_TRYV(file_write_exact(file, header.data));
                 }
             }
         }
@@ -256,7 +255,7 @@ oc::result<Entry> SonyElfFormatWriter::get_entry(File &file)
         entry.set_size(m_cmdline.size());
 
         OUTCOME_TRYV(write_entry(file, entry));
-        OUTCOME_TRYV(write_data(file, m_cmdline.data(), m_cmdline.size()));
+        OUTCOME_TRYV(write_data(file, as_uchars(span(m_cmdline))));
         OUTCOME_TRYV(finish_entry(file));
 
         return get_entry(file);
@@ -272,9 +271,9 @@ SonyElfFormatWriter::write_entry(File &file, const Entry &entry)
 }
 
 oc::result<size_t>
-SonyElfFormatWriter::write_data(File &file, const void *buf, size_t buf_size)
+SonyElfFormatWriter::write_data(File &file, span<const unsigned char> buf)
 {
-    return m_seg->write_data(file, buf, buf_size);
+    return m_seg->write_data(file, buf);
 }
 
 oc::result<void> SonyElfFormatWriter::finish_entry(File &file)

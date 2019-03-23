@@ -596,7 +596,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         return false;
     }
 
-    FileSearcher searcher(&fin, source_pattern, sizeof(source_pattern));
+    FileSearcher searcher(&fin, source_pattern);
 
     if (auto r = searcher.next()) {
         offset = r.value();
@@ -628,8 +628,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
             return false;
         }
 
-        auto ret = file_write_exact(fout, target_pattern,
-                                    sizeof(target_pattern));
+        auto ret = file_write_exact(fout, target_pattern);
         if (!ret) {
             LOGE("%s: Failed to write target pattern: %s",
                  output_file.c_str(), ret.error().message().c_str());
@@ -689,21 +688,19 @@ bool InstallerUtil::replace_file(const std::string &replace,
 
 bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
 {
-    char buf[10240];
+    unsigned char buf[10240];
 
     while (to_copy > 0) {
         size_t to_read = static_cast<size_t>(
                 std::min<uint64_t>(to_copy, sizeof(buf)));
 
-        auto n = file_read_retry(fin, buf, to_read);
-        if (!n || n.value() != to_read) {
-            LOGE("Failed to read data: %s", n.error().message().c_str());
+        if (auto r = file_read_exact(fin, span(buf, to_read)); !r) {
+            LOGE("Failed to read data: %s", r.error().message().c_str());
             return false;
         }
 
-        n = file_write_retry(fout, buf, to_read);
-        if (!n || n.value() != to_read) {
-            LOGE("Failed to write data: %s", n.error().message().c_str());
+        if (auto r = file_write_exact(fout, span(buf, to_read)); !r) {
+            LOGE("Failed to write data: %s", r.error().message().c_str());
             return false;
         }
 
@@ -715,10 +712,10 @@ bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
 
 bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
 {
-    char buf[10240];
+    unsigned char buf[10240];
 
     while (true) {
-        auto n_read = file_read_retry(fin, buf, sizeof(buf));
+        auto n_read = file_read_retry(fin, buf);
         if (!n_read) {
             LOGE("Failed to read data: %s", n_read.error().message().c_str());
             return false;
@@ -726,10 +723,8 @@ bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
             break;
         }
 
-        auto n_written = file_write_retry(fout, buf, n_read.value());
-        if (!n_written || n_written.value() != n_read.value()) {
-            LOGE("Failed to write data: %s",
-                 n_written.error().message().c_str());
+        if (auto r = file_write_exact(fout, span(buf, n_read.value())); !r) {
+            LOGE("Failed to write data: %s", r.error().message().c_str());
             return false;
         }
     }

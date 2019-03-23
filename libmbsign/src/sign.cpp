@@ -121,7 +121,7 @@ save_secret_key(File &file, const SecretKey &key, const char *passphrase,
 
     OUTCOME_TRYV(apply_xor_cipher(*payload, passphrase));
 
-    return save_raw_file(file, as_bytes(*payload), key.untrusted, nullptr,
+    return save_raw_file(file, as_uchars(*payload), key.untrusted, nullptr,
                          nullptr);
 }
 
@@ -149,8 +149,8 @@ load_secret_key(File &file, const char *passphrase) noexcept
 
     SecretKey key;
 
-    OUTCOME_TRYV(load_raw_file(file, as_writable_bytes(*payload), key.untrusted,
-                               nullptr, nullptr));
+    OUTCOME_TRYV(load_raw_file(file, as_writable_uchars(*payload),
+                               key.untrusted, nullptr, nullptr));
 
     if (payload->sig_alg != SIG_ALG) {
         return Error::UnsupportedSigAlg;
@@ -203,7 +203,7 @@ save_public_key(File &file, const PublicKey &key) noexcept
     payload.id = to_le64(key.id);
     payload.key = key.key;
 
-    return save_raw_file(file, as_bytes(payload), key.untrusted, nullptr,
+    return save_raw_file(file, as_uchars(payload), key.untrusted, nullptr,
                          nullptr);
 }
 
@@ -226,7 +226,7 @@ load_public_key(File &file) noexcept
     PKPayload payload;
     PublicKey key;
 
-    OUTCOME_TRYV(load_raw_file(file, as_writable_bytes(payload), key.untrusted,
+    OUTCOME_TRYV(load_raw_file(file, as_writable_uchars(payload), key.untrusted,
                                nullptr, nullptr));
 
     if (payload.sig_alg != SIG_ALG) {
@@ -260,7 +260,7 @@ save_signature(File &file, const Signature &sig) noexcept
     payload.id = to_le64(sig.id);
     payload.sig = sig.sig;
 
-    return save_raw_file(file, as_bytes(payload), sig.untrusted, &sig.trusted,
+    return save_raw_file(file, as_uchars(payload), sig.untrusted, &sig.trusted,
                          &sig.global_sig);
 }
 
@@ -284,7 +284,7 @@ load_signature(File &file) noexcept
     SigPayload payload;
     Signature sig;
 
-    OUTCOME_TRYV(load_raw_file(file, as_writable_bytes(payload), sig.untrusted,
+    OUTCOME_TRYV(load_raw_file(file, as_writable_uchars(payload), sig.untrusted,
                                &sig.trusted, &sig.global_sig));
 
     if (payload.sig_alg != SIG_ALG) {
@@ -322,7 +322,7 @@ static oc::result<std::vector<unsigned char>> read_to_memory(File &file)
     data.resize(static_cast<size_t>(size));
 
     OUTCOME_TRYV(file.seek(0, SEEK_SET));
-    OUTCOME_TRYV(file_read_exact(file, data.data(), data.size()));
+    OUTCOME_TRYV(file_read_exact(file, data));
 
     return std::move(data);
 }

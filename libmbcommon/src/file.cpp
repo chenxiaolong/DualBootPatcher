@@ -79,10 +79,10 @@ File::~File() = default;
  * Example usage:
  *
  * \code{.cpp}
- * char buf[10240];
+ * unsigned char buf[10240];
  *
  * while (true) {
- *     if (auto n = file.read(buf, sizeof(buf))) {
+ *     if (auto n = file.read(buf)) {
  *         if (n.value() == 0) {
  *             break;
  *         } else {
@@ -96,7 +96,6 @@ File::~File() = default;
  * \endcode
  *
  * \param[out] buf Buffer to read into
- * \param[in] size Buffer size
  *
  * \return
  *   * Number of bytes read if some bytes are successfully read or EOF is
@@ -114,7 +113,7 @@ File::~File() = default;
  * Example usage:
  *
  * \code{.cpp}
- * if (auto n = file.write(buf, sizeof(buf))) {
+ * if (auto n = file.write(buf_span)) {
  *     printf("Wrote %zu bytes\n", n.value());
  * } else {
  *     printf("Failed to write file: %s\n", n.error().message().c_str());
@@ -122,7 +121,6 @@ File::~File() = default;
  * \endcode
  *
  * \param buf Buffer to write from
- * \param size Buffer size
  *
  * \return
  *   * Number of bytes written if some bytes are successfully written or EOF is

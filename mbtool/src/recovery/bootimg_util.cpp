@@ -40,10 +40,10 @@ namespace mb
 
 bool bi_copy_data_to_fd(Reader &reader, int fd)
 {
-    char buf[BUF_SIZE];
+    unsigned char buf[BUF_SIZE];
 
     while (true) {
-        auto n_read = reader.read_data(buf, sizeof(buf));
+        auto n_read = reader.read_data(buf);
         if (!n_read) {
             LOGE("Failed to read boot image entry data: %s",
                  n_read.error().message().c_str());
@@ -78,13 +78,13 @@ bool bi_copy_file_to_data(const std::string &path, Writer &writer)
         return false;
     }
 
-    char buf[10240];
+    unsigned char buf[10240];
     size_t n;
 
     while (true) {
         n = fread(buf, 1, sizeof(buf), fp.get());
 
-        auto bytes_written = writer.write_data(buf, n);
+        auto bytes_written = writer.write_data(span(buf, n));
         if (!bytes_written) {
             LOGE("Failed to write entry data: %s",
                  bytes_written.error().message().c_str());
@@ -113,10 +113,10 @@ bool bi_copy_data_to_file(Reader &reader, const std::string &path)
         return false;
     }
 
-    char buf[10240];
+    unsigned char buf[10240];
 
     while (true) {
-        auto n = reader.read_data(buf, sizeof(buf));
+        auto n = reader.read_data(buf);
         if (!n) {
             LOGE("Failed to read entry data: %s",
                  n.error().message().c_str());
@@ -143,10 +143,10 @@ bool bi_copy_data_to_file(Reader &reader, const std::string &path)
 
 bool bi_copy_data_to_data(Reader &reader, Writer &writer)
 {
-    char buf[10240];
+    unsigned char buf[10240];
 
     while (true) {
-        auto n_read = reader.read_data(buf, sizeof(buf));
+        auto n_read = reader.read_data(buf);
         if (!n_read) {
             LOGE("Failed to read boot image entry data: %s",
                  n_read.error().message().c_str());
@@ -155,7 +155,7 @@ bool bi_copy_data_to_data(Reader &reader, Writer &writer)
             break;
         }
 
-        auto n_written = writer.write_data(buf, n_read.value());
+        auto n_written = writer.write_data(span(buf, n_read.value()));
         if (!n_written) {
             LOGE("Failed to write entry data: %s",
                  n_written.error().message().c_str());

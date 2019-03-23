@@ -53,7 +53,7 @@ static oc::result<sign::PublicKey> load_embedded_public_key()
 
     MemoryFile file;
 
-    OUTCOME_TRYV(file.open(data.data(), data.size()));
+    OUTCOME_TRYV(file.open(data));
 
     return sign::load_public_key(file);
 }

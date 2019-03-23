@@ -24,6 +24,7 @@
 #include <cstddef>
 
 #include "mbcommon/common.h"
+#include "mbcommon/span.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format.h"
@@ -62,7 +63,7 @@ public:
     virtual oc::result<void>
     write_entry(File &file, const Entry &entry) = 0;
     virtual oc::result<size_t>
-    write_data(File &file, const void *buf, size_t buf_size) = 0;
+    write_data(File &file, span<const unsigned char> buf) = 0;
     virtual oc::result<void>
     finish_entry(File &file);
 };

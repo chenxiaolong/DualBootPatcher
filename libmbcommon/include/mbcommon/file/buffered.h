@@ -49,8 +49,8 @@ public:
 
     oc::result<void> close() override;
 
-    oc::result<size_t> read(void *buf, size_t size) override;
-    oc::result<size_t> write(const void *buf, size_t size) override;
+    oc::result<size_t> read(span<unsigned char> buf) override;
+    oc::result<size_t> write(span<const unsigned char> buf) override;
     oc::result<uint64_t> seek(int64_t offset, int whence) override;
     oc::result<void> truncate(uint64_t size) override;
 
@@ -68,9 +68,9 @@ public:
     template<
         typename Container,
         class = std::void_t<
-            std::enable_if_t<sizeof(std::byte)
+            std::enable_if_t<sizeof(unsigned char)
                     == sizeof(typename Container::value_type)>,
-            std::enable_if_t<std::alignment_of_v<std::byte>
+            std::enable_if_t<std::alignment_of_v<unsigned char>
                     == std::alignment_of_v<typename Container::value_type>>
         >
     >
@@ -79,7 +79,7 @@ public:
     {
         using V = typename Container::value_type;
 
-        return get_delim([&buf](span<const std::byte> data) {
+        return get_delim([&buf](span<const unsigned char> data) {
             buf.insert(buf.end(), reinterpret_cast<const V *>(data.begin()),
                        reinterpret_cast<const V *>(data.end()));
         }, std::nullopt, delim);
@@ -88,9 +88,9 @@ public:
     template<
         typename Container,
         class = std::void_t<
-            std::enable_if_t<sizeof(std::byte)
+            std::enable_if_t<sizeof(unsigned char)
                     == sizeof(typename Container::value_type)>,
-            std::enable_if_t<std::alignment_of_v<std::byte>
+            std::enable_if_t<std::alignment_of_v<unsigned char>
                     == std::alignment_of_v<typename Container::value_type>>
         >
     >
@@ -99,23 +99,23 @@ public:
     {
         using V = typename Container::value_type;
 
-        return get_delim([&buf](span<const std::byte> data) {
+        return get_delim([&buf](span<const unsigned char> data) {
             buf.insert(buf.end(), reinterpret_cast<const V *>(data.begin()),
                        reinterpret_cast<const V *>(data.end()));
         }, max_size, delim);
     }
 
-    oc::result<size_t> read_sized_line(span<std::byte> buf,
+    oc::result<size_t> read_sized_line(span<unsigned char> buf,
                                        unsigned char delim = DEFAULT_DELIM);
 
 private:
     /*! \cond INTERNAL */
-    oc::result<size_t> read_underlying(void *buf, size_t size);
-    oc::result<size_t> write_underlying(const void *buf, size_t size);
-    oc::result<void> write_exact_underlying(const void *buf, size_t size);
+    oc::result<size_t> read_underlying(span<unsigned char> buf);
+    oc::result<size_t> write_underlying(span<const unsigned char> buf);
+    oc::result<void> write_exact_underlying(span<const unsigned char> buf);
     oc::result<uint64_t> seek_underlying(int64_t offset, int whence);
 
-    using GetDelimFn = std::function<void(span<const std::byte>)>;
+    using GetDelimFn = std::function<void(span<const unsigned char>)>;
 
     oc::result<size_t> get_delim(const GetDelimFn &f,
                                  std::optional<size_t> max_size,

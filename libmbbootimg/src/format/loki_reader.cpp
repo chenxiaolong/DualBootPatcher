@@ -168,9 +168,9 @@ LokiFormatReader::go_to_entry(File &file, std::optional<EntryType> entry_type)
 }
 
 oc::result<size_t>
-LokiFormatReader::read_data(File &file, void *buf, size_t buf_size)
+LokiFormatReader::read_data(File &file, span<unsigned char> buf)
 {
-    return m_seg->read_data(file, buf, buf_size);
+    return m_seg->read_data(file, buf);
 }
 
 /*!
@@ -198,7 +198,7 @@ LokiFormatReader::find_loki_header(File &file)
 
     LokiHeader header;
 
-    auto ret = file_read_exact(file, &header, sizeof(header));
+    auto ret = file_read_exact(file, as_writable_uchars(header));
     if (!ret) {
         if (ret.error() == FileError::UnexpectedEof) {
             return LokiError::LokiHeaderTooSmall;
@@ -245,7 +245,8 @@ LokiFormatReader::find_ramdisk_address(File &file,
     if (lhdr.ramdisk_addr != 0) {
         OUTCOME_TRYV(file.seek(0, SEEK_SET));
 
-        FileSearcher searcher(&file, LOKI_SHELLCODE, LOKI_SHELLCODE_SIZE - 9);
+        FileSearcher searcher(
+                &file, span(LOKI_SHELLCODE, LOKI_SHELLCODE_SIZE - 9));
 
         OUTCOME_TRY(offset, searcher.next());
         if (!offset) {
@@ -256,7 +257,7 @@ LokiFormatReader::find_ramdisk_address(File &file,
 
         OUTCOME_TRYV(file.seek(static_cast<int64_t>(*offset), SEEK_SET));
 
-        OUTCOME_TRYV(file_read_exact(file, &ramdisk_addr, sizeof(ramdisk_addr)));
+        OUTCOME_TRYV(file_read_exact(file, as_writable_uchars(ramdisk_addr)));
 
         ramdisk_addr = mb_le32toh(ramdisk_addr);
     } else {
@@ -310,8 +311,7 @@ LokiFormatReader::find_gzip_offset_old(File &file, uint32_t start_offset)
 
     OUTCOME_TRYV(file.seek(static_cast<int64_t>(start_offset), SEEK_SET));
 
-    FileSearcher searcher(&file, gzip_deflate_magic,
-                          sizeof(gzip_deflate_magic));
+    FileSearcher searcher(&file, gzip_deflate_magic);
     std::optional<uint64_t> flag0_offset;
     std::optional<uint64_t> flag8_offset;
 
@@ -332,8 +332,8 @@ LokiFormatReader::find_gzip_offset_old(File &file, uint32_t start_offset)
         OUTCOME_TRYV(file.seek(static_cast<int64_t>(*offset + 3), SEEK_SET));
 
         // Read next bytes for flags
-        unsigned char flags;
-        if (auto r = file_read_exact(file, &flags, sizeof(flags)); !r) {
+        unsigned char flags[1];
+        if (auto r = file_read_exact(file, flags); !r) {
             if (r.error() == FileError::UnexpectedEof) {
                 break;
             } else {
@@ -341,9 +341,9 @@ LokiFormatReader::find_gzip_offset_old(File &file, uint32_t start_offset)
             }
         }
 
-        if (!flag0_offset && flags == 0x00) {
+        if (!flag0_offset && flags[0] == 0x00) {
             flag0_offset = *offset;
-        } else if (!flag8_offset && flags == 0x08) {
+        } else if (!flag8_offset && flags[0] == 0x08) {
             flag8_offset = *offset;
         }
 
@@ -466,7 +466,7 @@ LokiFormatReader::find_linux_kernel_size(File &file, uint32_t kernel_offset)
     OUTCOME_TRYV(file.seek(kernel_offset + 0x2c, SEEK_SET));
 
     uint32_t kernel_size;
-    OUTCOME_TRYV(file_read_exact(file, &kernel_size, sizeof(kernel_size)));
+    OUTCOME_TRYV(file_read_exact(file, as_writable_uchars(kernel_size)));
 
     return mb_le32toh(kernel_size);
 }

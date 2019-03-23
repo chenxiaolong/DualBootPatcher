@@ -26,6 +26,7 @@
 #include "mbcommon/common.h"
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
+#include "mbcommon/span.h"
 
 #include "mbbootimg/format/loki_defs.h"
 
@@ -51,7 +52,6 @@ static inline void loki_fix_header_byte_order(LokiHeader &header)
     header.ramdisk_addr = mb_le32toh(header.ramdisk_addr);
 }
 
-oc::result<void> _loki_patch_file(File &file,
-                                  const void *aboot, size_t aboot_size);
+oc::result<void> _loki_patch_file(File &file, span<const unsigned char> aboot);
 
 }

@@ -63,15 +63,14 @@ MemoryFile::MemoryFile()
  * Construct the file handle and open the file. Use is_open() to check if the
  * file was successfully opened.
  *
- * \sa open(void *, size_t)
+ * \sa open(span<unsigned char>)
  *
  * \param buf Data buffer
- * \param size Size of data buffer
  */
-MemoryFile::MemoryFile(void *buf, size_t size)
+MemoryFile::MemoryFile(span<unsigned char> buf)
     : MemoryFile()
 {
-    (void) open(buf, size);
+    (void) open(buf);
 }
 
 /*!
@@ -110,7 +109,6 @@ MemoryFile::MemoryFile(MemoryFile &&other) noexcept
 
     std::swap(m_is_open, other.m_is_open);
     std::swap(m_data, other.m_data);
-    std::swap(m_size, other.m_size);
     std::swap(m_data_ptr, other.m_data_ptr);
     std::swap(m_size_ptr, other.m_size_ptr);
     std::swap(m_pos, other.m_pos);
@@ -133,7 +131,6 @@ MemoryFile & MemoryFile::operator=(MemoryFile &&rhs) noexcept
 
         std::swap(m_is_open, rhs.m_is_open);
         std::swap(m_data, rhs.m_data);
-        std::swap(m_size, rhs.m_size);
         std::swap(m_data_ptr, rhs.m_data_ptr);
         std::swap(m_size_ptr, rhs.m_size_ptr);
         std::swap(m_pos, rhs.m_pos);
@@ -147,18 +144,16 @@ MemoryFile & MemoryFile::operator=(MemoryFile &&rhs) noexcept
  * \brief Open from fixed size memory buffer.
  *
  * \param buf Data buffer
- * \param size Size of data buffer
  *
  * \return Nothing if the file is successfully opened. Otherwise, the error
  *         code.
  */
-oc::result<void> MemoryFile::open(void *buf, size_t size)
+oc::result<void> MemoryFile::open(span<unsigned char> buf)
 {
     if (is_open()) return FileError::InvalidState;
 
     m_is_open = true;
     m_data = buf;
-    m_size = size;
     m_data_ptr = nullptr;
     m_size_ptr = nullptr;
     m_pos = 0;
@@ -181,8 +176,7 @@ oc::result<void> MemoryFile::open(void **buf_ptr, size_t *size_ptr)
     if (is_open()) return FileError::InvalidState;
 
     m_is_open = true;
-    m_data = *buf_ptr;
-    m_size = *size_ptr;
+    m_data = span(static_cast<unsigned char *>(*buf_ptr), *size_ptr);
     m_data_ptr = buf_ptr;
     m_size_ptr = size_ptr;
     m_pos = 0;
@@ -201,58 +195,57 @@ oc::result<void> MemoryFile::close()
     return oc::success();
 }
 
-oc::result<size_t> MemoryFile::read(void *buf, size_t size)
+oc::result<size_t> MemoryFile::read(span<unsigned char> buf)
 {
     if (!is_open()) return FileError::InvalidState;
 
     size_t to_read = 0;
-    if (m_pos < m_size) {
-        to_read = std::min(m_size - m_pos, size);
+    if (m_pos < m_data.size()) {
+        to_read = std::min(m_data.size() - m_pos, buf.size());
     }
 
-    memcpy(buf, static_cast<char *>(m_data) + m_pos, to_read);
+    memcpy(buf.data(), m_data.data() + m_pos, to_read);
     m_pos += to_read;
 
     return to_read;
 }
 
-oc::result<size_t> MemoryFile::write(const void *buf, size_t size)
+oc::result<size_t> MemoryFile::write(span<const unsigned char> buf)
 {
     if (!is_open()) return FileError::InvalidState;
 
-    if (m_pos > SIZE_MAX - size) {
+    if (m_pos > SIZE_MAX - buf.size()) {
         return FileError::ArgumentOutOfRange;
     }
 
-    size_t desired_size = m_pos + size;
-    size_t to_write = size;
+    size_t desired_size = m_pos + buf.size();
+    size_t to_write = buf.size();
 
-    if (desired_size > m_size) {
+    if (desired_size > m_data.size()) {
         if (m_fixed_size) {
-            to_write = m_pos <= m_size ? m_size - m_pos : 0;
+            to_write = m_pos <= m_data.size() ? m_data.size() - m_pos : 0;
         } else {
             // Enlarge buffer
-            void *new_data = realloc(m_data, desired_size);
+            void *new_data = realloc(m_data.data(), desired_size);
             if (!new_data) {
                 return ec_from_errno();
             }
 
             // Zero-initialize new space
-            std::fill_n(static_cast<char *>(new_data) + m_size,
-                        desired_size - m_size, 0);
+            std::fill_n(static_cast<unsigned char *>(new_data) + m_data.size(),
+                        desired_size - m_data.size(), 0);
 
-            m_data = new_data;
-            m_size = desired_size;
+            m_data = as_writable_uchars(new_data, desired_size);
             if (m_data_ptr) {
-                *m_data_ptr = m_data;
+                *m_data_ptr = m_data.data();
             }
             if (m_size_ptr) {
-                *m_size_ptr = m_size;
+                *m_size_ptr = m_data.size();
             }
         }
     }
 
-    memcpy(static_cast<char *>(m_data) + m_pos, buf, to_write);
+    memcpy(m_data.data() + m_pos, buf.data(), to_write);
     m_pos += to_write;
 
     return to_write;
@@ -282,15 +275,15 @@ oc::result<uint64_t> MemoryFile::seek(int64_t offset, int whence)
         }
     case SEEK_END:
         if (offset < 0) {
-            if (static_cast<uint64_t>(-offset) > m_size) {
+            if (static_cast<uint64_t>(-offset) > m_data.size()) {
                 return FileError::ArgumentOutOfRange;
             }
-            return m_pos = m_size - static_cast<size_t>(-offset);
+            return m_pos = m_data.size() - static_cast<size_t>(-offset);
         } else {
-            if (static_cast<uint64_t>(offset) > SIZE_MAX - m_size) {
+            if (static_cast<uint64_t>(offset) > SIZE_MAX - m_data.size()) {
                 return FileError::ArgumentOutOfRange;
             }
-            return m_pos = m_size + static_cast<size_t>(offset);
+            return m_pos = m_data.size() + static_cast<size_t>(offset);
         }
     default:
         MB_UNREACHABLE("Invalid whence argument: %d", whence);
@@ -311,24 +304,23 @@ oc::result<void> MemoryFile::truncate(uint64_t size)
         }
 #endif
 
-        void *new_data = realloc(m_data, static_cast<size_t>(size));
+        void *new_data = realloc(m_data.data(), static_cast<size_t>(size));
         if (!new_data && size != 0) {
             return ec_from_errno();
         }
 
         // Zero-initialize new space
-        if (size > m_size) {
-            std::fill_n(static_cast<char *>(new_data) + m_size,
-                        static_cast<size_t>(size) - m_size, 0);
+        if (size > m_data.size()) {
+            std::fill_n(static_cast<unsigned char *>(new_data) + m_data.size(),
+                        static_cast<size_t>(size) - m_data.size(), 0);
         }
 
-        m_data = new_data;
-        m_size = static_cast<size_t>(size);
+        m_data = as_writable_uchars(new_data, static_cast<size_t>(size));
         if (m_data_ptr) {
-            *m_data_ptr = m_data;
+            *m_data_ptr = m_data.data();
         }
         if (m_size_ptr) {
-            *m_size_ptr = m_size;
+            *m_size_ptr = m_data.size();
         }
     }
 
@@ -343,8 +335,7 @@ bool MemoryFile::is_open()
 void MemoryFile::clear() noexcept
 {
     m_is_open = false;
-    m_data = nullptr;
-    m_size = 0;
+    m_data = {};
     m_data_ptr = nullptr;
     m_size_ptr = nullptr;
     m_pos = 0;

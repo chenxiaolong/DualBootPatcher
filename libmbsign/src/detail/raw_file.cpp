@@ -55,7 +55,7 @@ namespace mb::sign::detail
  *   * Otherwise, a specific I/O error code
  */
 oc::result<void>
-save_raw_file(File &file, span<const std::byte> payload,
+save_raw_file(File &file, span<const unsigned char> payload,
               const UntrustedComment &untrusted,
               const TrustedComment * const trusted,
               const RawSignature * const global_sig) noexcept
@@ -78,11 +78,11 @@ save_raw_file(File &file, span<const std::byte> payload,
 
     // Write untrusted comment
     {
-        OUTCOME_TRYV(file_write_exact(buf_file, UNTRUSTED_PREFIX,
-                                      strlen(UNTRUSTED_PREFIX)));
-        OUTCOME_TRYV(file_write_exact(buf_file, untrusted.data(),
-                                      strlen(untrusted.data())));
-        OUTCOME_TRYV(file_write_exact(buf_file, "\n", 1));
+        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars(UNTRUSTED_PREFIX,
+                                      strlen(UNTRUSTED_PREFIX))));
+        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars(untrusted.data(),
+                                      strlen(untrusted.data()))));
+        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars("\n", 1)));
     }
 
     // Write base64-encoded payload
@@ -101,18 +101,18 @@ save_raw_file(File &file, span<const std::byte> payload,
 
         // sodium_base64_ENCODED_LEN() includes space for a trailing NULL byte
         // and sodium_bin2base64() fills extra bytes in the buffer with zeros.
-        OUTCOME_TRYV(file_write_exact(buf_file, base64_payload.get(),
-                                      strlen(base64_payload.get())));
-        OUTCOME_TRYV(file_write_exact(buf_file, "\n", 1));
+        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars(base64_payload.get(),
+                                      strlen(base64_payload.get()))));
+        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars("\n", 1)));
     }
 
     // Write trusted comment
     if (trusted) {
-        OUTCOME_TRYV(file_write_exact(buf_file, TRUSTED_PREFIX,
-                                      strlen(TRUSTED_PREFIX)));
-        OUTCOME_TRYV(file_write_exact(buf_file, trusted->data(),
-                                      strlen(trusted->data())));
-        OUTCOME_TRYV(file_write_exact(buf_file, "\n", 1));
+        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars(TRUSTED_PREFIX,
+                                      strlen(TRUSTED_PREFIX))));
+        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars(trusted->data(),
+                                      strlen(trusted->data()))));
+        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars("\n", 1)));
     }
 
     // Write base64-encoded signature of signature and trusted comment
@@ -125,9 +125,9 @@ save_raw_file(File &file, span<const std::byte> payload,
 
         // sodium_base64_ENCODED_LEN() includes space for a trailing NULL byte
         // and sodium_bin2base64() fills extra bytes in the buffer with zeros.
-        OUTCOME_TRYV(file_write_exact(buf_file, base64_raw_sig.data(),
-                                      strlen(base64_raw_sig.data())));
-        OUTCOME_TRYV(file_write_exact(buf_file, "\n", 1));
+        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars(base64_raw_sig.data(),
+                                      strlen(base64_raw_sig.data()))));
+        OUTCOME_TRYV(file_write_exact(buf_file, as_uchars("\n", 1)));
     }
 
     OUTCOME_TRYV(buf_file.close());
@@ -160,7 +160,7 @@ save_raw_file(File &file, span<const std::byte> payload,
  *   * Otherwise, a specific I/O error code
  */
 oc::result<void>
-load_raw_file(File &file, span<std::byte> payload,
+load_raw_file(File &file, span<unsigned char> payload,
               UntrustedComment &untrusted, TrustedComment *trusted,
               RawSignature *global_sig) noexcept
 {
@@ -174,14 +174,14 @@ load_raw_file(File &file, span<std::byte> payload,
 
     // Read untrusted comment
     {
-        char prefix[sizeof(UNTRUSTED_PREFIX) - 1];
-        OUTCOME_TRY(file_read_exact(buf_file, prefix, sizeof(prefix)));
+        unsigned char prefix[sizeof(UNTRUSTED_PREFIX) - 1];
+        OUTCOME_TRY(file_read_exact(buf_file, prefix));
 
         if (memcmp(prefix, UNTRUSTED_PREFIX, sizeof(prefix)) != 0) {
             return Error::InvalidUntrustedComment;
         }
 
-        OUTCOME_TRY(n, buf_file.read_sized_line(as_writable_bytes(span(
+        OUTCOME_TRY(n, buf_file.read_sized_line(as_writable_uchars(span(
                 untrusted.data(), untrusted.size() - 1))));
 
         std::string_view sv(untrusted.data(), n);
@@ -201,7 +201,7 @@ load_raw_file(File &file, span<std::byte> payload,
 
         // The array has enough room for a null byte, which may be used to store
         // a newline in our case.
-        OUTCOME_TRY(n, buf_file.read_sized_line(as_writable_bytes(
+        OUTCOME_TRY(n, buf_file.read_sized_line(as_writable_uchars(
                 span(base64_payload.get(), base64_max_size))));
 
         size_t bin_size;
@@ -219,14 +219,14 @@ load_raw_file(File &file, span<std::byte> payload,
 
     // Read trusted comment
     if (trusted) {
-        char prefix[sizeof(TRUSTED_PREFIX) - 1];
-        OUTCOME_TRY(file_read_exact(buf_file, prefix, sizeof(prefix)));
+        unsigned char prefix[sizeof(TRUSTED_PREFIX) - 1];
+        OUTCOME_TRY(file_read_exact(buf_file, prefix));
 
         if (memcmp(prefix, TRUSTED_PREFIX, sizeof(prefix)) != 0) {
             return Error::InvalidTrustedComment;
         }
 
-        OUTCOME_TRY(n, buf_file.read_sized_line(as_writable_bytes(span(
+        OUTCOME_TRY(n, buf_file.read_sized_line(as_writable_uchars(span(
                 trusted->data(), trusted->size() - 1))));
 
         std::string_view sv(trusted->data(), n);
@@ -239,7 +239,7 @@ load_raw_file(File &file, span<std::byte> payload,
         RawSignatureBase64 base64_raw_sig;
 
         OUTCOME_TRY(n, buf_file.read_sized_line(
-                as_writable_bytes(base64_raw_sig)));
+                as_writable_uchars(base64_raw_sig)));
 
         size_t bin_size;
         if (sodium_base642bin(reinterpret_cast<unsigned char *>(global_sig),

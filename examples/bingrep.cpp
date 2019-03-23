@@ -109,7 +109,8 @@ static bool search(const char *name, mb::File &file,
         start = 0;
     }
 
-    mb::FileSearcher searcher(&file, pattern.data(), pattern.size());
+    mb::FileSearcher searcher(
+            &file, mb::as_uchars(pattern.data(), pattern.size()));
 
     while (true) {
         if (max_matches) {

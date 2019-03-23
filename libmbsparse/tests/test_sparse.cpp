@@ -101,9 +101,9 @@ struct SparseTest : testing::Test
         shdr.image_checksum = 0;
         fix_sparse_header_byte_order(shdr);
 
-        ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+        ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
         if (oversized) {
-            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd", 4));
+            ASSERT_TRUE(_source_file.write(as_uchars("\xaa\xbb\xcc\xdd", 4)));
         }
 
         ChunkHeader chdr;
@@ -115,11 +115,11 @@ struct SparseTest : testing::Test
         chdr.total_sz = shdr.chunk_hdr_sz + chdr.chunk_sz * shdr.blk_sz;
         fix_chunk_header_byte_order(chdr);
 
-        ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+        ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
         if (oversized) {
-            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd", 4));
+            ASSERT_TRUE(_source_file.write(as_uchars("\xaa\xbb\xcc\xdd", 4)));
         }
-        ASSERT_TRUE(_source_file.write("0123456789abcdef", 16));
+        ASSERT_TRUE(_source_file.write(as_uchars("0123456789abcdef", 16)));
 
         // [2/4] Add fill chunk header
         chdr = {};
@@ -129,13 +129,13 @@ struct SparseTest : testing::Test
                 + static_cast<uint32_t>(sizeof(uint32_t));
         fix_chunk_header_byte_order(chdr);
 
-        ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+        ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
         if (oversized) {
-            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd", 4));
+            ASSERT_TRUE(_source_file.write(as_uchars("\xaa\xbb\xcc\xdd", 4)));
         }
 
         uint32_t fill_val = mb_htole32(0x12345678);
-        ASSERT_TRUE(_source_file.write(&fill_val, sizeof(fill_val)));
+        ASSERT_TRUE(_source_file.write(as_uchars(fill_val)));
 
         // [3/4] Add skip chunk header
         chdr = {};
@@ -144,9 +144,9 @@ struct SparseTest : testing::Test
         chdr.total_sz = shdr.chunk_hdr_sz;
         fix_chunk_header_byte_order(chdr);
 
-        ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+        ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
         if (oversized) {
-            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd", 4));
+            ASSERT_TRUE(_source_file.write(as_uchars("\xaa\xbb\xcc\xdd", 4)));
         }
 
         // [4/4] Add CRC32 chunk header
@@ -157,11 +157,11 @@ struct SparseTest : testing::Test
                 + static_cast<uint16_t>(sizeof(uint32_t));
         fix_chunk_header_byte_order(chdr);
 
-        ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+        ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
         if (oversized) {
-            ASSERT_TRUE(_source_file.write("\xaa\xbb\xcc\xdd", 4));
+            ASSERT_TRUE(_source_file.write(as_uchars("\xaa\xbb\xcc\xdd", 4)));
         }
-        ASSERT_TRUE(_source_file.write("\x00\x00\x00\x00", 4));
+        ASSERT_TRUE(_source_file.write(as_uchars("\x00\x00\x00\x00", 4)));
 
         // Move back to beginning of the file
         ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
@@ -196,7 +196,7 @@ TEST_F(SparseTest, CheckInvalidStates)
     auto error = oc::failure(FileError::InvalidState);
 
     ASSERT_EQ(_file.close(), error);
-    ASSERT_EQ(_file.read(nullptr, 0), error);
+    ASSERT_EQ(_file.read({}), error);
     ASSERT_EQ(_file.seek(0, SEEK_SET), error);
 
     build_valid_data(true);
@@ -207,8 +207,7 @@ TEST_F(SparseTest, CheckInvalidStates)
 
 TEST_F(SparseTest, CheckUnsupportedWriteTruncate)
 {
-    ASSERT_EQ(_file.write(nullptr, 0),
-              oc::failure(FileError::UnsupportedWrite));
+    ASSERT_EQ(_file.write({}), oc::failure(FileError::UnsupportedWrite));
     ASSERT_EQ(_file.truncate(1024),
               oc::failure(FileError::UnsupportedTruncate));
 }
@@ -233,7 +232,7 @@ TEST_F(SparseTest, CheckSparseHeaderInvalidMagicFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
     ASSERT_TRUE(_source_file.truncate(shdr.total_blks * shdr.blk_sz));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
@@ -255,7 +254,7 @@ TEST_F(SparseTest, CheckSparseHeaderInvalidMajorVersionFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
     ASSERT_TRUE(_source_file.truncate(shdr.total_blks * shdr.blk_sz));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
@@ -277,7 +276,7 @@ TEST_F(SparseTest, CheckSparseHeaderInvalidMinorVersionOk)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
     ASSERT_TRUE(_source_file.truncate(shdr.total_blks * shdr.blk_sz));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
@@ -298,7 +297,7 @@ TEST_F(SparseTest, CheckSparseHeaderUndersizedSparseHeaderSizeFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
     ASSERT_TRUE(_source_file.truncate(shdr.total_blks * shdr.blk_sz));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
@@ -320,7 +319,7 @@ TEST_F(SparseTest, CheckSparseHeaderUndersizedChunkHeaderSizeFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
     ASSERT_TRUE(_source_file.truncate(shdr.total_blks * shdr.blk_sz));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
@@ -342,9 +341,9 @@ TEST_F(SparseTest, CheckInvalidRawChunkFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    char buf[1024];
+    unsigned char buf[1024];
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
 
     ChunkHeader chdr = {};
     chdr.chunk_type = CHUNK_TYPE_RAW;
@@ -352,13 +351,12 @@ TEST_F(SparseTest, CheckInvalidRawChunkFailure)
     chdr.total_sz = shdr.chunk_hdr_sz + chdr.chunk_sz * shdr.blk_sz + 1;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
-    ASSERT_TRUE(_source_file.write("1234", 4));
+    ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars("1234", 4)));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)),
-              oc::failure(SparseFileError::InvalidRawChunk));
+    ASSERT_EQ(_file.read(buf), oc::failure(SparseFileError::InvalidRawChunk));
 }
 
 TEST_F(SparseTest, CheckInvalidFillChunkFailure)
@@ -375,9 +373,9 @@ TEST_F(SparseTest, CheckInvalidFillChunkFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    char buf[1024];
+    unsigned char buf[1024];
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
 
     ChunkHeader chdr = {};
     chdr.chunk_type = CHUNK_TYPE_FILL;
@@ -385,12 +383,11 @@ TEST_F(SparseTest, CheckInvalidFillChunkFailure)
     chdr.total_sz = shdr.chunk_hdr_sz + 0;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)),
-              oc::failure(SparseFileError::InvalidFillChunk));
+    ASSERT_EQ(_file.read(buf), oc::failure(SparseFileError::InvalidFillChunk));
 }
 
 TEST_F(SparseTest, CheckInvalidSkipChunkFailure)
@@ -407,9 +404,9 @@ TEST_F(SparseTest, CheckInvalidSkipChunkFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    char buf[1024];
+    unsigned char buf[1024];
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
 
     ChunkHeader chdr = {};
     chdr.chunk_type = CHUNK_TYPE_DONT_CARE;
@@ -417,12 +414,11 @@ TEST_F(SparseTest, CheckInvalidSkipChunkFailure)
     chdr.total_sz = shdr.chunk_hdr_sz + 1u;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)),
-              oc::failure(SparseFileError::InvalidSkipChunk));
+    ASSERT_EQ(_file.read(buf), oc::failure(SparseFileError::InvalidSkipChunk));
 }
 
 TEST_F(SparseTest, CheckInvalidCrc32ChunkFailure)
@@ -439,9 +435,9 @@ TEST_F(SparseTest, CheckInvalidCrc32ChunkFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    char buf[1024];
+    unsigned char buf[1024];
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
 
     ChunkHeader chdr = {};
     chdr.chunk_type = CHUNK_TYPE_CRC32;
@@ -449,12 +445,11 @@ TEST_F(SparseTest, CheckInvalidCrc32ChunkFailure)
     chdr.total_sz = shdr.chunk_hdr_sz;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)),
-              oc::failure(SparseFileError::InvalidCrc32Chunk));
+    ASSERT_EQ(_file.read(buf), oc::failure(SparseFileError::InvalidCrc32Chunk));
 }
 
 TEST_F(SparseTest, CheckInvalidChunkTotalSizeFailure)
@@ -471,9 +466,9 @@ TEST_F(SparseTest, CheckInvalidChunkTotalSizeFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    char buf[1024];
+    unsigned char buf[1024];
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
 
     ChunkHeader chdr = {};
     chdr.chunk_type = CHUNK_TYPE_FILL;
@@ -481,12 +476,11 @@ TEST_F(SparseTest, CheckInvalidChunkTotalSizeFailure)
     chdr.total_sz = shdr.chunk_hdr_sz - 1u;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)),
-              oc::failure(SparseFileError::InvalidChunkSize));
+    ASSERT_EQ(_file.read(buf), oc::failure(SparseFileError::InvalidChunkSize));
 }
 
 TEST_F(SparseTest, CheckInvalidChunkTypeFailure)
@@ -503,9 +497,9 @@ TEST_F(SparseTest, CheckInvalidChunkTypeFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    char buf[1024];
+    unsigned char buf[1024];
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
 
     ChunkHeader chdr = {};
     chdr.chunk_type = 0xaabb;
@@ -513,12 +507,11 @@ TEST_F(SparseTest, CheckInvalidChunkTypeFailure)
     chdr.total_sz = shdr.chunk_hdr_sz;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)),
-              oc::failure(SparseFileError::InvalidChunkType));
+    ASSERT_EQ(_file.read(buf), oc::failure(SparseFileError::InvalidChunkType));
 }
 
 TEST_F(SparseTest, CheckReadTruncatedChunkHeaderFailure)
@@ -535,9 +528,9 @@ TEST_F(SparseTest, CheckReadTruncatedChunkHeaderFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    char buf[1024];
+    unsigned char buf[1024];
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
 
     ChunkHeader chdr = {};
     chdr.chunk_type = CHUNK_TYPE_FILL;
@@ -545,12 +538,11 @@ TEST_F(SparseTest, CheckReadTruncatedChunkHeaderFailure)
     chdr.total_sz = shdr.chunk_hdr_sz;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr) / 2));
+    ASSERT_TRUE(_source_file.write(as_uchars(chdr).subspan(sizeof(chdr) / 2)));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)),
-              oc::failure(FileError::UnexpectedEof));
+    ASSERT_EQ(_file.read(buf), oc::failure(FileError::UnexpectedEof));
 }
 
 TEST_F(SparseTest, CheckReadOversizedChunkDataFailure)
@@ -567,9 +559,9 @@ TEST_F(SparseTest, CheckReadOversizedChunkDataFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    char buf[1024];
+    unsigned char buf[1024];
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
 
     ChunkHeader chdr = {};
     chdr.chunk_type = CHUNK_TYPE_RAW;
@@ -577,12 +569,12 @@ TEST_F(SparseTest, CheckReadOversizedChunkDataFailure)
     chdr.total_sz = shdr.chunk_hdr_sz + chdr.chunk_sz * shdr.blk_sz;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
-    ASSERT_TRUE(_source_file.write("01234567", 8));
+    ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars("01234567", 8)));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)),
+    ASSERT_EQ(_file.read(buf),
               oc::failure(SparseFileError::InvalidChunkBounds));
 }
 
@@ -600,9 +592,9 @@ TEST_F(SparseTest, CheckReadUndersizedChunkDataFailure)
     shdr.image_checksum = 0;
     fix_sparse_header_byte_order(shdr);
 
-    char buf[1024];
+    unsigned char buf[1024];
 
-    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars(shdr)));
 
     ChunkHeader chdr = {};
     chdr.chunk_type = CHUNK_TYPE_RAW;
@@ -610,12 +602,12 @@ TEST_F(SparseTest, CheckReadUndersizedChunkDataFailure)
     chdr.total_sz = shdr.chunk_hdr_sz + chdr.chunk_sz * shdr.blk_sz;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr)));
-    ASSERT_TRUE(_source_file.write("0123", 1));
+    ASSERT_TRUE(_source_file.write(as_uchars(chdr)));
+    ASSERT_TRUE(_source_file.write(as_uchars("0123", 1)));
     ASSERT_TRUE(_source_file.seek(0, SEEK_SET));
 
     ASSERT_TRUE(_file.open(&_source_file));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)),
+    ASSERT_EQ(_file.read(buf),
               oc::failure(SparseFileError::InvalidChunkBounds));
 }
 
@@ -623,7 +615,7 @@ TEST_F(SparseTest, CheckReadUndersizedChunkDataFailure)
 
 TEST_F(SparseTest, ReadValidDataWithSeekableFile)
 {
-    char buf[1024];
+    unsigned char buf[1024];
     build_valid_data(true);
 
     // Check that valid sparse header can be opened
@@ -631,24 +623,23 @@ TEST_F(SparseTest, ReadValidDataWithSeekableFile)
 
     // Check that the entire file could be read and that the contents are
     // correct
-    ASSERT_EQ(_file.read(buf, sizeof(buf)),
-              oc::success(sizeof(expected_valid_data)));
+    ASSERT_EQ(_file.read(buf), oc::success(sizeof(expected_valid_data)));
     ASSERT_EQ(memcmp(buf, expected_valid_data, sizeof(expected_valid_data)), 0);
 
     // Check that partial read on chunk boundary works
     ASSERT_TRUE(_file.seek(-16, SEEK_END));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)), oc::success(16u));
+    ASSERT_EQ(_file.read(buf), oc::success(16u));
     ASSERT_EQ(memcmp(buf, expected_valid_data + 32, 16), 0);
 
     // Check that partial read not on chunk boundary works
     ASSERT_TRUE(_file.seek(33, SEEK_SET));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)), oc::success(15u));
+    ASSERT_EQ(_file.read(buf), oc::success(15u));
     ASSERT_EQ(memcmp(buf, expected_valid_data + 33, 15), 0);
 
     // Check that seeking past EOF is allowed and doing so returns no data
     ASSERT_TRUE(_file.seek(1000, SEEK_SET));
     ASSERT_EQ(_file.seek(1000, SEEK_CUR), oc::success(2000u));
-    ASSERT_EQ(_file.read(buf, sizeof(buf)), oc::success(0u));
+    ASSERT_EQ(_file.read(buf), oc::success(0u));
 
     // Check that seeking to the end of the sparse file works
     ASSERT_EQ(_file.seek(0, SEEK_END), oc::success(48u));
@@ -658,9 +649,8 @@ TEST_F(SparseTest, ReadValidDataWithSeekableFile)
 
 TEST_F(SparseTest, ReadValidDataWithSkippableFile)
 {
-    char buf[1024];
-    char *ptr = buf;
-    size_t remaining = sizeof(buf);
+    unsigned char buf[1024];
+    span<unsigned char> s(buf);
     uint64_t total = 0;
     build_valid_data(true);
 
@@ -671,20 +661,18 @@ TEST_F(SparseTest, ReadValidDataWithSkippableFile)
     // Check that the entire file could be read and that the contents are
     // correct. Read one byte at a time to test that a read while the sparse
     // file pointer is in the middle of a raw chunk works.
-    while (remaining > 0) {
-        auto n = _file.read(ptr, 1);
+    while (!s.empty()) {
+        auto n = _file.read(s.subspan(0, 1));
         ASSERT_TRUE(n);
         if (n.value() == 0) {
             break;
         }
 
-        ptr += n.value();
+        s = s.subspan(n.value());
         total += n.value();
-        remaining -= n.value();
     }
 
     ASSERT_EQ(total, sizeof(expected_valid_data));
-    ASSERT_EQ(remaining, sizeof(buf) - sizeof(expected_valid_data));
     ASSERT_EQ(memcmp(buf, expected_valid_data, sizeof(expected_valid_data)), 0);
 
     // Check that seeking fails
@@ -695,9 +683,8 @@ TEST_F(SparseTest, ReadValidDataWithSkippableFile)
 
 TEST_F(SparseTest, ReadValidDataWithUnseekableFile)
 {
-    char buf[1024];
-    char *ptr = buf;
-    size_t remaining = sizeof(buf);
+    unsigned char buf[1024];
+    span<unsigned char> s(buf);
     uint64_t total = 0;
     build_valid_data(true);
 
@@ -708,20 +695,18 @@ TEST_F(SparseTest, ReadValidDataWithUnseekableFile)
     // Check that the entire file could be read and that the contents are
     // correct. Read one byte at a time to test that a read while the sparse
     // file pointer is in the middle of a raw chunk works.
-    while (remaining > 0) {
-        auto n = _file.read(ptr, 1);
+    while (!s.empty()) {
+        auto n = _file.read(s.subspan(0, 1));
         ASSERT_TRUE(n);
         if (n.value() == 0) {
             break;
         }
 
-        ptr += n.value();
+        s = s.subspan(n.value());
         total += n.value();
-        remaining -= n.value();
     }
 
     ASSERT_EQ(total, sizeof(expected_valid_data));
-    ASSERT_EQ(remaining, sizeof(buf) - sizeof(expected_valid_data));
     ASSERT_EQ(memcmp(buf, expected_valid_data, sizeof(expected_valid_data)), 0);
 
     // Check that seeking fails

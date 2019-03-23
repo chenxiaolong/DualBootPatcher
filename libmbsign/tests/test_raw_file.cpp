@@ -51,7 +51,7 @@ struct RawFileTest : Test
     {
         open_file();
 
-        ASSERT_TRUE(_file.write(data.data(), data.size()));
+        ASSERT_TRUE(_file.write(as_uchars(data.data(), data.size())));
         ASSERT_TRUE(_file.seek(0, SEEK_SET));
     }
 };
@@ -78,7 +78,7 @@ AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7
         global_sig[i] = static_cast<unsigned char>(i % 256);
     }
 
-    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), untrusted, &trusted,
+    ASSERT_TRUE(save_raw_file(_file, as_uchars(payload), untrusted, &trusted,
                               &global_sig));
 
     ASSERT_EQ(std::string_view(static_cast<char *>(_file_data), _file_size),
@@ -98,7 +98,7 @@ aGVsbG8=
     UntrustedComment untrusted;
     strcpy(untrusted.data(), "foo");
 
-    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), untrusted, nullptr,
+    ASSERT_TRUE(save_raw_file(_file, as_uchars(payload), untrusted, nullptr,
                               nullptr));
 
     ASSERT_EQ(std::string_view(static_cast<char *>(_file_data), _file_size),
@@ -117,7 +117,7 @@ TEST_F(RawFileTest, SaveFileSuccessWithEmptyComments)
     TrustedComment trusted = {};
     RawSignature global_sig = {};
 
-    ASSERT_TRUE(save_raw_file(_file, as_bytes(payload), untrusted, &trusted,
+    ASSERT_TRUE(save_raw_file(_file, as_uchars(payload), untrusted, &trusted,
                               &global_sig));
 
     ASSERT_EQ(std::string_view(static_cast<char *>(_file_data), _file_size),
@@ -133,10 +133,10 @@ TEST_F(RawFileTest, SaveFileFailureInvalidArgument)
     TrustedComment trusted = {};
     RawSignature global_sig = {};
 
-    ASSERT_EQ(save_raw_file(_file, as_bytes(payload), untrusted, nullptr,
+    ASSERT_EQ(save_raw_file(_file, as_uchars(payload), untrusted, nullptr,
                             &global_sig),
               oc::failure(std::errc::invalid_argument));
-    ASSERT_EQ(save_raw_file(_file, as_bytes(payload), untrusted, &trusted,
+    ASSERT_EQ(save_raw_file(_file, as_uchars(payload), untrusted, &trusted,
                             nullptr),
               oc::failure(std::errc::invalid_argument));
 }
@@ -149,7 +149,7 @@ TEST_F(RawFileTest, SaveFileFailureInvalidUntrustedComment)
     UntrustedComment untrusted;
     strcpy(untrusted.data(), "foo\nbar");
 
-    ASSERT_EQ(save_raw_file(_file, as_bytes(payload), untrusted, nullptr,
+    ASSERT_EQ(save_raw_file(_file, as_uchars(payload), untrusted, nullptr,
                             nullptr),
               oc::failure(Error::InvalidUntrustedComment));
 }
@@ -165,7 +165,7 @@ TEST_F(RawFileTest, SaveFileFailureInvalidTrustedComment)
     strcpy(trusted.data(), "bar\r");
     RawSignature global_sig = {};
 
-    ASSERT_EQ(save_raw_file(_file, as_bytes(payload), untrusted, &trusted,
+    ASSERT_EQ(save_raw_file(_file, as_uchars(payload), untrusted, &trusted,
                             &global_sig),
               oc::failure(Error::InvalidTrustedComment));
 }
@@ -181,13 +181,13 @@ AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7
 
     open_file(data);
 
-    char payload[5];
+    unsigned char payload[5];
     UntrustedComment untrusted;
     TrustedComment trusted;
     RawSignature global_sig;
 
-    ASSERT_TRUE(load_raw_file(_file, as_writable_bytes(payload), untrusted,
-                              &trusted, &global_sig));
+    ASSERT_TRUE(load_raw_file(_file, payload, untrusted, &trusted,
+                              &global_sig));
 
     RawSignature expected_global_sig;
 
@@ -210,11 +210,10 @@ aGVsbG8=
 
     open_file(data);
 
-    char payload[5];
+    unsigned char payload[5];
     UntrustedComment untrusted;
 
-    ASSERT_TRUE(load_raw_file(_file, as_writable_bytes(payload), untrusted,
-                              nullptr, nullptr));
+    ASSERT_TRUE(load_raw_file(_file, payload, untrusted, nullptr, nullptr));
 
     ASSERT_EQ(memcmp(payload, "hello", 5), 0);
     ASSERT_STREQ(untrusted.data(), "foo");
@@ -227,13 +226,13 @@ TEST_F(RawFileTest, LoadFileSuccessWithEmptyComments)
 
     open_file(data);
 
-    char payload[5];
+    unsigned char payload[5];
     UntrustedComment untrusted;
     TrustedComment trusted;
     RawSignature global_sig;
 
-    ASSERT_TRUE(load_raw_file(_file, as_writable_bytes(payload), untrusted,
-                              &trusted, &global_sig));
+    ASSERT_TRUE(load_raw_file(_file, payload, untrusted, &trusted,
+                              &global_sig));
 
     RawSignature expected_global_sig = {};
 
@@ -247,16 +246,14 @@ TEST_F(RawFileTest, LoadFileFailureInvalidArgument)
 {
     open_file();
 
-    char payload[5];
+    unsigned char payload[5];
     UntrustedComment untrusted;
     TrustedComment trusted;
     RawSignature global_sig;
 
-    ASSERT_EQ(load_raw_file(_file, as_writable_bytes(payload), untrusted,
-                            nullptr, &global_sig),
+    ASSERT_EQ(load_raw_file(_file, payload, untrusted, nullptr, &global_sig),
               oc::failure(std::errc::invalid_argument));
-    ASSERT_EQ(load_raw_file(_file, as_writable_bytes(payload), untrusted,
-                            &trusted, nullptr),
+    ASSERT_EQ(load_raw_file(_file, payload, untrusted, &trusted, nullptr),
               oc::failure(std::errc::invalid_argument));
 }
 
@@ -269,11 +266,10 @@ aGVsbG8=
 
     open_file(data);
 
-    char payload[5];
+    unsigned char payload[5];
     UntrustedComment untrusted;
 
-    ASSERT_EQ(load_raw_file(_file, as_writable_bytes(payload), untrusted,
-                            nullptr, nullptr),
+    ASSERT_EQ(load_raw_file(_file, payload, untrusted, nullptr, nullptr),
               oc::failure(Error::InvalidUntrustedComment));
 }
 
@@ -288,13 +284,12 @@ AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7
 
     open_file(data);
 
-    char payload[5];
+    unsigned char payload[5];
     UntrustedComment untrusted;
     TrustedComment trusted;
     RawSignature global_sig;
 
-    ASSERT_EQ(load_raw_file(_file, as_writable_bytes(payload), untrusted,
-                            &trusted, &global_sig),
+    ASSERT_EQ(load_raw_file(_file, payload, untrusted, &trusted, &global_sig),
               oc::failure(Error::InvalidTrustedComment));
 }
 
@@ -307,11 +302,10 @@ aGVsbG8=
 
     open_file(data);
 
-    char payload[6];
+    unsigned char payload[6];
     UntrustedComment untrusted;
 
-    ASSERT_EQ(load_raw_file(_file, as_writable_bytes(payload), untrusted,
-                            nullptr, nullptr),
+    ASSERT_EQ(load_raw_file(_file, payload, untrusted, nullptr, nullptr),
               oc::failure(Error::InvalidPayloadSize));
 }
 
@@ -326,13 +320,12 @@ aGVsbG8=
 
     open_file(data);
 
-    char payload[5];
+    unsigned char payload[5];
     UntrustedComment untrusted;
     TrustedComment trusted;
     RawSignature global_sig;
 
-    ASSERT_EQ(load_raw_file(_file, as_writable_bytes(payload), untrusted,
-                            &trusted, &global_sig),
+    ASSERT_EQ(load_raw_file(_file, payload, untrusted, &trusted, &global_sig),
               oc::failure(Error::InvalidGlobalSigSize));
 }
 
@@ -345,10 +338,9 @@ abcdefghijklmnopqrstuvwxyz
 
     open_file(data);
 
-    char payload[6];
+    unsigned char payload[6];
     UntrustedComment untrusted;
 
-    ASSERT_EQ(load_raw_file(_file, as_writable_bytes(payload), untrusted,
-                            nullptr, nullptr),
+    ASSERT_EQ(load_raw_file(_file, payload, untrusted, nullptr, nullptr),
               oc::failure(Error::Base64DecodeError));
 }

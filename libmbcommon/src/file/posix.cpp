@@ -470,26 +470,26 @@ oc::result<void> PosixFile::close()
     return oc::success();
 }
 
-oc::result<size_t> PosixFile::read(void *buf, size_t size)
+oc::result<size_t> PosixFile::read(span<unsigned char> buf)
 {
     if (!is_open()) return FileError::InvalidState;
 
-    size_t n = m_funcs->fn_fread(buf, 1, size, m_fp);
+    size_t n = m_funcs->fn_fread(buf.data(), 1, buf.size(), m_fp);
 
-    if (n < size && m_funcs->fn_ferror(m_fp)) {
+    if (n < buf.size() && m_funcs->fn_ferror(m_fp)) {
         return ec_from_errno();
     }
 
     return n;
 }
 
-oc::result<size_t> PosixFile::write(const void *buf, size_t size)
+oc::result<size_t> PosixFile::write(span<const unsigned char> buf)
 {
     if (!is_open()) return FileError::InvalidState;
 
-    size_t n = m_funcs->fn_fwrite(buf, 1, size, m_fp);
+    size_t n = m_funcs->fn_fwrite(buf.data(), 1, buf.size(), m_fp);
 
-    if (n < size && m_funcs->fn_ferror(m_fp)) {
+    if (n < buf.size() && m_funcs->fn_ferror(m_fp)) {
         return ec_from_errno();
     }
 

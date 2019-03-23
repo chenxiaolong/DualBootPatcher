@@ -239,7 +239,7 @@ struct SplitCtx
 struct SplitReaderCtx : SplitCtx
 {
     // Read buffer
-    std::array<char, 10240> buf;
+    std::array<unsigned char, 10240> buf;
 
     SplitReaderCtx(std::string path, bool is_split)
         : SplitCtx(std::move(path), is_split)
@@ -261,7 +261,7 @@ struct SplitReaderCtx : SplitCtx
                 }
             }
 
-            auto n = ctx->file.read(ctx->buf.data(), ctx->buf.size());
+            auto n = ctx->file.read(ctx->buf);
             if (!n) {
                 set_archive_error(a, n.error());
                 return -1;
@@ -302,7 +302,7 @@ struct SplitWriterCtx : SplitCtx
     {
         auto *ctx = static_cast<SplitWriterCtx *>(userdata);
 
-        const char *ptr = static_cast<const char *>(data);
+        auto *ptr = static_cast<const unsigned char *>(data);
         size_t remain = size;
 
         while (remain > 0) {
@@ -317,7 +317,7 @@ struct SplitWriterCtx : SplitCtx
                     ? (ctx->max_size - ctx->bytes_written)
                     : remain));
 
-            auto n = ctx->file.write(ptr, to_write);
+            auto n = ctx->file.write(span(ptr, to_write));
             if (!n) {
                 set_archive_error(a, n.error());
                 return -1;
