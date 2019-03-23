@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,18 +19,42 @@
 
 #pragma once
 
+#include <unordered_map>
+#include <string>
+
+#include "mbcommon/outcome.h"
+#include "mbcommon/version.h"
+
+#define TRUSTED_PROP_TIMESTAMP  "timestamp"
+#define TRUSTED_PROP_VERSION    "version"
+
 namespace mb
 {
 
-enum class SigVerifyResult
+enum class SigVerifyError
 {
-    Valid,
-    Invalid,
-    Failure,
+    MissingVersion = 1,
+    MismatchedVersion,
 };
 
-SigVerifyResult verify_signature(const char *path, const char *sig_path);
+std::error_code make_error_code(SigVerifyError e);
+
+const std::error_category & sigverify_error_category();
+
+using TrustedProps = std::unordered_map<std::string, std::string>;
+
+oc::result<TrustedProps>
+verify_signature(const char *path, const char *sig_path,
+                 const char *version = mb::version());
 
 int sigverify_main(int argc, char *argv[]);
 
+}
+
+namespace std
+{
+    template<>
+    struct is_error_code_enum<mb::SigVerifyError> : true_type
+    {
+    };
 }

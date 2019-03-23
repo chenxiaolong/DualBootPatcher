@@ -24,7 +24,11 @@
 #include <getopt.h>
 
 #include "mbcommon/file/standard.h"
+#include "mbcommon/string.h"
+#include "mbcommon/version.h"
+
 #include "mblog/logging.h"
+
 #include "mbsign/build_key.h"
 #include "mbsign/error.h"
 #include "mbsign/sign.h"
@@ -33,6 +37,41 @@
 
 namespace mb
 {
+
+struct SigVerifyErrorCategory : std::error_category
+{
+    const char * name() const noexcept override;
+
+    std::string message(int ev) const override;
+};
+
+const std::error_category & sigverify_error_category()
+{
+    static SigVerifyErrorCategory c;
+    return c;
+}
+
+std::error_code make_error_code(SigVerifyError e)
+{
+    return {static_cast<int>(e), sigverify_error_category()};
+}
+
+const char * SigVerifyErrorCategory::name() const noexcept
+{
+    return "sigverify";
+}
+
+std::string SigVerifyErrorCategory::message(int ev) const
+{
+    switch (static_cast<SigVerifyError>(ev)) {
+    case SigVerifyError::MissingVersion:
+        return "missing version in trusted comment";
+    case SigVerifyError::MismatchedVersion:
+        return "mismatched version in trusted comment";
+    default:
+        return "(unknown sigverify error)";
+    }
+}
 
 static oc::result<sign::Signature> load_signature(const char *path)
 {
@@ -54,26 +93,30 @@ static oc::result<void> verify_signature(const char *path,
     return sign::verify_file(file, sig, key);
 }
 
-SigVerifyResult verify_signature(const char *path, const char *sig_path)
+oc::result<TrustedProps>
+verify_signature(const char *path, const char *sig_path, const char *version)
 {
-    auto sig = load_signature(sig_path);
-    if (!sig) {
-        LOGE("%s: Failed to load signature: %s",
-             sig_path, sig.error().message().c_str());
-        return SigVerifyResult::Failure;
-    }
+    OUTCOME_TRY(sig, load_signature(sig_path));
+    OUTCOME_TRYV(verify_signature(path, sig, sign::build_key()));
 
-    if (auto r = verify_signature(path, sig.value(), sign::build_key()); !r) {
-        if (r.error() == sign::Error::SignatureVerifyFailed) {
-            return SigVerifyResult::Invalid;
-        } else {
-            LOGE("%s: Failed to verify signature: %s",
-                 path, r.error().message().c_str());
-            return SigVerifyResult::Failure;
+    TrustedProps props;
+
+    // Parse trusted comment
+    for (auto const &kv : split_sv(sig.trusted.data(), ';')) {
+        if (auto pos = kv.find(':'); pos != kv.npos) {
+            props[std::string(kv.substr(0, pos))] = kv.substr(pos + 1);
         }
     }
 
-    return SigVerifyResult::Valid;
+    if (version) {
+        if (auto it = props.find(TRUSTED_PROP_VERSION); it == props.end()) {
+            return SigVerifyError::MissingVersion;
+        } else if (it->second != version) {
+            return SigVerifyError::MismatchedVersion;
+        }
+    }
+
+    return props;
 }
 
 static void sigverify_usage(FILE *stream)
@@ -81,6 +124,10 @@ static void sigverify_usage(FILE *stream)
     fprintf(stream,
             "Usage: sigverify [option...] <input file> <signature file>\n\n"
             "Options:\n"
+            "  -v, --version <VERSION>\n"
+            "                   Check that trusted comment matches version\n"
+            "  -V, --build-version\n"
+            "                   Check that trusted comment matches build version\n"
             "  -h, --help       Display this help message\n"
             "\n"
             "Exit codes:\n"
@@ -97,15 +144,29 @@ int sigverify_main(int argc, char *argv[])
 {
     int opt;
 
-    static struct option long_options[] = {
-        {"help",      no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+    static constexpr char short_options[] = "v:Vh";
+
+    static constexpr option long_options[] = {
+        {"version",       required_argument, nullptr, 'v'},
+        {"build-version", no_argument,       nullptr, 'V'},
+        {"help",          no_argument,       nullptr, 'h'},
+        {nullptr,         0,                 nullptr, 0},
     };
 
     int long_index = 0;
+    const char *version = nullptr;
 
-    while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, short_options,
+                              long_options, &long_index)) != -1) {
         switch (opt) {
+        case 'v':
+            version = optarg;
+            break;
+
+        case 'V':
+            version = mb::version();
+            break;
+
         case 'h':
             sigverify_usage(stdout);
             return EXIT_SUCCESS;
@@ -129,15 +190,20 @@ int sigverify_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    SigVerifyResult result = verify_signature(path, sig_path);
-
-    switch (result) {
-    case SigVerifyResult::Valid:
+    if (auto r = verify_signature(path, sig_path, version)) {
+        LOGV("%s: Valid signature", path);
+        if (!r.value().empty()) {
+            for (auto const &[k, v] : r.value()) {
+                LOGV("Trusted property: %s=%s", k.c_str(), v.c_str());
+            }
+        }
         return EXIT_SUCCESS;
-    case SigVerifyResult::Invalid:
+    } else if (r.error() == sign::Error::SignatureVerifyFailed) {
+        LOGW("%s: Invalid signature", path);
         return EXIT_INVALID;
-    case SigVerifyResult::Failure:
-    default:
+    } else {
+        LOGE("%s: Failed to verify signature: %s",
+             path, r.error().message().c_str());
         return EXIT_FAILURE;
     }
 }

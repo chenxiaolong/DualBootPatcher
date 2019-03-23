@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "mbcommon/string.h"
+#include "mbcommon/version.h"
 #include "mbdevice/device.h"
 #include "mblog/logging.h"
 #include "mbutil/blkid.h"
@@ -251,14 +252,11 @@ static bool mount_exfat_fuse(const char *source, const char *target)
     uid_t uid = get_media_rw_uid();
 
     // Check signatures
-    SigVerifyResult result;
-    result = verify_signature("/sbin/fsck.exfat", "/sbin/fsck.exfat.sig");
-    if (result != SigVerifyResult::Valid) {
+    if (!verify_signature("/sbin/fsck.exfat", "/sbin/fsck.exfat.sig")) {
         LOGE("Invalid fsck.exfat signature");
         return false;
     }
-    result = verify_signature("/sbin/mount.exfat", "/sbin/mount.exfat.sig");
-    if (result != SigVerifyResult::Valid) {
+    if (!verify_signature("/sbin/mount.exfat", "/sbin/mount.exfat.sig")) {
         LOGE("Invalid mount.exfat signature");
         return false;
     }
@@ -626,9 +624,7 @@ static bool mount_all_system_images()
 
 static bool disable_fsck(const char *fsck_binary)
 {
-    SigVerifyResult result;
-    result = verify_signature(FSCK_WRAPPER, FSCK_WRAPPER_SIG);
-    if (result != SigVerifyResult::Valid) {
+    if (!verify_signature(FSCK_WRAPPER, FSCK_WRAPPER_SIG)) {
         LOGE("%s: Invalid signature", FSCK_WRAPPER);
         return false;
     }
