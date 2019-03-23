@@ -24,6 +24,7 @@
 #include <cstring>
 
 #include "mbcommon/file/standard.h"
+#include "mbcommon/version.h"
 
 #include "mbsign/sign.h"
 
@@ -66,6 +67,20 @@ static oc::result<SecretKey> load_secret_key(const char *filename,
     OUTCOME_TRYV(file.open(filename, FileOpenMode::ReadOnly));
 
     return load_secret_key(file, passphrase);
+}
+
+static oc::result<void> add_version_prop(Signature &sig, const SecretKey &key)
+{
+    std::string append(";version:");
+    append += version();
+
+    if (append.size() >= sig.trusted.size() - strlen(sig.trusted.data())) {
+        return std::errc::invalid_argument;
+    }
+
+    strcat(sig.trusted.data(), append.c_str());
+
+    return update_global_signature(sig, key);
 }
 
 int main(int argc, char *argv[])
@@ -123,6 +138,12 @@ int main(int argc, char *argv[])
 
         if (auto r = file.open(file_output, FileOpenMode::WriteOnly); !r) {
             fprintf(stderr, "%s: Failed to open for writing: %s\n",
+                    file_output, r.error().message().c_str());
+            return EXIT_FAILURE;
+        }
+
+        if (auto r = add_version_prop(sig.value(), skey.value()); !r) {
+            fprintf(stderr, "%s: Failed to update trusted comment: %s\n",
                     file_output, r.error().message().c_str());
             return EXIT_FAILURE;
         }
