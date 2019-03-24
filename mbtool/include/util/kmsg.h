@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,6 +22,6 @@
 namespace mb
 {
 
-[[noreturn]] void emergency_reboot();
+bool set_kmsg_logging();
 
 }

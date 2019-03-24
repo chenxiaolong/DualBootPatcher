@@ -41,7 +41,6 @@
 #include "mbcommon/type_traits.h"
 #include "mbcommon/version.h"
 #include "mbdevice/json.h"
-#include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
 #include "mbutil/chown.h"
 #include "mbutil/cmdline.h"
@@ -60,6 +59,7 @@
 #include "main/uevent_thread.h"
 #include "util/android_api.h"
 #include "util/emergency.h"
+#include "util/kmsg.h"
 #include "util/multiboot.h"
 #include "util/property_service.h"
 #include "util/romconfig.h"
@@ -721,25 +721,6 @@ static bool disable_spota()
     return true;
 }
 
-static void redirect_stdio_null()
-{
-    static constexpr char name[] = "/dev/__null__";
-
-    if (mknod(name, S_IFCHR | 0600, makedev(1, 3)) == 0) {
-        // O_CLOEXEC should not be used
-        int fd = open(name, O_RDWR);
-        unlink(name);
-        if (fd >= 0) {
-            dup2(fd, 0);
-            dup2(fd, 1);
-            dup2(fd, 2);
-            if (fd > 2) {
-                close(fd);
-            }
-        }
-    }
-}
-
 int init_main(int argc, char *argv[])
 {
     // Some devices actually receive arguments, so ignore them during boot
@@ -778,14 +759,7 @@ int init_main(int argc, char *argv[])
     (void) util::chown("/cache", "system", "cache", 0);
     (void) util::chown("/data", "system", "system", 0);
 
-    // Redirect std{in,out,err} to /dev/null
-    redirect_stdio_null();
-
-    // Log to kmsg
-    log::set_logger(std::make_shared<log::KmsgLogger>(true));
-    if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 7) < 0) {
-        LOGE("Failed to set loglevel: %s", strerror(errno));
-    }
+    set_kmsg_logging();
 
     LOGV("Booting up with version %s (%s)",
          version(), git_version());

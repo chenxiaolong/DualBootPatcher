@@ -40,16 +40,17 @@
 
 #include "util/config.h"
 #include "util/emergency.h"
+#include "util/kmsg.h"
 #include "util/signature.h"
 #include "util/uevent.h"
 
-#define LOG_TAG             "mbtool/shim/init"
+#define LOG_TAG     "mbtool/shim/init"
 
-#define DBP_ROOT            "/dbp"
-#define DBP_MBTOOL          DBP_ROOT "/mbtool"
+#define DBP_ROOT    "/dbp"
+#define DBP_MBTOOL  DBP_ROOT "/mbtool"
 
-#define MOUNT_POINT         "/dbp.shim.mnt"
-#define BLOCK_DEV           "/dbp.shim.blk"
+#define MOUNT_POINT "/dbp.shim.mnt"
+#define BLOCK_DEV   "/dbp.shim.blk"
 
 namespace mb
 {
@@ -161,6 +162,8 @@ int init_main(int argc, char *argv[])
     mount("devpts", "/dev/pts", "devpts", 0, nullptr);
     mount("proc", "/proc", "proc", 0, nullptr);
     mount("sysfs", "/sys", "sysfs", 0, nullptr);
+
+    set_kmsg_logging();
 
     stage_1();
 

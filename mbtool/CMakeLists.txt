@@ -40,6 +40,7 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         src/util/android_api.cpp
         src/util/config.cpp
         src/util/emergency.cpp
+        src/util/kmsg.cpp
         src/util/legacy_property_service.cpp
         src/util/multiboot.cpp
         src/util/property_service.cpp
