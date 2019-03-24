@@ -8,7 +8,6 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         interface.global.CXXVersion
         mbsparse-static
         mbutil-static
-        mbdevice-static
         mbcommon-static
         mblog-static
         LibArchive::LibArchive

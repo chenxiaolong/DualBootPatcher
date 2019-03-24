@@ -47,9 +47,6 @@
 // libmbsparse
 #include "mbsparse/sparse.h"
 
-// libmbdevice
-#include "mbdevice/json.h"
-
 // libmbutil
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
@@ -66,7 +63,6 @@
 #define CACHE_SPARSE_FILE       "cache.img.sparse"
 #define BOOT_IMAGE_FILE         "boot.img"
 #define FUSE_SPARSE_FILE        "fuse-sparse"
-#define DEVICE_JSON_FILE        "multiboot/device.json"
 
 #define TEMP_CACHE_SPARSE_FILE  "/tmp/cache.img.ext4"
 #define TEMP_CACHE_MOUNT_FILE   "/tmp/cache.img"
@@ -81,7 +77,6 @@
 #define PROP_BOOT_DEV           "boot"
 
 using namespace mb;
-using namespace mb::device;
 
 using ScopedArchive = std::unique_ptr<archive, TypeFn<archive_free>>;
 using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
@@ -98,8 +93,8 @@ static int output_fd;
 static const char *zip_file;
 
 static std::string sales_code;
-static std::string system_block_dev;
-static std::string boot_block_dev;
+static constexpr char system_block_dev[] = "/dev/block/platform/by-name/system";
+static constexpr char boot_block_dev[] = "/dev/block/platform/by-name/boot";
 
 MB_PRINTF(1, 2)
 static void ui_print(const char *fmt, ...)
@@ -233,96 +228,6 @@ static bool load_sales_code()
     }
 
     info("EFS partition says sales code is: %s", sales_code.c_str());
-    return true;
-}
-
-static bool load_block_devs()
-{
-    system_block_dev.clear();
-    boot_block_dev.clear();
-
-    Device device;
-
-    {
-        archive *a = archive_read_new();
-        if (!a) {
-            error("Out of memory");
-            return false;
-        }
-
-        auto close_archive = finally([&]{
-            archive_read_free(a);
-        });
-
-        if (!la_open_zip(a, zip_file)) {
-            return false;
-        }
-
-        archive_entry *entry;
-        if (la_skip_to(a, DEVICE_JSON_FILE, &entry) != ExtractResult::Ok) {
-            return false;
-        }
-
-        static constexpr size_t max_size = 10240;
-
-        if (archive_entry_size(entry) >= static_cast<int64_t>(max_size)) {
-            error("%s is too large", DEVICE_JSON_FILE);
-            return false;
-        }
-
-        std::vector<char> buf(max_size);
-        la_ssize_t n;
-
-        n = archive_read_data(a, buf.data(), buf.size() - 1);
-        if (n < 0) {
-            error("libarchive: %s: Failed to read %s: %s",
-                  zip_file, DEVICE_JSON_FILE, archive_error_string(a));
-            return false;
-        }
-
-        // Buffer is already NULL-terminated
-        JsonError ret;
-        if (!device_from_json(buf.data(), device, ret)) {
-            error("Failed to load %s", DEVICE_JSON_FILE);
-            return false;
-        }
-    }
-
-    auto flags = device.validate();
-    if (flags) {
-        error("Device definition file is invalid: %" PRIu64,
-              static_cast<uint64_t>(flags));
-        return false;
-    }
-
-    auto is_blk_device = [](const std::string &path) {
-        struct stat sb;
-        return stat(path.c_str(), &sb) == 0 && S_ISBLK(sb.st_mode);
-    };
-
-    {
-        auto devs = device.system_block_devs();
-        auto it = std::find_if(devs.begin(), devs.end(), is_blk_device);
-        if (it == devs.end()) {
-            error("%s: No system block device specified", DEVICE_JSON_FILE);
-            return false;
-        }
-        system_block_dev = *it;
-    }
-
-    {
-        auto devs = device.boot_block_devs();
-        auto it = std::find_if(devs.begin(), devs.end(), is_blk_device);
-        if (it == devs.end()) {
-            error("%s: No boot block device specified", DEVICE_JSON_FILE);
-            return false;
-        }
-        boot_block_dev = *it;
-    }
-
-    info("System block device: %s", system_block_dev.c_str());
-    info("Boot block device: %s", boot_block_dev.c_str());
-
     return true;
 }
 
@@ -967,11 +872,6 @@ static bool flash_zip()
         return false;
     }
 
-    // Load block device info
-    if (!load_block_devs()) {
-        return false;
-    }
-
     // Unmount system
     if (util::is_mounted("/system") && !umount_system()) {
         ui_print("Failed to unmount /system");
@@ -982,7 +882,7 @@ static bool flash_zip()
 
     // Flash system.img.ext4
     ui_print("Flashing system image");
-    result = extract_sparse_file(SYSTEM_SPARSE_FILE, system_block_dev.c_str());
+    result = extract_sparse_file(SYSTEM_SPARSE_FILE, system_block_dev);
     switch (result) {
     case ExtractResult::Error:
         ui_print("Failed to flash system image");
@@ -1024,7 +924,7 @@ static bool flash_zip()
 
     // Flash boot.img
     ui_print("Flashing boot image");
-    result = extract_raw_file(BOOT_IMAGE_FILE, boot_block_dev.c_str());
+    result = extract_raw_file(BOOT_IMAGE_FILE, boot_block_dev);
     if (result != ExtractResult::Ok) {
         ui_print("Failed to flash boot image");
         return false;
