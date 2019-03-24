@@ -343,94 +343,6 @@ static bool write_fstab_hack(const char *fstab)
     return true;
 }
 
-static bool strip_manual_mounts()
-{
-    ScopedDIR dir(opendir("/"));
-    if (!dir) {
-        return true;
-    }
-
-    struct dirent *ent;
-    while ((ent = readdir(dir.get()))) {
-        // Look for *.rc files
-        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
-                || !ends_with(ent->d_name, ".rc")) {
-            continue;
-        }
-
-        std::string path("/");
-        path += ent->d_name;
-
-        ScopedFILE fp(fopen(path.c_str(), "re"));
-        if (!fp) {
-            LOGE("Failed to open %s for reading: %s",
-                 path.c_str(), strerror(errno));
-            continue;
-        }
-
-        char *line = nullptr;
-        size_t len = 0;
-        ssize_t read = 0;
-
-        auto free_line = finally([&]{
-            free(line);
-        });
-
-        std::size_t count = 0;
-        std::unordered_set<std::size_t> comment_out;
-
-        // Find out which lines need to be commented out
-        while ((read = getline(&line, &len, fp.get())) >= 0) {
-            if (strstr(line, "mount")
-                    && (strstr(line, "/system")
-                    || strstr(line, "/cache")
-                    || strstr(line, "/data"))) {
-                std::vector<std::string> tokens = util::tokenize(line, " \t\n");
-                if (tokens.size() >= 4 && tokens[0] == "mount"
-                        && (tokens[3] == "/system"
-                        || tokens[3] == "/cache"
-                        || tokens[3] == "/data")) {
-                    comment_out.insert(count);
-                }
-            }
-
-            ++count;
-        }
-
-        if (comment_out.empty()) {
-            continue;
-        }
-
-        // Go back to beginning of file for reread
-        rewind(fp.get());
-        count = 0;
-
-        std::string new_path(path);
-        new_path += ".new";
-
-        ScopedFILE fp_new(fopen(new_path.c_str(), "we"));
-        if (!fp_new) {
-            LOGE("Failed to open %s for writing: %s",
-                 new_path.c_str(), strerror(errno));
-            continue;
-        }
-
-        // Actually comment out the lines
-        while ((read = getline(&line, &len, fp.get())) >= 0) {
-            if (comment_out.find(count) != comment_out.end()) {
-                fputs("#", fp_new.get());
-            }
-            fputs(line, fp_new.get());
-
-            ++count;
-        }
-
-        replace_file(path.c_str(), new_path.c_str());
-    }
-
-    return true;
-}
-
 static bool symlink_base_dir(const Device &device)
 {
     struct stat sb;
@@ -761,7 +673,6 @@ int boot_main(int argc, char *argv[])
         fix_binary_file_contexts(FILE_CONTEXTS_BIN);
     }
     write_fstab_hack(fstab.c_str());
-    strip_manual_mounts();
 
     // Data modifications
     create_layout_version();
