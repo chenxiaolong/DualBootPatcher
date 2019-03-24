@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,22 +21,12 @@
 
 #include "mbcommon/common.h"
 
-#ifdef __cplusplus
-
 namespace mb
 {
 
 MB_EXPORT const char * version();
 MB_EXPORT const char * git_version();
 
+MB_EXPORT int version_compare(const char *version1, const char *version2);
+
 }
-
-extern "C" {
-#endif
-
-MB_EXPORT const char * mb_version();
-MB_EXPORT const char * mb_git_version();
-
-#ifdef __cplusplus
-}
-#endif

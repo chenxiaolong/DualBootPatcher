@@ -2,7 +2,7 @@ include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
 git_describe(GIT_VERSION --dirty --always --tags)
 
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/version.in.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
     @ONLY
 )
@@ -137,6 +137,7 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/test_locale.cpp
         tests/test_span.cpp
         tests/test_string.cpp
+        tests/test_version.cpp
     )
 
     if(WIN32)
