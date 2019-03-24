@@ -322,27 +322,6 @@ static bool fix_binary_file_contexts(const char *path)
     return replace_file(path, new_path.c_str());
 }
 
-static bool write_fstab_hack(const char *fstab)
-{
-    ScopedFILE fp_fstab(fopen(fstab, "abe"));
-    if (!fp_fstab) {
-        LOGE("%s: Failed to open for writing: %s",
-             fstab, strerror(errno));
-        return false;
-    }
-
-    fputs(R"EOF(
-# The following is added to prevent vold in Android 7.0 from segfaulting due to
-# dereferencing a null pointer when checking if the /data fstab entry has the
-# "forcefdeorfbe" vold option. (See cryptfs_isConvertibleToFBE() in
-# system/vold/cryptfs.c.)
-
-/dev/null /data auto defaults voldmanaged=dummy:auto
-)EOF", fp_fstab.get());
-
-    return true;
-}
-
 static bool symlink_base_dir(const Device &device)
 {
     struct stat sb;
@@ -365,113 +344,6 @@ static bool symlink_base_dir(const Device &device)
     }
 
     return false;
-}
-
-static std::string find_fstab()
-{
-    struct stat sb;
-
-    // Try using androidboot.hardware as the fstab suffix since most devices
-    // follow this scheme.
-    std::string fstab("/fstab.");
-    std::string hardware;
-    hardware = util::property_get_string("ro.hardware", "");
-    fstab += hardware;
-
-    if (!hardware.empty() && stat(fstab.c_str(), &sb) == 0) {
-        return fstab;
-    }
-
-    // Otherwise, try to find it in the /init*.rc files
-    ScopedDIR dir(opendir("/"));
-    if (!dir) {
-        return std::string();
-    }
-
-    std::vector<std::string> fallback;
-
-    struct dirent *ent;
-    while ((ent = readdir(dir.get()))) {
-        // Look for *.rc files
-        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
-                || !starts_with(ent->d_name, "init")
-                || !ends_with(ent->d_name, ".rc")) {
-            continue;
-        }
-
-        std::string path("/");
-        path += ent->d_name;
-
-        ScopedFILE fp(fopen(path.c_str(), "re"));
-        if (!fp) {
-            continue;
-        }
-
-        char *line = nullptr;
-        size_t len = 0;
-        ssize_t read = 0;
-
-        auto free_line = finally([&]{
-            free(line);
-        });
-
-        while ((read = getline(&line, &len, fp.get())) >= 0) {
-            char *ptr = strstr(line, "mount_all");
-            if (!ptr) {
-                continue;
-            }
-            ptr += 9;
-
-            // Find the argument to mount_all
-            while (isspace(*ptr)) {
-                ++ptr;
-            }
-
-            // Strip everything after next whitespace
-            for (char *p = ptr; *p; ++p) {
-                if (isspace(*p)) {
-                    *p = '\0';
-                    break;
-                }
-            }
-
-            if (strstr(ptr, "goldfish") || strstr(ptr, "fota")) {
-                LOGV("Skipping fstab file: %s", ptr);
-                continue;
-            }
-
-            fstab = ptr;
-
-            // Replace ${ro.hardware}
-            if (fstab.find("${ro.hardware}") != std::string::npos) {
-                util::replace_all(fstab, "${ro.hardware}", hardware);
-            }
-
-            LOGD("Found fstab during search: %s", fstab.c_str());
-
-            // Check if fstab exists
-            if (stat(fstab.c_str(), &sb) < 0) {
-                LOGE("Failed to stat fstab %s: %s",
-                     fstab.c_str(), strerror(errno));
-                continue;
-            }
-
-            // If the fstab file is for charger mode, add to fallback
-            if (fstab.find("charger") != std::string::npos) {
-                LOGE("Adding charger fstab to fallback fstabs: %s",
-                     fstab.c_str());
-                fallback.push_back(fstab);
-                continue;
-            }
-
-            return fstab;
-        }
-    }
-
-    if (!fallback.empty()) {
-        return fallback[0];
-    }
-    return std::string();
 }
 
 static bool create_layout_version()
@@ -610,17 +482,6 @@ int boot_main(int argc, char *argv[])
     // initialize properties
     properties_setup();
 
-    std::string fstab(find_fstab());
-
-    LOGV("fstab file: %s", fstab.c_str());
-
-    if (access(fstab.c_str(), R_OK) < 0) {
-        LOGW("%s: Failed to access file: %s", fstab.c_str(), strerror(errno));
-        LOGW("Continuing anyway...");
-        fstab = "/fstab.MBTOOL_DUMMY_DO_NOT_USE";
-        (void) util::create_empty_file(fstab);
-    }
-
     // Get ROM ID from /romid
     std::string rom_id = get_rom_id();
     std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
@@ -631,6 +492,7 @@ int boot_main(int argc, char *argv[])
 
     LOGV("ROM ID is: %s", rom_id.c_str());
 
+#if 0
     // Mount system, cache, and external SD from fstab file
     MountFlags flags =
             MountFlag::RewriteFstab
@@ -643,6 +505,7 @@ int boot_main(int argc, char *argv[])
         LOGE("Failed to mount fstab");
         emergency_reboot();
     }
+#endif
 
     LOGV("Successfully mounted fstab");
 
@@ -672,7 +535,6 @@ int boot_main(int argc, char *argv[])
     if (access(FILE_CONTEXTS_BIN, R_OK) == 0) {
         fix_binary_file_contexts(FILE_CONTEXTS_BIN);
     }
-    write_fstab_hack(fstab.c_str());
 
     // Data modifications
     create_layout_version();
