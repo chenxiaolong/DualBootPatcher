@@ -151,6 +151,17 @@ int init_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    // Mount base directories
+    mkdir("/dev", 0755);
+    mkdir("/proc", 0755);
+    mkdir("/sys", 0755);
+
+    mount("tmpfs", "/dev", "tmpfs", MS_NOSUID, "mode=0755");
+    mkdir("/dev/pts", 0755);
+    mount("devpts", "/dev/pts", "devpts", 0, nullptr);
+    mount("proc", "/proc", "proc", 0, nullptr);
+    mount("sysfs", "/sys", "sysfs", 0, nullptr);
+
     stage_1();
 
     emergency_reboot();

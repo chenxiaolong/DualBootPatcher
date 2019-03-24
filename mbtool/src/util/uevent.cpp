@@ -22,7 +22,6 @@
 #include <cerrno>
 #include <cstring>
 
-#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <unistd.h>
@@ -73,16 +72,6 @@ static std::optional<dev_t> get_device_number(const char *uevent_path)
 //! Create a block device corresponding to a uevent path
 bool create_block_dev(const char *uevent_path, const char *block_dev)
 {
-    // Mount /sys
-    mkdir("/sys", 0755);
-    mount("sysfs", "/sys", "sysfs", 0, nullptr);
-
-    // Unmount /sys
-    auto clean_up_sys = finally([&] {
-        umount("/sys");
-        rmdir("/sys");
-    });
-
     auto dev_num = get_device_number(block_dev);
     if (!dev_num) {
         return false;

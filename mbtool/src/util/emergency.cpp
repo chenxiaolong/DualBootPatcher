@@ -101,6 +101,8 @@ static bool persist_logs()
         return false;
     }
 
+    LOGV("Emergency persist device: %s", config->uevent_path.c_str());
+
     if (mkdir(EMERGENCY_MOUNT_POINT, 0755) < 0 && errno != EEXIST) {
         LOGE("%s: Failed to create directory: %s",
              EMERGENCY_MOUNT_POINT, strerror(errno));
@@ -153,11 +155,6 @@ void emergency_reboot()
     using namespace std::chrono_literals;
 
     LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
-
-    if (!util::is_mounted("/sys")) {
-        mkdir("/sys", 0755);
-        mount("sysfs", "/sys", "sysfs", 0, nullptr);
-    }
 
     for (int i = 0; i < 5; ++i) {
         (void) util::vibrate(100ms, 250ms);
