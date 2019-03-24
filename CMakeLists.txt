@@ -83,7 +83,7 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
     # file will work with newer versions of the NDK, we'll depend on an exact
     # version.
     set(ndk_version_whitelist
-        r18.1.5063045
+        r19.2.5345600
     )
 
     if(NOT ANDROID_NDK_RELEASE IN_LIST ndk_version_whitelist)
