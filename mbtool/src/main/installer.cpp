@@ -1998,7 +1998,6 @@ Installer::ProceedState Installer::install_stage_finish()
         rp_add_binaries(_temp + "/binaries"),
         rp_symlink_fuse_exfat(),
         rp_symlink_init(),
-        rp_add_device_json(_temp + "/device.json"),
     })) {
         display_msg("Failed to patch boot image");
         return ProceedState::Fail;

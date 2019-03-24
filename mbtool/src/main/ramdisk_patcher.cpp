@@ -409,32 +409,4 @@ rp_restore_init()
     return _rp_restore_init;
 }
 
-static bool _rp_add_device_json(const std::string &dir,
-                                const std::string &device_json_file)
-{
-    std::string device_json(dir);
-    device_json += "/device.json";
-
-    if (auto r = util::copy_file(device_json_file, device_json, 0); !r) {
-        LOGE("%s", r.error().message().c_str());
-        return false;
-    }
-
-    if (chmod(device_json.c_str(), 0644) < 0) {
-        LOGE("%s: Failed to chmod file: %s",
-             device_json.c_str(), strerror(errno));
-        return false;
-    }
-
-    return true;
-}
-
-std::function<RamdiskPatcherFn>
-rp_add_device_json(const std::string &device_json_file)
-{
-    using namespace std::placeholders;
-
-    return std::bind(_rp_add_device_json, _1, device_json_file);
-}
-
 }
