@@ -26,7 +26,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifdef RECOVERY
+#if defined(SHIM)
+#include "shim/init.h"
+#elif defined(RECOVERY)
 #include "recovery/backup.h"
 #include "recovery/update_binary.h"
 #else
@@ -54,15 +56,17 @@ struct Tool
 };
 
 static Tool g_tools[] = {
-    { "mbtool", mbtool_main },
+#if defined(SHIM)
+    { "mbtool-shim", mbtool_main },
+    { "init", mb::init_main },
+#elif defined(RECOVERY)
     { "mbtool_recovery", mbtool_main },
-    // Tools
-#ifdef RECOVERY
     { "backup", mb::backup_main },
     { "restore", mb::restore_main },
     { "updater", mb::update_binary_main }, // TWRP
     { "update_binary", mb::update_binary_main }, // CWM, Philz
 #else
+    { "mbtool", mbtool_main },
     { "auditd", mb::auditd_main },
     { "init", mb::init_main },
     { "properties", mb::properties_main },

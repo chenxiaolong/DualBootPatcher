@@ -81,7 +81,13 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         src/recovery/update_binary.cpp
     )
 
-    foreach(target mbtool-util mbtool mbtool_recovery)
+    add_executable(
+        mbtool-shim
+        src/main.cpp
+        src/shim/init.cpp
+    )
+
+    foreach(target mbtool-util mbtool mbtool_recovery mbtool-shim)
         # Includes
         target_include_directories(
             ${target}
@@ -97,7 +103,13 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         -DRECOVERY
     )
 
-    unix_link_executable_statically(mbtool mbtool_recovery)
+    target_compile_definitions(
+        mbtool-shim
+        PRIVATE
+        -DSHIM
+    )
+
+    unix_link_executable_statically(mbtool mbtool_recovery mbtool-shim)
 
     target_link_libraries(
         mbtool-util
@@ -130,9 +142,15 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         libminizip
         LibArchive::LibArchive
     )
+    target_link_libraries(
+        mbtool-shim
+        PRIVATE
+        interface.global.CXXVersion
+        mbtool-util
+    )
 
     install(
-        TARGETS mbtool mbtool_recovery
+        TARGETS mbtool mbtool_recovery mbtool-shim
         RUNTIME DESTINATION "${BIN_INSTALL_DIR}/"
         COMPONENT Applications
     )
