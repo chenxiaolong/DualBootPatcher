@@ -17,6 +17,8 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <memory>
+
 #include <cerrno>
 #include <clocale>
 #include <cstdio>
@@ -40,7 +42,9 @@
 #include "util/signature.h"
 #endif
 
+#include "mbcommon/type_traits.h"
 #include "mbcommon/version.h"
+
 #include "mbutil/process.h"
 #include "mbutil/string.h"
 
@@ -160,7 +164,8 @@ static int mbtool_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
     // This works because argv is NULL-terminated
-    char **argv_copy = mb::util::dup_cstring_list(argv);
+    std::unique_ptr<char *, mb::TypeFn<mb::util::free_cstring_list>> argv_copy(
+            mb::util::dup_cstring_list(argv));
     if (!argv_copy) {
         fprintf(stderr, "Failed to copy arguments: %s\n", strerror(errno));
         return EXIT_FAILURE;
@@ -178,16 +183,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to set default locale\n");
     }
 
-    int ret;
-
     char *no_multicall = getenv("MBTOOL_NO_MULTICALL");
     if (no_multicall && strcmp(no_multicall, "true") == 0) {
-        ret = main_normal(argc, argv_copy);
+        return main_normal(argc, argv_copy.get());
     } else {
-        ret = main_multicall(argc, argv_copy);
+        return main_multicall(argc, argv_copy.get());
     }
-
-    mb::util::free_cstring_list(argv_copy);
-
-    return ret;
 }
