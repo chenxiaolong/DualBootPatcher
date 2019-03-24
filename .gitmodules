@@ -1,6 +1,3 @@
-[submodule "external/minizip"]
-	path = external/minizip
-	url = https://github.com/chenxiaolong/minizip.git
 [submodule "external/googletest"]
 	path = external/googletest
 	url = https://github.com/chenxiaolong/googletest.git
