@@ -38,7 +38,7 @@ const char * git_version()
     return GIT_VERSION;
 }
 
-int version_compare(const char *version1, const char *version2)
+int version_compare(std::string_view version1, std::string_view version2)
 {
     auto split1 = split_sv(version1, ".");
     auto split2 = split_sv(version2, ".");

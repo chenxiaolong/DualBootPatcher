@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <string_view>
+
 #include "mbcommon/common.h"
 
 namespace mb
@@ -27,6 +29,7 @@ namespace mb
 MB_EXPORT const char * version();
 MB_EXPORT const char * git_version();
 
-MB_EXPORT int version_compare(const char *version1, const char *version2);
+MB_EXPORT int version_compare(std::string_view version1,
+                              std::string_view version2);
 
 }
