@@ -72,14 +72,14 @@ static std::optional<dev_t> get_device_number(const char *uevent_path)
 //! Create a block device corresponding to a uevent path
 bool create_block_dev(const char *uevent_path, const char *block_dev)
 {
-    auto dev_num = get_device_number(block_dev);
+    auto dev_num = get_device_number(uevent_path);
     if (!dev_num) {
         return false;
     }
 
-    if (mknod(uevent_path, S_IFBLK, *dev_num) < 0) {
+    if (mknod(block_dev, S_IFBLK, *dev_num) < 0) {
         LOGE("%s: Failed to create block device: %s",
-             uevent_path, strerror(errno));
+             block_dev, strerror(errno));
         return false;
     }
 
