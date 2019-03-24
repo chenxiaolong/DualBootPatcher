@@ -145,75 +145,6 @@ static bool create_dir_and_mount(const std::vector<util::FstabRec> &recs,
     return false;
 }
 
-/*!
- * \brief Get list of generic /system fstab entries for ROMs that mount the
- *        partition manually
- */
-static std::vector<util::FstabRec>
-generic_fstab_system_entries(const Device &device)
-{
-    std::vector<util::FstabRec> result;
-
-    for (auto const &path : device.system_block_devs()) {
-        result.emplace_back();
-        result.back().blk_device = path;
-        result.back().mount_point = "/system";
-        result.back().fs_type = "auto";
-        result.back().flags = MS_RDONLY;
-        result.back().fs_options = "";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
-    }
-
-    return result;
-}
-
-/*!
- * \brief Get list of generic /cache fstab entries for ROMs that mount the
- *        partition manually
- */
-static std::vector<util::FstabRec>
-generic_fstab_cache_entries(const Device &device)
-{
-    std::vector<util::FstabRec> result;
-
-    for (auto const &path : device.cache_block_devs()) {
-        result.emplace_back();
-        result.back().blk_device = path;
-        result.back().mount_point = "/cache";
-        result.back().fs_type = "auto";
-        result.back().flags = MS_NOSUID | MS_NODEV;
-        result.back().fs_options = "";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
-    }
-
-    return result;
-}
-
-/*!
- * \brief Get list of generic /data fstab entries for ROMs that mount the
- *        partition manually
- */
-static std::vector<util::FstabRec>
-generic_fstab_data_entries(const Device &device)
-{
-    std::vector<util::FstabRec> result;
-
-    for (auto const &path : device.data_block_devs()) {
-        result.emplace_back();
-        result.back().blk_device = path;
-        result.back().mount_point = "/data";
-        result.back().fs_type = "auto";
-        result.back().flags = MS_NOSUID | MS_NODEV;
-        result.back().fs_options = "";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
-    }
-
-    return result;
-}
-
 static bool path_matches(const char *path, const char *pattern)
 {
     // Vold uses prefix matching if no '*' exists. Otherwise, globbing is used.
@@ -816,33 +747,6 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
             // Let vold mount this
             recs.gen.push_back(std::move(*it));
             it = fstab.erase(it);
-        }
-    }
-
-    // Some ROMs mount the partitions in one of the init.*.rc files or some
-    // shell script. If that's the case, we just have to guess for working
-    // fstab entries.
-    if (!(flags & MountFlag::NoGenericEntries)) {
-        if (recs.system.empty() && (flags & MountFlag::MountSystem)) {
-            LOGW("No /system fstab entries found. Adding generic entries");
-            auto entries = generic_fstab_system_entries(device);
-            for (util::FstabRec &rec : entries) {
-                recs.system.push_back(std::move(rec));
-            }
-        }
-        if (recs.cache.empty() && (flags & MountFlag::MountCache)) {
-            LOGW("No /cache fstab entries found. Adding generic entries");
-            auto entries = generic_fstab_cache_entries(device);
-            for (util::FstabRec &rec : entries) {
-                recs.cache.push_back(std::move(rec));
-            }
-        }
-        if (recs.data.empty() && (flags & MountFlag::MountData)) {
-            LOGW("No /data fstab entries found. Adding generic entries");
-            auto entries = generic_fstab_data_entries(device);
-            for (util::FstabRec &rec : entries) {
-                recs.data.push_back(std::move(rec));
-            }
         }
     }
 

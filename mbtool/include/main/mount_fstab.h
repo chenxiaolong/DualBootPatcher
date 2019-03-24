@@ -36,13 +36,10 @@ enum class MountFlag : uint32_t
 {
     // Rewrite fstab file to remove mounted entries
     RewriteFstab        = 1u << 1,
-    // Prevent the use of generic fstab entries for fstab files that are missing
-    // entries for /system, /cache, or /data
-    NoGenericEntries    = 1u << 2,
     // Unmount mount points that were successfully mounted if a later entry in
     // the fstab file fails to mount (affects only the mount points mounted in
     // the current invocation of the function)
-    UnmountOnFailure    = 1u << 3,
+    UnmountOnFailure    = 1u << 2,
 
     // Mount /system
     MountSystem         = 1u << 10,
