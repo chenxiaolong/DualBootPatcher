@@ -28,13 +28,9 @@
 
 #define ABOOT_PARTITION                 "/dev/block/platform/msm_sdcc.1/by-name/aboot"
 
-#define UNIVERSAL_BY_NAME_DIR           "/dev/block/by-name"
-
 #define BUILD_PROP_PATH                 "/system/build.prop"
 #define DEFAULT_PROP_PATH               "/default.prop"
 #define DBP_PROP_PATH                   "/dbp.prop"
-
-#define DEVICE_JSON_PATH                "/device.json"
 
 #define FILE_CONTEXTS_BIN               "/file_contexts.bin"
 #define FILE_CONTEXTS                   "/file_contexts"

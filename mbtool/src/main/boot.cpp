@@ -40,7 +40,6 @@
 #include "mbcommon/string.h"
 #include "mbcommon/type_traits.h"
 #include "mbcommon/version.h"
-#include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mbutil/chown.h"
 #include "mbutil/cmdline.h"
@@ -75,8 +74,6 @@
 #endif
 
 #define LOG_TAG "mbtool/main/init"
-
-using namespace mb::device;
 
 namespace mb
 {
@@ -322,30 +319,6 @@ static bool fix_binary_file_contexts(const char *path)
     return replace_file(path, new_path.c_str());
 }
 
-static bool symlink_base_dir(const Device &device)
-{
-    struct stat sb;
-    if (stat(UNIVERSAL_BY_NAME_DIR, &sb) == 0) {
-        return true;
-    }
-
-    for (auto const &path : device.block_dev_base_dirs()) {
-        if (util::path_compare(path, UNIVERSAL_BY_NAME_DIR) != 0
-                && stat(path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)) {
-            if (symlink(path.c_str(), UNIVERSAL_BY_NAME_DIR) < 0) {
-                LOGW("Failed to symlink %s to %s",
-                     path.c_str(), UNIVERSAL_BY_NAME_DIR);
-            } else {
-                LOGE("Symlinked %s to %s",
-                     path.c_str(), UNIVERSAL_BY_NAME_DIR);
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
 static bool create_layout_version()
 {
     // Prevent installd from dying because it can't unmount /data/media for
@@ -453,31 +426,10 @@ int boot_main(int argc, char *argv[])
     LOGV("Booting up with version %s (%s)",
          version(), git_version());
 
-    auto contents = util::file_read_all(DEVICE_JSON_PATH);
-    if (!contents) {
-        LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH,
-             contents.error().message().c_str());
-        emergency_reboot();
-    }
-
     // Start probing for devices so we have somewhere to write logs for
     // critical_failure()
     UeventThread uevent_thread;
     uevent_thread.start();
-
-    Device device;
-    JsonError error;
-
-    if (!device_from_json(contents.value(), device, error)) {
-        LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
-        emergency_reboot();
-    } else if (device.validate()) {
-        LOGE("%s: Device definition validation failed", DEVICE_JSON_PATH);
-        emergency_reboot();
-    }
-
-    // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
-    symlink_base_dir(device);
 
     // initialize properties
     properties_setup();
