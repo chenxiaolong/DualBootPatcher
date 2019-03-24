@@ -33,6 +33,7 @@
 
 #include "mbcommon/error_code.h"
 #include "mbcommon/integer.h"
+#include "mbcommon/string.h"
 #include "mbcommon/type_traits.h"
 
 
@@ -75,18 +76,17 @@ oc::result<pid_t> get_pid_status_field(pid_t pid, std::string_view name)
     char buf[1024];
 
     while (fgets(buf, sizeof(buf), fp.get())) {
-        auto buf_len = strlen(buf);
+        std::string_view sv(buf);
 
-        if (buf_len > name.size()
-                && strncmp(buf, name.data(), name.size()) == 0
-                && buf[name.size()] == ':') {
-            char *end = buf + buf_len - 1;
-            if (*end == '\n') {
-                *end = '\0';
+        if (sv.size() > name.size() && starts_with(sv, name)
+                && sv[name.size()] == ':') {
+            sv.remove_prefix(name.size() + 1);
+            if (!sv.empty() && sv.back() == '\n') {
+                sv.remove_suffix(1);
             }
 
             pid_t result;
-            if (!str_to_num(buf + name.size() + 1, 10, result)) {
+            if (!str_to_num(sv, 10, result)) {
                 return ec_from_errno();
             }
             return result;

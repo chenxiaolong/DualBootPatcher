@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,13 +19,12 @@
 
 #pragma once
 
-#include <limits>
+#include <charconv>
+#include <string_view>
 #include <type_traits>
 
 #include <cctype>
 #include <cerrno>
-#include <climits>
-#include <cstdlib>
 
 namespace mb
 {
@@ -34,7 +33,7 @@ namespace mb
  * \brief Convert a string to an integer
  *
  * \param[in] str String to parse
- * \param[in] base Base of the integer value (valid: {0, 2, 3, ..., 36})
+ * \param[in] base Base of the integer value (valid: {2, 3, ..., 36})
  * \param[out] out Reference to store result
  *
  * \return
@@ -43,64 +42,40 @@ namespace mb
  *   * If conversion is successful, but result is out of range, then returns
  *     false and sets `errno` to ERANGE.
  *   * If IntType is unsigned and \p str represents a negative number, then
- *     returns false and sets `errno` to ERANGE.
+ *     returns false and sets `errno` to ERANGE. TODO TODO TODO
  *   * If \p str is an empty string, then returns false and sets `errno` to
  *     EINVAL.
  *   * If \p str contains characters that could not be parsed as a number, then
  *     returns false and sets `errno` to EINVAL.
  */
 template<typename IntType>
-inline bool str_to_num(const char *str, int base, IntType &out)
+inline bool str_to_num(std::string_view str, int base, IntType &out)
 {
-    if constexpr (std::is_signed_v<IntType>) {
-        static_assert(std::numeric_limits<IntType>::min() >= LLONG_MIN
-                      && std::numeric_limits<IntType>::max() <= LLONG_MAX,
-                      "Integer type to too large to handle");
-
-        char *end;
-        errno = 0;
-        auto num = strtoll(str, &end, base);
-        if (errno != 0) {
-            return false;
-        } else if (*str == '\0' || *end != '\0') {
-            errno = EINVAL;
-            return false;
-        } else if (num < std::numeric_limits<IntType>::min()
-                || num > std::numeric_limits<IntType>::max()) {
-            errno = ERANGE;
-            return false;
-        }
-        out = static_cast<IntType>(num);
-        return true;
-    } else {
-        static_assert(std::numeric_limits<IntType>::max() <= ULLONG_MAX,
-                      "Integer type to too large to handle");
-
-        // Skip leading whitespace
-        for (; *str && isspace(*str); ++str);
-
-        // Disallow negative numbers since strtoull can only wrap 64-bit
-        // integers
-        if (*str == '-') {
-            errno = ERANGE;
-            return false;
-        }
-
-        char *end;
-        errno = 0;
-        auto num = strtoull(str, &end, base);
-        if (errno != 0) {
-            return false;
-        } else if (*str == '\0' || *end != '\0') {
-            errno = EINVAL;
-            return false;
-        } else if (num > std::numeric_limits<IntType>::max()) {
-            errno = ERANGE;
-            return false;
-        }
-        out = static_cast<IntType>(num);
-        return true;
+    // Skip leading whitespace
+    while (!str.empty() && isspace(str.front())) {
+        str.remove_prefix(1);
     }
+
+    // Don't allow negative numbers with unsigned integers
+    if constexpr (std::is_unsigned_v<IntType>) {
+        if (!str.empty() && str.front() == '-') {
+            errno = ERANGE;
+            return false;
+        }
+    }
+
+    auto result = std::from_chars(
+            str.data(), str.data() + str.size(), out, base);
+
+    if (result.ptr != str.data() + str.size()) {
+        errno = EINVAL;
+        return false;
+    } else if (result.ec != std::errc()) {
+        errno = static_cast<int>(result.ec);
+        return false;
+    }
+
+    return true;
 }
 
 /*!

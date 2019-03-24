@@ -53,7 +53,7 @@ inline IntType property_get_num(const std::string &key, IntType default_value)
 {
     if (auto value = property_get(key)) {
         IntType result;
-        if (str_to_num(value->c_str(), 10, result)) {
+        if (str_to_num(*value, 10, result)) {
             return result;
         }
     }
@@ -85,7 +85,7 @@ inline IntType property_file_get_num(const std::string &path,
 {
     if (auto value = property_file_get(path, key)) {
         IntType result;
-        if (str_to_num(value->c_str(), 10, result)) {
+        if (str_to_num(*value, 10, result)) {
             return result;
         }
     }
