@@ -58,7 +58,7 @@
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 
-// minizip
+// libarchive
 #include <archive.h>
 #include <archive_entry.h>
 

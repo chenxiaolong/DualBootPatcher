@@ -93,7 +93,6 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
             ${target}
             PRIVATE
             include
-            ${CMAKE_SOURCE_DIR}/external/minizip
         )
     endforeach()
 
@@ -131,7 +130,6 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         interface.global.CXXVersion
         mbtool-util
         mbbootimg-static
-        libminizip
     )
     target_link_libraries(
         mbtool_recovery
@@ -139,7 +137,6 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         interface.global.CXXVersion
         mbtool-util
         mbbootimg-static
-        libminizip
         LibArchive::LibArchive
     )
     target_link_libraries(
