@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "boot/uevent_thread.h"
+#include "main/uevent_thread.h"
 
 #include <cerrno>
 #include <cstring>
@@ -29,7 +29,7 @@
 
 #include "mblog/logging.h"
 
-#define LOG_TAG "mbtool/boot/uevent_thread"
+#define LOG_TAG "mbtool/main/uevent_thread"
 
 namespace mb
 {

@@ -1,12 +1,12 @@
 set_source_files_properties(
-    src/boot/audit/libaudit.cpp
+    src/main/audit/libaudit.cpp
     PROPERTIES
     COMPILE_FLAGS
     "-Wno-cast-align -Wno-conversion -Wno-gnu-statement-expression -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-sign-conversion"
 )
 
 set_source_files_properties(
-    src/boot/auditd.cpp
+    src/main/auditd.cpp
     PROPERTIES
     COMPILE_FLAGS
     "-Wno-gnu-statement-expression -Wno-zero-length-array"
@@ -54,31 +54,26 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
 
     add_executable(
         mbtool
-        src/boot/audit/libaudit.cpp
-        src/boot/auditd.cpp
-        src/boot/init.cpp
-        src/boot/init/cutils/uevent.cpp
-        src/boot/init/devices.cpp
-        src/boot/init/uevent_listener.cpp
-        src/boot/mount_fstab.cpp
-        src/boot/properties.cpp
-        src/boot/reboot.cpp
-        src/boot/uevent_dump.cpp
-        src/boot/uevent_thread.cpp
+        src/main/archive_util.cpp
+        src/main/audit/libaudit.cpp
+        src/main/auditd.cpp
+        src/main/backup.cpp
+        src/main/bootimg_util.cpp
+        src/main/image.cpp
+        src/main/init.cpp
+        src/main/init/cutils/uevent.cpp
+        src/main/init/devices.cpp
+        src/main/init/uevent_listener.cpp
+        src/main/installer.cpp
+        src/main/installer_util.cpp
+        src/main/mount_fstab.cpp
+        src/main/properties.cpp
+        src/main/ramdisk_patcher.cpp
+        src/main/reboot.cpp
+        src/main/uevent_dump.cpp
+        src/main/uevent_thread.cpp
+        src/main/update_binary.cpp
         src/main.cpp
-    )
-
-    add_executable(
-        mbtool_recovery
-        src/main.cpp
-        src/recovery/archive_util.cpp
-        src/recovery/backup.cpp
-        src/recovery/bootimg_util.cpp
-        src/recovery/image.cpp
-        src/recovery/installer.cpp
-        src/recovery/installer_util.cpp
-        src/recovery/ramdisk_patcher.cpp
-        src/recovery/update_binary.cpp
     )
 
     add_executable(
@@ -87,7 +82,7 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         src/shim/init.cpp
     )
 
-    foreach(target mbtool-util mbtool mbtool_recovery mbtool-shim)
+    foreach(target mbtool-util mbtool mbtool-shim)
         # Includes
         target_include_directories(
             ${target}
@@ -97,18 +92,12 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
     endforeach()
 
     target_compile_definitions(
-        mbtool_recovery
-        PRIVATE
-        -DRECOVERY
-    )
-
-    target_compile_definitions(
         mbtool-shim
         PRIVATE
         -DSHIM
     )
 
-    unix_link_executable_statically(mbtool mbtool_recovery mbtool-shim)
+    unix_link_executable_statically(mbtool mbtool-shim)
 
     target_link_libraries(
         mbtool-util
@@ -132,14 +121,6 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         mbbootimg-static
     )
     target_link_libraries(
-        mbtool_recovery
-        PRIVATE
-        interface.global.CXXVersion
-        mbtool-util
-        mbbootimg-static
-        LibArchive::LibArchive
-    )
-    target_link_libraries(
         mbtool-shim
         PRIVATE
         interface.global.CXXVersion
@@ -147,7 +128,7 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
     )
 
     install(
-        TARGETS mbtool mbtool_recovery mbtool-shim
+        TARGETS mbtool mbtool-shim
         RUNTIME DESTINATION "${BIN_INSTALL_DIR}/"
         COMPONENT Applications
     )

@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "recovery/image.h"
+#include "main/image.h"
 
 #include <cerrno>
 #include <cinttypes>
@@ -35,7 +35,7 @@
 #include "mbutil/path.h"
 #include "mbutil/string.h"
 
-#define LOG_TAG "mbtool/recovery/image"
+#define LOG_TAG "mbtool/main/image"
 
 namespace mb
 {

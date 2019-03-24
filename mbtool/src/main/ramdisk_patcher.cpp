@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "recovery/ramdisk_patcher.h"
+#include "main/ramdisk_patcher.h"
 
 #include <algorithm>
 #include <memory>
@@ -37,10 +37,10 @@
 #include "mbutil/copy.h"
 #include "mbutil/path.h"
 
-#include "recovery/installer_util.h"
+#include "main/installer_util.h"
 #include "util/multiboot.h"
 
-#define LOG_TAG "mbtool/recovery/ramdisk_patcher"
+#define LOG_TAG "mbtool/main/ramdisk_patcher"
 
 namespace mb
 {

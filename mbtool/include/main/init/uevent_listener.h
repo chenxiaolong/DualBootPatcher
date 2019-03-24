@@ -25,7 +25,7 @@
 
 #include "mbutil/unique_fd.h"
 
-#include "boot/init/uevent.h"
+#include "main/init/uevent.h"
 
 #define UEVENT_MSG_LEN 2048
 

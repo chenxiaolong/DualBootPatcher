@@ -29,7 +29,7 @@
 
 #include "mbutil/path.h"
 
-#include "boot/init/uevent.h"
+#include "main/init/uevent.h"
 
 namespace android {
 namespace init {

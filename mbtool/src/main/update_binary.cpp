@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "recovery/update_binary.h"
+#include "main/update_binary.h"
 
 #include <array>
 
@@ -42,11 +42,11 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
-#include "recovery/installer.h"
+#include "main/installer.h"
 #include "util/multiboot.h"
 #include "util/sepolpatch.h"
 
-#define LOG_TAG "mbtool/recovery/update_binary"
+#define LOG_TAG "mbtool/main/update_binary"
 
 
 namespace mb

@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "boot/auditd.h"
+#include "main/auditd.h"
 
 #include <cerrno>
 #include <cstdio>
@@ -30,9 +30,9 @@
 #include "mbcommon/finally.h"
 #include "mblog/logging.h"
 
-#include "boot/audit/libaudit.h"
+#include "main/audit/libaudit.h"
 
-#define LOG_TAG "mbtool/boot/auditd"
+#define LOG_TAG "mbtool/main/auditd"
 
 
 namespace mb

@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "boot/properties.h"
+#include "main/properties.h"
 
 #include <string>
 

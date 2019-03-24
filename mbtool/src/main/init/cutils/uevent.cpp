@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "boot/init/cutils/uevent.h"
+#include "main/init/cutils/uevent.h"
 
 #include <cerrno>
 #include <cstring>

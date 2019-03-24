@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "boot/init/devices.h"
+#include "main/init/devices.h"
 
 #include <memory>
 
@@ -33,7 +33,7 @@
 #include "mbutil/directory.h"
 #include "mbutil/path.h"
 
-#define LOG_TAG "mbtool/boot/init/devices"
+#define LOG_TAG "mbtool/main/init/devices"
 
 namespace android {
 namespace init {

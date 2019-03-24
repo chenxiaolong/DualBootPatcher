@@ -46,7 +46,7 @@
 #include "util/multiboot.h"
 #include "util/uevent.h"
 
-#define LOG_TAG "mbtool/boot/emergency"
+#define LOG_TAG "mbtool/main/emergency"
 
 #define EMERGENCY_BLOCK_DEV     "/dbp.emerg.blk"
 #define EMERGENCY_MOUNT_POINT   "/dbp.emerg.mnt"

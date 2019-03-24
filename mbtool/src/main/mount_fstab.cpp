@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "boot/mount_fstab.h"
+#include "main/mount_fstab.h"
 
 #include <algorithm>
 #include <chrono>
@@ -55,14 +55,14 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
-#include "boot/init/devices.h"
-#include "boot/reboot.h"
+#include "main/init/devices.h"
+#include "main/reboot.h"
 #include "util/multiboot.h"
 #include "util/roms.h"
 #include "util/sepolpatch.h"
 #include "util/signature.h"
 
-#define LOG_TAG "mbtool/boot/mount_fstab"
+#define LOG_TAG "mbtool/main/mount_fstab"
 
 #define SYSTEM_MOUNT_POINT          "/raw/system"
 #define CACHE_MOUNT_POINT           "/raw/cache"
@@ -443,7 +443,7 @@ static std::vector<std::string> split_patterns(const char *patterns)
  * \brief Mount specified external SD fstab entries to /raw/extsd
  *
  * This will *not* do anything if the system wasn't booted using mbtool.
- * It relies an the sysfs -> block devices map created by boot/init/devices.cpp
+ * It relies an the sysfs -> block devices map created by main/init/devices.cpp
  */
 static bool mount_extsd_fstab_entries(const android::init::DeviceHandler &handler,
                                       const std::vector<util::FstabRec> &extsd_recs,

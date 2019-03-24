@@ -17,14 +17,14 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "recovery/archive_util.h"
+#include "main/archive_util.h"
 
 #include <cerrno>
 #include <cstring>
 
 #include "mblog/logging.h"
 
-#define LOG_TAG "mbtool/recovery/archive_util"
+#define LOG_TAG "mbtool/main/archive_util"
 
 #define BUF_SIZE    10240
 

@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "boot/reboot.h"
+#include "main/reboot.h"
 
 #include <getopt.h>
 

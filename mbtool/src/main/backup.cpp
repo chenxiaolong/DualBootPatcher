@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "recovery/backup.h"
+#include "main/backup.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -47,13 +47,13 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
-#include "recovery/installer_util.h"
-#include "recovery/image.h"
+#include "main/image.h"
+#include "main/installer_util.h"
 #include "util/multiboot.h"
 #include "util/roms.h"
 #include "util/wipe.h"
 
-#define LOG_TAG "mbtool/recovery/backup"
+#define LOG_TAG "mbtool/main/backup"
 
 
 namespace mb

@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "recovery/installer_util.h"
+#include "main/installer_util.h"
 
 #include <memory>
 #include <optional>
@@ -49,10 +49,10 @@
 #include "mbutil/delete.h"
 #include "mbutil/path.h"
 
-#include "recovery/bootimg_util.h"
+#include "main/bootimg_util.h"
 #include "util/multiboot.h"
 
-#define LOG_TAG "mbtool/recovery/installer_util"
+#define LOG_TAG "mbtool/main/installer_util"
 
 using namespace mb::bootimg;
 

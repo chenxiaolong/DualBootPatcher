@@ -28,15 +28,14 @@
 
 #if defined(SHIM)
 #include "shim/init.h"
-#elif defined(RECOVERY)
-#include "recovery/backup.h"
-#include "recovery/update_binary.h"
 #else
-#include "boot/auditd.h"
-#include "boot/init.h"
-#include "boot/properties.h"
-#include "boot/reboot.h"
-#include "boot/uevent_dump.h"
+#include "main/auditd.h"
+#include "main/backup.h"
+#include "main/init.h"
+#include "main/properties.h"
+#include "main/reboot.h"
+#include "main/uevent_dump.h"
+#include "main/update_binary.h"
 #include "util/sepolpatch.h"
 #include "util/signature.h"
 #endif
@@ -53,28 +52,27 @@ struct Tool
 {
     const char *name;
     int (*func)(int, char **);
+    bool show;
 };
 
 static Tool g_tools[] = {
 #if defined(SHIM)
-    { "mbtool-shim", mbtool_main },
-    { "init", mb::init_main },
-#elif defined(RECOVERY)
-    { "mbtool_recovery", mbtool_main },
-    { "backup", mb::backup_main },
-    { "restore", mb::restore_main },
-    { "updater", mb::update_binary_main }, // TWRP
-    { "update_binary", mb::update_binary_main }, // CWM, Philz
+    { "mbtool-shim", mbtool_main, false },
+    { "init", mb::init_main, true },
 #else
-    { "mbtool", mbtool_main },
-    { "auditd", mb::auditd_main },
-    { "init", mb::init_main },
-    { "properties", mb::properties_main },
-    { "reboot", mb::reboot_main },
-    { "sepolpatch", mb::sepolpatch_main },
-    { "shutdown", mb::shutdown_main },
-    { "sigverify", mb::sigverify_main },
-    { "uevent_dump", mb::uevent_dump_main },
+    { "mbtool", mbtool_main, false },
+    { "auditd", mb::auditd_main, true },
+    { "backup", mb::backup_main, true },
+    { "init", mb::init_main, true },
+    { "properties", mb::properties_main, true },
+    { "reboot", mb::reboot_main, true },
+    { "restore", mb::restore_main, true },
+    { "sepolpatch", mb::sepolpatch_main, true },
+    { "shutdown", mb::shutdown_main, true },
+    { "sigverify", mb::sigverify_main, true },
+    { "uevent_dump", mb::uevent_dump_main, true },
+    { "updater", mb::update_binary_main, true }, // TWRP
+    { "update_binary", mb::update_binary_main, true }, // CWM, Philz
 #endif
 };
 
@@ -94,8 +92,7 @@ static void mbtool_usage(FILE *stream)
             mb::version(),
             mb::git_version());
     for (auto const &tool : g_tools) {
-        if (strcmp(tool.name, "mbtool") != 0
-                && strcmp(tool.name, "mbtool_recovery") != 0) {
+        if (tool.show) {
             fprintf(stream, "  %s\n", tool.name);
         }
     }

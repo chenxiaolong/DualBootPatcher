@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "recovery/installer.h"
+#include "main/installer.h"
 
 // C++
 #include <algorithm>
@@ -70,8 +70,8 @@
 #include "mbutil/string.h"
 
 // Local
-#include "recovery/image.h"
-#include "recovery/installer_util.h"
+#include "main/image.h"
+#include "main/installer_util.h"
 #include "util/android_api.h"
 #include "util/legacy_property_service.h"
 #include "util/multiboot.h"
@@ -81,7 +81,7 @@
 #include "util/switcher.h"
 #include "util/wipe.h"
 
-#define LOG_TAG "mbtool/recovery/installer"
+#define LOG_TAG "mbtool/main/installer"
 
 // Set to 1 to spawn a shell after installation
 // NOTE: This should ONLY be used through adb. For example:

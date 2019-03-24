@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "recovery/bootimg_util.h"
+#include "main/bootimg_util.h"
 
 #include <cerrno>
 #include <cstdio>
@@ -27,7 +27,7 @@
 
 #include "mblog/logging.h"
 
-#define LOG_TAG "mbtool/recovery/bootimg_util"
+#define LOG_TAG "mbtool/main/bootimg_util"
 
 #define BUF_SIZE    10240
 

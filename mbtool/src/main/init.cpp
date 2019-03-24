@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "boot/init.h"
+#include "main/init.h"
 
 #include <algorithm>
 #include <memory>
@@ -35,11 +35,6 @@
 #include <sys/mount.h>
 #include <sys/sysmacros.h>
 #include <unistd.h>
-
-#include "mz.h"
-#include "mz_strm_android.h"
-#include "mz_strm_buf.h"
-#include "mz_zip.h"
 
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
@@ -61,8 +56,8 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
-#include "boot/mount_fstab.h"
-#include "boot/uevent_thread.h"
+#include "main/mount_fstab.h"
+#include "main/uevent_thread.h"
 #include "util/android_api.h"
 #include "util/emergency.h"
 #include "util/multiboot.h"
@@ -79,7 +74,7 @@
 #error Unknown PCRE path for architecture
 #endif
 
-#define LOG_TAG "mbtool/boot/init"
+#define LOG_TAG "mbtool/main/init"
 
 using namespace mb::device;
 
@@ -726,186 +721,6 @@ static bool disable_spota()
     return true;
 }
 
-static bool extract_zip(const char *source, const char *target)
-{
-    void *stream;
-    if (!mz_stream_android_create(&stream)) {
-        LOGE("Failed to create base stream");
-        return false;
-    }
-
-    auto destroy_stream = finally([&] {
-        mz_stream_delete(&stream);
-    });
-
-    void *buf_stream;
-    if (!mz_stream_buffered_create(&buf_stream)) {
-        LOGE("Failed to create buffered stream");
-        return false;
-    }
-
-    auto destroy_buf_stream = finally([&] {
-        mz_stream_delete(&buf_stream);
-    });
-
-    if (mz_stream_set_base(buf_stream, stream) != MZ_OK) {
-        LOGE("Failed to set base stream for buffered stream");
-        return false;
-    }
-
-    if (mz_stream_open(buf_stream, source, MZ_OPEN_MODE_READ) != MZ_OK) {
-        LOGE("%s: Failed to open stream", source);
-        return false;
-    }
-
-    auto close_stream = finally([&] {
-        mz_stream_close(buf_stream);
-    });
-
-    auto *handle = mz_zip_open(buf_stream, MZ_OPEN_MODE_READ);
-    if (!handle) {
-        LOGE("%s: Failed to open zip", source);
-        return false;
-    }
-
-    auto close_zip = finally([&]{
-        mz_zip_close(handle);
-    });
-
-    if (mz_zip_locate_entry(handle, "exec", nullptr) != MZ_OK) {
-        LOGE("%s: Failed to find 'exec' in zip", source);
-        return false;
-    }
-
-    if (mz_zip_entry_read_open(handle, 0, nullptr) != MZ_OK) {
-        LOGE("%s: Failed to open file in zip", source);
-        return false;
-    }
-
-    auto close_inner_file = finally([&] {
-        mz_zip_entry_close(handle);
-    });
-
-    std::string target_file(target);
-    target_file += "/exec";
-
-    (void) util::mkdir_recursive(target, 0755);
-
-    FILE *fp = fopen(target_file.c_str(), "wbe");
-    if (!fp) {
-        LOGE("%s: Failed to open for writing: %s",
-             target_file.c_str(), strerror(errno));
-        return false;
-    }
-
-    auto close_fp = finally([&] {
-        fclose(fp);
-    });
-
-    char buf[UINT16_MAX];
-    int bytes_read;
-
-    while ((bytes_read = mz_zip_entry_read(handle, buf, sizeof(buf))) > 0) {
-        size_t bytes_written = fwrite(buf, 1, static_cast<size_t>(bytes_read),
-                                      fp);
-        if (bytes_written == 0) {
-            LOGE("%s: Truncated write", target);
-            return false;
-        }
-    }
-    if (bytes_read != 0) {
-        LOGE("%s: Failed before reaching inner file's EOF", source);
-        return false;
-    }
-
-    close_fp.dismiss();
-
-    if (fclose(fp) < 0) {
-        LOGE("%s: Error when closing file: %s",
-             target_file.c_str(), strerror(errno));
-        return false;
-    }
-
-    return true;
-}
-
-static bool launch_boot_menu()
-{
-    struct stat sb;
-    bool skip = false;
-
-    if (stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
-        auto skip_rom = util::file_first_line(BOOT_UI_SKIP_PATH);
-
-        std::string rom_id = get_rom_id();
-
-        if (skip_rom && skip_rom.value() == rom_id) {
-            LOGV("Performing one-time skipping of Boot UI");
-            skip = true;
-        } else {
-            LOGW("Skip file is not for: %s", rom_id.c_str());
-            LOGW("Not skipping boot UI");
-        }
-    }
-
-    if (remove(BOOT_UI_SKIP_PATH) < 0 && errno != ENOENT) {
-        LOGW("%s: Failed to remove file: %s",
-             BOOT_UI_SKIP_PATH, strerror(errno));
-        LOGW("Boot UI won't run again!");
-    }
-
-    if (skip) {
-        return true;
-    }
-
-    if (stat(BOOT_UI_ZIP_PATH, &sb) < 0) {
-        LOGV("Boot UI is missing. Skipping...");
-        return true;
-    }
-
-    // Verify boot UI signature
-    if (auto r = verify_signature(BOOT_UI_ZIP_PATH, nullptr); !r) {
-        LOGE("%s: Failed to verify signature: %s",
-             BOOT_UI_ZIP_PATH, r.error().message().c_str());
-        return false;
-    }
-
-    if (!extract_zip(BOOT_UI_ZIP_PATH, BOOT_UI_PATH)) {
-        LOGE("%s: Failed to extract zip", BOOT_UI_ZIP_PATH);
-        return false;
-    }
-
-    auto clean_up = finally([]{
-        if (auto r = util::delete_recursive(BOOT_UI_PATH); !r) {
-            LOGW("%s: Failed to recursively delete: %s",
-                 BOOT_UI_PATH, r.error().message().c_str());
-        }
-    });
-
-    if (chmod(BOOT_UI_EXEC_PATH, 0500) < 0) {
-        LOGE("%s: Failed to chmod: %s", BOOT_UI_EXEC_PATH, strerror(errno));
-        return false;
-    }
-
-    std::vector<std::string> argv{ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH };
-    int ret = util::run_command(argv[0], argv, {}, {}, {});
-    if (ret < 0) {
-        LOGE("%s: Failed to execute: %s", BOOT_UI_EXEC_PATH, strerror(errno));
-    } else if (WIFEXITED(ret)) {
-        LOGV("Boot UI exited with status: %d", WEXITSTATUS(ret));
-    } else if (WIFSIGNALED(ret)) {
-        LOGE("Boot UI killed by signal: %d", WTERMSIG(ret));
-    }
-
-    // NOTE: Always continue regardless of how the boot UI exits. If the current
-    // ROM should be booted, the UI simply exits. If the UI crashes or doesn't
-    // work for whatever reason, the current ROM should still be booted. If the
-    // user switches to another ROM, then the boot UI will switch ROMs and
-    // reboot (ie. the UI will not exit).
-
-    return true;
-}
-
 static void redirect_stdio_null()
 {
     static constexpr char name[] = "/dev/__null__";
@@ -1053,11 +868,6 @@ int init_main(int argc, char *argv[])
     }
 
     LOGV("Successfully mounted fstab");
-
-    if (!launch_boot_menu()) {
-        LOGE("Failed to run boot menu");
-        // Continue anyway since boot menu might not run on every device
-    }
 
     // Mount selinuxfs
     selinux_mount();

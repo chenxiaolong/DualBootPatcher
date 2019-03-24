@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "boot/init/uevent_listener.h"
+#include "main/init/uevent_listener.h"
 
 #include <memory>
 
@@ -28,9 +28,9 @@
 
 #include "mblog/logging.h"
 
-#include "boot/init/cutils/uevent.h"
+#include "main/init/cutils/uevent.h"
 
-#define LOG_TAG "mbtool/boot/init/uevent_listener"
+#define LOG_TAG "mbtool/main/init/uevent_listener"
 
 #define LOG_UEVENTS 0
 

@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "boot/uevent_dump.h"
+#include "main/uevent_dump.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -26,7 +26,7 @@
 
 #include "mbcommon/version.h"
 
-#include "boot/init/uevent_listener.h"
+#include "main/init/uevent_listener.h"
 
 namespace mb
 {

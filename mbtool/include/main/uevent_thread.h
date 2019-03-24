@@ -22,8 +22,8 @@
 #include <optional>
 #include <thread>
 
-#include "boot/init/devices.h"
-#include "boot/init/uevent_listener.h"
+#include "main/init/devices.h"
+#include "main/init/uevent_listener.h"
 
 namespace mb
 {

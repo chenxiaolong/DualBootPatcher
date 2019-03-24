@@ -17,7 +17,7 @@
  * Written by William Roberts <w.roberts@sta.samsung.com>
  */
 
-#include "boot/audit/libaudit.h"
+#include "main/audit/libaudit.h"
 
 #include <cerrno>
 #include <cstring>

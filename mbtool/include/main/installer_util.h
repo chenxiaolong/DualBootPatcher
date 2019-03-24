@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "recovery/ramdisk_patcher.h"
+#include "main/ramdisk_patcher.h"
 
 namespace mb
 {
