@@ -322,84 +322,6 @@ static bool fix_binary_file_contexts(const char *path)
     return replace_file(path, new_path.c_str());
 }
 
-static bool add_mbtool_services()
-{
-    ScopedFILE fp_old(fopen("/init.rc", "rbe"));
-    if (!fp_old) {
-        if (errno == ENOENT) {
-            return true;
-        } else {
-            LOGE("Failed to open /init.rc: %s", strerror(errno));
-            return false;
-        }
-    }
-
-    ScopedFILE fp_new(fopen("/init.rc.new", "wbe"));
-    if (!fp_new) {
-        LOGE("Failed to open /init.rc.new for writing: %s",
-             strerror(errno));
-        return false;
-    }
-
-    char *line = nullptr;
-    size_t len = 0;
-    ssize_t read = 0;
-
-    auto free_line = finally([&]{
-        free(line);
-    });
-
-    bool has_init_multiboot_rc = false;
-
-    while ((read = getline(&line, &len, fp_old.get())) >= 0) {
-        if (strstr(line, "import /init.multiboot.rc")) {
-            has_init_multiboot_rc = true;
-        }
-    }
-
-    rewind(fp_old.get());
-
-    while ((read = getline(&line, &len, fp_old.get())) >= 0) {
-        // Load /init.multiboot.rc
-        if (!has_init_multiboot_rc && line[0] != '#') {
-            has_init_multiboot_rc = true;
-            fputs("import /init.multiboot.rc\n", fp_new.get());
-        }
-
-        if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
-                != static_cast<size_t>(read)) {
-            LOGE("Failed to write to /init.rc.new: %s", strerror(errno));
-            return false;
-        }
-    }
-
-    if (!replace_file("/init.rc", "/init.rc.new")) {
-        return false;
-    }
-
-    // Create /init.multiboot.rc
-    ScopedFILE fp_multiboot(fopen("/init.multiboot.rc", "wbe"));
-    if (!fp_multiboot) {
-        LOGE("Failed to open /init.multiboot.rc for writing: %s",
-             strerror(errno));
-        return false;
-    }
-
-    static const char *properties_service =
-            "service mbtoolprops /mbtool properties set-file " DBP_PROP_PATH "\n"
-            "    class core\n"
-            "    user root\n"
-            "    oneshot\n"
-            "    seclabel " MB_EXEC_CONTEXT "\n"
-            "\n";
-
-    fputs(properties_service, fp_multiboot.get());
-
-    fchmod(fileno(fp_multiboot.get()), 0750);
-
-    return true;
-}
-
 static bool write_fstab_hack(const char *fstab)
 {
     ScopedFILE fp_fstab(fopen(fstab, "abe"));
@@ -505,23 +427,6 @@ static bool strip_manual_mounts()
 
         replace_file(path.c_str(), new_path.c_str());
     }
-
-    return true;
-}
-
-static bool add_props_to_dbp_prop()
-{
-    ScopedFILE fp(fopen(DBP_PROP_PATH, "abe"));
-    if (!fp) {
-        LOGE("%s: Failed to open file: %s",
-             DBP_PROP_PATH, strerror(errno));
-        return false;
-    }
-
-    // Write version property
-    fprintf(fp.get(), PROP_MULTIBOOT_VERSION "=%s\n", version());
-    // Write ROM ID property
-    fprintf(fp.get(), PROP_MULTIBOOT_ROM_ID "=%s\n", get_rom_id().c_str());
 
     return true;
 }
@@ -790,8 +695,6 @@ int boot_main(int argc, char *argv[])
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
     symlink_base_dir(device);
 
-    add_props_to_dbp_prop();
-
     // initialize properties
     properties_setup();
 
@@ -858,7 +761,6 @@ int boot_main(int argc, char *argv[])
         fix_binary_file_contexts(FILE_CONTEXTS_BIN);
     }
     write_fstab_hack(fstab.c_str());
-    add_mbtool_services();
     strip_manual_mounts();
 
     // Data modifications
