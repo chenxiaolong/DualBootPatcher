@@ -41,7 +41,6 @@
 
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
-#include "mbdevice/device.h"
 #include "mblog/logging.h"
 #include "mbutil/blkid.h"
 #include "mbutil/command.h"
@@ -76,8 +75,6 @@
 
 #define FSCK_WRAPPER                "/sbin/fsck-wrapper"
 
-
-using namespace mb::device;
 
 namespace mb
 {
@@ -691,8 +688,7 @@ struct FstabRecs
 };
 
 static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                          const Device &device, MountFlags flags,
-                          FstabRecs &recs)
+                          MountFlags flags, FstabRecs &recs)
 {
     recs.gen.clear();
     recs.system.clear();
@@ -709,7 +705,7 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     }
     auto &&fstab = fstab_ret.value();
 
-    bool include_sdcard0 = !(device.flags() & DeviceFlag::FstabSkipSdcard0);
+    bool include_sdcard0 = true;
 
     for (auto it = fstab.begin(); it != fstab.end();) {
         LOGD("fstab: %s", it->orig_line.c_str());
@@ -781,13 +777,12 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
  * \return Whether all of the
  */
 bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                 const Device &device, MountFlags flags,
-                 const android::init::DeviceHandler &handler)
+                 MountFlags flags, const android::init::DeviceHandler &handler)
 {
     std::vector<std::string> successful;
     FstabRecs recs;
 
-    if (!process_fstab(path, rom, device, flags, recs)) {
+    if (!process_fstab(path, rom, flags, recs)) {
         return false;
     }
 

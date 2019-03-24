@@ -174,8 +174,7 @@ rp_restore_default_prop()
     return _rp_restore_default_prop;
 }
 
-static bool _rp_add_dbp_prop(const std::string &dir,
-                             const std::string &device_id, bool use_fuse_exfat)
+static bool _rp_add_dbp_prop(const std::string &dir, bool use_fuse_exfat)
 {
     std::string path(dir);
     path += DBP_PROP_PATH;
@@ -188,9 +187,8 @@ static bool _rp_add_dbp_prop(const std::string &dir,
     }
 
     // Write new properties
-    if (fprintf(fp.get(), PROP_DEVICE "=%s\n", device_id.c_str()) < 0
-            || fprintf(fp.get(), PROP_USE_FUSE_EXFAT "=%s\n",
-                    use_fuse_exfat ? "true" : "false") < 0) {
+    if (fprintf(fp.get(), PROP_USE_FUSE_EXFAT "=%s\n",
+                use_fuse_exfat ? "true" : "false") < 0) {
         LOGE("%s: Failed to write properties: %s",
              path.c_str(), strerror(errno));
         return false;
@@ -207,11 +205,11 @@ static bool _rp_add_dbp_prop(const std::string &dir,
 }
 
 std::function<RamdiskPatcherFn>
-rp_add_dbp_prop(const std::string &device_id, bool use_fuse_exfat)
+rp_add_dbp_prop(bool use_fuse_exfat)
 {
     using namespace std::placeholders;
 
-    return std::bind(_rp_add_dbp_prop, _1, device_id, use_fuse_exfat);
+    return std::bind(_rp_add_dbp_prop, _1, use_fuse_exfat);
 }
 
 static bool _rp_add_binaries(const std::string &dir,

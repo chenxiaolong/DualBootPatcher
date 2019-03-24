@@ -36,7 +36,6 @@
 #define FILE_CONTEXTS                   "/file_contexts"
 
 #define PROP_USE_FUSE_EXFAT             "ro.patcher.use_fuse_exfat"
-#define PROP_DEVICE                     "ro.patcher.device"
 
 #define PROP_MULTIBOOT_VERSION          "ro.multiboot.version"
 #define PROP_MULTIBOOT_ROM_ID           "ro.multiboot.romid"

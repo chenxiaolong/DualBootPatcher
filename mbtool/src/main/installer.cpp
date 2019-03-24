@@ -49,9 +49,6 @@
 // libmblog
 #include "mblog/logging.h"
 
-// libmbdevice
-#include "mbdevice/json.h"
-
 // libmbutil
 #include "mbutil/archive.h"
 #include "mbutil/chmod.h"
@@ -103,8 +100,6 @@
 
 #define HELPER_TOOL             "/update-binary-tool"
 
-
-using namespace mb::device;
 
 namespace mb
 {
@@ -588,10 +583,6 @@ bool Installer::extract_multiboot_files()
         {
             "multiboot/bb-wrapper.sh.sig",
             _temp + "/bb-wrapper.sh.sig"
-        },
-        {
-            "multiboot/device.json",
-            _temp + "/device.json"
         },
         {
             "multiboot/info.prop",
@@ -1312,11 +1303,6 @@ Installer::ProceedState Installer::on_created_chroot()
     return ProceedState::Continue;
 }
 
-Installer::ProceedState Installer::on_checked_device()
-{
-    return ProceedState::Continue;
-}
-
 Installer::ProceedState Installer::on_set_up_chroot()
 {
     return ProceedState::Continue;
@@ -1433,158 +1419,6 @@ Installer::ProceedState Installer::install_stage_set_up_environment()
     }
 
     return ProceedState::Continue;
-}
-
-Installer::ProceedState Installer::install_stage_check_device()
-{
-    LOGD("[Installer] Device verification stage");
-
-    auto contents = util::file_read_all(_temp + "/device.json");
-    if (!contents) {
-        display_msg("Failed to read device.json");
-        return ProceedState::Fail;
-    }
-
-    JsonError error;
-
-    if (!device_from_json(contents.value(), _device, error)) {
-        display_msg("Error when loading device.json");
-        return ProceedState::Fail;
-    }
-
-    if (_device.validate()) {
-        display_msg("Validation of device.json failed");
-        return ProceedState::Fail;
-    }
-
-    std::string prop_product_device =
-            util::property_get_string("ro.product.device", {});
-    std::string prop_build_product =
-            util::property_get_string("ro.build.product", {});
-    std::string prop_patcher_device =
-            util::property_get_string(PROP_DEVICE, {});
-
-    LOGD("ro.product.device = %s", prop_product_device.c_str());
-    LOGD("ro.build.product = %s", prop_build_product.c_str());
-    LOGD(PROP_DEVICE " = %s", prop_patcher_device.c_str());
-    LOGD("Target device = %s", _device.id().c_str());
-
-    if (!prop_patcher_device.empty()) {
-        _detected_device = prop_patcher_device;
-    } else if (!prop_product_device.empty()) {
-        _detected_device = prop_product_device;
-    } else if (!prop_build_product.empty()) {
-        _detected_device = prop_build_product;
-    } else {
-        display_msg("Failed to determine device's codename");
-        return ProceedState::Fail;
-    }
-
-    // Due to optimizations in libc, strlen() may trigger valgrind errors like
-    //     Address 0x4c0bf04 is 4 bytes inside a block of size 6 alloc'd
-    // It's an annoyance, but not a big deal
-
-    // Verify codename
-    auto const &codenames = _device.codenames();
-    auto it = std::find(codenames.begin(), codenames.end(), _detected_device);
-
-    if (it == codenames.end()) {
-        display_msg("Patched zip is for:");
-        for (auto const &codename : codenames) {
-            display_msg("- %s", codename.c_str());
-        }
-        display_msg("This device is '%s'", _detected_device.c_str());
-
-        return ProceedState::Fail;
-    }
-
-    auto find_existing_path = [](const std::string &path) {
-        return access(path.c_str(), R_OK) == 0;
-    };
-
-    auto const &boot_devs = _device.boot_block_devs();
-    auto const &recovery_devs = _device.recovery_block_devs();
-    auto const &system_devs = _device.system_block_devs();
-    auto const &extra_devs = _device.extra_block_devs();
-
-    // Find boot blockdev path
-    it = std::find_if(boot_devs.begin(), boot_devs.end(),
-                      find_existing_path);
-    if (it == boot_devs.end()) {
-        display_msg("Could not determine the boot block device");
-        return ProceedState::Fail;
-    } else {
-        _boot_block_dev = *it;
-        LOGD("Boot block device: %s", _boot_block_dev.c_str());
-    }
-
-    // Find recovery blockdev path
-    it = std::find_if(recovery_devs.begin(), recovery_devs.end(),
-                      find_existing_path);
-    if (it == recovery_devs.end()) {
-        LOGW("Could not determine the recovery block device");
-        // Non-fatal
-    } else {
-        _recovery_block_dev = *it;
-        LOGD("Recovery block device: %s", _recovery_block_dev.c_str());
-    }
-
-    // Find system blockdev path
-    it = std::find_if(system_devs.begin(), system_devs.end(),
-                      find_existing_path);
-    if (it == system_devs.end()) {
-        display_msg("Could not determine the system block device");
-        return ProceedState::Fail;
-    } else {
-        _system_block_dev = *it;
-        LOGD("System block device: %s", _system_block_dev.c_str());
-    }
-
-    // Other block devices to copy
-    std::vector<std::string> devs;
-    devs.insert(devs.end(), boot_devs.begin(), boot_devs.end());
-    devs.insert(devs.end(), recovery_devs.begin(), recovery_devs.end());
-    devs.insert(devs.end(), extra_devs.begin(), extra_devs.end());
-
-    // Copy block devices to the chroot
-    for (auto const &dev : devs) {
-        std::string dev_path(in_chroot(dev));
-
-        if (auto r = util::mkdir_parent(dev_path, 0755); !r) {
-            LOGW("Failed to create parent directory of %s: %s",
-                 dev_path.c_str(), r.error().message().c_str());
-        }
-
-        // Follow symlinks just in case the symlink source isn't in the list
-        if (auto r = util::copy_file(dev, dev_path,
-                                     util::CopyFlag::CopyAttributes
-                                   | util::CopyFlag::CopyXattrs
-                                   | util::CopyFlag::FollowSymlinks); !r) {
-            LOGW("Failed to copy %s. Continuing anyway", dev.c_str());
-        } else {
-            LOGD("Copied %s to the chroot", dev.c_str());
-        }
-    }
-
-    // Symlink CHROOT_SYSTEM_LOOP_DEV to system block devs
-    for (auto const &dev : system_devs) {
-        std::string dev_path(in_chroot(dev));
-
-        if (auto r = util::mkdir_parent(dev_path, 0755); !r) {
-            LOGW("Failed to create parent directory of %s: %s",
-                 dev_path.c_str(), r.error().message().c_str());
-        }
-
-        if (symlink(CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str()) < 0) {
-            LOGW("Failed to symlink %s to %s: %s. Continuing anyway",
-                 CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str(), strerror(errno));
-        } else {
-            LOGD("Symlinked %s to %s",
-                 CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str());
-        }
-    }
-
-    return on_checked_device();
 }
 
 Installer::ProceedState Installer::install_stage_get_install_type()
@@ -1994,7 +1828,7 @@ Installer::ProceedState Installer::install_stage_finish()
     if (!InstallerUtil::patch_boot_image(_boot_block_dev, temp_boot_img, {
         rp_write_rom_id(_rom->id),
         rp_restore_default_prop(),
-        rp_add_dbp_prop(_detected_device, _use_fuse_exfat),
+        rp_add_dbp_prop(_use_fuse_exfat),
         rp_add_binaries(_temp + "/binaries"),
         rp_symlink_fuse_exfat(),
         rp_symlink_init(),
@@ -2117,10 +1951,6 @@ bool Installer::start_installation()
     else if (ret == ProceedState::Cancel) return true;
 
     ret = install_stage_set_up_environment();
-    if (ret == ProceedState::Fail) return false;
-    else if (ret == ProceedState::Cancel) return true;
-
-    ret = install_stage_check_device();
     if (ret == ProceedState::Fail) return false;
     else if (ret == ProceedState::Cancel) return true;
 

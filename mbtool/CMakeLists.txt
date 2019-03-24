@@ -107,7 +107,6 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         PUBLIC
         mbutil-static
         mbsign-static
-        mbdevice-static
         mblog-static
         mbcommon-static
         rapidjson

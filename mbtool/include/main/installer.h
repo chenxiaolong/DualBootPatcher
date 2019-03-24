@@ -27,7 +27,6 @@
 #include "mbcommon/common.h"
 #include "mbcommon/flags.h"
 #include "mbcommon/outcome.h"
-#include "mbdevice/device.h"
 
 #include "util/roms.h"
 
@@ -71,7 +70,6 @@ protected:
     virtual std::unordered_map<std::string, std::string> get_properties();
     virtual ProceedState on_initialize();
     virtual ProceedState on_created_chroot();
-    virtual ProceedState on_checked_device();
     virtual ProceedState on_set_up_chroot();
     virtual ProceedState on_mounted_filesystems();
     virtual ProceedState on_pre_install();
@@ -88,8 +86,6 @@ protected:
     InstallerFlags _flags;
     bool _passthrough;
 
-    device::Device _device;
-    std::string _detected_device;
     std::string _boot_block_dev;
     std::string _recovery_block_dev;
     std::string _system_block_dev;
@@ -152,7 +148,6 @@ private:
     ProceedState install_stage_initialize();
     ProceedState install_stage_create_chroot();
     ProceedState install_stage_set_up_environment();
-    ProceedState install_stage_check_device();
     ProceedState install_stage_get_install_type();
     ProceedState install_stage_set_up_chroot();
     ProceedState install_stage_mount_filesystems();

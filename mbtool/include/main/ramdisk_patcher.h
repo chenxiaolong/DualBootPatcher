@@ -34,7 +34,7 @@ std::function<RamdiskPatcherFn>
 rp_restore_default_prop();
 
 std::function<RamdiskPatcherFn>
-rp_add_dbp_prop(const std::string &device_id, bool use_fuse_exfat);
+rp_add_dbp_prop(bool use_fuse_exfat);
 
 std::function<RamdiskPatcherFn>
 rp_add_binaries(const std::string &binaries_dir);

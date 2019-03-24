@@ -452,7 +452,7 @@ int boot_main(int argc, char *argv[])
             | MountFlag::MountCache
             | MountFlag::MountData
             | MountFlag::MountExternalSd;
-    if (!mount_fstab(fstab.c_str(), rom, device, flags,
+    if (!mount_fstab(fstab.c_str(), rom, flags,
                      uevent_thread.device_handler())) {
         LOGE("Failed to mount fstab");
         emergency_reboot();
