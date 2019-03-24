@@ -68,7 +68,7 @@ static oc::result<void> dump_kernel_log(const char *path)
         return ec_from_errno();
     }
 
-    auto s = as_uchars(span(buf).subspan(static_cast<size_t>(len)));
+    auto s = as_uchars(span(buf).subspan(0, static_cast<size_t>(len)));
     StandardFile file;
 
     OUTCOME_TRYV(file.open(path, FileOpenMode::WriteOnly));
