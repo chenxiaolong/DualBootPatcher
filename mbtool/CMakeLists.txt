@@ -38,6 +38,8 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         mbtool-util
         STATIC
         src/util/android_api.cpp
+        src/util/config.cpp
+        src/util/emergency.cpp
         src/util/legacy_property_service.cpp
         src/util/multiboot.cpp
         src/util/property_service.cpp
@@ -46,6 +48,7 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         src/util/sepolpatch.cpp
         src/util/signature.cpp
         src/util/switcher.cpp
+        src/util/uevent.cpp
         src/util/wipe.cpp
     )
 
@@ -53,7 +56,6 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         mbtool
         src/boot/audit/libaudit.cpp
         src/boot/auditd.cpp
-        src/boot/emergency.cpp
         src/boot/init.cpp
         src/boot/init/cutils/uevent.cpp
         src/boot/init/devices.cpp

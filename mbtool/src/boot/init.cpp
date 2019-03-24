@@ -61,10 +61,10 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
-#include "boot/emergency.h"
 #include "boot/mount_fstab.h"
 #include "boot/uevent_thread.h"
 #include "util/android_api.h"
+#include "util/emergency.h"
 #include "util/multiboot.h"
 #include "util/property_service.h"
 #include "util/romconfig.h"
