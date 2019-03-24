@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "main/init.h"
+#include "main/boot.h"
 
 #include <algorithm>
 #include <memory>
@@ -86,10 +86,10 @@ using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 static PropertyService g_property_service;
 
-static void init_usage(FILE *stream)
+static void boot_usage(FILE *stream)
 {
     fprintf(stream,
-            "Usage: init"
+            "Usage: boot"
             "\n"
             "Note: This tool takes no arguments\n"
             "\n"
@@ -721,7 +721,7 @@ static bool disable_spota()
     return true;
 }
 
-int init_main(int argc, char *argv[])
+int boot_main(int argc, char *argv[])
 {
     // Some devices actually receive arguments, so ignore them during boot
     if (getppid() != 0) {
@@ -736,18 +736,18 @@ int init_main(int argc, char *argv[])
         while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
             switch (opt) {
             case 'h':
-                init_usage(stdout);
+                boot_usage(stdout);
                 return EXIT_SUCCESS;
 
             default:
-                init_usage(stderr);
+                boot_usage(stderr);
                 return EXIT_FAILURE;
             }
         }
 
         // There should be no other arguments
         if (argc - optind != 0) {
-            init_usage(stderr);
+            boot_usage(stderr);
             return EXIT_FAILURE;
         }
     }

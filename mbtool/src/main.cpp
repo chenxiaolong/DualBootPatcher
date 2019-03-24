@@ -33,7 +33,7 @@
 #else
 #include "main/auditd.h"
 #include "main/backup.h"
-#include "main/init.h"
+#include "main/boot.h"
 #include "main/properties.h"
 #include "main/reboot.h"
 #include "main/uevent_dump.h"
@@ -67,7 +67,7 @@ static Tool g_tools[] = {
     { "mbtool", mbtool_main, false },
     { "auditd", mb::auditd_main, true },
     { "backup", mb::backup_main, true },
-    { "init", mb::init_main, true },
+    { "boot", mb::boot_main, true },
     { "properties", mb::properties_main, true },
     { "reboot", mb::reboot_main, true },
     { "restore", mb::restore_main, true },

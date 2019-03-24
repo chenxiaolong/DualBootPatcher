@@ -61,7 +61,7 @@ if(${MBP_BUILD_TARGET} STREQUAL device)
         src/main/backup.cpp
         src/main/bootimg_util.cpp
         src/main/image.cpp
-        src/main/init.cpp
+        src/main/boot.cpp
         src/main/init/cutils/uevent.cpp
         src/main/init/devices.cpp
         src/main/init/uevent_listener.cpp

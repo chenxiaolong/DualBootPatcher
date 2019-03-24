@@ -22,6 +22,6 @@
 namespace mb
 {
 
-int init_main(int argc, char *argv[]);
+int boot_main(int argc, char *argv[]);
 
 }
