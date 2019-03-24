@@ -76,13 +76,13 @@ foreach(variant ${variants})
         ${lib_target}
         PUBLIC
         mbcommon-${variant}
+        LibArchive::LibArchive
         LibSepol::LibSepol
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
         mblog-${variant}
-        LibArchive::LibArchive
         sodium
     )
 
