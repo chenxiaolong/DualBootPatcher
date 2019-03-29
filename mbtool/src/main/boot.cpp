@@ -21,20 +21,17 @@
 
 #include <algorithm>
 #include <memory>
-#include <unordered_set>
 
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 
-#include <dirent.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
 #include <sys/klog.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
-#include <sys/sysmacros.h>
 #include <unistd.h>
 
 #include "mbcommon/finally.h"
@@ -48,19 +45,17 @@
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/fstab.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
-#include "main/mount_fstab.h"
 #include "util/android_api.h"
 #include "util/emergency.h"
 #include "util/kmsg.h"
 #include "util/multiboot.h"
-#include "util/property_service.h"
+#include "util/roms.h"
 #include "util/sepolpatch.h"
 #include "util/signature.h"
 
@@ -77,10 +72,7 @@
 namespace mb
 {
 
-using ScopedDIR = std::unique_ptr<DIR, TypeFn<closedir>>;
 using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
-
-static PropertyService g_property_service;
 
 static void boot_usage(FILE *stream)
 {
@@ -363,12 +355,6 @@ int boot_main(int argc, char *argv[])
     // Load pre-boot policy
     patch_sepolicy(util::SELINUX_DEFAULT_POLICY_FILE, util::SELINUX_LOAD_FILE,
                    SELinuxPatch::PreBoot);
-
-    // Mount ROM (bind mount directory or mount images, etc.)
-    if (!mount_rom(rom)) {
-        LOGE("Failed to mount ROM directories and images");
-        emergency_reboot();
-    }
 
     // Make runtime ramdisk modifications
     if (access(FILE_CONTEXTS, R_OK) == 0) {
