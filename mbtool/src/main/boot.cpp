@@ -28,28 +28,26 @@
 
 #include <fcntl.h>
 #include <getopt.h>
-#include <signal.h>
-#include <sys/klog.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "mbcommon/finally.h"
+#include "mbcommon/error_code.h"
+#include "mbcommon/file/buffered.h"
+#include "mbcommon/file/standard.h"
+#include "mbcommon/file_util.h"
 #include "mbcommon/string.h"
-#include "mbcommon/type_traits.h"
 #include "mbcommon/version.h"
+
 #include "mblog/logging.h"
+
 #include "mbutil/chown.h"
-#include "mbutil/cmdline.h"
 #include "mbutil/command.h"
-#include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/mount.h"
-#include "mbutil/path.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
-#include "mbutil/string.h"
 
 #include "util/android_api.h"
 #include "util/emergency.h"
@@ -71,8 +69,6 @@
 
 namespace mb
 {
-
-using ScopedFILE = std::unique_ptr<FILE, TypeFn<fclose>>;
 
 static void boot_usage(FILE *stream)
 {
@@ -103,7 +99,7 @@ static std::string get_rom_id()
 
 // Operating on paths instead of fd's should be safe enough since, at this
 // point, we're the only process alive on the system.
-static bool replace_file(const char *replace, const char *with)
+static oc::result<void> replace_file(const char *replace, const char *with)
 {
     struct stat sb;
     int sb_ret;
@@ -111,81 +107,81 @@ static bool replace_file(const char *replace, const char *with)
     sb_ret = stat(replace, &sb);
 
     if (rename(with, replace) < 0) {
-        LOGE("Failed to rename %s to %s: %s", with, replace, strerror(errno));
-        return false;
+        return ec_from_errno();
     }
 
     if (sb_ret == 0) {
         if (chown(replace, sb.st_uid, sb.st_gid) < 0) {
-            LOGE("Failed to chown %s: %s", replace, strerror(errno));
-            return false;
+            return ec_from_errno();
         }
 
         if (chmod(replace, sb.st_mode & 0777) < 0) {
-            LOGE("Failed to chmod %s: %s", replace, strerror(errno));
-            return false;
+            return ec_from_errno();
         }
     }
 
-    return true;
+    return oc::success();
 }
 
 static bool fix_file_contexts(const char *path)
 {
-    std::string new_path(path);
-    new_path += ".new";
+    auto ret = [&]() -> oc::result<void> {
+        std::string new_path(path);
+        new_path += ".new";
 
-    ScopedFILE fp_old(fopen(path, "rbe"));
-    if (!fp_old) {
-        if (errno == ENOENT) {
-            return true;
-        } else {
-            LOGE("%s: Failed to open for reading: %s",
-                 path, strerror(errno));
-            return false;
+        StandardFile file_old;
+        if (auto r = file_old.open(path, FileOpenMode::ReadOnly); !r) {
+            if (r.error() == std::errc::no_such_file_or_directory) {
+                return oc::success();
+            } else {
+                return r.as_failure();
+            }
         }
-    }
 
-    ScopedFILE fp_new(fopen(new_path.c_str(), "wbe"));
-    if (!fp_new) {
-        LOGE("%s: Failed to open for writing: %s",
-             new_path.c_str(), strerror(errno));
+        BufferedFile file_old_buf;
+        OUTCOME_TRYV(file_old_buf.open(file_old));
+
+        StandardFile file_new;
+        OUTCOME_TRYV(file_new.open(new_path, FileOpenMode::WriteOnly));
+
+        std::string line;
+
+        while (true) {
+            OUTCOME_TRY(n, file_old_buf.read_line(line));
+            if (n == 0) {
+                break;
+            }
+
+            if (starts_with(line, INTERNAL_STORAGE_ROOT "(")
+                    && line.find("<<none>>") == line.npos) {
+                OUTCOME_TRYV(file_write_exact(file_new, "#"_uchars));
+            }
+
+            OUTCOME_TRYV(file_write_exact(file_new, as_uchars(span(line))));
+        }
+        static span<const unsigned char> new_contexts =
+                "\n"
+                INTERNAL_STORAGE_ROOT                 " <<none>>\n"
+                INTERNAL_STORAGE_ROOT "/[0-9]+(/.*)?" " <<none>>\n"
+                "/raw(/.*)?"                          " <<none>>\n"
+                "/data/multiboot(/.*)?"               " <<none>>\n"
+                "/cache/multiboot(/.*)?"              " <<none>>\n"
+                "/system/multiboot(/.*)?"             " <<none>>\n"_uchars;
+
+        OUTCOME_TRYV(file_write_exact(file_new, new_contexts));
+
+        OUTCOME_TRYV(file_new.close());
+
+        return replace_file(path, new_path.c_str());
+    }();
+
+    if (!ret) {
+        LOGE("%s: Failed to patch file: %s",
+             path, ret.error().message().c_str());
         return false;
     }
 
-    char *line = nullptr;
-    size_t len = 0;
-    ssize_t read = 0;
-
-    auto free_line = finally([&]{
-        free(line);
-    });
-
-    while ((read = getline(&line, &len, fp_old.get())) >= 0) {
-        if (starts_with(line, INTERNAL_STORAGE_ROOT "(")
-                && !strstr(line, "<<none>>")) {
-            fputc('#', fp_new.get());
-        }
-
-        if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
-                != static_cast<size_t>(read)) {
-            LOGE("%s: Failed to write file: %s",
-                 new_path.c_str(), strerror(errno));
-            return false;
-        }
-    }
-
-    static const char *new_contexts =
-            "\n"
-            INTERNAL_STORAGE_ROOT                 " <<none>>\n"
-            INTERNAL_STORAGE_ROOT "/[0-9]+(/.*)?" " <<none>>\n"
-            "/raw(/.*)?"                          " <<none>>\n"
-            "/data/multiboot(/.*)?"               " <<none>>\n"
-            "/cache/multiboot(/.*)?"              " <<none>>\n"
-            "/system/multiboot(/.*)?"             " <<none>>\n";
-    fputs(new_contexts, fp_new.get());
-
-    return replace_file(path, new_path.c_str());
+    return true;
 }
 
 static bool fix_binary_file_contexts(const char *path)
@@ -234,7 +230,13 @@ static bool fix_binary_file_contexts(const char *path)
 
     unlink(tmp_path.c_str());
 
-    return replace_file(path, new_path.c_str());
+    if (auto r = replace_file(path, new_path.c_str()); !r) {
+        LOGE("%s: Failed to replace with %s: %s",
+             path, new_path.c_str(), r.error().message().c_str());
+        return false;
+    }
+
+    return true;
 }
 
 static bool create_layout_version()
@@ -242,27 +244,27 @@ static bool create_layout_version()
     // Prevent installd from dying because it can't unmount /data/media for
     // multi-user migration. Since <= 4.2 devices aren't supported anyway,
     // we'll bypass this.
-    ScopedFILE fp(fopen("/data/.layout_version", "wbe"));
-    if (fp) {
-        const char *layout_version;
+    auto r = [&]() -> oc::result<void> {
+        StandardFile file;
+        OUTCOME_TRYV(file.open("/data/.layout_version", FileOpenMode::WriteOnly));
+
+        span<const unsigned char> layout_version;
         if (get_sdk_version(SdkVersionSource::BuildProp) >= 21) {
-            layout_version = "3";
+            layout_version = "3"_uchars;
         } else {
-            layout_version = "2";
+            layout_version = "2"_uchars;
         }
 
-        fwrite(layout_version, 1, strlen(layout_version), fp.get());
-        fp.reset();
-    } else {
-        LOGE("%s: Failed to open for writing: %s",
-             "/data/.layout_version", strerror(errno));
-        return false;
-    }
+        OUTCOME_TRYV(file_write_exact(file, layout_version));
+        OUTCOME_TRYV(file.close());
 
-    if (auto ret = util::selinux_set_context("/data/.layout_version",
-            "u:object_r:install_data_file:s0"); !ret) {
-        LOGE("%s: Failed to set SELinux context: %s",
-             "/data/.layout_version", ret.error().message().c_str());
+        return util::selinux_set_context(
+                "/data/.layout_version", "u:object_r:install_data_file:s0");
+    }();
+
+    if (!r) {
+        LOGE("%s: Failed to write file: %s",
+             "/data/.layout_version", r.error().message().c_str());
         return false;
     }
 
