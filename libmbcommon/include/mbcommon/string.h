@@ -103,6 +103,37 @@ std::vector<std::string> split(std::string_view str, const DelimType &delim)
 }
 
 /*!
+ * \brief Split a string by one or more delimiters (excluding empty components)
+ *
+ * \param str Input string
+ * \param delim `char` delimiter or string of delimiters
+ *
+ * \return Vector of split components. If \p delim is empty, then a vector
+ *         consisting a single element equal to \p str is returned. If \p str is
+ *         empty, then an empty vector is returned.
+ */
+template<typename DelimType>
+std::vector<std::string> split_no_empty(std::string_view str,
+                                        const DelimType &delim)
+{
+    std::size_t begin = 0;
+    std::size_t end;
+    std::vector<std::string> result;
+
+    while ((end = str.find_first_of(delim, begin)) != std::string::npos) {
+        if (end != begin) {
+            result.emplace_back(str.substr(begin, end - begin));
+        }
+        begin = end + 1;
+    }
+    if (begin != str.size()) {
+        result.emplace_back(str.substr(begin));
+    }
+
+    return result;
+}
+
+/*!
  * \brief Split a string by one or more delimiters as string views
  *
  * \param str Input string
@@ -113,7 +144,8 @@ std::vector<std::string> split(std::string_view str, const DelimType &delim)
  *         returned.
  */
 template<typename DelimType>
-std::vector<std::string_view> split_sv(std::string_view str, const DelimType &delim)
+std::vector<std::string_view> split_sv(std::string_view str,
+                                       const DelimType &delim)
 {
     std::size_t begin = 0;
     std::size_t end;
@@ -124,6 +156,41 @@ std::vector<std::string_view> split_sv(std::string_view str, const DelimType &de
         begin = end + 1;
     }
     result.push_back(str.substr(begin));
+
+    return result;
+}
+
+/*!
+ * \brief Split a string by one or more delimiters as string views (excluding
+ *        empty components)
+ *
+ * \param str Input string
+ * \param delim `char` delimiter or string of delimiters
+ *
+ * \return Vector of split components as string views. If \p delim is empty,
+ *         then a vector consisting a single element equal to \p str is
+ *         returned. If \p str is empty, then an empty vector is returned.
+ *
+ * If \p str or \p delim is
+ *         empty, then a vector an empty vector is returned.
+ */
+template<typename DelimType>
+std::vector<std::string_view> split_sv_no_empty(std::string_view str,
+                                                const DelimType &delim)
+{
+    std::size_t begin = 0;
+    std::size_t end;
+    std::vector<std::string_view> result;
+
+    while ((end = str.find_first_of(delim, begin)) != std::string::npos) {
+        if (end != begin) {
+            result.push_back(str.substr(begin, end - begin));
+        }
+        begin = end + 1;
+    }
+    if (begin != str.size()) {
+        result.push_back(str.substr(begin));
+    }
 
     return result;
 }

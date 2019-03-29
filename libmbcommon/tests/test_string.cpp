@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,11 +17,12 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "mbcommon/string.h"
 
 using namespace mb;
+using namespace testing;
 
 TEST(StringTest, FormatString)
 {
@@ -187,46 +188,82 @@ TEST(StringTest, TrimStringView)
 
 TEST(StringTest, CheckSplit)
 {
-    using VS = std::vector<std::string>;
-
     // Empty delimiter or string
-    ASSERT_EQ(split("", ""), VS({""}));
-    ASSERT_EQ(split("abc", ""), VS({"abc"}));
-    ASSERT_EQ(split("", ':'), VS({""}));
+    ASSERT_THAT(split("", ""), ElementsAre(""));
+    ASSERT_THAT(split("abc", ""), ElementsAre("abc"));
+    ASSERT_THAT(split("", ':'), ElementsAre(""));
 
     // Normal split
-    ASSERT_EQ(split(":a:b:c:", ':'), VS({"", "a", "b", "c", ""}));
+    ASSERT_THAT(split(":a:b:c:", ':'), ElementsAre("", "a", "b", "c", ""));
 
     // Repeated delimiters in source
-    ASSERT_EQ(split("a:::b", ':'), VS({"a", "", "", "b"}));
+    ASSERT_THAT(split("a:::b", ':'), ElementsAre("a", "", "", "b"));
 
     // Multiple delimiters
-    ASSERT_EQ(split("a:b;c,d", ",:;"), VS({"a", "b", "c", "d"}));
+    ASSERT_THAT(split("a:b;c,d", ",:;"), ElementsAre("a", "b", "c", "d"));
 
     // Multiple repeated delimiters
-    ASSERT_EQ(split("a:,:;b", ",:;"), VS({"a", "", "", "", "b"}));
+    ASSERT_THAT(split("a:,:;b", ",:;"), ElementsAre("a", "", "", "", "b"));
+}
+
+TEST(StringTest, CheckSplitNoEmpty)
+{
+    // Empty delimiter or string
+    ASSERT_THAT(split_no_empty("", ""), IsEmpty());
+    ASSERT_THAT(split_no_empty("abc", ""), ElementsAre("abc"));
+    ASSERT_THAT(split_no_empty("", ':'), IsEmpty());
+
+    // Normal split
+    ASSERT_THAT(split_no_empty(":a:b:c:", ':'), ElementsAre("a", "b", "c"));
+
+    // Repeated delimiters in source
+    ASSERT_THAT(split_no_empty("a:::b", ':'), ElementsAre("a", "b"));
+
+    // Multiple delimiters
+    ASSERT_THAT(split_no_empty("a:b;c,d", ",:;"), ElementsAre("a", "b", "c", "d"));
+
+    // Multiple repeated delimiters
+    ASSERT_THAT(split_no_empty("a:,:;b", ",:;"), ElementsAre("a", "b"));
 }
 
 TEST(StringTest, CheckSplitStringView)
 {
-    using VSV = std::vector<std::string_view>;
-
     // Empty delimiter or string
-    ASSERT_EQ(split_sv("", ""), VSV({""}));
-    ASSERT_EQ(split_sv("abc", ""), VSV({"abc"}));
-    ASSERT_EQ(split_sv("", ':'), VSV({""}));
+    ASSERT_THAT(split_sv("", ""), ElementsAre(""));
+    ASSERT_THAT(split_sv("abc", ""), ElementsAre("abc"));
+    ASSERT_THAT(split_sv("", ':'), ElementsAre(""));
 
     // Normal split
-    ASSERT_EQ(split_sv(":a:b:c:", ':'), VSV({"", "a", "b", "c", ""}));
+    ASSERT_THAT(split_sv(":a:b:c:", ':'), ElementsAre("", "a", "b", "c", ""));
 
     // Repeated delimiters in source
-    ASSERT_EQ(split_sv("a:::b", ':'), VSV({"a", "", "", "b"}));
+    ASSERT_THAT(split_sv("a:::b", ':'), ElementsAre("a", "", "", "b"));
 
     // Multiple delimiters
-    ASSERT_EQ(split_sv("a:b;c,d", ",:;"), VSV({"a", "b", "c", "d"}));
+    ASSERT_THAT(split_sv("a:b;c,d", ",:;"), ElementsAre("a", "b", "c", "d"));
 
     // Multiple repeated delimiters
-    ASSERT_EQ(split_sv("a:,:;b", ",:;"), VSV({"a", "", "", "", "b"}));
+    ASSERT_THAT(split_sv("a:,:;b", ",:;"), ElementsAre("a", "", "", "", "b"));
+}
+
+TEST(StringTest, CheckSplitStringViewNoEmpty)
+{
+    // Empty delimiter or string
+    ASSERT_THAT(split_sv_no_empty("", ""), IsEmpty());
+    ASSERT_THAT(split_sv_no_empty("abc", ""), ElementsAre("abc"));
+    ASSERT_THAT(split_sv_no_empty("", ':'), IsEmpty());
+
+    // Normal split
+    ASSERT_THAT(split_sv_no_empty(":a:b:c:", ':'), ElementsAre("a", "b", "c"));
+
+    // Repeated delimiters in source
+    ASSERT_THAT(split_sv_no_empty("a:::b", ':'), ElementsAre("a", "b"));
+
+    // Multiple delimiters
+    ASSERT_THAT(split_sv_no_empty("a:b;c,d", ",:;"), ElementsAre("a", "b", "c", "d"));
+
+    // Multiple repeated delimiters
+    ASSERT_THAT(split_sv_no_empty("a:,:;b", ",:;"), ElementsAre("a", "b"));
 }
 
 TEST(StringTest, CheckJoin)
