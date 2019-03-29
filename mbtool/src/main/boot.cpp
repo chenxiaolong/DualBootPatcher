@@ -311,33 +311,30 @@ static bool disable_spota()
 
 int boot_main(int argc, char *argv[])
 {
-    // Some devices actually receive arguments, so ignore them during boot
-    if (getppid() != 0) {
-        static struct option long_options[] = {
-            {"help", no_argument, 0, 'h'},
-            {0, 0, 0, 0}
-        };
+    static const option long_options[] = {
+        {"help", no_argument, 0, 'h'},
+        {0, 0, 0, 0}
+    };
 
-        int opt;
-        int long_index = 0;
+    int opt;
+    int long_index = 0;
 
-        while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
-            switch (opt) {
-            case 'h':
-                boot_usage(stdout);
-                return EXIT_SUCCESS;
+    while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
+        switch (opt) {
+        case 'h':
+            boot_usage(stdout);
+            return EXIT_SUCCESS;
 
-            default:
-                boot_usage(stderr);
-                return EXIT_FAILURE;
-            }
-        }
-
-        // There should be no other arguments
-        if (argc - optind != 0) {
+        default:
             boot_usage(stderr);
             return EXIT_FAILURE;
         }
+    }
+
+    // There should be no other arguments
+    if (argc - optind != 0) {
+        boot_usage(stderr);
+        return EXIT_FAILURE;
     }
 
     // Create mount points
