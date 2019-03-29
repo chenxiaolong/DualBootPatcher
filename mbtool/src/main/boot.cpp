@@ -33,6 +33,7 @@
 #include <signal.h>
 #include <sys/klog.h>
 #include <sys/mount.h>
+#include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <unistd.h>
 
@@ -55,13 +56,11 @@
 #include "mbutil/string.h"
 
 #include "main/mount_fstab.h"
-#include "main/uevent_thread.h"
 #include "util/android_api.h"
 #include "util/emergency.h"
 #include "util/kmsg.h"
 #include "util/multiboot.h"
 #include "util/property_service.h"
-#include "util/romconfig.h"
 #include "util/sepolpatch.h"
 #include "util/signature.h"
 
@@ -98,79 +97,6 @@ static void boot_usage(FILE *stream)
             "expected to be located at /init.orig in the ramdisk. mbtool will\n"
             "remove the /init -> /mbtool symlink and rename /init.orig to /init.\n"
             "/init will then be launched with no arguments.\n");
-}
-
-static bool set_kernel_properties()
-{
-    if (auto cmdline = util::kernel_cmdline()) {
-        for (auto const &[k, v] : cmdline.value()) {
-            LOGV("Kernel cmdline option %s=%s",
-                 k.c_str(), v ? v->c_str() : "(no value)");
-
-            if (starts_with(k, "androidboot.") && k.size() > 12 && v) {
-                std::string key("ro.boot.");
-                key += std::string_view(k).substr(12);
-                g_property_service.set(key, *v);
-            }
-        }
-    } else {
-        LOGW("Failed get kernel cmdline: %s",
-             cmdline.error().message().c_str());
-    }
-
-    struct {
-        const char *src_prop;
-        const char *dst_prop;
-        const char *default_value;
-    } prop_map[] = {
-        { "ro.boot.serialno",   "ro.serialno",   ""        },
-        { "ro.boot.mode",       "ro.bootmode",   "unknown" },
-        { "ro.boot.baseband",   "ro.baseband",   "unknown" },
-        { "ro.boot.bootloader", "ro.bootloader", "unknown" },
-        { "ro.boot.hardware",   "ro.hardware",   "unknown" },
-        { "ro.boot.revision",   "ro.revision",   "0"       },
-    };
-
-    for (auto const &p : prop_map) {
-        auto value = g_property_service.get(p.src_prop);
-        g_property_service.set(p.dst_prop, value ? *value : p.default_value);
-    }
-
-    return true;
-}
-
-static bool properties_setup()
-{
-    if (!g_property_service.initialize()) {
-        LOGW("Failed to initialize properties area");
-    }
-
-    // Set ro.boot.* properties from the kernel command line
-    if (!set_kernel_properties()) {
-        LOGW("Failed to set kernel cmdline properties");
-    }
-
-    // Load /default.prop
-    g_property_service.load_boot_props();
-
-    // Load DBP props
-    g_property_service.load_properties_file(DBP_PROP_PATH, {});
-
-    // Start properties service (to allow other processes to set properties)
-    if (!g_property_service.start_thread()) {
-        LOGW("Failed to start properties service");
-    }
-
-    return true;
-}
-
-static bool properties_cleanup()
-{
-    if (!g_property_service.stop_thread()) {
-        LOGW("Failed to stop properties service");
-    }
-
-    return true;
 }
 
 static std::string get_rom_id()
@@ -423,16 +349,7 @@ int boot_main(int argc, char *argv[])
 
     set_kmsg_logging();
 
-    LOGV("Booting up with version %s (%s)",
-         version(), git_version());
-
-    // Start probing for devices so we have somewhere to write logs for
-    // critical_failure()
-    UeventThread uevent_thread;
-    uevent_thread.start();
-
-    // initialize properties
-    properties_setup();
+    LOGV("Booting up with version %s (%s)", version(), git_version());
 
     // Get ROM ID from /romid
     std::string rom_id = get_rom_id();
@@ -444,23 +361,6 @@ int boot_main(int argc, char *argv[])
 
     LOGV("ROM ID is: %s", rom_id.c_str());
 
-#if 0
-    // Mount system, cache, and external SD from fstab file
-    MountFlags flags =
-            MountFlag::RewriteFstab
-            | MountFlag::MountSystem
-            | MountFlag::MountCache
-            | MountFlag::MountData
-            | MountFlag::MountExternalSd;
-    if (!mount_fstab(fstab.c_str(), rom, flags,
-                     uevent_thread.device_handler())) {
-        LOGE("Failed to mount fstab");
-        emergency_reboot();
-    }
-#endif
-
-    LOGV("Successfully mounted fstab");
-
     // Mount selinuxfs
     selinux_mount();
     // Load pre-boot policy
@@ -471,13 +371,6 @@ int boot_main(int argc, char *argv[])
     if (!mount_rom(rom)) {
         LOGE("Failed to mount ROM directories and images");
         emergency_reboot();
-    }
-
-    std::string config_path(rom->config_path());
-    RomConfig config;
-    if (!config.load_file(config_path)) {
-        LOGW("%s: Failed to load config for ROM %s",
-             config_path.c_str(), rom->id.c_str());
     }
 
     // Make runtime ramdisk modifications
@@ -505,12 +398,6 @@ int boot_main(int argc, char *argv[])
             emergency_reboot();
         }
     }
-
-    // Kill uevent thread and close uevent socket
-    uevent_thread.stop();
-
-    // Kill properties service and clean up
-    properties_cleanup();
 
     // Hack to work around issue where Magisk unconditionally unmounts /system
     // https://github.com/topjohnwu/Magisk/pull/387
