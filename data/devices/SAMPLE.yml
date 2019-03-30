@@ -9,60 +9,66 @@
 
 
 # Human readable device name (required)
-- name: Samsung Galaxy S 4 (Qcom)
+- name: OE106
   # Device ID (required). Must be unique, but can be any string. It is good
   # practice to set this value similar to the device's codename if possible.
-  id: jflte
+  id: ocean
 
   # List of device codenames (required). The codename is the value of
   # 'ro.product.device' or 'ro.build.product' in the /system/build.prop file.
   # WARNING: All of the devices listed MUST have the same partition table.
   #          Otherwise, there's a chance of hard-bricking the device.
   codenames:
-    - jflte
-    - jfltetmo
-    - jfltexx
+    - ocean
+    
 
   # Device architecture (required). For example, armeabi-v7a, arm64-v8a, or x86.
-  architecture: armeabi-v7a
+  architecture: arm64-v8a
 
   # Block device paths section (required).
   block_devs:
     # Base directories (optional). This is a list of the 'by-name' directories
     # in /dev/ that contain the partition block devices.
     base_dirs:
-      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+      - /dev/block/
 
     # System partition block device paths (required).
     system:
-      - /dev/block/platform/msm_sdcc.1/by-name/system
-      - /dev/block/mmcblk0p16
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p49
 
     # Cache partition block device paths (required).
     cache:
-      - /dev/block/platform/msm_sdcc.1/by-name/cache
-      - /dev/block/mmcblk0p18
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p15
 
     # Data partition block device paths (required).
     data:
-      - /dev/block/platform/msm_sdcc.1/by-name/userdata
-      - /dev/block/mmcblk0p29
+      - /dev/block/logic_data
+      - /dev/block/dm-0
 
     # Boot partition block device paths (required).
     boot:
-      - /dev/block/platform/msm_sdcc.1/by-name/boot
-      - /dev/block/mmcblk0p20
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p13
 
     # Recovery partition block device paths (required).
     recovery:
-      - /dev/block/platform/msm_sdcc.1/by-name/recovery
-      - /dev/block/mmcblk0p21
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p16
 
     # Extra block device paths (optional). This is a list of block devices that
     # will be available during the flashing process. Any block devices not
     # listed here cannot be touched by a ROM's installer.
     extra:
-      - /dev/block/platform/msm_sdcc.1/by-name/aboot
+     # - /dev/block/platform/msm_sdcc.1/by-name/aboot
+      - /dev/block/platform/soc
+      - /dev/block/platform/soc/7c4000.sdhci
+      - /dev/block/platform/soc/7c4000.sdhci/by-name
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/abl
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/alterable
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/aop
 
   # Boot UI section (optional).
   boot_ui:
