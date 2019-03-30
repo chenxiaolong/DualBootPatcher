@@ -181,7 +181,7 @@
     brightness_path: '/sys/devices/platform/soc/ae00000.qcom,mdss_mdp/backlight/panel0-backlight/brightness'
 
     # TWRP secondary brightness sysfs path (optional).
-    secondary_brightness_path: '/sys/...'
+    #secondary_brightness_path: '/sys/...'
 
     # TWRP max brightness (optional).
     max_brightness: 255
@@ -190,16 +190,16 @@
     default_brightness: 128
 
     # TWRP battery sysfs path (optional).
-    battery_path: '/sys/...'
+    # battery_path: '/sys/...'
 
     # TWRP CPU temperature sys path (optional).
-    cpu_temp_path: '/sys/...'
+    # cpu_temp_path: '/sys/...'
 
     # TWRP input device blacklist (optional).
-    input_blacklist: ''
+    # input_blacklist: ''
 
     # TWRP input device whitelist (optional).
-    input_whitelist: ''
+    # input_whitelist: ''
 
     # TWRP graphics backend list (required).
     #
