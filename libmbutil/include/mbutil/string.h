@@ -27,11 +27,6 @@
 namespace mb::util
 {
 
-void replace(std::string &source,
-             const std::string &from, const std::string &to);
-void replace_all(std::string &source,
-                 const std::string &from, const std::string &to);
-
 std::string hex_string(const unsigned char *data, size_t size);
 
 char ** dup_cstring_list(const char * const *list);
