@@ -35,7 +35,6 @@
 #include "mbcommon/integer.h"
 #include "mbcommon/string.h"
 #include "mbcommon/type_traits.h"
-#include "mbutil/string.h"
 
 
 namespace mb::util
@@ -352,7 +351,7 @@ FstabResult<TwrpFstabRecs> read_twrp_fstab(const std::string &path)
             } else if (strncmp(temp, "flags=", 6) == 0) {
                 // TWRP flags
                 temp += 6;
-                rec.twrp_flags = tokenize(temp, ";");
+                rec.twrp_flags = split_no_empty(temp, ";");
             } else if (strncmp(temp, "null", 4) == 0
                     || strncmp(temp, "NULL", 4) == 0) {
                 // Skip

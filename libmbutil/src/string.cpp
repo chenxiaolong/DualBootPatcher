@@ -59,23 +59,6 @@ void replace_all(std::string &source,
     replace_internal(source, from, to, false);
 }
 
-std::vector<std::string> tokenize(std::string str, const std::string &delims)
-{
-    std::vector<std::string> tokens;
-
-    char *temp;
-    char *token;
-
-    token = strtok_r(str.data(), delims.c_str(), &temp);
-    while (token != nullptr) {
-        tokens.emplace_back(token);
-
-        token = strtok_r(nullptr, delims.c_str(), &temp);
-    }
-
-    return tokens;
-}
-
 /*!
  * \brief Convert binary data to its hex string representation
  *
