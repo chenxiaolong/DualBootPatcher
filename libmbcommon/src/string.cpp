@@ -366,4 +366,48 @@ std::string_view trimmed(std::string_view s)
     return trimmed_left(trimmed_right(s));
 }
 
+static void replace_internal(std::string &source,
+                             std::string_view from, std::string_view to,
+                             bool replace_first_only)
+{
+    if (from.empty()) {
+        return;
+    }
+
+    std::size_t pos = 0;
+    while ((pos = source.find(from, pos)) != std::string::npos) {
+        source.replace(pos, from.size(), to);
+        if (replace_first_only) {
+            return;
+        }
+        pos += to.size();
+    }
+}
+
+/*!
+ * \brief Replace one instance of sequence in string
+ *
+ * \param[in,out] source String to modify
+ * \param[in] from Source pattern
+ * \param[in] to Replacement
+ */
+void replace(std::string &source,
+             std::string_view from, std::string_view to)
+{
+    replace_internal(source, from, to, true);
+}
+
+/*!
+ * \brief Replace all instances of sequence in string
+ *
+ * \param[in,out] source String to modify
+ * \param[in] from Source pattern
+ * \param[in] to Replacement
+ */
+void replace_all(std::string &source,
+                 std::string_view from, std::string_view to)
+{
+    replace_internal(source, from, to, false);
+}
+
 }

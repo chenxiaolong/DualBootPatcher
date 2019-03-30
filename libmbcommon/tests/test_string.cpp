@@ -292,3 +292,45 @@ TEST(StringTest, CheckJoin)
     ASSERT_EQ(join(VS({"a", "b", "c"}), ", "), "a, b, c");
     ASSERT_EQ(join(VSV({"a", "b", "c"}), ", "), "a, b, c");
 }
+
+TEST(StringTest, CheckReplace)
+{
+    constexpr char expected1[] = "";
+    std::string str1;
+
+    replace(str1, "", "");
+    ASSERT_EQ(str1, expected1);
+
+    constexpr char expected2[] = "abc";
+    std::string str2 = "abc";
+
+    replace(str2, "", "def");
+    ASSERT_EQ(str2, expected2);
+
+    constexpr char expected3[] = "yzyzabcd";
+    std::string str3 = "abababcd";
+
+    replace(str3, "abab", "yzyz");
+    ASSERT_EQ(str3, expected3);
+}
+
+TEST(StringTest, CheckReplaceAll)
+{
+    constexpr char expected1[] = "";
+    std::string str1;
+
+    replace_all(str1, "", "");
+    ASSERT_EQ(str1, expected1);
+
+    constexpr char expected2[] = "bbbbb";
+    std::string str2 = "aaaaa";
+
+    replace_all(str2, "a", "b");
+    ASSERT_EQ(str2, expected2);
+
+    constexpr char expected3[] = "yzyzyzyzabcd";
+    std::string str3 = "abababababcd";
+
+    replace_all(str3, "abab", "yzyz");
+    ASSERT_EQ(str3, expected3);
+}

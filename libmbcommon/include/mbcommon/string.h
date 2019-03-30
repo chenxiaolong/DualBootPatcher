@@ -222,4 +222,10 @@ std::string join(const Container &list, const DelimType &delim)
     return result;
 }
 
+// String replace
+MB_EXPORT void replace(std::string &source,
+                       std::string_view from, std::string_view to);
+MB_EXPORT void replace_all(std::string &source,
+                           std::string_view from, std::string_view to);
+
 }
