@@ -1,6 +1,7 @@
 if(MBP_ENABLE_TESTS)
     set(INSTALL_GTEST OFF CACHE BOOL "Enable installation of googletest" FORCE)
     set(INSTALL_GMOCK OFF CACHE BOOL "Enable installation of googlemock" FORCE)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
     add_subdirectory(external/googletest)
 
