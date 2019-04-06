@@ -1,3 +1,11 @@
+if(WIN32)
+    # Target Vista and up
+    add_definitions(-D_WIN32_WINNT=0x0600)
+
+    # Get rid of min/max macros in windows.h
+    add_definitions(-DNOMINMAX)
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 
@@ -35,32 +43,22 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     endif()
 
     if(WIN32)
-        # Target Vista and up
-        add_definitions(-D_WIN32_WINNT=0x0600)
+        # Don't warn for valid msprintf specifiers
+        add_compile_options(-Wno-pedantic-ms-format)
 
-        # Get rid of min/max macros in windows.h
-        add_definitions(-DNOMINMAX)
+        # Enable ASLR
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--dynamicbase")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--dynamicbase")
 
-        if(MSVC)
-            add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
-        else()
-            # Don't warn for valid msprintf specifiers
-            add_compile_options(-Wno-pedantic-ms-format)
+        # Enable DEP
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--nxcompat")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--nxcompat")
 
-            # Enable ASLR
-            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--dynamicbase")
-            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--dynamicbase")
-
-            # Enable DEP
-            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--nxcompat")
-            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--nxcompat")
-
-            # libssp is required if stack-protector is enabled
-            set(CMAKE_C_CREATE_SHARED_LIBRARY "${CMAKE_C_CREATE_SHARED_LIBRARY} -lssp")
-            set(CMAKE_CXX_CREATE_SHARED_LIBRARY "${CMAKE_CXX_CREATE_SHARED_LIBRARY} -lssp")
-            SET(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINK_EXECUTABLE} -lssp")
-            SET(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -lssp")
-        endif()
+        # libssp is required if stack-protector is enabled
+        set(CMAKE_C_CREATE_SHARED_LIBRARY "${CMAKE_C_CREATE_SHARED_LIBRARY} -lssp")
+        set(CMAKE_CXX_CREATE_SHARED_LIBRARY "${CMAKE_CXX_CREATE_SHARED_LIBRARY} -lssp")
+        SET(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINK_EXECUTABLE} -lssp")
+        SET(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -lssp")
     else()
         # Visibility
         add_compile_options(-fvisibility=hidden)
@@ -183,6 +181,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
             -Wno-shadow-field-in-constructor
         )
     endif()
+elseif(MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
 add_library(interface.global.CVersion INTERFACE)
