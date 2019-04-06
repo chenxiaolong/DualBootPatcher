@@ -30,33 +30,33 @@ using namespace mb;
 TEST(IntegerTest, ConvertEmptyString)
 {
     int ri;
-    ASSERT_FALSE(str_to_num("", 0, ri));
+    ASSERT_FALSE(str_to_num("", 10, ri));
     ASSERT_EQ(errno, EINVAL);
 
     unsigned int ru;
-    ASSERT_FALSE(str_to_num("", 0, ru));
+    ASSERT_FALSE(str_to_num("", 10, ru));
     ASSERT_EQ(errno, EINVAL);
 }
 
 TEST(IntegerTest, ConvertInvalidString)
 {
     int ri;
-    ASSERT_FALSE(str_to_num("abcd", 0, ri));
+    ASSERT_FALSE(str_to_num("abcd", 10, ri));
     ASSERT_EQ(errno, EINVAL);
 
     unsigned int ru;
-    ASSERT_FALSE(str_to_num("abcd", 0, ru));
+    ASSERT_FALSE(str_to_num("abcd", 10, ru));
     ASSERT_EQ(errno, EINVAL);
 }
 
 TEST(IntegerTest, ConvertStringWithTrailingNonDigits)
 {
     int ri;
-    ASSERT_FALSE(str_to_num("1234 ", 0, ri));
+    ASSERT_FALSE(str_to_num("1234 ", 10, ri));
     ASSERT_EQ(errno, EINVAL);
 
     unsigned int ru;
-    ASSERT_FALSE(str_to_num("1234 ", 0, ru));
+    ASSERT_FALSE(str_to_num("1234 ", 10, ru));
     ASSERT_EQ(errno, EINVAL);
 }
 
