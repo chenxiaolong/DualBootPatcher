@@ -97,6 +97,8 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/format/test_mtk_writer.cpp
         tests/format/test_sony_elf_reader.cpp
         tests/format/test_sony_elf_writer.cpp
+        # Third-party SHA1
+        tests/test_sha1.cpp
     )
 
     # Link dependencies
@@ -106,8 +108,8 @@ if(variants AND MBP_ENABLE_TESTS)
         interface.mbbootimg.private-headers
         mbbootimg-static
         mbcommon-static
-        gtest
-        gtest_main
+        gmock
+        gmock_main
     )
 
     if(${MBP_BUILD_TARGET} STREQUAL device)
