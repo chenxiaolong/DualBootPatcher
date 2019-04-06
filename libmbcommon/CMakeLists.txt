@@ -53,10 +53,8 @@ foreach(variant ${variants})
         src/error.cpp
         src/error_code.cpp
         src/file/buffered.cpp
-        src/file/fd.cpp
         src/file/memory.cpp
         src/file/open_mode.cpp
-        src/file/posix.cpp
         src/file/standard.cpp
         src/file.cpp
         src/file_error.cpp
@@ -66,7 +64,14 @@ foreach(variant ${variants})
         ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
     )
 
-    if(WIN32)
+    if(UNIX)
+        target_sources(
+            ${lib_target}
+            PRIVATE
+            src/file/fd.cpp
+            src/file/posix.cpp
+        )
+    elseif(WIN32)
         target_sources(
             ${lib_target}
             PRIVATE
@@ -122,9 +127,7 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/main.cpp
         # Tests
         tests/file/test_buffered.cpp
-        tests/file/test_fd.cpp
         tests/file/test_memory.cpp
-        tests/file/test_posix.cpp
         tests/test_endian.cpp
         tests/test_error_code.cpp
         tests/test_file_error.cpp
@@ -137,7 +140,14 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/test_version.cpp
     )
 
-    if(WIN32)
+    if(UNIX)
+        target_sources(
+            mbcommon_tests
+            PRIVATE
+            tests/file/test_fd.cpp
+            tests/file/test_posix.cpp
+        )
+    elseif(WIN32)
         target_sources(
             mbcommon_tests
             PRIVATE
