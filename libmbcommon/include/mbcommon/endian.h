@@ -64,7 +64,7 @@
 #  define MB_LITTLE_ENDIAN LITTLE_ENDIAN
 #  define MB_PDP_ENDIAN    PDP_ENDIAN
 #elif defined(_WIN32)
-#  include <sys/param.h>
+#  include <cstdlib>
 
 #  if defined(_MSC_VER)
 #    define MB_WIN32_SWAP_16 _byteswap_ushort
