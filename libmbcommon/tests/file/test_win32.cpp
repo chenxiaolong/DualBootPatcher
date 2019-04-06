@@ -316,6 +316,20 @@ TEST_F(FileWin32Test, ReadEof)
     ASSERT_EQ(file.read(c), oc::success(0u));
 }
 
+TEST_F(FileWin32Test, ReadEofBrokenPipe)
+{
+    // Ensure that the read callback is called
+    EXPECT_CALL(_funcs, fn_ReadFile(_, _, _, _, _))
+        .Times(1)
+        .WillOnce(SetWin32ErrorAndReturn(ERROR_BROKEN_PIPE, TRUE));
+
+    TestableWin32File file(&_funcs, nullptr, true, false);
+    ASSERT_TRUE(file.is_open());
+
+    unsigned char c[1];
+    ASSERT_EQ(file.read(c), oc::success(0u));
+}
+
 TEST_F(FileWin32Test, ReadFailure)
 {
     // Ensure that the read callback is called

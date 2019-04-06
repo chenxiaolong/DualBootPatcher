@@ -468,7 +468,11 @@ oc::result<size_t> Win32File::read(span<unsigned char> buf)
     );
 
     if (!ret) {
-        return ec_from_win32();
+        if (auto e = ec_from_win32(); e.value() == ERROR_BROKEN_PIPE) {
+            return 0;
+        } else {
+            return e;
+        }
     }
 
     return n;
