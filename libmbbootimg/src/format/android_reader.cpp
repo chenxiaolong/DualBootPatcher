@@ -78,9 +78,9 @@ oc::result<void> AndroidFormatReader::set_option(const char *key,
                                                  const char *value)
 {
     if (strcmp(key, "strict") == 0) {
-        bool strict = strcasecmp(value, "true") == 0
-                || strcasecmp(value, "yes") == 0
-                || strcasecmp(value, "y") == 0
+        bool strict = equals_icase(value, "true")
+                || equals_icase(value, "yes")
+                || equals_icase(value, "y")
                 || strcmp(value, "1") == 0;
         m_allow_truncated_dt = !strict;
         return oc::success();
