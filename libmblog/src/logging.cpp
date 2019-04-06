@@ -43,7 +43,6 @@
 
 #include "mbcommon/error.h"
 #include "mbcommon/string.h"
-#include "mbcommon/type_traits.h"
 
 #include "mblog/log_record.h"
 #include "mblog/stdio_logger.h"
@@ -52,13 +51,13 @@ namespace mb::log
 {
 
 #if defined(_WIN32)
-using Pid = ReturnType<decltype(GetCurrentProcessId)>::type;
-using Tid = ReturnType<decltype(GetCurrentThreadId)>::type;
+using Pid = DWORD;
+using Tid = DWORD;
 #elif defined(__APPLE__)
-using Pid = ReturnType<decltype(getpid)>::type;
-using Tid = std::remove_pointer_t<ArgN<1, decltype(pthread_threadid_np)>::type>;
+using Pid = pid_t;
+using Tid = uint64_t;
 #elif defined(__linux__)
-using Pid = ReturnType<decltype(getpid)>::type;
+using Pid = pid_t;
 using Tid = pid_t;
 #endif
 
@@ -91,8 +90,7 @@ static Tid _get_tid()
 #if defined(_WIN32)
     return GetCurrentThreadId();
 #elif defined(__APPLE__)
-    uint64_t tid;
-    if (pthread_threadid_np(nullptr, &tid)) {
+    if (Tid tid; pthread_threadid_np(nullptr, &tid)) {
         return tid;
     } else {
         return 0;
