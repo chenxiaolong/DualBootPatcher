@@ -45,7 +45,7 @@ TEST(LocaleTest, ConvertUtf8ToWcs)
 {
     constexpr char utf8_str[] = "\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8"
                                 "\x96\xe7\x95\x8c\xef\xbc\x81";
-    constexpr wchar_t wcs_str[] = L"你好，世界！";
+    constexpr wchar_t wcs_str[] = L"\u4f60\u597d\uff0c\u4e16\u754c\uff01"; // 你好，世界！
     auto result = mb::utf8_to_wcs(utf8_str);
 
     ASSERT_TRUE(result);
@@ -56,7 +56,7 @@ TEST(LocaleTest, ConvertWcsToUtf8)
 {
     constexpr char utf8_str[] = "\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8"
                                 "\x96\xe7\x95\x8c\xef\xbc\x81";
-    constexpr wchar_t wcs_str[] = L"你好，世界！";
+    constexpr wchar_t wcs_str[] = L"\u4f60\u597d\uff0c\u4e16\u754c\uff01"; // 你好，世界！
     auto result = mb::wcs_to_utf8(wcs_str);
 
     ASSERT_TRUE(result);
@@ -92,7 +92,7 @@ TEST(LocaleTest, ConvertLargeString)
     std::string_view str1_mbs_pattern("Hello!");
     std::wstring_view str1_wcs_pattern(L"Hello!");
     std::string_view str2_utf8_pattern("\xe4\xbd\xa0\xe5\xa5\xbd");
-    std::wstring_view str2_wcs_pattern(L"你好");
+    std::wstring_view str2_wcs_pattern(L"\u4f60\u597d"); // 你好
 
     str1_mbs.reserve(str1_mbs_pattern.size() * 1024 * 1024);
     str1_wcs.reserve(str1_wcs_pattern.size() * 1024 * 1024);
