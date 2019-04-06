@@ -81,13 +81,13 @@ struct ReturnType<R(As...) noexcept>
 
 #ifdef _WIN32
 template <typename R, typename... As>
-struct ReturnType<__stdcall R(As...)>
+struct ReturnType<R __stdcall(As...)>
 {
     using type = R;
 };
 
 template <typename R, typename... As>
-struct ReturnType<__stdcall R(As...) noexcept>
+struct ReturnType<R __stdcall(As...) noexcept>
 {
     using type = R;
 };
