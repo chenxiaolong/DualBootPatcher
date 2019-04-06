@@ -47,6 +47,16 @@ TEST(StringTest, FormatSizeT)
     ASSERT_EQ(format("%" MB_PRIzX, unsigned_val), "FFFFFFFF");
 }
 
+TEST(StringTest, CheckEquals)
+{
+    ASSERT_TRUE(equals_icase("", ""));
+    ASSERT_TRUE(equals_icase("hello", "hello"));
+    ASSERT_TRUE(equals_icase("hello", "HELLO"));
+    ASSERT_TRUE(equals_icase("hElLo", "HeLlO"));
+
+    ASSERT_FALSE(equals_icase("hello", "BYE"));
+}
+
 TEST(StringTest, CheckStartsWithNormal)
 {
     // Check equal strings

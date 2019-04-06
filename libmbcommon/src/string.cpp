@@ -226,6 +226,23 @@ std::string format_v(const char *fmt, va_list ap)
 }
 
 /*!
+ * \brief Check if strings are equal (case insensitive)
+ *
+ * \param str1 String 1
+ * \param str2 String 2
+ *
+ * \return Whether the strings are equal
+ */
+bool equals_icase(const char *str1, const char *str2)
+{
+#ifdef _WIN32
+    return _stricmp(str1, str2) == 0;
+#else
+    return strcasecmp(str1, str2) == 0;
+#endif
+}
+
+/*!
  * \brief Check if string has prefix (case sensitive)
  *
  * \param string String

@@ -58,6 +58,9 @@ MB_EXPORT std::string format(const char *fmt, ...);
 MB_EXPORT oc::result<std::string> format_v_safe(const char *fmt, va_list ap);
 MB_EXPORT std::string format_v(const char *fmt, va_list ap);
 
+// String equals
+MB_EXPORT bool equals_icase(const char *str1, const char *str2);
+
 // String starts with
 MB_EXPORT bool starts_with(std::string_view string, std::string_view prefix);
 MB_EXPORT bool starts_with_icase(std::string_view string, std::string_view prefix);
