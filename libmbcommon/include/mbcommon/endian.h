@@ -78,44 +78,25 @@
 #    error Unsupported compiler on Win32
 #  endif
 
-#  if BYTE_ORDER == LITTLE_ENDIAN
-#    define mb_htobe16(x) MB_WIN32_SWAP_16(x)
-#    define mb_htole16(x) (x)
-#    define mb_be16toh(x) MB_WIN32_SWAP_16(x)
-#    define mb_le16toh(x) (x)
+#  define mb_htobe16(x) MB_WIN32_SWAP_16(x)
+#  define mb_htole16(x) (x)
+#  define mb_be16toh(x) MB_WIN32_SWAP_16(x)
+#  define mb_le16toh(x) (x)
 
-#    define mb_htobe32(x) MB_WIN32_SWAP_32(x)
-#    define mb_htole32(x) (x)
-#    define mb_be32toh(x) MB_WIN32_SWAP_32(x)
-#    define mb_le32toh(x) (x)
+#  define mb_htobe32(x) MB_WIN32_SWAP_32(x)
+#  define mb_htole32(x) (x)
+#  define mb_be32toh(x) MB_WIN32_SWAP_32(x)
+#  define mb_le32toh(x) (x)
 
-#    define mb_htobe64(x) MB_WIN32_SWAP_64(x)
-#    define mb_htole64(x) (x)
-#    define mb_be64toh(x) MB_WIN32_SWAP_64(x)
-#    define mb_le64toh(x) (x)
-#  elif BYTE_ORDER == BIG_ENDIAN
-#    define mb_htobe16(x) (x)
-#    define mb_htole16(x) MB_WIN32_SWAP_16(x)
-#    define mb_be16toh(x) (x)
-#    define mb_le16toh(x) MB_WIN32_SWAP_16(x)
+#  define mb_htobe64(x) MB_WIN32_SWAP_64(x)
+#  define mb_htole64(x) (x)
+#  define mb_be64toh(x) MB_WIN32_SWAP_64(x)
+#  define mb_le64toh(x) (x)
 
-#    define mb_htobe32(x) (x)
-#    define mb_htole32(x) MB_WIN32_SWAP_32(x)
-#    define mb_be32toh(x) (x)
-#    define mb_le32toh(x) MB_WIN32_SWAP_32(x)
-
-#    define mb_htobe64(x) (x)
-#    define mb_htole64(x) MB_WIN32_SWAP_64(x)
-#    define mb_be64toh(x) (x)
-#    define mb_le64toh(x) MB_WIN32_SWAP_64(x)
-#  else
-#    error Unsupported byte order on Win32
-#  endif
-
-#  define MB_BYTE_ORDER    BYTE_ORDER
-#  define MB_BIG_ENDIAN    BIG_ENDIAN
-#  define MB_LITTLE_ENDIAN LITTLE_ENDIAN
-#  define MB_PDP_ENDIAN    PDP_ENDIAN
+#  define MB_BYTE_ORDER    2
+#  define MB_BIG_ENDIAN    1
+#  define MB_LITTLE_ENDIAN 2
+#  define MB_PDP_ENDIAN    3
 #else
 #  error Unsupported platform
 #endif
