@@ -23,10 +23,6 @@
 
 #include <system_error>
 
-#ifdef _WIN32
-#  include <windef.h>
-#endif
-
 namespace mb
 {
 
@@ -36,7 +32,7 @@ namespace mb
 #ifdef _WIN32
 MB_EXPORT const std::error_category & win32_error_category();
 
-[[nodiscard]] MB_EXPORT std::error_code ec_from_win32(DWORD error_value);
+[[nodiscard]] MB_EXPORT std::error_code ec_from_win32(unsigned long error_value);
 [[nodiscard]] MB_EXPORT std::error_code ec_from_win32();
 #endif
 

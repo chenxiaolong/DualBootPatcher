@@ -19,9 +19,11 @@
 
 #include "mbcommon/error_code.h"
 
-#ifdef __MINGW32__
+#ifdef _WIN32
 #  include <windows.h>
+#endif
 
+#ifdef __MINGW32__
 #  include "mbcommon/finally.h"
 #  include "mbcommon/locale.h"
 #endif
@@ -208,8 +210,10 @@ const std::error_category & win32_error_category()
 #endif
 }
 
-std::error_code ec_from_win32(DWORD error_value)
+std::error_code ec_from_win32(unsigned long error_value)
 {
+    static_assert(sizeof(DWORD) == sizeof(unsigned long));
+
     return {static_cast<int>(error_value), win32_error_category()};
 }
 
