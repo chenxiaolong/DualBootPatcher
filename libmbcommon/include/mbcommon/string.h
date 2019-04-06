@@ -26,7 +26,6 @@
 #include <vector>
 
 #include <cstdarg>
-#include <cstdbool>
 #include <cstddef>
 
 #include "mbcommon/outcome.h"
