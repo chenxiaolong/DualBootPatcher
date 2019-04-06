@@ -19,9 +19,8 @@
 
 #pragma once
 
-#pragma GCC diagnostic push
-
 #ifdef __clang__
+#  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wc++1z-extensions"
 #  pragma GCC diagnostic ignored "-Wdocumentation"
 #  pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -29,7 +28,9 @@
 
 #include "outcome.hpp"
 
-#pragma GCC diagnostic pop
+#ifdef __clang__
+#  pragma GCC diagnostic pop
+#endif
 
 
 namespace mb
