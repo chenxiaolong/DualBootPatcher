@@ -54,7 +54,7 @@ static oc::result<std::wstring> win32_convert_to_wcs(UINT code_page,
         return ec_from_win32(ERROR_INVALID_PARAMETER);
     }
 
-    int n = MultiByteToWideChar(code_page, 0, in.data(),
+    int n = MultiByteToWideChar(code_page, MB_ERR_INVALID_CHARS, in.data(),
                                 static_cast<int>(in.size()), nullptr, 0);
     if (n == 0) {
         return ec_from_win32();
@@ -64,7 +64,7 @@ static oc::result<std::wstring> win32_convert_to_wcs(UINT code_page,
     std::wstring out_buf;
     out_buf.resize(static_cast<size_t>(n));
 
-    n = MultiByteToWideChar(code_page, 0, in.data(),
+    n = MultiByteToWideChar(code_page, MB_ERR_INVALID_CHARS, in.data(),
                             static_cast<int>(in.size()), out_buf.data(), n);
     if (n == 0) {
         return ec_from_win32();
@@ -87,7 +87,12 @@ static oc::result<std::string> win32_convert_to_mbs(UINT code_page,
         return ec_from_win32(ERROR_INVALID_PARAMETER);
     }
 
-    int n = WideCharToMultiByte(code_page, 0, in.data(),
+    DWORD flags = 0;
+    if (code_page == CP_UTF8) {
+        flags |= WC_ERR_INVALID_CHARS;
+    }
+
+    int n = WideCharToMultiByte(code_page, flags, in.data(),
                                 static_cast<int>(in.size()), nullptr, 0,
                                 nullptr, nullptr);
     if (n == 0) {
@@ -98,7 +103,7 @@ static oc::result<std::string> win32_convert_to_mbs(UINT code_page,
     std::string out_buf;
     out_buf.resize(static_cast<size_t>(n));
 
-    n = WideCharToMultiByte(code_page, 0, in.data(),
+    n = WideCharToMultiByte(code_page, flags, in.data(),
                             static_cast<int>(in.size()), out_buf.data(), n,
                             nullptr, nullptr);
     if (n == 0) {
