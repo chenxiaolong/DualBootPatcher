@@ -51,9 +51,6 @@ foreach(variant ${variants})
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
     endif()
 
-    # Set library name
-    set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbbootimg)
-
     # Link dependencies
     target_link_libraries(
         ${lib_target}

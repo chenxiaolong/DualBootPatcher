@@ -43,9 +43,6 @@ foreach(variant ${variants})
         target_compile_options(${lib_target} PRIVATE -Wno-format-nonliteral)
     endif()
 
-    # Set library name
-    set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mblog)
-
     # Link dependencies
     target_link_libraries(
         ${lib_target}
