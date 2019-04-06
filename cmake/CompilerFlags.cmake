@@ -191,14 +191,14 @@ if(NOT MSVC)
         INTERFACE
         c_std_11
     )
-
-    # Target C++17
-    target_compile_features(
-        interface.global.CXXVersion
-        INTERFACE
-        cxx_std_17
-    )
 endif()
+
+# Target C++17
+target_compile_features(
+    interface.global.CXXVersion
+    INTERFACE
+    cxx_std_17
+)
 
 function(unix_link_executable_statically first_target)
     if(UNIX)
