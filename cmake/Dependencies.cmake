@@ -1,6 +1,7 @@
 # Dependencies
 
 if(${MBP_BUILD_TARGET} STREQUAL system)
+    include(cmake/dependencies/CLI11.cmake)
     include(cmake/dependencies/googletest.cmake)
     include(cmake/dependencies/libarchive.cmake)
     include(cmake/dependencies/liblzma.cmake)
@@ -12,6 +13,7 @@ elseif(${MBP_BUILD_TARGET} STREQUAL device)
     backup_variable(CMAKE_FIND_LIBRARY_SUFFIXES)
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 
+    include(cmake/dependencies/CLI11.cmake)
     include(cmake/dependencies/fuse.cmake)
     include(cmake/dependencies/googletest.cmake)
     include(cmake/dependencies/libarchive.cmake)
