@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -31,27 +31,16 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <getopt.h>
+#include "CLI/CLI.hpp"
+
+#ifdef _WIN32
+#  include "mbcommon/file/win32.h"
+#else
+#  include "mbcommon/file/fd.h"
+#endif
 
 #include "mbcommon/file/standard.h"
-#include "mbcommon/file/posix.h"
 #include "mbcommon/integer.h"
-
-static void usage(FILE *stream, const char *prog_name)
-{
-    fprintf(stream, "Usage: %s {-p <hex> | -t <text>} [option...] [<file>...]\n"
-                    "\n"
-                    "Options:\n"
-                    "  -p, --hex <hex pattern>\n"
-                    "                  Search file for hex pattern\n"
-                    "  -t, --text <text pattern>\n"
-                    "                  Search file for text pattern\n"
-                    "  -n, --num-matches\n"
-                    "                  Maximum number of matches\n"
-                    "  --start-offset  Starting boundary offset for search\n"
-                    "  --end-offset    Ending boundary offset for search\n",
-                    prog_name);
-}
 
 static int ascii_to_hex(char c)
 {
@@ -147,9 +136,20 @@ static bool search_stdin(std::optional<uint64_t> start,
                          std::string_view pattern,
                          std::optional<uint64_t> max_matches)
 {
-    mb::PosixFile file;
+#ifdef _WIN32
+    auto handle = GetStdHandle(STD_INPUT_HANDLE);
+    if (handle == INVALID_HANDLE_VALUE) {
+        fprintf(stderr, "Failed to get stdin handle\n");
+        return false;
+    }
 
-    auto ret = file.open(stdin, false);
+    mb::Win32File file;
+    auto ret = file.open(handle, false, false);
+#else
+    mb::FdFile file;
+    auto ret = file.open(STDIN_FILENO, false);
+#endif
+
     if (!ret) {
         fprintf(stderr, "Failed to open stdin: %s\n",
                 ret.error().message().c_str());
@@ -179,108 +179,54 @@ static bool search_file(const char *path,
 
 int main(int argc, char *argv[])
 {
-    std::optional<uint64_t> start;
-    std::optional<uint64_t> end;
+    CLI::App app;
+
+    std::string pattern;
+    auto pattern_group = app.add_option_group("Pattern", "Search pattern");
+    pattern_group->required();
+    pattern_group->add_option("-p,--hex", pattern,
+                              "Search file for hex pattern")
+            ->type_name("PATTERN")
+            ->transform(CLI::Validator([](auto &input) {
+                std::string result;
+                if (!hex_to_binary(input, result)) {
+                    return "invalid hex pattern";
+                }
+                input.swap(result);
+                return "";
+            }, "HEX"));
+    pattern_group->add_option("-t,--text", pattern,
+                              "Search file for text pattern")
+            ->type_name("PATTERN");
+
     std::optional<uint64_t> max_matches;
-    std::optional<std::string> pattern;
+    app.add_option("-n,--num-matches", max_matches,
+                   "Maximum number of matches")
+            ->type_name("NUM");
 
-    int opt;
+    std::optional<uint64_t> start;
+    app.add_option("--start-offset", start,
+                   "Starting boundary offset for search")
+            ->type_name("OFFSET");
 
-    // Arguments with no short options
-    enum : int
-    {
-        OPT_START_OFFSET         = CHAR_MAX + 1,
-        OPT_END_OFFSET           = CHAR_MAX + 2,
-    };
+    std::optional<uint64_t> end;
+    app.add_option("--end-offset", end,
+                   "Ending boundary offset for search")
+            ->type_name("OFFSET");
 
-    static const char short_options[] = "hn:p:t:";
+    std::vector<std::string> files;
+    app.add_option("file", files, "Files to search")
+            ->type_name("FILE");
 
-    static struct option long_options[] = {
-        // Arguments with short versions
-        {"help",         no_argument,       nullptr, 'h'},
-        {"num-matches",  required_argument, nullptr, 'n'},
-        {"hex",          required_argument, nullptr, 'p'},
-        {"text",         required_argument, nullptr, 't'},
-        // Arguments without short versions
-        {"start-offset", required_argument, nullptr, OPT_START_OFFSET},
-        {"end-offset",   required_argument, nullptr, OPT_END_OFFSET},
-        {nullptr,        0,                 nullptr, 0},
-    };
-
-    int long_index = 0;
-
-    while ((opt = getopt_long(argc, argv, short_options,
-                              long_options, &long_index)) != -1) {
-        switch (opt) {
-        case 'n': {
-            uint64_t value;
-            if (!mb::str_to_num(optarg, 10, value)) {
-                fprintf(stderr, "Invalid value for -n/--num-matches: %s\n",
-                        optarg);
-                return EXIT_FAILURE;
-            }
-            max_matches = value;
-            break;
-        }
-
-        case 'p': {
-            pattern = "";
-            if (!hex_to_binary(optarg, *pattern)) {
-                fprintf(stderr, "Invalid hex pattern: %s\n", strerror(errno));
-                return EXIT_FAILURE;
-            }
-            break;
-        }
-
-        case 't':
-            pattern = optarg;
-            break;
-
-        case OPT_START_OFFSET: {
-            uint64_t value;
-            if (!mb::str_to_num(optarg, 0, value)) {
-                fprintf(stderr, "Invalid value for --start-offset: %s\n",
-                        optarg);
-                return EXIT_FAILURE;
-            }
-            start = value;
-            break;
-        }
-
-        case OPT_END_OFFSET: {
-            uint64_t value;
-            if (!mb::str_to_num(optarg, 0, value)) {
-                fprintf(stderr, "Invalid value for --end-offset: %s\n",
-                        optarg);
-                return EXIT_FAILURE;
-            }
-            end = value;
-            break;
-        }
-
-        case 'h':
-            usage(stdout, argv[0]);
-            return EXIT_SUCCESS;
-
-        default:
-            usage(stderr, argv[0]);
-            return EXIT_FAILURE;
-        }
-    }
-
-    if (!pattern) {
-        fprintf(stderr, "No pattern provided\n");
-        return EXIT_FAILURE;
-    }
+    CLI11_PARSE(app, argc, argv);
 
     bool ret = true;
 
-    if (optind == argc) {
-        ret = search_stdin(start, end, *pattern, max_matches);
+    if (files.empty()) {
+        ret = search_stdin(start, end, pattern, max_matches);
     } else {
-        for (int i = optind; i < argc; ++i) {
-            bool ret2 = search_file(argv[i], start, end, *pattern, max_matches);
-            if (!ret2) {
+        for (auto const &f : files) {
+            if (!search_file(f.c_str(), start, end, pattern, max_matches)) {
                 ret = false;
             }
         }

@@ -25,6 +25,7 @@ if(${MBP_BUILD_TARGET} STREQUAL system)
         PRIVATE
         interface.global.CXXVersion
         mbcommon-shared
+        CLI11::CLI11
     )
 
     # boot image compare tool
