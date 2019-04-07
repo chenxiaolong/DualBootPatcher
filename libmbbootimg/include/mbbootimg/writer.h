@@ -55,7 +55,7 @@ public:
 
     // Open/close
     oc::result<void> open_filename(const std::string &filename);
-    oc::result<void> open_filename_w(const std::wstring &filename);
+    oc::result<void> open_filename(const std::wstring &filename);
     oc::result<void> open(std::unique_ptr<File> file);
     oc::result<void> open(File *file);
     oc::result<void> close();

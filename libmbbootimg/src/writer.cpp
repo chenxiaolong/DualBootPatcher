@@ -293,7 +293,7 @@ oc::result<void> Writer::open_filename(const std::string &filename)
  * \return Nothing if the boot image is successfully opened. Otherwise, a
  *         specific error code.
  */
-oc::result<void> Writer::open_filename_w(const std::wstring &filename)
+oc::result<void> Writer::open_filename(const std::wstring &filename)
 {
     ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
 
