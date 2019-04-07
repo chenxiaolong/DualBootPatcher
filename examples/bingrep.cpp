@@ -31,10 +31,11 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "CLI/CLI.hpp"
+#include <CLI/CLI.hpp>
 
 #ifdef _WIN32
 #  include "mbcommon/file/win32.h"
+#  include "mbcommon/locale.h"
 #else
 #  include "mbcommon/file/fd.h"
 #endif
@@ -167,7 +168,13 @@ static bool search_file(const char *path,
 {
     mb::StandardFile file;
 
-    auto ret = file.open(path, mb::FileOpenMode::ReadOnly);
+#ifdef _WIN32
+    auto native_path = mb::utf8_to_wcs(path).value();
+#else
+    auto native_path = path;
+#endif
+
+    auto ret = file.open(native_path, mb::FileOpenMode::ReadOnly);
     if (!ret) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
                 path, ret.error().message().c_str());
@@ -177,7 +184,11 @@ static bool search_file(const char *path,
     return search(path, file, start, end, pattern, max_matches);
 }
 
+#ifdef _WIN32
+int wmain(int argc, wchar_t* argv[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
     CLI::App app;
 
@@ -218,7 +229,20 @@ int main(int argc, char *argv[])
     app.add_option("file", files, "Files to search")
             ->type_name("FILE");
 
-    CLI11_PARSE(app, argc, argv);
+    try {
+#ifdef _WIN32
+        std::vector<std::string> reversed_args;
+        for (int i = argc - 1; i > 0; --i) {
+            reversed_args.emplace_back(mb::wcs_to_utf8(argv[i]).value());
+        }
+        app.name(mb::wcs_to_utf8(argv[0]).value());
+        app.parse(reversed_args);
+#else
+        app.parse(argc, argv);
+#endif
+    } catch (const CLI::ParseError &e) {
+        return app.exit(e);
+    }
 
     bool ret = true;
 
