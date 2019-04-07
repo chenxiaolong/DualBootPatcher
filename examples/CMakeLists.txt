@@ -39,6 +39,7 @@ if(${MBP_BUILD_TARGET} STREQUAL system)
         PRIVATE
         interface.global.CXXVersion
         mbbootimg-shared
+        CLI11::CLI11
     )
 endif()
 

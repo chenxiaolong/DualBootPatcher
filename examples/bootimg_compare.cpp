@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,58 +21,67 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <getopt.h>
+#include <CLI/CLI.hpp>
+
+#ifdef _WIN32
+#  include "mbcommon/locale.h"
+#endif
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/header.h"
 #include "mbbootimg/reader.h"
 
-static void usage(FILE *stream, const char *prog_name)
-{
-    fprintf(stream, "Usage: %s <file1> <file2>\n"
-                    "\n"
-                    "Exits with:\n"
-                    "  0 if boot images are equal\n"
-                    "  1 if an error occurs\n"
-                    "  2 if boot images are not equal\n",
-                    prog_name);
-}
+using namespace mb;
+using namespace mb::bootimg;
 
+#ifdef _WIN32
+int wmain(int argc, wchar_t *argv[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
-    int opt;
+    CLI::App app;
 
-    static const char short_options[] = "h";
+    app.footer(
+        "\n"
+        "Exits with:\n"
+        "  0 if boot images are equal\n"
+        "  1 if an error occurs\n"
+        "  2 if boot images are not equal\n"
+    );
 
-    static struct option long_options[] = {
-        {"help", no_argument, nullptr, 'h'},
-        {nullptr, 0, nullptr, 0},
-    };
+    std::string filename1;
+    std::string filename2;
 
-    int long_index = 0;
+    app.add_option("file1", filename1, "First file")
+            ->required()
+            ->type_name("FILE");
+    app.add_option("file2", filename2, "Second file")
+            ->required()
+            ->type_name("FILE");
 
-    while ((opt = getopt_long(argc, argv, short_options,
-                              long_options, &long_index)) != -1) {
-        switch (opt) {
-        case 'h':
-            usage(stdout, argv[0]);
-            return EXIT_SUCCESS;
-
-        default:
-            usage(stderr, argv[0]);
-            return EXIT_FAILURE;
+    try {
+#ifdef _WIN32
+        std::vector<std::string> reversed_args;
+        for (int i = argc - 1; i > 0; --i) {
+            reversed_args.emplace_back(wcs_to_utf8(argv[i]).value());
         }
+        app.name(wcs_to_utf8(argv[0]).value());
+        app.parse(reversed_args);
+#else
+        app.parse(argc, argv);
+#endif
+    } catch (const CLI::ParseError &e) {
+        return app.exit(e);
     }
 
-    if (argc - optind != 2) {
-        usage(stderr, argv[0]);
-        return EXIT_FAILURE;
-    }
-
-    using namespace mb::bootimg;
-
-    const char *filename1 = argv[optind];
-    const char *filename2 = argv[optind + 1];
+#ifdef _WIN32
+    auto native_filename1 = utf8_to_wcs(filename1).value();
+    auto native_filename2 = utf8_to_wcs(filename2).value();
+#else
+    auto &native_filename1 = filename1;
+    auto &native_filename2 = filename2;
+#endif
 
     Reader reader1;
     Reader reader2;
@@ -91,14 +100,14 @@ int main(int argc, char *argv[])
     }
 
     // Open boot images
-    if (auto r = reader1.open_filename(filename1); !r) {
+    if (auto r = reader1.open_filename(native_filename1); !r) {
         fprintf(stderr, "%s: Failed to open boot image for reading: %s\n",
-                filename1, r.error().message().c_str());
+                filename1.c_str(), r.error().message().c_str());
         return EXIT_FAILURE;
     }
-    if (auto r = reader2.open_filename(filename2); !r) {
+    if (auto r = reader2.open_filename(native_filename2); !r) {
         fprintf(stderr, "%s: Failed to open boot image for reading: %s\n",
-                filename2, r.error().message().c_str());
+                filename2.c_str(), r.error().message().c_str());
         return EXIT_FAILURE;
     }
 
@@ -106,13 +115,13 @@ int main(int argc, char *argv[])
     auto header1 = reader1.read_header();
     if (!header1) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                filename1, header1.error().message().c_str());
+                filename1.c_str(), header1.error().message().c_str());
         return EXIT_FAILURE;
     }
     auto header2 = reader2.read_header();
     if (!header2) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                filename2, header2.error().message().c_str());
+                filename2.c_str(), header2.error().message().c_str());
         return EXIT_FAILURE;
     }
 
@@ -130,7 +139,7 @@ int main(int argc, char *argv[])
                     break;
                 }
                 fprintf(stderr, "%s: Failed to read entry: %s\n",
-                        filename1, entry.error().message().c_str());
+                        filename1.c_str(), entry.error().message().c_str());
                 return EXIT_FAILURE;
             }
             ++entries;
@@ -146,7 +155,7 @@ int main(int argc, char *argv[])
                     break;
                 }
                 fprintf(stderr, "%s: Failed to read entry: %s",
-                        filename2, entry2.error().message().c_str());
+                        filename2.c_str(), entry2.error().message().c_str());
                 return EXIT_FAILURE;
             }
 
@@ -164,7 +173,7 @@ int main(int argc, char *argv[])
                     return 2;
                 } else {
                     fprintf(stderr, "%s: Failed to seek to entry: %s\n",
-                            filename1, entry1.error().message().c_str());
+                            filename1.c_str(), entry1.error().message().c_str());
                     return EXIT_FAILURE;
                 }
             }
@@ -181,15 +190,15 @@ int main(int argc, char *argv[])
             while (true) {
                 auto n1 = reader1.read_data(buf1);
                 if (!n1) {
-                    fprintf(stderr, "%s: Failed to read data: %s\n", filename1,
-                            n1.error().message().c_str());
+                    fprintf(stderr, "%s: Failed to read data: %s\n",
+                            filename1.c_str(), n1.error().message().c_str());
                     return EXIT_FAILURE;
                 }
 
                 auto n2 = reader2.read_data(buf2);
                 if (!n2) {
-                    fprintf(stderr, "%s: Failed to read data: %s\n", filename2,
-                            n2.error().message().c_str());
+                    fprintf(stderr, "%s: Failed to read data: %s\n",
+                            filename2.c_str(), n2.error().message().c_str());
                     return EXIT_FAILURE;
                 }
 
