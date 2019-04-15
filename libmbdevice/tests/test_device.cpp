@@ -35,6 +35,7 @@ TEST(DeviceTest, CheckDefaultValues)
     ASSERT_TRUE(device.block_dev_base_dirs().empty());
     ASSERT_TRUE(device.system_block_devs().empty());
     ASSERT_TRUE(device.cache_block_devs().empty());
+    ASSERT_TRUE(device.vendor_block_devs().empty());
     ASSERT_TRUE(device.data_block_devs().empty());
     ASSERT_TRUE(device.boot_block_devs().empty());
     ASSERT_TRUE(device.recovery_block_devs().empty());
@@ -93,6 +94,10 @@ TEST(DeviceTest, CheckGettersSetters)
     std::vector<std::string> cache_devs{"/dev/block/bootdevice/by-name/cache"};
     device.set_cache_block_devs(cache_devs);
     ASSERT_EQ(device.cache_block_devs(), cache_devs);
+    
+    std::vector<std::string> vendor_devs{"/dev/block/bootdevice/by-name/vendor"};
+    device.set_vendor_block_devs(vendor_devs);
+    ASSERT_EQ(device.vendor_block_devs(), vendor_devs);
 
     std::vector<std::string> data_devs{"/dev/block/bootdevice/by-name/userdata"};
     device.set_data_block_devs(data_devs);

@@ -220,6 +220,7 @@ replace_edify_mount(std::vector<EdifyToken> &tokens,
                     const FunctionBounds &bounds,
                     const std::vector<std::string> &system_devs,
                     const std::vector<std::string> &cache_devs,
+                    const std::vector<std::string> &vendor_devs,
                     const std::vector<std::string> &data_devs)
 {
     // For the mount() edify function, replace with the corresponding
@@ -236,6 +237,8 @@ replace_edify_mount(std::vector<EdifyToken> &tokens,
                 || find_items_in_string(str.c_str(), system_devs);
         bool is_cache = str.find("/cache") != std::string::npos
                 || find_items_in_string(str.c_str(), cache_devs);
+        bool is_vendor = str.find("/vendor") != std::string::npos
+                || find_items_in_string(str.c_str(), vendor_devs);
         bool is_data = str.find("/data") != std::string::npos
                 || str.find("/userdata") != std::string::npos
                 || find_items_in_string(str.c_str(), data_devs);
@@ -297,6 +300,9 @@ replace_edify_unmount(std::vector<EdifyToken> &tokens,
         } else if (is_cache) {
             return replace_function(tokens, bounds,
                                     format(UNMOUNT_FMT, "/cache"));
+        } else if (is_vendor) {
+            return replace_function(tokens, bounds,
+                                    format(UNMOUNT_FMT, "/vendor"));
         } else if (is_data) {
             return replace_function(tokens, bounds,
                                     format(UNMOUNT_FMT, "/data"));
@@ -322,6 +328,7 @@ replace_edify_run_program(std::vector<EdifyToken> &tokens,
                           const FunctionBounds &bounds,
                           const std::vector<std::string> &system_devs,
                           const std::vector<std::string> &cache_devs,
+                          const std::vector<std::string> &vendor_devs,
                           const std::vector<std::string> &data_devs)
 {
     bool found_reboot = false;
@@ -331,6 +338,7 @@ replace_edify_run_program(std::vector<EdifyToken> &tokens,
     bool found_mke2fs = false;
     bool is_system = false;
     bool is_cache = false;
+    bool is_vendor = false;
     bool is_data = false;
 
     for (auto it = bounds.left_paren + 1; it != bounds.right_paren; ++it) {
@@ -371,6 +379,10 @@ replace_edify_run_program(std::vector<EdifyToken> &tokens,
                 || find_items_in_string(unescaped.c_str(), cache_devs)) {
             is_cache = true;
         }
+        if (unescaped.find("/vendor") != std::string::npos
+                || find_items_in_string(unescaped.c_str(), vendor_devs)) {
+            is_vendor = true;
+        }
         if (unescaped.find("/data") != std::string::npos
                 || unescaped.find("/userdata") != std::string::npos
                 || find_items_in_string(unescaped.c_str(), data_devs)) {
@@ -388,6 +400,9 @@ replace_edify_run_program(std::vector<EdifyToken> &tokens,
         } else if (is_cache) {
             return replace_function(tokens, bounds,
                                     format(UNMOUNT_FMT, "/cache"));
+        } else if (is_vendor) {
+            return replace_function(tokens, bounds,
+                                    format(UNMOUNT_FMT, "/vendor"));
         } else if (is_data) {
             return replace_function(tokens, bounds,
                                     format(UNMOUNT_FMT, "/data"));
@@ -399,6 +414,9 @@ replace_edify_run_program(std::vector<EdifyToken> &tokens,
         } else if (is_cache) {
             return replace_function(tokens, bounds,
                                     format(MOUNT_FMT, "/cache"));
+        } else if (is_vendor) {
+            return replace_function(tokens, bounds,
+                                    format(MOUNT_FMT, "/vendor"));
         } else if (is_data) {
             return replace_function(tokens, bounds,
                                     format(MOUNT_FMT, "/data"));
@@ -413,6 +431,9 @@ replace_edify_run_program(std::vector<EdifyToken> &tokens,
         } else if (is_cache) {
             return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/cache"));
+        } else if (is_vendor) {
+            return replace_function(tokens, bounds,
+                                    format(FORMAT_FMT, "/vendor"));
         } else if (is_data) {
             return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/data"));
@@ -455,6 +476,9 @@ replace_edify_delete_recursive(std::vector<EdifyToken> &tokens,
         } else if (unescaped == "/cache" || unescaped == "/cache/") {
             return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/cache"));
+        } else if (unescaped == "/vendor" || unescaped == "/vendor/") {
+            return replace_function(tokens, bounds,
+                                    format(FORMAT_FMT, "/vendor"));
         }
     }
     return bounds.right_paren + 1;
@@ -477,6 +501,7 @@ replace_edify_format(std::vector<EdifyToken> &tokens,
                      const FunctionBounds &bounds,
                      const std::vector<std::string> &system_devs,
                      const std::vector<std::string> &cache_devs,
+                     const std::vector<std::string> &vendor_devs,
                      const std::vector<std::string> &data_devs)
 {
     // For the format() edify function, replace with the corresponding
@@ -493,6 +518,8 @@ replace_edify_format(std::vector<EdifyToken> &tokens,
                 || find_items_in_string(str.c_str(), system_devs);
         bool is_cache = str.find("/cache") != std::string::npos
                 || find_items_in_string(str.c_str(), cache_devs);
+        bool is_vendor = str.find("/vendor") != std::string::npos
+                || find_items_in_string(str.c_str(), vendor_devs);
         bool is_data = str.find("/data") != std::string::npos
                 || str.find("/userdata") != std::string::npos
                 || find_items_in_string(str.c_str(), data_devs);
@@ -503,6 +530,9 @@ replace_edify_format(std::vector<EdifyToken> &tokens,
         } else if (is_cache) {
             return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/cache"));
+        } else if (is_vendor) {
+            return replace_function(tokens, bounds,
+                                    format(FORMAT_FMT, "/vendor"));
         } else if (is_data) {
             return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/data"));
@@ -555,6 +585,7 @@ bool StandardPatcher::patch_updater(const std::string &directory)
     auto &&device = m_info.device();
     auto system_devs = device.system_block_devs();
     auto cache_devs = device.cache_block_devs();
+    auto vendor_devs = device.vendor_block_devs();
     auto data_devs = device.data_block_devs();
 
     TokenIter begin = tokens.begin();
@@ -584,18 +615,18 @@ bool StandardPatcher::patch_updater(const std::string &directory)
 
         if (unescaped.value() == "mount") {
             begin = replace_edify_mount(tokens, *bounds,
-                                        system_devs, cache_devs, data_devs);
+                                        system_devs, cache_devs, vendor_devs, data_devs);
         } else if (unescaped.value() == "unmount") {
             begin = replace_edify_unmount(tokens, *bounds,
-                                          system_devs, cache_devs, data_devs);
+                                          system_devs, cache_devs, vendor_devs, data_devs);
         } else if (unescaped.value() == "run_program") {
             begin = replace_edify_run_program(tokens, *bounds,
-                                              system_devs, cache_devs, data_devs);
+                                              system_devs, cache_devs, vendor_devs, data_devs);
         } else if (unescaped.value() == "delete_recursive") {
             begin = replace_edify_delete_recursive(tokens, *bounds);
         } else if (unescaped.value() == "format") {
             begin = replace_edify_format(tokens, *bounds,
-                                         system_devs, cache_devs, data_devs);
+                                         system_devs, cache_devs, vendor_devs, data_devs);
         } else {
             // Only skip function name so that we catch nested function calls
             begin = bounds->func_name + 1;

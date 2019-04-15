@@ -35,6 +35,7 @@ struct BaseOptions
     std::vector<std::string> base_dirs;
     std::vector<std::string> system_devs;
     std::vector<std::string> cache_devs;
+    std::vector<std::string> vendor_devs;
     std::vector<std::string> data_devs;
     std::vector<std::string> boot_devs;
     std::vector<std::string> recovery_devs;

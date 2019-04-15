@@ -63,6 +63,9 @@ public:
 
     std::vector<std::string> cache_block_devs() const;
     void set_cache_block_devs(std::vector<std::string> block_devs);
+    
+    std::vector<std::string> vendor_block_devs() const;
+    void set_vendor_block_devs(std::vector<std::string> block_devs);
 
     std::vector<std::string> data_block_devs() const;
     void set_data_block_devs(std::vector<std::string> block_devs);

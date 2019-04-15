@@ -92,6 +92,11 @@
                     "type": "array",
                     "$ref": "#/definitions/dev_path_list"
                 },
+                "vendor": {
+                    "title": "vendor partition block device paths",
+                    "type": "array",
+                    "$ref": "#/definitions/dev_path_list"
+                },
                 "data": {
                     "title": "Data partition block device paths",
                     "type": "array",
@@ -116,6 +121,7 @@
             "required": [
                 "system",
                 "cache",
+                "vendor",
                 "data",
                 "boot"
             ],
