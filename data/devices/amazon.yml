@@ -61,4 +61,6 @@
      recovery:
        - /dev/block/platform/mtk-msdc.0/by-name/recovery
        - /dev/block/mmcblk0p12
- 
+     MISC:
+       - /dev/block/platform/mtk-msdc.0/by-name/MISC
+       - /dev/block/mmcblk0p9
