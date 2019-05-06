@@ -4,7 +4,7 @@
   codenames:
       - Enchilada
       - A6000
-  architecture: arm64--v8a
+  architecture: arm64-v8a
   block_devs:
     base_dirs:
       - /dev/block/platform/soc/1d84000.ufshc/by-name
@@ -146,7 +146,7 @@
     supported: true
     flags:
       - TW_GRAPHICS_FORCE_USE_LINELENGTH
-    brightness_path: 
+    brightness_path:  /sys/class/leds/lcd-backlight/brightness 
     max_brightness: 255
     default_brightness: 168
     cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
