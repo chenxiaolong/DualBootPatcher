@@ -1,314 +1,156 @@
 ---
-- name: OnePlus One
-  id: bacon
+- name:  OnePlus6
+  id: Enchilada 
   codenames:
-    - bacon
-    - A0001
-  architecture: armeabi-v7a
-
+      - Enchilada
+      - A6000
+  architecture: arm64--v8a
   block_devs:
     base_dirs:
-      - /dev/block/platform/msm_sdcc.1/by-name
-    system:
-      - /dev/block/platform/msm_sdcc.1/by-name/system
-      - /dev/block/mmcblk0p14
-    cache:
-      - /dev/block/platform/msm_sdcc.1/by-name/cache
-      - /dev/block/mmcblk0p16
-    data:
-      - /dev/block/platform/msm_sdcc.1/by-name/userdata
-      - /dev/block/mmcblk0p28
-    boot:
-      - /dev/block/platform/msm_sdcc.1/by-name/boot
-      - /dev/block/mmcblk0p7
-    recovery:
-      - /dev/block/platform/msm_sdcc.1/by-name/recovery
-    extra:
-      - /dev/block/platform/msm_sdcc.1/by-name/aboot
-      - /dev/block/mmcblk0p5
-      - /dev/block/platform/msm_sdcc.1/by-name/dbi
-      - /dev/block/mmcblk0p3
-      - /dev/block/platform/msm_sdcc.1/by-name/LOGO
-      - /dev/block/mmcblk0p22
-      - /dev/block/platform/msm_sdcc.1/by-name/modem
-      - /dev/block/mmcblk0p1
-      - /dev/block/platform/msm_sdcc.1/by-name/oppostanvbk
-      - /dev/block/mmcblk0p13
-      - /dev/block/platform/msm_sdcc.1/by-name/reserve4
-      - /dev/block/mmcblk0p27
-      - /dev/block/platform/msm_sdcc.1/by-name/rpm
-      - /dev/block/mmcblk0p6
-      - /dev/block/platform/msm_sdcc.1/by-name/sbl1
-      - /dev/block/mmcblk0p2
-      - /dev/block/platform/msm_sdcc.1/by-name/tz
-      - /dev/block/mmcblk0p8
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-
-- name: OnePlus 2
-  id: OnePlus2
-  codenames:
-    - OnePlus2
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/f9824900.sdhci/by-name
-      - /dev/block/platform/soc.0/f9824900.sdhci/by-name
-      - /dev/block/bootdevice/by-name
-    system:
-      - /dev/block/platform/f9824900.sdhci/by-name/system
-      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/system
-      - /dev/block/bootdevice/by-name/system
-      - /dev/block/mmcblk0p42
-    cache:
-      - /dev/block/platform/f9824900.sdhci/by-name/cache
-      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/cache
-      - /dev/block/bootdevice/by-name/cache
-      - /dev/block/mmcblk0p41
-    data:
-      - /dev/block/platform/f9824900.sdhci/by-name/userdata
-      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/userdata
-      - /dev/block/bootdevice/by-name/userdata
-      - /dev/block/mmcblk0p43
-    boot:
-      - /dev/block/platform/f9824900.sdhci/by-name/boot
-      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/boot
-      - /dev/block/bootdevice/by-name/boot
-      - /dev/block/mmcblk0p35
-    recovery:
-      - /dev/block/platform/f9824900.sdhci/by-name/recovery
-      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/recovery
-      - /dev/block/bootdevice/by-name/recovery
-      - /dev/block/mmcblk0p36
-    extra:
-      # TrustZone
-      - /dev/block/bootdevice/by-name/tz
-      - /dev/block/platform/f9824900.sdhci/by-name/tz
-      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/tz
-      - /dev/block/mmcblk0p29
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-
-- name: OnePlus 3
-  id: OnePlus3
-  codenames:
-    - OnePlus3
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/bootdevice/by-name
-      - /dev/block/platform/soc/624000.ufshc/by-name
-    system:
-      - /dev/block/bootdevice/by-name/system
-      - /dev/block/platform/soc/624000.ufshc/by-name
-      - /dev/block/sde20
-    cache:
-      - /dev/block/bootdevice/by-name/cache
-      - /dev/block/platform/soc/624000.ufshc/by-name/cache
-      - /dev/block/sda3
-    data:
-      - /dev/block/bootdevice/by-name/userdata
-      - /dev/block/platform/soc/624000.ufshc/by-name/userdata
-      - /dev/block/sda15
-    boot:
-      - /dev/block/bootdevice/by-name/boot
-      - /dev/block/platform/soc/624000.ufshc/by-name/boot
-      - /dev/block/sde18
-    recovery:
-      - /dev/block/bootdevice/by-name/recovery
-      - /dev/block/platform/soc/624000.ufshc/by-name/recovery
-      - /dev/block/sde21
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    default_brightness: 80
-
-- name: OnePlus 3T
-  id: OnePlus3T
-  codenames:
-    - OnePlus3T
-    - oneplus3t
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/bootdevice/by-name
-      - /dev/block/platform/soc/624000.ufshc/by-name
-    system:
-      - /dev/block/bootdevice/by-name/system
-      - /dev/block/platform/soc/624000.ufshc/by-name
-      - /dev/block/sde20
-    cache:
-      - /dev/block/bootdevice/by-name/cache
-      - /dev/block/platform/soc/624000.ufshc/by-name/cache
-      - /dev/block/sda3
-    data:
-      - /dev/block/bootdevice/by-name/userdata
-      - /dev/block/platform/soc/624000.ufshc/by-name/userdata
-      - /dev/block/sda15
-    boot:
-      - /dev/block/bootdevice/by-name/boot
-      - /dev/block/platform/soc/624000.ufshc/by-name/boot
-      - /dev/block/sde18
-    recovery:
-      - /dev/block/bootdevice/by-name/recovery
-      - /dev/block/platform/soc/624000.ufshc/by-name/recovery
-      - /dev/block/sde21
-     #Trust Zone
-    extra:
-      - /dev/block/bootdevice/by-name/tz
-      - /dev/block/platform/soc/624000.ufshc/by-name/tz
-      - /dev/block/sde3
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    default_brightness: 80
-
-- name: OnePlus X
-  id: onyx
-  codenames:
-    - OnePlus
-    - ONE
-    - onyx
-  architecture: armeabi-v7a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/msm_sdcc.1/by-name
-      - /dev/block/bootdevice/by-name
-    system:
-      - /dev/block/platform/msm_sdcc.1/by-name/system
-      - /dev/block/bootdevice/by-name/system
-      - /dev/block/mmcblk0p27
-    cache:
-      - /dev/block/platform/msm_sdcc.1/by-name/cache
-      - /dev/block/bootdevice/by-name/cache
-      - /dev/block/mmcblk0p15
-    data:
-      - /dev/block/platform/msm_sdcc.1/by-name/userdata
-      - /dev/block/bootdevice/by-name/userdata
-      - /dev/block/mmcblk0p28
-    boot:
-      - /dev/block/platform/msm_sdcc.1/by-name/boot
-      - /dev/block/bootdevice/by-name/boot
-      - /dev/block/mmcblk0p7
-    recovery:
-      - /dev/block/platform/msm_sdcc.1/by-name/recovery
-      - /dev/block/bootdevice/by-name/recovery
-      - /dev/block/mmcblk0p16
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_HAS_DOWNLOAD_MODE
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    force_pixel_format: RGB_565
-    theme: portrait_hdpi
-
-- name: OnePlus 5
-  id: OnePlus5
-  codenames:
-    - OnePlus5
-    - cheeseburger
-    - oneplus5
-    - op5
-    - A5000
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
+      - /dev/block/platform/soc/1d84000.ufshc/by-name
       - /dev/block/bootdevice/by-name
     system:
       - /dev/block/bootdevice/by-name/system
-    cache:
-      - /dev/block/bootdevice/by-name/cache
-    data:
-      - /dev/block/bootdevice/by-name/userdata
-    boot:
-      - /dev/block/bootdevice/by-name/boot
-    recovery:
-      - /dev/block/bootdevice/by-name/recovery
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_QCOM_RTC_FIX
-    graphics_backends:
-      - fbdev
-    theme: portrait_hdpi
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    default_brightness: 240
-
-- name: OnePlus 5T
-  id: OnePlus5T
-  codenames:
-    - OnePlus5T
-    - OnePlus5t
-    - dumpling
-    - A5010
-    - op5t
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/bootdevice/by-name
-      - /dev/block/platform/soc/624000.ufshc/by-name
-    system:
-      - /dev/block/bootdevice/by-name/system
-      - /dev/block/platform/soc/1da4000.ufshc/by-name
-      - /dev/block/sde21
-    cache:
-      - /dev/block/bootdevice/by-name/cache
-      - /dev/block/platform/soc/1da4000.ufshc/by-name/cache
-      - /dev/block/sda3
-    data:
-      - /dev/block/bootdevice/by-name/userdata
-      - /dev/block/platform/soc/1da4000.ufshc/by-name/userdata
+      - /dev/block/bootdevice/by-name/system_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/system
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/system_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/system_b
       - /dev/block/sda13
+      - /dev/block/sda14
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/userdata
+      - /dev/block/sda17
     boot:
       - /dev/block/bootdevice/by-name/boot
-      - /dev/block/platform/soc/1da4000.ufshc/by-name/boot
-      - /dev/block/sde19
+      - /dev/block/bootdevice/by-name/boot_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/boot
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/boot_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/boot_aging
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/boot_b
+      - /dev/block/sde11
+      - /dev/block/sde39
+      - /dev/block/sde58
+      - ext4
     recovery:
       - /dev/block/bootdevice/by-name/recovery
-      - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
-      - /dev/block/sde22
-
+    extra:
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/ALIGN_TO_128K_1
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/ALIGN_TO_128K_2
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/ImageFv
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/LOGO_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/LOGO_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/abl_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/abl_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/aop_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/aop_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/apdp
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bluetooth
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bluetooth_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/bluetooth_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cdt
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cmnlib64_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cmnlib64_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cmnlib_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/cmnlib_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/config
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/ddr
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/devcfg_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/devcfg_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/devinfo
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/dip
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/dsp
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/dsp_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/dsp_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/dtbo_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/dtbo_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/frp
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fsc
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fsg
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_4j1ed_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_4j1ed_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_4u1ea_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_4u1ea_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs3_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs3_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs4_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs4_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs5_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs5_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs6_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs6_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs7_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs7_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs8_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/fw_ufs8_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/hyp_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/hyp_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/keymaster_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/keymaster_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/keystore
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/limits
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/logdump
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/logfs
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/mdtp_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/mdtp_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/mdtpsecapp_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/mdtpsecapp_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/minidump
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/misc
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/modem
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/modem_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/modem_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/modemst1
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/modemst2
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/msadp
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/odm_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/odm_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/oem_dycnvbk
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/oem_stanvbk
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/oem_stanvbk_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/oem_stanvbk_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/op1
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/op2
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/param
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/persist
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/qupfw_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/qupfw_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/reserve1
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/reserve2
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/sec
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/splash
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/spunvm
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/ssd
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/sti
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/storsec_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/storsec_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/toolsfv
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/tz_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/tz_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/vbmeta_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/vbmeta_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/vendor
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/vendor_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/vendor_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/xbl_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/xbl_b
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/xbl_config_a
+      - /dev/block/platform/soc/1d84000.ufshc/by-name/xbl_config_b
+      - bugreports
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
   boot_ui:
     supported: true
     flags:
-      - TW_QCOM_RTC_FIX
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: 
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
-    brightness_path: /sys/class/leds/lcd-backlight/brightness
-    default_brightness: 255
