@@ -2,9 +2,8 @@
 - name:  OnePlus6
   id: Enchilada 
   codenames:
-      - Enchilada
       - A6000
-  architecture: arm64-v8a
+  architecture: ARMv8-a
   block_devs:
     base_dirs:
       - /dev/block/platform/soc/1d84000.ufshc/by-name
