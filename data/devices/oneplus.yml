@@ -1,8 +1,8 @@
 ---
 - name:  OnePlus6
-  id: Enchilada 
+  id: A6000 
   codenames:
-      - A6000
+      - Enchilada
   architecture: ARMv8-a
   block_devs:
     base_dirs:
