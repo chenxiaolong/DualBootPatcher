@@ -6,10 +6,6 @@ services:
 before_install:
   # Clone DualBootPatcher Repository
   - git clone https://github.com/DubMastr/DualBootPatcher -b master DualBootPatcher/
- 
-  # blocklist
-  branches:/external/outcome
-    except:
 
  Pull docker images
   - docker pull yshalsager/dualbootpatcher:9.3.0-4-base
