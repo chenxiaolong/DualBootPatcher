@@ -33,6 +33,10 @@
 # Prebuilts
 /thirdparty/prebuilts
 
+# external
+/external/outcome
+	
+
 # makepkg build and output files
 /thirdparty/*/src/
 /thirdparty/*/pkg/
