@@ -5,7 +5,7 @@ services:
 
 before_install:
   # Clone DualBootPatcher Repository
-  - git clone --recursive https://github.com/DubMastr/DualBootPatcher -b master DualBootPatcher/
+  - git clone https://github.com/DubMastr/DualBootPatcher -b master DualBootPatcher/
   # Pull docker images
   - docker pull yshalsager/dualbootpatcher:9.3.0-4-base
   - docker pull yshalsager/dualbootpatcher:9.3.0-4-android
@@ -18,7 +18,7 @@ script:
   - |
     docker run --rm -i -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) -v "$(pwd):/builder/DualBootPatcher:rw,z" -v "${HOME}/.android:/builder/.android:rw,z" yshalsager/dualbootpatcher:9.3.0-4-android bash << EOF
     cd DualBootPatcher/builder && cmake .. -DMBP_BUILD_TARGET=android -DMBP_BUILD_TYPE=debug && make -j16 && rm -rf assets && cpack && make apk -j16
-    make android-system_armeabi-v7a -j16 && make -C data/devices -j16
+    make android-system_arm64-v8a -j16 && make -C data/devices -j16
     exit
     EOF
   - |
