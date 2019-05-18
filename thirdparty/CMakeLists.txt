@@ -1,12 +1,11 @@
 # All of the files here are built from the PKGBUILD files in thirdparty/*/PKGBUILD.
-# All of the files are signed with my GPG key and correct hashes are provided
-# at https://dbp.noobdev.io/repo/prebuilts, but if you don't trust me or
-# my binaries, you can use your own builds builds by copying your own prebuilts
-# to thirdparty/prebuilts and updating the checksums here. It is not necessary
-# to upload the files to a server as CMake will not download the files if the
-# checksums match.
+# All of the files are signed with my GPG key and correct hashes are provided,
+# but if you don't trust me or my binaries, you can use your own builds builds
+# by copying your own prebuilts to thirdparty/prebuilts and updating the checksums
+# here. It is not necessary to upload the files to a server as CMake will not
+# download the files if the checksums match.
 
-set(URL_BASE "https://dbp.noobdev.io/repo/prebuilts")
+set(URL_BASE "https://downloads.sourceforge.net/project/dualbootpatcher/prebuilts")
 
 set(MBP_PREBUILTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/prebuilts"
     CACHE PATH "Prebuilts download directory")
@@ -368,7 +367,7 @@ if(MBP_TOP_LEVEL_BUILD)
     file(
         DOWNLOAD
         #"http://forum.xda-developers.com/devdb/project/dl/?id=286&task=get"
-        "https://dbp.noobdev.io/mirror/aroma-${AROMA_VER}.zip"
+        "https://downloads.sourceforge.net/project/dualbootpatcher/old_mirror/aroma-${AROMA_VER}.zip"
         ${MBP_PREBUILTS_DIR}/aroma-${AROMA_VER}.zip
         EXPECTED_HASH MD5=a77c4993803db28d53cd7e6a37ec73b5
         EXPECTED_HASH SHA512=44abff7bd536908ae8cde9a17e1fb334b59561e115f54b23bf910e1f7920b6f35ab078d3353db65c3526e25c0be27cd592470145063cafd4e05418e4bece775f

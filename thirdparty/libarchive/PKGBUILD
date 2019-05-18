@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-_prebuilts='https://dbp.noobdev.io/repo/prebuilts'
+_prebuilts='https://downloads.sourceforge.net/project/dualbootpatcher/prebuilts'
 _ver_liblzma=5.2.4-1
 _ver_lz4=1.8.3-1
 
