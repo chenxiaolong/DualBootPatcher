@@ -411,3 +411,41 @@
     brightness_path: /sys/class/backlight/panel/brightness
     default_brightness: 255
     theme: portrait_hdpi
+
+- name: Samsung Galaxy Core 2 Duos
+  id: kanas
+  codenames:
+    - kanas
+    - SM-G355H
+    - SM-G355M
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sprd-sdhci.3/by-name
+    system:
+      - /dev/block/platform/sprd-sdhci.3/by-name/system
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/sprd-sdhci.3/by-name/cache
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/sprd-sdhci.3/by-name/data
+      - /dev/block/mmcblk0p22
+    boot:
+      - /dev/block/platform/sprd-sdhci.3/by-name/boot
+      - /dev/block/mmcblk0p17
+    recovery:
+      - /dev/block/platform/sprd-sdhci.3/by-name/recovery
+      - /dev/block/mmcblk0p18
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/backlight/panel/brightness
+    default_brightness: 255
+    theme: portrait_hdpi
