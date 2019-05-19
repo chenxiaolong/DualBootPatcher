@@ -1,0 +1,112 @@
+---
+- name: asus ASUS_X00TD
+  id: X00T
+  codenames:
+      - ASUS_X00TD
+      - X00T
+      - X00TD
+  architecture: 
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p13
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p58
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p66
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p12
+      - /dev/block/mmcblk0p58
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p59
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/recovery
+    extra:
+      - /dev/block/mmcblk1p1
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/ADF
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/APD
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/abl
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/ablbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/apdp
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/asdf
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/asusfw
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/bluetooth
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/bluetoothbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/cmnlib
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/cmnlib64
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/cmnlib64bak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/cmnlibbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/ddr
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/devcfg
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/devcfgbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/devinfo
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/dip
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/dpo
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/dsp
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/factory
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/frp
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/fsc
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/fsg
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/hyp
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/hypbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/keymaster
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/keymasterbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/keystore
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/limits
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/logdump
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/logfs
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/mdtp
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/mdtpbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/mdtpsecapp
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/mdtpsecappbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/misc
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/modem
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/modemst1
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/modemst2
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/msadp
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/persist
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/pmic
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/pmicbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/priv
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/rawdump
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/rpm
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/rpmbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/sec
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/splash
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/ssd
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/sti
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/storsec
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/toolsfv
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/tz
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/tzbak
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/vbmeta
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/vendor
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/version
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/xbl
+      - /dev/block/platform/soc/c0c4000.sdhci/by-name/xblbak
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
