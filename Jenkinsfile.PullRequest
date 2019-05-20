@@ -1,0 +1,38 @@
+node('master') {
+    def refSpec = "+refs/pull/${ghprbPullId}/*:refs/remotes/origin/pr/${ghprbPullId}/*"
+
+    scmEnv = checkout([
+        $class: 'GitSCM',
+        branches: [
+            [name: '${sha1}'],
+        ],
+        extensions: [
+            [$class: 'CleanCheckout'],
+            [$class: 'CleanBeforeCheckout'],
+        ],
+        userRemoteConfigs: [[
+            url: 'https://github.com/chenxiaolong/DualBootPatcher.git',
+            refspec: refSpec,
+        ]],
+    ])
+
+    stage('Build') {
+        def result = build(
+            job: 'DualBootPatcher_Build',
+            parameters: [
+                string(name: 'GIT_REF', value: scmEnv.GIT_COMMIT),
+                string(name: 'GIT_REFSPEC', value: refSpec),
+                string(name: 'VERSION_SUFFIX', value: "PR${ghprbPullId}"),
+            ],
+            propagate: false,
+        )
+
+        if (result.result == 'SUCCESS') {
+            currentBuild.displayName = result.displayName
+            currentBuild.description = result.description
+        } else {
+            currentBuild.result = result.result
+            error 'Build failed'
+        }
+    }
+}

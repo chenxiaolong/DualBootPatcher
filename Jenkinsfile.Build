@@ -1,0 +1,429 @@
+def shellQuote(String str) {
+    return '\'' + str.replace('\'', '\'"\'"\'') + '\''
+}
+
+def shellQuote(Collection<String> collection) {
+    return collection.collect {
+        shellQuote(it)
+    }.join(' ')
+}
+
+def generateChecksums = { directory ->
+    sh """
+        for f in ${shellQuote(directory)}/*; do
+            md5sum "\${f}" > "\${f}.md5sum"
+            sha1sum "\${f}" > "\${f}.sha1sum"
+            sha512sum "\${f}" > "\${f}.sha512sum"
+        done
+    """.stripIndent()
+}
+
+def buildAndroid = { ctx ->
+    dir('build_android') {
+        writeFile file: 'build.sh', text: """\
+            #!/bin/bash -eux
+
+            cmake .. \\
+                -DMBP_BUILD_TARGET=android \\
+                -DMBP_BUILD_TYPE=ci \\
+                -DMBP_CI_VERSION=${shellQuote(ctx.version)} \\
+                -DMBP_SIGN_CONFIG_PATH=${shellQuote(ctx.signingConfigFile)} \\
+                -DMBP_PREBUILTS_DIR=${shellQuote(ctx.prebuiltsDownloadDir)} \\
+                -DMBP_PREBUILTS_BINARY_DIR=${shellQuote(ctx.prebuiltsExtractedDir)}
+
+            make
+            cpack
+
+            (
+                flock 321 || (echo "Failed to acquire lock on gradle cache!" && exit 1)
+                make apk
+            ) 321>"\${GRADLE_USER_HOME}/.dbp.cache.lock"
+
+            mkdir -p ${shellQuote(ctx.artifactDir)}
+
+            cp ../Android_GUI/build/outputs/apk/ci/Android_GUI-ci.apk \\
+                ${shellQuote(ctx.artifactDir)}/DualBootPatcherAndroid-${shellQuote(ctx.version)}-snapshot.apk
+        """.stripIndent()
+
+        sh 'chmod 500 ./build.sh'
+
+        // Can't use splat operator: https://issues.jenkins-ci.org/browse/JENKINS-43520
+        dockerArgs = ['docker', 'run', '--rm']
+        dockerArgs.addAll(ctx.commonDockerArgs)
+        dockerArgs << '-w' << pwd()
+        dockerArgs << ctx.dockerImage
+        dockerArgs << '--' << "${pwd()}/build.sh"
+
+        sh shellQuote(dockerArgs)
+
+        generateChecksums(ctx.artifactDir)
+        archiveArtifacts artifacts: "${ctx.artifactDir}/*"
+    }
+}
+
+def buildMingw = { ctx ->
+    dir('build_mingw') {
+        writeFile file: 'build.sh', text: """\
+            #!/bin/bash -eux
+
+            # https://sourceware.org/bugzilla/show_bug.cgi?id=4356
+
+            export MINGW_TRIPLET=\$(rpm -E '%{mingw32_target}')
+            export MINGW_ROOT_PATH=\$(rpm -E '%{mingw32_prefix}')
+
+            sed -r \\
+                -e "s,@MINGW_TRIPLET@,\${MINGW_TRIPLET},g" \\
+                -e "s,@MINGW_ROOT_PATH@,\${MINGW_ROOT_PATH},g" \\
+                < ../cmake/toolchain-mingw.cmake.in \\
+                > ../cmake/toolchain-mingw.cmake
+
+            cat >> ../cmake/toolchain-mingw.cmake << EOF
+            set(CMAKE_C_COMPILER_LAUNCHER ccache)
+            set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+            EOF
+
+            cmake .. \\
+                -DMBP_BUILD_TARGET=desktop \\
+                -DMBP_BUILD_TYPE=ci \\
+                -DMBP_ENABLE_QEMU=true \\
+                -DMBP_CI_VERSION=${shellQuote(ctx.version)} \\
+                -DMBP_SIGN_CONFIG_PATH=${shellQuote(ctx.signingConfigFile)} \\
+                -DMBP_PREBUILTS_DIR=${shellQuote(ctx.prebuiltsDownloadDir)} \\
+                -DMBP_PREBUILTS_BINARY_DIR=${shellQuote(ctx.prebuiltsExtractedDir)} \\
+                -DMBP_PORTABLE=ON \\
+                -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-mingw.cmake \\
+                -DCMAKE_BUILD_TYPE=Release
+
+            make
+
+            # Run tests
+            WINEPREFIX=${shellQuote(ctx.winePrefixDir)} \\
+            WINEPATH="\${MINGW_ROOT_PATH}/bin" \\
+                ctest -VV --no-compress-output -T Test || true
+
+            # Run android tests
+            qemu_targets=()
+            for abi in armeabi-v7a arm64-v8a x86 x86_64; do
+                qemu_targets+=("android-system_"\${abi}"_qemu-tests")
+            done
+            make -j2 "\${qemu_targets[@]}"
+
+            # Repack with DLLs for redistribution
+            cpack
+
+            unzip DualBootPatcher-${shellQuote(ctx.version)}-win32.zip
+            rm DualBootPatcher-${shellQuote(ctx.version)}-win32.zip
+            pushd DualBootPatcher-${shellQuote(ctx.version)}-win32
+
+            dlls=(
+                iconv.dll
+                libarchive-13.dll
+                libbz2-1.dll
+                libcrypto-10.dll
+                libfreetype-6.dll
+                libgcc_s_sjlj-1.dll
+                #libGLESv2.dll
+                libglib-2.0-0.dll
+                libharfbuzz-0.dll
+                libintl-8.dll
+                #libjansson-4.dll
+                liblz4.dll
+                liblzma-5.dll
+                libpcre-1.dll
+                #libpcre16-0.dll
+                libpcre2-16-0.dll
+                libpng16-16.dll
+                libssp-0.dll
+                libstdc++-6.dll
+                libwinpthread-1.dll
+                libxml2-2.dll
+                Qt5Core.dll
+                Qt5Gui.dll
+                Qt5Widgets.dll
+                zlib1.dll
+            )
+            for dll in "\${dlls[@]}"; do
+                cp "\${MINGW_ROOT_PATH}/bin/\${dll}" .
+            done
+
+            # Qt Windows plugin
+            mkdir platforms/
+            cp "\${MINGW_ROOT_PATH}"/lib/qt5/plugins/platforms/qwindows.dll platforms/
+
+            # Strip exe's and dll's
+            find -name '*.exe' -o -name '*.dll' -exec strip {} \\+
+
+            # Optionally, compress dlls
+            #find -name '*.exe' -o -name '*.dll' -exec upx --lzma {} \\+
+            # Can't compress qwindows.dll
+            #upx --lzma *.exe *.dll
+            # Can't compress Qt5Widgets.dll
+            #upx -d Qt5Widgets.dll
+
+            popd
+
+            #zip -r DualBootPatcher-${shellQuote(ctx.version)}-win32.zip \
+            #    DualBootPatcher-${shellQuote(ctx.version)}-win32
+            7z a DualBootPatcher-${shellQuote(ctx.version)}-win32.7z \
+                DualBootPatcher-${shellQuote(ctx.version)}-win32
+
+            mkdir -p ${shellQuote(ctx.artifactDir)}
+
+            #cp DualBootPatcher-${shellQuote(ctx.version)}-win32.zip \\
+            #    ${shellQuote(ctx.artifactDir)}/DualBootPatcher-${shellQuote(ctx.version)}-win32.zip
+            cp DualBootPatcher-${shellQuote(ctx.version)}-win32.7z \\
+                ${shellQuote(ctx.artifactDir)}/DualBootPatcher-${shellQuote(ctx.version)}-win32.7z
+        """.stripIndent()
+
+        sh 'chmod 500 ./build.sh'
+
+        // Can't use splat operator: https://issues.jenkins-ci.org/browse/JENKINS-43520
+        dockerArgs = ['docker', 'run', '--rm']
+        dockerArgs.addAll(ctx.commonDockerArgs)
+        // wine requires SYS_PTRACE
+        dockerArgs << '--cap-add' << 'SYS_PTRACE'
+        dockerArgs << '-w' << pwd()
+        dockerArgs << ctx.dockerImage
+        dockerArgs << '--' << "${pwd()}/build.sh"
+
+        sh shellQuote(dockerArgs)
+
+        generateChecksums(ctx.artifactDir)
+        archiveArtifacts artifacts: "${ctx.artifactDir}/*"
+
+        xunit(
+            thresholds: [
+                failed(failureThreshold: '0'),
+            ],
+            tools: [
+                CTest(pattern: 'Testing/**/Test.xml'),
+                GoogleTest(pattern: '**/*.gtest.xml'),
+            ],
+        )
+    }
+}
+
+def buildLinux = { image ->
+    docker.image(image).inside {
+        sh 'echo linux-x86_64'
+    }
+}
+
+def buildUtilities = { ctx ->
+    dir('build_utilities') {
+        writeFile file: 'build.sh', text: """\
+            #!/bin/bash -eux
+
+            cmake .. \\
+                -DMBP_BUILD_TYPE=ci \\
+                -DMBP_CI_VERSION=${shellQuote(ctx.version)} \\
+                -DMBP_SIGN_CONFIG_PATH=${shellQuote(ctx.signingConfigFile)} \\
+                -DMBP_PREBUILTS_DIR=${shellQuote(ctx.prebuiltsDownloadDir)} \\
+                -DMBP_PREBUILTS_BINARY_DIR=${shellQuote(ctx.prebuiltsExtractedDir)}
+
+            make android-system_armeabi-v7a
+            make -C data/devices
+
+            ./utilities/create.sh
+
+            mkdir -p ${shellQuote(ctx.artifactDir)}
+
+            cp utilities/DualBootUtilities-${shellQuote(ctx.version)}.zip \
+                ${shellQuote(ctx.artifactDir)}/DualBootUtilities-${shellQuote(ctx.version)}.zip
+            cp data/devices/devices.json ${shellQuote(ctx.artifactDir)}/
+        """.stripIndent()
+
+        sh 'chmod 500 ./build.sh'
+
+        // Can't use splat operator: https://issues.jenkins-ci.org/browse/JENKINS-43520
+        dockerArgs = ['docker', 'run', '--rm']
+        dockerArgs.addAll(ctx.commonDockerArgs)
+        dockerArgs << '-w' << pwd()
+        dockerArgs << ctx.dockerImage
+        dockerArgs << '--' << "${pwd()}/build.sh"
+
+        sh shellQuote(dockerArgs)
+
+        generateChecksums(ctx.artifactDir)
+        archiveArtifacts artifacts: "${ctx.artifactDir}/*"
+    }
+}
+
+node('docker') {
+    scmEnv = checkout([
+        $class: 'GitSCM',
+        branches: [
+            [name: params.GIT_REF],
+        ],
+        extensions: [
+            [$class: 'CleanCheckout'],
+            [$class: 'CleanBeforeCheckout'],
+            [$class: 'SubmoduleOption'],
+        ],
+        userRemoteConfigs: [[
+            url: 'https://github.com/chenxiaolong/DualBootPatcher.git',
+            refspec: params.GIT_REFSPEC,
+        ]],
+    ])
+
+    // The jenkins plugin has trouble with UTF-8 paths in external/pugixml
+    // sh '''\
+    //     git clean -fdx
+    //     git reset --hard
+    //     git submodule foreach --recursive git clean -fdx
+    //     git submodule foreach --recursive git reset --hard
+
+    //     git submodule init
+    //     git submodule sync --recursive
+    //     git submodule update --init --recursive
+    // '''.stripIndent()
+
+    // Get version number
+    version = sh returnStdout: true, script: 'git describe --long'
+    version = version.trim()
+            .replaceAll(/^v/, '')
+            .replaceAll(/([^-]*-g)/, /r$1/)
+            .replaceAll(/-/, /./)
+    if (params.VERSION_SUFFIX) {
+        version += ".${params.VERSION_SUFFIX}"
+    }
+
+    // Make version available to upstream build
+    env.VERSION = version
+
+    echo """
+        ----------------------------------------------------------------
+        Packaging version ${version}
+        ----------------------------------------------------------------
+    """.stripIndent()
+
+    // Set build name and description
+    currentBuild.displayName = version
+    currentBuild.description = params.GIT_REF
+
+    // Build docker images
+    lock('dualbootpatcher_docker_build') {
+        ansiColor('xterm') {
+            timestamps {
+                sh './docker/generate.sh'
+                sh './docker/build.sh'
+            }
+        }
+    }
+
+    // Get built images
+    images = readProperties file: './docker/generated/images.properties'
+
+    // Get current user's UID and GID
+    uid = sh(returnStdout: true, script: 'id -u').trim()
+    gid = sh(returnStdout: true, script: 'id -g').trim()
+
+    // Base build context
+    def defaultCtx = [:]
+    defaultCtx.version = version
+    defaultCtx.signingConfigFile = '/srv/dualbootpatcher/keys/SigningConfig.prop'
+    defaultCtx.prebuiltsDownloadDir = '/srv/dualbootpatcher/prebuilts/download'
+    defaultCtx.prebuiltsExtractedDir = '/srv/dualbootpatcher/prebuilts/extracted'
+    defaultCtx.winePrefixDir = '/srv/dualbootpatcher/wine'
+    defaultCtx.commonDockerArgs = [
+        // Allocate pseudo-TTY
+        '-t',
+
+        // Colored output
+        '-e', 'TERM=xterm',
+        '-e', 'CLICOLOR_FORCE=1',
+
+        // ccache behavior
+        //'-e', 'CCACHE_COMPILERCHECK=content',
+        //'-e', 'CCACHE_SLOPPINESS=time_macros,include_file_mtime,file_macro',
+
+        // Directories
+        '-e', 'GRADLE_USER_HOME=/srv/dualbootpatcher/gradle',
+        '-e', 'CCACHE_DIR=/srv/dualbootpatcher/ccache',
+
+        // make flags
+        '-e', 'MAKEFLAGS=-j4',
+
+        // User and group ID
+        '-e', "USER_ID=${uid}",
+        '-e', "GROUP_ID=${gid}",
+
+        // Bind mount workspace
+        '-v', "${pwd()}:${pwd()}:rw,z",
+
+        // Bind mount shared directories
+        '-v', '/srv/dualbootpatcher:/srv/dualbootpatcher:rw,z',
+    ]
+
+    ansiColor('xterm') {
+        timestamps {
+            // Build all variants
+            parallel(
+                'android': {
+                    stage('Build target: android') {
+                        def ctx = [:]
+                        ctx << defaultCtx
+                        ctx.artifactDir = 'archive/Android'
+                        ctx.dockerImage = images['android']
+
+                        buildAndroid(ctx)
+                    }
+                },
+                'mingw-i686': {
+                    stage('Build target: mingw-i686') {
+                        def ctx = [:]
+                        ctx << defaultCtx
+                        ctx.artifactDir = 'archive/Win32'
+                        ctx.dockerImage = images['mingw']
+
+                        buildMingw(ctx)
+                    }
+                },
+                // 'linux-x86_64': {
+                //     stage('linux-x86-64') {
+                //         buildLinux(images['linux'], 'archive/linux-x86_64')
+                //     }
+                // },
+                'utilities': {
+                    stage('Build target: utilities') {
+                        def ctx = [:]
+                        ctx << defaultCtx
+                        ctx.artifactDir = 'archive/Utilities'
+                        ctx.dockerImage = images['linux']
+
+                        buildUtilities(ctx)
+                    }
+                }
+            )
+
+            // Push source files to Transifex
+            stage('Upload translations') {
+                if (params.UPLOAD_TRANSLATIONS) {
+                    echo 'Uploading source translation file to Transifex...'
+
+                    // For whatever reason, the tx client needs write access to the config
+                    writeFile file: 'upload_translations.sh', text: """\
+                        #!/bin/bash -eux
+
+                        cp /srv/dualbootpatcher/transifexrc "\${HOME}"/.transifexrc
+                        chmod 600 "\${HOME}"/.transifexrc
+                        tx push -s
+                    """.stripIndent()
+
+                    sh 'chmod 500 ./upload_translations.sh'
+
+                    // Can't use splat operator: https://issues.jenkins-ci.org/browse/JENKINS-43520
+                    dockerArgs = ['docker', 'run', '--rm']
+                    dockerArgs.addAll(defaultCtx.commonDockerArgs)
+                    dockerArgs << '-w' << pwd()
+                    dockerArgs << images['base']
+                    dockerArgs << '--' << "${pwd()}/upload_translations.sh"
+
+                    sh shellQuote(dockerArgs)
+                } else {
+                    echo 'Skipping source translation file upload'
+                }
+            }
+        }
+    }
+}

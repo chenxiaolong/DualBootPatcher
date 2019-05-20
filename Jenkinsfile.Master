@@ -1,0 +1,88 @@
+def shellQuote(String str) {
+    return '\'' + str.replace('\'', '\'"\'"\'') + '\''
+}
+
+node('master') {
+    scmEnv = checkout([
+        $class: 'GitSCM',
+        branches: [
+            [name: 'master'],
+        ],
+        extensions: [
+            [$class: 'CleanCheckout'],
+            [$class: 'CleanBeforeCheckout'],
+        ],
+        userRemoteConfigs: [[
+            url: 'https://github.com/chenxiaolong/DualBootPatcher.git',
+        ]],
+    ])
+
+    def result
+
+    stage('Build') {
+        result = build(
+            job: 'DualBootPatcher_Build',
+            parameters: [
+                string(name: 'GIT_REF', value: scmEnv.GIT_COMMIT),
+                booleanParam(name: 'UPLOAD_TRANSLATIONS', value: true),
+            ],
+            propagate: false,
+        )
+
+        if (result.result == 'SUCCESS') {
+            currentBuild.displayName = result.displayName
+            currentBuild.description = result.description
+        } else {
+            currentBuild.result = result.result
+            error 'Build failed'
+        }
+    }
+
+    stage('Release') {
+        echo 'Publishing release ...'
+
+        timestamps {
+            dir('artifacts') {
+                try {
+                    // Copy artifacts
+                    step([
+                        $class: 'CopyArtifact',
+                        fingerprintArtifacts: true,
+                        projectName: 'DualBootPatcher_Build',
+                        selector: [
+                            $class: 'SpecificBuildSelector',
+                            buildNumber: result.number.toString(),
+                        ],
+                        target: '.',
+                    ])
+
+                    // SCP to target
+                    sshagent(['ssh-deploy']) {
+                        sh """\
+                            #!/bin/bash -eu
+
+                            target_host=deploy@noobdev.io
+                            target_dir=/srv/uploads
+
+                            # Fix directory structure
+                            find archive/ -name 'devices.json*' \\
+                                -exec mv -t ./ {} \\;
+
+                            # Upload devices.json
+                            rsync devices.json "\${target_host}:\${target_dir}/"
+
+                            # Upload other files
+                            ssh "\${target_host}" mkdir -p "\${target_dir}/dbp/files"/${shellQuote(result.buildVariables.VERSION)}/
+                            rsync -r archive/ "\${target_host}:\${target_dir}/dbp/files"/${shellQuote(result.buildVariables.VERSION)}/
+
+                            # Regenerate index
+                            ssh "\${target_host}" /srv/uploads/scripts/create-index.sh
+                        """.stripIndent()
+                    }
+                } finally {
+                    deleteDir()
+                }
+            }
+        }
+    }
+}
