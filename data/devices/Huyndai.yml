@@ -1,0 +1,65 @@
+---
+- name: HYUNDAI Seoul 5
+  id: Seoul5
+  codenames:
+      - 5
+      - Seoul
+      - Seoul5
+  architecture: 
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p18
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p19
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p20
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p7
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p8
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+    extra:
+      - /dev/block/mmcblk1p1
+      - /dev/block/platform/mtk-msdc.0/by-name/expdb
+      - /dev/block/platform/mtk-msdc.0/by-name/flashinfo
+      - /dev/block/platform/mtk-msdc.0/by-name/frp
+      - /dev/block/platform/mtk-msdc.0/by-name/keystore
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/by-name/nvdata
+      - /dev/block/platform/mtk-msdc.0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/by-name/oemkeystore
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/by-name/proinfo
+      - /dev/block/platform/mtk-msdc.0/by-name/protect1
+      - /dev/block/platform/mtk-msdc.0/by-name/protect2
+      - /dev/block/platform/mtk-msdc.0/by-name/seccfg
+      - /dev/block/platform/mtk-msdc.0/by-name/secro
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
