@@ -9,60 +9,117 @@
 
 
 # Human readable device name (required)
-- name: Samsung Galaxy S 4 (Qcom)
+- name: OE106
   # Device ID (required). Must be unique, but can be any string. It is good
   # practice to set this value similar to the device's codename if possible.
-  id: jflte
+  id: ocean
 
   # List of device codenames (required). The codename is the value of
   # 'ro.product.device' or 'ro.build.product' in the /system/build.prop file.
   # WARNING: All of the devices listed MUST have the same partition table.
   #          Otherwise, there's a chance of hard-bricking the device.
   codenames:
-    - jflte
-    - jfltetmo
-    - jfltexx
+    - ocean
+    
 
   # Device architecture (required). For example, armeabi-v7a, arm64-v8a, or x86.
-  architecture: armeabi-v7a
+  architecture: arm64-v8a
 
   # Block device paths section (required).
   block_devs:
     # Base directories (optional). This is a list of the 'by-name' directories
     # in /dev/ that contain the partition block devices.
     base_dirs:
-      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+      - /dev/block/
 
     # System partition block device paths (required).
     system:
-      - /dev/block/platform/msm_sdcc.1/by-name/system
-      - /dev/block/mmcblk0p16
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p49
 
     # Cache partition block device paths (required).
     cache:
-      - /dev/block/platform/msm_sdcc.1/by-name/cache
-      - /dev/block/mmcblk0p18
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p15
 
     # Data partition block device paths (required).
     data:
-      - /dev/block/platform/msm_sdcc.1/by-name/userdata
-      - /dev/block/mmcblk0p29
+      - /dev/block/logic_data
+      - /dev/block/dm-0
 
     # Boot partition block device paths (required).
     boot:
-      - /dev/block/platform/msm_sdcc.1/by-name/boot
-      - /dev/block/mmcblk0p20
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p13
 
     # Recovery partition block device paths (required).
     recovery:
-      - /dev/block/platform/msm_sdcc.1/by-name/recovery
-      - /dev/block/mmcblk0p21
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p16
 
     # Extra block device paths (optional). This is a list of block devices that
     # will be available during the flashing process. Any block devices not
     # listed here cannot be touched by a ROM's installer.
     extra:
-      - /dev/block/platform/msm_sdcc.1/by-name/aboot
+     # - /dev/block/platform/msm_sdcc.1/by-name/aboot
+      
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/abl
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/alterable
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/aop
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/apdp
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/bluetooth
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/boot
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/cache
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/cmnlib
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/cmnlib64
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/ddr
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/devcfg
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/devinfo
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/dip
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/dpo
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/dsp
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/dtbo
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/factory
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/factory_bak
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/frp
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/fsc
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/fsg
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/fsg1
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/fsg2
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/hyp
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/keymaster
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/keystore
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/klogdump
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/limits
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/logdump
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/logfs
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/misc
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/modem
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/modemst1
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/modemst2
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/msadp
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/persist
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/qupfw
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/ramdump
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/rawdump
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/recovery
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/sec
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/splash
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/spunvm
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/ssd
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/sti
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/storsec
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/system
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/toolsfv
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/tz
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/userdata
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/vbmeta
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/vendor
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/xbl
+      - /dev/block/platform/soc/7c4000.sdhci/by-name/xbl_config
+      
+      
 
   # Boot UI section (optional).
   boot_ui:
@@ -102,7 +159,7 @@
     # - RGBX_8888
     # - BGRA_8888
     # - RGBA_8888
-    pixel_format: DEFAULT
+    pixel_format: RGBA_8888
 
     # TWRP force pixel format (optional).
     #
@@ -121,10 +178,10 @@
     default_y_offset: 0
 
     # TWRP brightness sysfs path (optional).
-    brightness_path: '/sys/...'
+    brightness_path: '/sys/devices/platform/soc/ae00000.qcom,mdss_mdp/backlight/panel0-backlight/brightness'
 
     # TWRP secondary brightness sysfs path (optional).
-    secondary_brightness_path: '/sys/...'
+    #secondary_brightness_path: '/sys/...'
 
     # TWRP max brightness (optional).
     max_brightness: 255
@@ -133,16 +190,16 @@
     default_brightness: 128
 
     # TWRP battery sysfs path (optional).
-    battery_path: '/sys/...'
+    # battery_path: '/sys/...'
 
     # TWRP CPU temperature sys path (optional).
-    cpu_temp_path: '/sys/...'
+    # cpu_temp_path: '/sys/...'
 
     # TWRP input device blacklist (optional).
-    input_blacklist: ''
+    # input_blacklist: ''
 
     # TWRP input device whitelist (optional).
-    input_whitelist: ''
+    # input_whitelist: ''
 
     # TWRP graphics backend list (required).
     #
