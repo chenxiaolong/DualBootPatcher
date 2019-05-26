@@ -16,6 +16,7 @@ set(files
     cherrymobile.yml
     cmcc.yml
     coolpad.yml
+    cool1dual.yml
     dexp.yml
     doogee.yml
     elephone.yml
