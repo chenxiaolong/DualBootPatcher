@@ -1,0 +1,66 @@
+- name: AMGOO AM523
+  id: AM523
+  codenames:
+    - AM523
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/sdio_emmc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/sdio_emmc/by-name/system
+      - /dev/block/mmcblk0p17
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/sdio_emmc/by-name/cache
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/sdio_emmc/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/sdio_emmc/by-name/boot
+      - /dev/block/mmcblk0p16
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/sdio_emmc/by-name/recovery
+      - /dev/block/mmcblk0p21
+    extra:
+       #modem:
+      - /dev/block/platform/sdio_emmc/by-name/wdsp
+      - /dev/block/platform/sdio_emmc/by-name/wmodem
+      - /dev/block/platform/sdio.emmc/by-name/wcnmodem
+       #misc:
+      - /dev/block/platform/sdio_emmc/by-name/misc
+      - /dev/block/platform/sdio.emmc/by-name/miscdata
+       #imei:
+      - /dev/block/platform/sdio_emmc/by-name/wcnfixnv1
+      - /dev/block/platform/sdio_emmc/by-name/wcnfixnv2
+      - /dev/block/platform/sdio_emmc/by-name/wcnruntimenv1
+      - /dev/block/platform/sdio_emmc/by-name/wcnruntimenv2
+      - /dev/block/platform/sdio_emmc/by-name/wfixnv1
+      - /dev/block/platform/sdio_emmc/by-name/wfixnv2
+      - /dev/block/platform/sdio_emmc/by-name/wruntimenv1
+      - /dev/block/platform/sdio_emmc/by-name/wruntimenv2
+       #other:
+      - /dev/block/platform/sdio_emmc/by-name/persist
+      - /dev/block/platform/sdio_emmc/by-name/prodnv
+      - /dev/block/platform/sdio_emmc/by-name/sysinfo
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+      - /dev/block/mmcblk0p1
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    pixel_format: RGBX_8888
+    brightness_path: /sys/devices/40260000.sprd_pwm_bl/backlight/sprd_backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    theme: portrait_hdpi
