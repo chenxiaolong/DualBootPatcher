@@ -753,7 +753,7 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = libmbcommon libmbbootimg libmbsparse
+INPUT                  = libmbcommon libmbbootimg libmbsparse libmbsystrace
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -807,8 +807,6 @@ EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = */tests/*
 # External files
 EXCLUDE_PATTERNS       += */external/*
-# libmbcommon libc replacement functions
-EXCLUDE_PATTERNS       += */include/mbcommon/libc/* */libmbcommon/src/libc/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the

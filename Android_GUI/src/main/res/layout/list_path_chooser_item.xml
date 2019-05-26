@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+   * Copyright (C) 2016-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   *
+   * This program is free software: you can redistribute it and/or modify
+   * it under the terms of the GNU General Public License as published by
+   * the Free Software Foundation, either version 3 of the License, or
+   * (at your option) any later version.
+   *
+   * This program is distributed in the hope that it will be useful,
+   * but WITHOUT ANY WARRANTY; without even the implied warranty of
+   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   * GNU General Public License for more details.
+   *
+   * You should have received a copy of the GNU General Public License
+   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?selectableItemBackground"
+    android:descendantFocusability="blocksDescendants"
+    android:minHeight="@dimen/md_listitem_height"
+    android:orientation="horizontal"
+    android:paddingEnd="@dimen/md_dialog_frame_margin_horizontal"
+    android:paddingStart="@dimen/md_dialog_frame_margin_horizontal"
+    tools:gravity="start|center_vertical"
+    tools:ignore="PrivateResource">
+
+    <TextView
+        android:id="@android:id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:minHeight="@dimen/md_listitem_height"
+        android:paddingBottom="@dimen/md_listitem_vertical_margin_choice"
+        android:paddingEnd="@dimen/md_listitem_control_margin"
+        android:paddingStart="@dimen/md_listitem_control_margin"
+        android:paddingTop="@dimen/md_listitem_vertical_margin_choice"
+        android:textSize="@dimen/md_listitem_textsize"
+        android:textColor="?android:attr/textColorSecondary"
+        tools:ignore="NewApi,RtlSymmetry"
+        tools:text="Item" />
+</LinearLayout>

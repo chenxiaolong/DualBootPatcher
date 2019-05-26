@@ -1,0 +1,502 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <!--Name of the app built in release mode-->
+  <string name="app_name_release">Dual Boot Patcher</string>
+  <!--Name of the app built in debug mode-->
+  <string name="app_name_debug">Dual Boot Patcher (Debug)</string>
+  <!--Name of the app built in snapshot mode-->
+  <string name="app_name_snapshot">Dual Boot Patcher (Entwicklerversion)</string>
+  <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
+  <string name="wait_until_finished">Bitte warte bis alle Prozesse abgeschlossen sind.</string>
+  <!--Indicate the version of the app on the about screen-->
+  <string name="version">Version %s</string>
+  <!--GitHub source code web page URL-->
+  <!--GitHub source code link text-->
+  <string name="link_source_code">Quellcode</string>
+  <!--XDA forum thread web page URL-->
+  <!--XDA forum thread link text-->
+  <string name="link_xda_thread">XDA Thread</string>
+  <!--Licenses URL-->
+  <!--Licenses link text-->
+  <string name="link_licenses">Lizenzen</string>
+  <!--Thank you message for contributors and links to relavent URLs-->
+  <string name="credits">Ein besonderes Dankeschön an alle die mit geholfen haben diesen Patcher zu ermöglichen.</string>
+  <!--Title for card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_title">Die Verbindung zu mbtool schlug fehl.</string>
+  <!--Message for the card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_message">Die App konnte sich nicht mit mbtool verbinden. Dies könnte daran liegen, dass keine Root-Berechtigung vorliegt oder Ramdisk nicht geupdatet wurde.
+\n\nDrücken um es erneut zu versuchen.</string>
+  <!--Navigation drawer item for selecting the ROM-->
+  <string name="title_roms">ROMs</string>
+  <!--Navigation drawer item for patching a zip file-->
+  <string name="title_patch_zip">Patche Zip-Datei</string>
+  <!--Navigation drawer item for checking free space-->
+  <string name="title_free_space">Freier Speicher</string>
+  <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">Einstellungen</string>
+  <!--Navigation drawer item for changing the app sharing settings-->
+  <string name="title_app_sharing">App Teilen</string>
+  <!--Nagivation drawer item for rebooting the device-->
+  <string name="title_reboot">Neustart</string>
+  <!--Navigation drawer item for showing the about screen-->
+  <string name="title_about">Über</string>
+  <!--Nagivation drawer item for exiting the app-->
+  <string name="title_exit">Verlassen</string>
+  <!--Accessibility text for opening the app drawer-->
+  <string name="drawer_open">Navigation drawer öffnen</string>
+  <!--Accessibility text for closing the app drawer-->
+  <string name="drawer_close">Navigation drawer schließen</string>
+  <!--Default name for the primary ROM-->
+  <string name="primary">Primär</string>
+  <!--Default name for the secondary ROM-->
+  <string name="secondary">Skundär</string>
+  <!--Default name for the multi-slot ROMs-->
+  <string name="multislot">Multi Platz %s</string>
+  <!--Default name for the data-slot ROMs-->
+  <string name="dataslot">%s (Daten Platz)</string>
+  <!--Default name for the extsd-slot ROMs-->
+  <string name="extsdslot">%s (Externe Sd-Karten Platz)</string>
+  <!--Text shown when a ROM's version could not be detected-->
+  <string name="couldnt_determine_version">Die Betriebssystemversion konnte nicht gefunden werden.</string>
+  <!--Title of progress dialog shown when switching ROMs-->
+  <string name="switching_rom">Wechsle ROM</string>
+  <!--Title of progress dialog shown when setting kernel-->
+  <string name="setting_kernel">Setze den Kernel</string>
+  <!--Message shown when switching ROMs succeeds-->
+  <string name="choose_rom_success">Erfolgreich die ROM gewechselt</string>
+  <!--Message shown when switching ROMs failed-->
+  <string name="choose_rom_failure">Fehler beim wechseln der ROM</string>
+  <!--Message shown when switching ROMs and checksums don't match-->
+  <string name="choose_rom_checksums_invalid">Image Checksummen stimmen nicht überein</string>
+  <!--Message shown when switching ROMs and checksums are missing-->
+  <string name="choose_rom_checksums_missing">Image Checksummen fehlen</string>
+  <!--Message shown when setting the kernel succeeds-->
+  <string name="set_kernel_success">Kernel erfolgreich gesetzt</string>
+  <!--Message shown when setting the kernel fails-->
+  <string name="set_kernel_failure">Fehler beim Kernel setzen</string>
+  <!--Message shown when another application tries to switch the ROM via an intent-->
+  <string name="confirm_automated_switch_rom">Eine andere Anwendung versucht zu %s zu wechseln, fortfahren?</string>
+  <!--Message shown if the boot partition could not be detected because the device codename is
+         not recognized-->
+  <string name="unknown_boot_partition">Konnte die Boot Partition nicht bestimmen, weil der Codename des Geräts \'%s\' nicht bekannt ist.</string>
+  <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
+  <string name="checksums_invalid">Die SHA512 Checksummen für das boot.img oder anderen *.img Dateien im file /sdcard/MultiBoot/%s/  stimmen nicht mit den erwarteten Checksummen überein. Eine Drittanwendung hat diese Images möglicherweise geändert. Mit dem Romwechsel fortfahren?</string>
+  <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
+  <string name="checksums_missing">Die SHA512 Checksummen für das boot.img oder anderen *.img Dateien in /sdcard/MultiBoot/%s/ dieser ROM sind nicht vorhanden. Dies wird wahrscheinlich durch das  upgraden von einer älteren Version dieser App hervorgerufen. Mit dem ROM-Wechsel fortfahren?</string>
+  <!--Version text shown on ROM card if the version could not be detected-->
+  <string name="rom_card_unknown_version">Unbekannte Version</string>
+  <!--Build text shown on ROM card if the build could not be detected-->
+  <string name="rom_card_unknown_build">Unbekannter Build</string>
+  <!--ROM menu item for updating the ramdisk-->
+  <string name="rom_menu_update_ramdisk">Ramdisk updaten</string>
+  <!--ROM menu item for setting kernel-->
+  <string name="rom_menu_set_kernel">Kernel setzen</string>
+  <!--ROM menu item for backing up the ROM-->
+  <string name="rom_menu_backup_rom">Backup ROM</string>
+  <!--ROM menu item for adding an icon to the home screen-->
+  <string name="rom_menu_add_to_home_screen">Zum Home screen hinzufügen</string>
+  <!--ROM menu item for changing the name-->
+  <string name="rom_menu_edit_name">Name ändern</string>
+  <!--ROM menu item for changing the image-->
+  <string name="rom_menu_change_image">Image ändern</string>
+  <!--ROM menu item for resetting back to the default image-->
+  <string name="rom_menu_reset_image">Image resetten</string>
+  <!--ROM menu item for wiping the ROM-->
+  <string name="rom_menu_wipe_rom">Wipe ROM</string>
+  <!--Snack bar message shown when a launcher is successfully created-->
+  <string name="successfully_created_launcher">%swurde erfolgreich zum home screen hinzugefügt</string>
+  <!--Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching-->
+  <string name="auto_reboot_after_switching">Möchtest du das das Gerät nach dem Romwechsel automatisch neustartet?</string>
+  <!--Target for wiping ROM's /system-->
+  <string name="wipe_target_system">System</string>
+  <!--Target for wiping ROM's /cache-->
+  <string name="wipe_target_cache">Cache</string>
+  <!--Target for wiping ROM's /data-->
+  <string name="wipe_target_data">Data</string>
+  <!--Target for wiping ROM's dalvik cache-->
+  <string name="wipe_target_dalvik_cache">Dalvik cache</string>
+  <!--Target for wiping ROM's multiboot files-->
+  <string name="wipe_target_multiboot_files">MultiBoot Dateien</string>
+  <!--Title of dialog box asking for which targets to wipe-->
+  <string name="wipe_rom_dialog_title">Ziele löschen</string>
+  <!--Title of progress dialog shown when wiping targets-->
+  <string name="wiping_targets">Ziele werden gelöscht</string>
+  <!--Toast message indicating successfully wiped targets-->
+  <string name="wipe_rom_successfully_wiped">Erfolgreich gelöscht: %s</string>
+  <!--Toast message indicating targets that failed to wipe-->
+  <string name="wipe_rom_failed_to_wipe">Fehler beim wipen von: %s</string>
+  <!--Toast message indicating that the wipe process failed to start-->
+  <string name="wipe_rom_initiate_fail">Fehler beim einleiten des Rom wiping Prozesses.</string>
+  <!--Toast message shown if the user did not select any target to wipe-->
+  <string name="wipe_rom_none_selected">Es wurde kein wipe durchgeführt, da keine Ziele ausgewählt wurden.</string>
+  <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
+  <string name="wipe_rom_no_wipe_current_rom">Die momentan laufende ROM kann nicht gewiped werden.</string>
+  <!--Switcher service notification title-->
+  <string name="switcher_service_background_service">Hintergrund service</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
+  <string name="switcher_storage_permission_required">Die ROM Vorschaubilder und Namen können nicht geladen werden weil der Speicherzugriff verwährt wurde.</string>
+  <!--Accessibility text for the ROM logo images-->
+  <string name="switcher_rom_image">ROM Logo</string>
+  <!--Title for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_title">Kernel setzen?</string>
+  <!--Message for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_desc">Der momentan laufende Kernel wurde gespeichert als der Kernel für %s.</string>
+  <!--Title for the dialog box to rename a ROM-->
+  <string name="rename_rom_title">%sumbenennen</string>
+  <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">Neuen Namen für %seingeben. Leer lassen um Standardnamen zu wählen.</string>
+  <!--Dialog message shown when the kernel has not been set-->
+  <string name="kernel_not_set_desc">Der Kernel wurde für diese ROM noch nicht gesetzt. 
+Möchten Sie den Kernel jetzt setzen?</string>
+  <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
+  <string name="kernel_different_from_saved_desc">Der gespeicherte Kernel ist anders als der derzeitig laufende Kernel.
+Wollen Sie den Kernel jetzt setzen?</string>
+  <!--Positive dialog button shown for the above two messages-->
+  <string name="set_kernel_now">Jetzt setzen</string>
+  <!--Negative dialog button shown for the above two messages-->
+  <string name="set_kernel_later">Später setzen</string>
+  <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
+  <string name="set_kernel_mismatched_rom">Die momentan ausgewählte ROM ist %1$s, aber Sie versuchen den Kernel für %2$s zu setzen. Bitte bestätigen Sie dass das das ist, was Sie wollen.</string>
+  <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <string name="in_app_flashing_title_backup_rom">ROM Backup</string>
+  <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <string name="in_app_flashing_title_restore_rom">ROM wiederherstellen</string>
+  <!--In-app flashing output activity title - shown when flashing a single file-->
+  <string name="in_app_flashing_title_flash_file">File flashen</string>
+  <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <string name="in_app_flashing_title_flash_files">Files flashen</string>
+  <!--In-app flashing activity title-->
+  <string name="in_app_flashing_title">In-app flashen</string>
+  <!--FAB button text for adding a patched file to flash-->
+  <string name="in_app_flashing_fab_add_patched_file">Gepatchtes File hinzufügen</string>
+  <!--FAB button text for adding a backup to flash-->
+  <string name="in_app_flashing_fab_add_backup">Backup hinzufügen</string>
+  <!--Title of pending action card for flashing a file-->
+  <string name="in_app_flashing_action_flash_file">File flashen</string>
+  <!--Title of pending action card for restoring a backup-->
+  <string name="in_app_flashing_action_restore_backup">Backup wiederherestellen</string>
+  <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
+  <string name="in_app_flashing_filename">Filename: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <string name="in_app_flashing_backup_name">Backupname: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
+  <string name="in_app_flashing_restore_targets">Ziele: %s</string>
+  <!--Subtitle text in pending action card showing the installation location-->
+  <string name="in_app_flashing_location">ROM ID: %s</string>
+  <!--Title shown in dialog asking for the installation location of a zip file-->
+  <string name="in_app_flashing_dialog_installation_location">Installationsort:</string>
+  <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
+  <string name="in_app_flashing_dialog_verifying_zip">Zip wird überprüft</string>
+  <!--Error message shown when the selected zip file is not found-->
+  <string name="in_app_flashing_error_zip_not_found">Das angegebene zip File wurde nicht gefunden</string>
+  <!--Error message shown when the selected zip file could not be read-->
+  <string name="in_app_flashing_error_zip_read_fail">Das ausgewählte zip File kann nicht gelesen werden.</string>
+  <!--Error message shown when the selected zip file isn't patched-->
+  <string name="in_app_flashing_error_not_multiboot">Das zip File scheint nicht für multiboot gepatcht worden zu sein. Bitte File vor dem flashen patchen.</string>
+  <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
+  <string name="in_app_flashing_error_version_too_old">Das zip File muss mit %s oder neuer gepatcht werden, um das in-app flashing zu verwenden.</string>
+  <!--Error message shown when the user tries to flash a zip file to the current ROM-->
+  <string name="in_app_flashing_error_no_overwrite_rom">Um Crashes oder Reboots am derzeitigen System zu verhinden, ist das flashen über die derzeitige ROM nicht erlaubt.</string>
+  <!--Dialog message asking if the user wants to change the installation location of the zip-->
+  <string name="in_app_flashing_change_install_location_desc">Das zip File ist für die Installation nach %s gepatcht. Wollen Sie den Installationsort ändern?</string>
+  <!--Dialog button for keeping the current installation location-->
+  <string name="in_app_flashing_keep_current_location">Ort beibehalten</string>
+  <!--Dialog button for changing the installation location-->
+  <string name="in_app_flashing_change_install_location">Ort ändern</string>
+  <!--Message shown in the first-use dialog for zip flashing-->
+  <string name="in_app_flashing_dialog_first_use">Der in-app flasher kan sowohl gepatchte files, als auch DualBootPatcher Backups flashen. Drücke einfach den plus Button um das flashen zu beginnen.\n\nDie ausstehenden Aktionen können per drag&amp;swipe bewegt werden um die Flashreihenfolge zu ändern oder aus der Warteliste zu entfernen.</string>
+  <!--Dialog description when choosing a backup to restore-->
+  <string name="in_app_flashing_select_backup_dialog_desc">Wähle ein Backup aus der Liste um es wiederherzustellen.</string>
+  <!--Toast message shown if there are no backups available-->
+  <string name="in_app_flashing_no_backups_available">Es sind keine Backups für eine Wiederherstellung verfügbar .</string>
+  <!--ROM details item showing which slot the ROM is installed to-->
+  <string name="rom_details_info_slot">Slot</string>
+  <!--ROM details item showing the version of the ROM-->
+  <string name="rom_details_info_version">Version</string>
+  <!--ROM details item showing the build name of the ROM-->
+  <string name="rom_details_info_build">Build</string>
+  <!--ROM details item showing the mbtool version used to boot the ROM-->
+  <string name="rom_details_info_mbtool_status">mbtool Status</string>
+  <!--ROM details item showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts">Apps</string>
+  <!--ROM details value showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts_value">%1$s System Apps, %2$s upgedatete Apps, %3$s User Apps</string>
+  <!--ROM details item showing the path to the system directory or image-->
+  <string name="rom_details_info_system_path">System Pfad</string>
+  <!--ROM details item showing the path to the cache directory or image-->
+  <string name="rom_details_info_cache_path">Cache Pfad</string>
+  <!--ROM details item showing the path to the data directory or image-->
+  <string name="rom_details_info_data_path">Data Pfad</string>
+  <!--ROM details item showing the size of the system directory or image-->
+  <string name="rom_details_info_system_size">System Größe</string>
+  <!--ROM details item showing the size of the cache directory or image-->
+  <string name="rom_details_info_cache_size">Cache Größe</string>
+  <!--ROM details item showing the size of the data directory or image-->
+  <string name="rom_details_info_data_size">Data Größe</string>
+  <!--ROM details item value shown when calculating the directory or image sizes-->
+  <string name="rom_details_info_calculating">Berechne...</string>
+  <!--Backup ROM activity title-->
+  <string name="br_backup_title">ROM Backup</string>
+  <!--Restore ROM activity title-->
+  <string name="br_restore_title">ROM Wiederherstellung</string>
+  <!--Backup targets dialog description-->
+  <string name="br_backup_targets_dialog_desc">Die Ziele auswählen, welche gebackupt werden sollen.</string>
+  <!--Restore targets dialog description-->
+  <string name="br_restore_targets_dialog_desc">Die Ziele auswählen, welche wiederhergestelltwerden sollen.</string>
+  <!--Backup/restore target for ROM's /system files-->
+  <string name="br_target_system">System</string>
+  <!--Backup/restore target for ROM's /cache files-->
+  <string name="br_target_cache">Cache</string>
+  <!--Backup/restore target for ROM's /data files-->
+  <string name="br_target_data">Data</string>
+  <!--Backup/restore target for ROM's boot image-->
+  <string name="br_target_boot">Boot image</string>
+  <!--Backup/restore target for ROM's multiboot configuration files-->
+  <string name="br_target_config">MultiBoot configs</string>
+  <!--Toast message shown if no backup/restore targets are selected-->
+  <string name="br_no_target_selected">Keine Backup/Wiederherstellungs Ziele gefunden.</string>
+  <!--Backup name input dialog description-->
+  <string name="br_name_dialog_desc">Geben Sie einen Namen für das Backup ein. Er darf keinen Schrägstrich (\"/\") enthalten und nicht \".\" oder \"..\" sein.</string>
+  <!--Backup name input field hint for backup name dialog-->
+  <string name="br_name_dialog_hint">Backupnamen eingeben...</string>
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <string name="patcher_background_message">Tippen Sie auf FAB um files hinzuzufügen.</string>
+  <!--Label for FAB to add a flashable zip-->
+  <string name="patcher_add_flashable_zip">Flashable zip hinzufügen</string>
+  <!--Label for FAB to add an Odin image-->
+  <string name="patcher_add_odin_image">Odin Image hinzufügen</string>
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <string name="patcher_storage_permission_required">Der Patcher kann ohne lese/schreib Rechte auf den internal storage keine Files patchen. Bitte bestätigen Sie die Speicherberechtigung um files pathcen zu können.</string>
+  <!--Snackbar message shown if the user tries to patch the same file more than once-->
+  <string name="patcher_cannot_add_same_item">Das ausgewählte output File ist Bereits in der Warteschlange.</string>
+  <!--Title of the device selection box in the patcher-->
+  <string name="patcher_device_title">Gerät:</string>
+  <!--Title of the partition configuration box in the patcher-->
+  <string name="patcher_partconfig_title">Partitions Konfiguration:</string>
+  <!--Title of the partition configuration description in the patcher-->
+  <string name="patcher_partconfig_desc_title">Beschreibung:</string>
+  <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
+  <!--Subtitle shown in patch file card when patching succeeded-->
+  <string name="patcher_card_subtitle_succeeded">Erfolgreich</string>
+  <!--Subtitle shown in patch file card when patching failed-->
+  <string name="patcher_card_subtitle_failed">Fehler (Error %s)</string>
+  <!--Subtitle shown in patch file card when file is waiting to be patched-->
+  <string name="patcher_card_subtitle_pending">Ausstehend</string>
+  <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
+  <string name="patcher_card_subtitle_queued">Angestanden</string>
+  <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <string name="patcher_card_subtitle_cancelled">Abgebrochen</string>
+  <!--Patcher options dialog title-->
+  <string name="patcher_options_dialog_title">Patcher Optionen</string>
+  <!--Description for all other installation locations-->
+  <string name="install_location_desc">Rom wird nach %s installiert</string>
+  <!--Text box hint for specifying the data slot ID-->
+  <string name="install_location_named_slot_id_hint">ID eingeben</string>
+  <!--Description text shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_empty">ID oben eingeben</string>
+  <!--Error tooltip shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_error_is_empty">Die Slot-ID darf nicht leer sein.</string>
+  <!--Error tooltip shown if the data slot ID contains invalid characters-->
+  <string name="install_location_named_slot_id_error_invalid">Die Slot-ID darf nur kleingeschriebene, englische Buchstaben und/oder Nummern erthalten.</string>
+  <!--Name for the data-slot installation location-->
+  <string name="install_location_data_slot">Data Slot</string>
+  <!--Name for the extsd-slot installation location-->
+  <string name="install_location_extsd_slot">Externe SD Slot</string>
+  <!--Title for the dialog box indicating that no file manager is installed-->
+  <string name="filemanager_missing_title">Keine File Manager</string>
+  <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
+  <string name="filemanager_missing_desc">Es ist kein angemessener File Manager installier, Installieren Sie bitte einen File Manager um zu patchende Files auszuwählen.</string>
+  <!--Text for the details card indicating that the patching is done-->
+  <string name="details_done">Fertig</string>
+  <!--Text for the progress card showing how many files have been added to the new zip-->
+  <string name="overall_progress_files">%1$s/%2$s Files</string>
+  <!--Title for total size of partition-->
+  <string name="free_space_total_size">Gesamtgröße:</string>
+  <!--Title for occupied space on partition-->
+  <string name="free_space_occupied_size">Belegt:</string>
+  <!--Title for free space on partition-->
+  <string name="free_space_free_size">Frei:</string>
+  <!--Format string for exbibytes-->
+  <!--Format string for pebibytes-->
+  <!--Format string for tebibytes-->
+  <!--Format string for gibibytes-->
+  <!--Format string for mebibytes-->
+  <!--Format string for kibibytes-->
+  <!--Format string for bytes-->
+  <!--Title for the individual application sharing section of the ROM settings-->
+  <string name="a_s_settings_indiv_app_sharing_section_title">Individuelles Apps teilen</string>
+  <!--Title for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_title">Teile eine Individuelle App</string>
+  <!--Description for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_desc">Teile eine Individuelle App ROM-übergreifend. (Neustart benötigt)</string>
+  <!--Title for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_title">Geteilte Apps managen</string>
+  <!--Description for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_desc">Eine App auswählen, welche für das individuelle Teilen geteilt werden soll.</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
+  <string name="a_s_settings_storage_permission_required">Die App-teil-Einstellungen konnten nicht gespeichert werden, da die Speicherberechtigung abgelehnt wurde. Bitte lassen Sie die Speicherberechtigung zu, um die App-teil-Einstellungen zu bearbeiten.</string>
+  <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
+  <string name="a_s_settings_version_too_old">mbtool muss upgedatet werden um das App teilem ordnungsgemäß zu verwenden. Bitte updaten Sie die ramdisk.</string>
+  <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">Ramdisk updaten</string>
+  <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
+  <string name="update_ramdisk_missing_desc">ramdisk hat momentan keine Version von mbtool.</string>
+  <!--Description for the ramdisk update preference when the ramdisk is outdated-->
+  <string name="update_ramdisk_outdated_desc">ramdisk hat momentan eine veraltete Version von mbtool.</string>
+  <!--Description for the ramdisk update preference when the ramdisk is already up to date-->
+  <string name="update_ramdisk_up_to_date_desc">ramdisk ist bereits auf dem neuesten Stand</string>
+  <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">ramdisk erfolgreich upgedatet.</string>
+  <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">ramdisk erfolgreich upgedatet.
+Wollen Sie neustarten?</string>
+  <!--Message telling user that the ramdisk updating succeeded-->
+  <string name="update_ramdisk_no_reboot_desc">ramdisk erfolgreich upgedatet.</string>
+  <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">Fehler beim updaten von ramdisk</string>
+  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">Fehler beim updaten von ramdisk. Der log wurde nach MultiBoot/ramdisk-update.log in den internen Speicher gespeichert.</string>
+  <!--Toast popup message containing the countdown for forcing a ramdisk update-->
+  <plurals name="force_update_ramdisk_countdown">
+    <item quantity="one">Sie sind nur noch %1$dSchritt 
+von einem Zwangsupdate der Ramdisk entfernt.</item>
+    <item quantity="other">Sie sind noch %1$dSchritte 
+von einem Zwangsupdate der Ramdisk entfernt.</item>
+  </plurals>
+  <!--Toast popup message shown when the user forces a ramdisk update-->
+  <string name="force_updating_ramdisk">ramdisk wird force geupdatet</string>
+  <!--Title for the section in the settings to manage the Boot UI-->
+  <string name="rom_settings_boot_ui_title">Boot UI (Experimentell)</string>
+  <!--Title for the preference to install the Boot UI-->
+  <string name="rom_settings_boot_ui_install_title">Boot UI installieren</string>
+  <!--Title for the preference to update the Boot UI-->
+  <string name="rom_settings_boot_ui_update_title">Boot UI updaten</string>
+  <!--Title for the preference to uninstall the Boot UI-->
+  <string name="rom_settings_boot_ui_uninstall_title">Boot UI deinstallieren</string>
+  <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <string name="rom_settings_boot_ui_update_available">Update verfügbar: %s</string>
+  <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <string name="rom_settings_boot_ui_up_to_date">Auf dem neuesten Stand</string>
+  <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <string name="rom_settings_boot_ui_not_installed">Nicht installiert</string>
+  <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <string name="rom_settings_boot_ui_not_supported">Auf diesem Gerät nicht unterstützt</string>
+  <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <string name="rom_settings_boot_ui_install_success">Boot UI wurde erfolgreich installiert.</string>
+  <!--Toast message to indicate that the Boot UI failed to install-->
+  <string name="rom_settings_boot_ui_install_failure">Boot UI konnte nicht installiert werden</string>
+  <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <string name="rom_settings_boot_ui_uninstall_success">Boot UI erfolgreich deinstalliert</string>
+  <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <string name="rom_settings_boot_ui_uninstall_failure">Boot UI konnte nicht deinstalliert werden.</string>
+  <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
+  <string name="rom_settings_boot_ui_update_ramdisk_msg">Die Boot UI wurde erfolgreich installiert.\n\nBitte gehen Sie sicher, dass die ramdisk in jeder ROM upgedatet ist, sonst wird Boot UI nicht beim Systemstart gestartet.</string>
+  <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <string name="rom_settings_backup_title">Bakup/Wiederherstellen (EXPERIMENTELL)</string>
+  <!--Title for the preference to change the backup directory-->
+  <string name="rom_settings_backup_change_directory">Backup Ordner ändern</string>
+  <!--Title for the section in ROM Settings to change settings related to the patcher-->
+  <string name="rom_settings_patcher_title">Patcher</string>
+  <!--Title for the preference to show the exit button in the navigation drawer-->
+  <string name="rom_settings_show_exit_title">Exit Button anzeigen</string>
+  <!--Title for the preference to show the reboot button in the navigation drawer-->
+  <string name="rom_settings_show_reboot_title">Neustart Button anzeigen</string>
+  <!--Title for the preference to choose the initial screen to show when opening the app-->
+  <string name="rom_settings_initial_screen_title">Startbildschirm</string>
+  <!--Description for the initial screen preference-->
+  <string name="rom_settings_initial_screen_desc">Erstes Bild das gezeigt wird, wenn die App geöffnet wird.</string>
+  <!--Title for the preference to use the dark theme-->
+  <string name="rom_settings_use_dark_theme">Dark Theme verwenden</string>
+  <!--Title for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_title">Erlaube Intents zu empfangen.</string>
+  <!--Description for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_desc">Erlaube Apps von Drittanbietern Intents an diese App 
+zu senden, um Aktionen wie einen ROM-Wechsel 
+oder das Patchen einer Datei auszuführen.</string>
+  <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_title">Nesutart Dialog anzeigen</string>
+  <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_desc">Zeige den Neustart-Dialog von Android anstelle einen direkten
+Neustart durchzuführen. Dies erlaubt beispielsweise das booten 
+direkt ins Recovery von Roms, die ein erweitertes Bootmenü haben.</string>
+  <!--Title for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_title">Parallel Patch Operationen</string>
+  <!--Description for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_desc">Wenn mehrere Files in der patching Warteschlange sind, bearbeite diese \"%d at a time\".</string>
+  <!--Title for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_title">Individuelles App teilen</string>
+  <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_desc">Individuelles App sharing erlaubt Apps
+        Daten an einem gemeinsamen Speicherort abzulegen, auf den von jedem Rom zugegriffen werden kann. Das benutzen eines gemeinsames Speichers
+        synchronisiert die Daten über die ROM Grenzen hinweg  (z.B.. Chrome tabs).\n\nAchtung: Ein Neustart ist notwendig, um die Änderungen zu aktivieren..\n\nUm das individuelle App sharing zu erlauben, muss diese Option in jedem Rom in den Einstellungen aktiviert werden.  Zum Beispiel: Für das primary ROM, aktiviere das Teilen der Daten für
+        Chrome. Chrome wird somit den gemeinsamen Datenspeicher benutzen. Danach boote in ein anderes ROM und
+       aktivere ebenso den gemeinsamen Datenspeicher für Chrome. Ab dann wird auch hier der gemeinsame Datenspeicher benutzt.</string>
+  <!--App label in the individual app sharing screen shown if the app uses shared data-->
+  <string name="indiv_app_sharing_shared_data">Geteilte Daten</string>
+  <!--App label in the individual app sharing screen shown if the app is not shared-->
+  <string name="indiv_app_sharing_not_shared">Nicht geteilt</string>
+  <!--App sharing dialog checkbox text for using shared app data-->
+  <string name="indiv_app_sharing_dialog_share_data">Geteilte Daten verwenden</string>
+  <!--App sharing dialog message shown by default-->
+  <string name="indiv_app_sharing_dialog_default_message">Auswählen ob die App ein geteiltes Datenverzeichniss verwenden soll.</string>
+  <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
+  <string name="indiv_app_sharing_other_roms_using_shared_data">Andere ROms, welche geteilte Daten nutzen: %s</string>
+  <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
+  <string name="indiv_app_sharing_reboot_needed_message">Die Änderungen werden beim nächsten Neustart wirksam.</string>
+  <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
+  <string name="indiv_app_sharing_app_no_longer_shared">Die App \"%s\" wird nicht länger geteilt.</string>
+  <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <string name="third_party_intents_not_allowed">Blockierter Intent von einer Dritternbieter-App. Um anderen Apps
+zu erlauben einen Intent zu senden, aktivieren Sie diese Option
+in der Einstellungen von DualBootPatcher.</string>
+  <!--Progress dialog message shown when starting mbtool (with root)-->
+  <string name="mbtool_dialog_starting_mbtool">mbtool wird gestartet...\n(Root benötigt)</string>
+  <!--Progress dialog message shown when updating mbtool (with root)-->
+  <string name="mbtool_dialog_updating_mbtool">mbtool wird upgedatet...\n(Root benötigt)</string>
+  <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <string name="mbtool_dialog_signature_check_fail">mbtool hat die Verbindung zu dieser App abgelehnt. Das kann passieren wenn ein unofizieller Build der App verwendet wird, oder die App böswillig verändert wurde. Wenn Sie trotzdem fortfahren, wird mbtool gekillt und die gebündelte Version von mbtool wird als root laufen.</string>
+  <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <string name="mbtool_dialog_version_too_old">Die derzeitige mbtool Version ist zu alt. Einige funktionen, das Rom wechseln z.B, werden ohne ein Update nicht funktionieren. Das benötigt root Zugriff.</string>
+  <!--Confirm dialog message shown when updating mbtool failed-->
+  <string name="mbtool_dialog_update_failed">mbtool konnte nicht upgedatet werden. Viele Operationen, wie Rom wechseln wird nicht funktionieren.</string>
+  <!--Path chooser dialog textbox hint for entering a filename-->
+  <string name="path_chooser_enter_a_filename">Filenamen eingeben</string>
+  <!--Path chooser dialog button to select a directory-->
+  <string name="path_chooser_choose_label">auswählen</string>
+  <!--Path chooser dialog button to save a file-->
+  <string name="path_chooser_save_label">speichern</string>
+  <!--Path chooser dialog button to create a new folder-->
+  <string name="path_chooser_new_folder_label">Neuer Ordner</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <string name="notification_channel_background_services_name">Hintergrunddienste</string>
+  <!--Android 8.0+ notification channel description for background services-->
+  <string name="notification_channel_background_services_desc">Persistente Benachrichtigung wird gezeigt
+wenn ein Hintergrunddienst läuft.</string>
+  <!--Word/phrase for Search (used in action bars)-->
+  <string name="search">suchen</string>
+  <!--Word/phrase for None (used in eg. a list)-->
+  <string name="none">nichts</string>
+  <!--Word/phrase for OK (used in dialog boxes)-->
+  <string name="ok">ok</string>
+  <!--Word/phrase for Cancel (used in dialog boxes)-->
+  <string name="cancel">Abbrechen</string>
+  <!--Word/phrase for Continue (used in dialog boxes)-->
+  <string name="proceed">Weiter</string>
+  <!--Word/phrase for Yes (used in dialog boxes)-->
+  <string name="yes">Ja</string>
+  <!--Word/phrase for No (used in dialog boxes)-->
+  <string name="no">Nein</string>
+  <!--Word/phrase for try again (used in dialog boxes)-->
+  <string name="try_again">Nochmals versuchen</string>
+  <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">Jetzt Neustarten</string>
+  <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">Später Neustarten</string>
+  <!--Unknown (used when a value cannot be determined)-->
+  <string name="unknown">Unbekannt</string>
+  <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
+  <string name="do_not_show_again">Nicht erneut anzeigen</string>
+  <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">Bitte warten</string>
+</resources>

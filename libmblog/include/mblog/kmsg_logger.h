@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,27 +21,22 @@
 
 #include "mblog/base_logger.h"
 
-#define KMSG_BUF_SIZE 512
-
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 class MB_EXPORT KmsgLogger : public BaseLogger
 {
 public:
     KmsgLogger(bool force_error_prio);
-
     virtual ~KmsgLogger();
 
-    virtual void log(LogLevel prio, const char *fmt, va_list ap) override;
+    virtual void log(const LogRecord &rec) override;
+
+    virtual bool formatted() override;
 
 private:
     int _fd;
-    char _buf[KMSG_BUF_SIZE];
     bool _force_error_prio;
 };
 
-}
 }

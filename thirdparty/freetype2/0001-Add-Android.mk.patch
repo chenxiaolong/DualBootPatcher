@@ -1,0 +1,68 @@
+From 0f369d749dbf0079be7d2cf34fc941268512d642 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
+Date: Sun, 24 Dec 2017 16:27:16 -0500
+Subject: [PATCH] Add Android.mk
+
+---
+ Android.mk | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
+ create mode 100644 Android.mk
+
+diff --git a/Android.mk b/Android.mk
+new file mode 100644
+index 00000000..3c5d907f
+--- /dev/null
++++ b/Android.mk
+@@ -0,0 +1,49 @@
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_MODULE            := libpng
++LOCAL_SRC_FILES         := common/libpng/lib/libpng.a
++LOCAL_EXPORT_C_INCLUDES := common/libpng/include
++include $(PREBUILT_STATIC_LIBRARY)
++
++include $(CLEAR_VARS)
++LOCAL_MODULE := libft2
++# compile in ARM mode, since the glyph loader/renderer is a hotspot
++# when loading complex pages in the browser
++#
++LOCAL_ARM_MODE := arm
++LOCAL_SRC_FILES:= \
++    src/base/ftbbox.c \
++    src/base/ftbitmap.c \
++    src/base/ftfntfmt.c \
++    src/base/ftfstype.c \
++    src/base/ftglyph.c \
++    src/base/ftlcdfil.c \
++    src/base/ftstroke.c \
++    src/base/fttype1.c \
++    src/base/ftbase.c \
++    src/base/ftsystem.c \
++    src/base/ftinit.c \
++    src/base/ftgasp.c \
++    src/base/ftmm.c \
++    src/gzip/ftgzip.c \
++    src/raster/raster.c \
++    src/sfnt/sfnt.c \
++    src/smooth/smooth.c \
++    src/autofit/autofit.c \
++    src/truetype/truetype.c \
++    src/cff/cff.c \
++    src/psnames/psnames.c \
++    src/pshinter/pshinter.c
++LOCAL_C_INCLUDES += \
++    $(LOCAL_PATH)/include
++LOCAL_CFLAGS += \
++	-W \
++	-Wall \
++	-fPIC \
++	-DPIC \
++	-DDARWIN_NO_CARBON \
++	-DFT2_BUILD_LIBRARY \
++	-O2
++LOCAL_STATIC_LIBRARIES += libpng libz
++include $(BUILD_STATIC_LIBRARY)
+-- 
+2.14.3
+

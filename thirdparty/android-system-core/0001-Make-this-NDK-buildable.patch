@@ -1,29 +1,27 @@
-From 890c258587e48e82ce96a309cba613460640f14f Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
-Date: Sun, 22 May 2016 02:01:46 -0400
+From 10135cf2a9d69eda9f516e6db5c768849a68743c Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
+Date: Sun, 24 Dec 2017 17:28:48 -0500
 Subject: [PATCH] Make this NDK buildable
 
 ---
- bionic_dlmalloc/README.txt                 |   10 +
- bionic_dlmalloc/malloc.c                   | 6323 ++++++++++++++++++++++++++++
- bionic_dlmalloc/malloc.h                   |  620 +++
- bionic_include/android/set_abort_message.h |   40 +
- bionic_include/sys/_system_properties.h    |  178 +
- libcutils/Android.mk                       |   79 +-
- liblog/Android.mk                          |   42 +-
- libpixelflinger/Android.mk                 |   49 +-
- libpixelflinger/codeflinger/CodeCache.cpp  |    2 +-
- libutils/Android.mk                        |   44 +-
- 10 files changed, 7223 insertions(+), 164 deletions(-)
+ bionic_dlmalloc/README.txt                |   10 +
+ bionic_dlmalloc/malloc.c                  | 6323 +++++++++++++++++++++
+ bionic_dlmalloc/malloc.h                  |  620 ++
+ libcutils/Android.mk                      |   65 +
+ liblog/Android.mk                         |   36 +-
+ libpixelflinger/Android.mk                |   54 +-
+ libpixelflinger/codeflinger/CodeCache.cpp |    2 +-
+ libutils/Android.mk                       |   45 +
+ 8 files changed, 7131 insertions(+), 24 deletions(-)
  create mode 100644 bionic_dlmalloc/README.txt
  create mode 100644 bionic_dlmalloc/malloc.c
  create mode 100644 bionic_dlmalloc/malloc.h
- create mode 100644 bionic_include/android/set_abort_message.h
- create mode 100644 bionic_include/sys/_system_properties.h
+ create mode 100644 libcutils/Android.mk
+ create mode 100644 libutils/Android.mk
 
 diff --git a/bionic_dlmalloc/README.txt b/bionic_dlmalloc/README.txt
 new file mode 100644
-index 0000000..485704b
+index 000000000..485704bb6
 --- /dev/null
 +++ b/bionic_dlmalloc/README.txt
 @@ -0,0 +1,10 @@
@@ -39,7 +37,7 @@ index 0000000..485704b
 +END android-changed
 diff --git a/bionic_dlmalloc/malloc.c b/bionic_dlmalloc/malloc.c
 new file mode 100644
-index 0000000..a61c0da
+index 000000000..a61c0da9c
 --- /dev/null
 +++ b/bionic_dlmalloc/malloc.c
 @@ -0,0 +1,6323 @@
@@ -6368,7 +6366,7 @@ index 0000000..a61c0da
 +*/
 diff --git a/bionic_dlmalloc/malloc.h b/bionic_dlmalloc/malloc.h
 new file mode 100644
-index 0000000..e52c9e5
+index 000000000..e52c9e5a4
 --- /dev/null
 +++ b/bionic_dlmalloc/malloc.h
 @@ -0,0 +1,620 @@
@@ -6992,295 +6990,50 @@ index 0000000..e52c9e5
 +#endif
 +
 +#endif /* MALLOC_280_H */
-diff --git a/bionic_include/android/set_abort_message.h b/bionic_include/android/set_abort_message.h
-new file mode 100644
-index 0000000..4b3d82b
---- /dev/null
-+++ b/bionic_include/android/set_abort_message.h
-@@ -0,0 +1,40 @@
-+/*
-+ * Copyright (C) 2014 The Android Open Source Project
-+ * All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions
-+ * are met:
-+ *  * Redistributions of source code must retain the above copyright
-+ *    notice, this list of conditions and the following disclaimer.
-+ *  * Redistributions in binary form must reproduce the above copyright
-+ *    notice, this list of conditions and the following disclaimer in
-+ *    the documentation and/or other materials provided with the
-+ *    distribution.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-+ * SUCH DAMAGE.
-+ */
-+
-+#ifndef _SET_ABORT_MESSAGE_H
-+#define _SET_ABORT_MESSAGE_H
-+
-+#include <sys/cdefs.h>
-+
-+__BEGIN_DECLS
-+
-+void android_set_abort_message(const char* msg);
-+
-+__END_DECLS
-+
-+#endif // _SET_ABORT_MESSAGE_H
-diff --git a/bionic_include/sys/_system_properties.h b/bionic_include/sys/_system_properties.h
-new file mode 100644
-index 0000000..3b1f7d0
---- /dev/null
-+++ b/bionic_include/sys/_system_properties.h
-@@ -0,0 +1,178 @@
-+/*
-+ * Copyright (C) 2008 The Android Open Source Project
-+ * All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions
-+ * are met:
-+ *  * Redistributions of source code must retain the above copyright
-+ *    notice, this list of conditions and the following disclaimer.
-+ *  * Redistributions in binary form must reproduce the above copyright
-+ *    notice, this list of conditions and the following disclaimer in
-+ *    the documentation and/or other materials provided with the
-+ *    distribution.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-+ * SUCH DAMAGE.
-+ */
-+
-+#ifndef _INCLUDE_SYS__SYSTEM_PROPERTIES_H
-+#define _INCLUDE_SYS__SYSTEM_PROPERTIES_H
-+
-+#ifndef _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
-+#error you should #include <sys/system_properties.h> instead
-+#else
-+#include <sys/system_properties.h>
-+
-+typedef struct prop_msg prop_msg;
-+
-+#define PROP_AREA_MAGIC   0x504f5250
-+#define PROP_AREA_VERSION 0xfc6ed0ab
-+#define PROP_AREA_VERSION_COMPAT 0x45434f76
-+
-+#define PROP_SERVICE_NAME "property_service"
-+#define PROP_FILENAME_MAX 1024
-+#define PROP_FILENAME "/dev/__properties__"
-+
-+#define PA_SIZE         (128 * 1024)
-+
-+#define SERIAL_VALUE_LEN(serial) ((serial) >> 24)
-+#define SERIAL_DIRTY(serial) ((serial) & 1)
-+
-+__BEGIN_DECLS
-+
-+struct prop_msg
-+{
-+    unsigned cmd;
-+    char name[PROP_NAME_MAX];
-+    char value[PROP_VALUE_MAX];
-+};
-+
-+#define PROP_MSG_SETPROP 1
-+
-+/*
-+** Rules:
-+**
-+** - there is only one writer, but many readers
-+** - prop_area.count will never decrease in value
-+** - once allocated, a prop_info's name will not change
-+** - once allocated, a prop_info's offset will not change
-+** - reading a value requires the following steps
-+**   1. serial = pi->serial
-+**   2. if SERIAL_DIRTY(serial), wait*, then goto 1
-+**   3. memcpy(local, pi->value, SERIAL_VALUE_LEN(serial) + 1)
-+**   4. if pi->serial != serial, goto 2
-+**
-+** - writing a value requires the following steps
-+**   1. pi->serial = pi->serial | 1
-+**   2. memcpy(pi->value, local_value, value_len)
-+**   3. pi->serial = (value_len << 24) | ((pi->serial + 1) & 0xffffff)
-+*/
-+
-+#define PROP_PATH_RAMDISK_DEFAULT  "/default.prop"
-+#define PROP_PATH_SYSTEM_BUILD     "/system/build.prop"
-+#define PROP_PATH_VENDOR_BUILD     "/vendor/build.prop"
-+#define PROP_PATH_LOCAL_OVERRIDE   "/data/local.prop"
-+#define PROP_PATH_FACTORY          "/factory/factory.prop"
-+
-+/*
-+** Map the property area from the specified filename.  This
-+** method is for testing only.
-+*/
-+int __system_property_set_filename(const char *filename);
-+
-+/*
-+** Initialize the area to be used to store properties.  Can
-+** only be done by a single process that has write access to
-+** the property area.
-+*/
-+int __system_property_area_init();
-+
-+/* Read the global serial number of the system properties
-+**
-+** Called to predict if a series of cached __system_property_find
-+** objects will have seen __system_property_serial values change.
-+** But also aids the converse, as changes in the global serial can
-+** also be used to predict if a failed __system_property_find
-+** could in-turn now find a new object; thus preventing the
-+** cycles of effort to poll __system_property_find.
-+**
-+** Typically called at beginning of a cache cycle to signal if _any_ possible
-+** changes have occurred since last. If there is, one may check each individual
-+** __system_property_serial to confirm dirty, or __system_property_find
-+** to check if the property now exists. If a call to __system_property_add
-+** or __system_property_update has completed between two calls to
-+** __system_property_area_serial then the second call will return a larger
-+** value than the first call. Beware of race conditions as changes to the
-+** properties are not atomic, the main value of this call is to determine
-+** whether the expensive __system_property_find is worth retrying to see if
-+** a property now exists.
-+**
-+** Returns the serial number on success, -1 on error.
-+*/
-+unsigned int __system_property_area_serial();
-+
-+/* Add a new system property.  Can only be done by a single
-+** process that has write access to the property area, and
-+** that process must handle sequencing to ensure the property
-+** does not already exist and that only one property is added
-+** or updated at a time.
-+**
-+** Returns 0 on success, -1 if the property area is full.
-+*/
-+int __system_property_add(const char *name, unsigned int namelen,
-+			const char *value, unsigned int valuelen);
-+
-+/* Update the value of a system property returned by
-+** __system_property_find.  Can only be done by a single process
-+** that has write access to the property area, and that process
-+** must handle sequencing to ensure that only one property is
-+** updated at a time.
-+**
-+** Returns 0 on success, -1 if the parameters are incorrect.
-+*/
-+int __system_property_update(prop_info *pi, const char *value, unsigned int len);
-+
-+/* Read the serial number of a system property returned by
-+** __system_property_find.
-+**
-+** Returns the serial number on success, -1 on error.
-+*/
-+unsigned int __system_property_serial(const prop_info *pi);
-+
-+/* Wait for any system property to be updated.  Caller must pass
-+** in 0 the first time, and the previous return value on each
-+** successive call. */
-+unsigned int __system_property_wait_any(unsigned int serial);
-+
-+/*  Compatibility functions to support using an old init with a new libc,
-+ ** mostly for the OTA updater binary.  These can be deleted once OTAs from
-+ ** a pre-K release no longer needed to be supported. */
-+const prop_info *__system_property_find_compat(const char *name);
-+int __system_property_read_compat(const prop_info *pi, char *name, char *value);
-+int __system_property_foreach_compat(
-+        void (*propfn)(const prop_info *pi, void *cookie),
-+        void *cookie);
-+
-+/* Initialize the system properties area in read only mode.
-+ * Should be done by all processes that need to read system
-+ * properties.
-+ *
-+ * Returns 0 on success, -1 otherwise.
-+ */
-+int __system_properties_init();
-+
-+__END_DECLS
-+
-+#endif
-+#endif
 diff --git a/libcutils/Android.mk b/libcutils/Android.mk
-index 0c6e5a1..d22f666 100644
---- a/libcutils/Android.mk
+new file mode 100644
+index 000000000..d3e055037
+--- /dev/null
 +++ b/libcutils/Android.mk
-@@ -14,7 +14,6 @@
- # limitations under the License.
- #
- LOCAL_PATH := $(my-dir)
--include $(CLEAR_VARS)
- 
- libcutils_common_sources := \
-         atomic.c.arm \
-@@ -59,34 +58,7 @@ libcutils_windows_host_sources := \
-         socket_network_client_windows.c \
-         sockets_windows.cpp \
- 
--# Shared and static library for host
--# Note: when linking this library on Windows, you must also link to Winsock2
--# using "LOCAL_LDLIBS_windows := -lws2_32".
--# ========================================================
--LOCAL_MODULE := libcutils
--LOCAL_SRC_FILES := $(libcutils_common_sources) dlmalloc_stubs.c
--LOCAL_SRC_FILES_darwin := $(libcutils_nonwindows_sources) $(libcutils_nonwindows_host_sources)
--LOCAL_SRC_FILES_linux := $(libcutils_nonwindows_sources) $(libcutils_nonwindows_host_sources)
--LOCAL_SRC_FILES_windows := $(libcutils_windows_host_sources)
--LOCAL_STATIC_LIBRARIES := liblog
--LOCAL_CFLAGS := -Werror -Wall -Wextra
--LOCAL_MULTILIB := both
--LOCAL_MODULE_HOST_OS := darwin linux windows
--include $(BUILD_HOST_STATIC_LIBRARY)
--
--include $(CLEAR_VARS)
--LOCAL_MODULE := libcutils
--LOCAL_SRC_FILES := $(libcutils_common_sources) dlmalloc_stubs.c
--LOCAL_SRC_FILES_darwin := $(libcutils_nonwindows_sources) $(libcutils_nonwindows_host_sources)
--LOCAL_SRC_FILES_linux := $(libcutils_nonwindows_sources) $(libcutils_nonwindows_host_sources)
--LOCAL_SHARED_LIBRARIES := liblog
--LOCAL_CFLAGS := -Werror -Wall -Wextra
--LOCAL_MULTILIB := both
--include $(BUILD_HOST_SHARED_LIBRARY)
--
--
--
--# Shared and static library for target
-+# Static library for target
- # ========================================================
- 
- include $(CLEAR_VARS)
-@@ -103,39 +75,26 @@ LOCAL_SRC_FILES := $(libcutils_common_sources) \
-         trace-dev.c \
-         uevent.c \
- 
--LOCAL_SRC_FILES_arm += arch-arm/memset32.S
--LOCAL_SRC_FILES_arm64 += arch-arm64/android_memset.S
--
--LOCAL_SRC_FILES_mips += arch-mips/android_memset.c
--LOCAL_SRC_FILES_mips64 += arch-mips/android_memset.c
--
--LOCAL_SRC_FILES_x86 += \
+@@ -0,0 +1,65 @@
++LOCAL_PATH := $(my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_MODULE := libcutils
++LOCAL_SRC_FILES := \
++	config_utils.c \
++	fs_config.cpp \
++	canned_fs_config.c \
++	hashmap.c \
++	iosched_policy.c \
++	load_file.c \
++	native_handle.c \
++	open_memstream.c \
++	record_stream.c \
++	sched_policy.cpp \
++	sockets.cpp \
++	strdup16to8.c \
++	strdup8to16.c \
++	strlcpy.c \
++	threads.c \
++	android_get_control_file.cpp \
++	fs.c \
++	multiuser.c \
++	socket_inaddr_any_server_unix.c \
++	socket_local_client_unix.c \
++	socket_local_server_unix.c \
++	socket_network_client_unix.c \
++	sockets_unix.cpp \
++	str_parms.c \
++	android_reboot.c \
++	ashmem-dev.c \
++	klog.cpp \
++	partition_utils.c \
++	properties.cpp \
++	qtaguid.c \
++	trace-dev.c \
++	uevent.c
++
 +ifeq ($(TARGET_ARCH),arm)
 +LOCAL_SRC_FILES += arch-arm/memset32.S
 +else ifeq ($(TARGET_ARCH),arm64)
@@ -7291,125 +7044,71 @@ index 0c6e5a1..d22f666 100644
 +LOCAL_SRC_FILES += arch-mips/android_memset.c
 +else ifeq ($(TARGET_ARCH),x86)
 +LOCAL_SRC_FILES += \
-         arch-x86/android_memset16.S \
--        arch-x86/android_memset32.S \
--
--LOCAL_SRC_FILES_x86_64 += \
-+        arch-x86/android_memset32.S
++	arch-x86/android_memset16.S \
++	arch-x86/android_memset32.S
 +else ifeq ($(TARGET_ARCH),x86_64)
 +LOCAL_SRC_FILES += \
-         arch-x86_64/android_memset16.S \
--        arch-x86_64/android_memset32.S \
--
--LOCAL_C_INCLUDES := $(libcutils_c_includes)
--LOCAL_STATIC_LIBRARIES := liblog
--ifneq ($(ENABLE_CPUSETS),)
--LOCAL_CFLAGS += -DUSE_CPUSETS
-+        arch-x86_64/android_memset32.S
- endif
--ifneq ($(ENABLE_SCHEDBOOST),)
--LOCAL_CFLAGS += -DUSE_SCHEDBOOST
--endif
--LOCAL_CFLAGS += -Werror -Wall -Wextra -std=gnu90
--LOCAL_CLANG := true
--LOCAL_SANITIZE := integer
--include $(BUILD_STATIC_LIBRARY)
- 
--include $(CLEAR_VARS)
--LOCAL_MODULE := libcutils
--# TODO: remove liblog as whole static library, once we don't have prebuilt that requires
--# liblog symbols present in libcutils.
--LOCAL_WHOLE_STATIC_LIBRARIES := libcutils liblog
--LOCAL_SHARED_LIBRARIES := liblog
-+LOCAL_C_INCLUDES := $(libcutils_c_includes) ../include ../bionic_include
++	arch-x86_64/android_memset16.S \
++	arch-x86_64/android_memset32.S
++endif
++
++LOCAL_C_INCLUDES := \
++	include \
++	../liblog/include \
++	../libutils/include
 +LOCAL_STATIC_LIBRARIES := liblog
- ifneq ($(ENABLE_CPUSETS),)
- LOCAL_CFLAGS += -DUSE_CPUSETS
- endif
-@@ -143,9 +102,9 @@ ifneq ($(ENABLE_SCHEDBOOST),)
- LOCAL_CFLAGS += -DUSE_SCHEDBOOST
- endif
- LOCAL_CFLAGS += -Werror -Wall -Wextra
--LOCAL_C_INCLUDES := $(libcutils_c_includes)
-+LOCAL_CONLYFLAGS += -std=gnu90
- LOCAL_CLANG := true
- LOCAL_SANITIZE := integer
--include $(BUILD_SHARED_LIBRARY)
++LOCAL_CFLAGS := -Werror -Wall -Wextra
++LOCAL_CONLYFLAGS := -std=gnu90
++LOCAL_CPPFLAGS := -std=gnu++11
 +include $(BUILD_STATIC_LIBRARY)
- 
- include $(call all-makefiles-under,$(LOCAL_PATH))
 diff --git a/liblog/Android.mk b/liblog/Android.mk
-index b24b489..7c0fd0c 100644
+index 6c4dff595..7098143aa 100644
 --- a/liblog/Android.mk
 +++ b/liblog/Android.mk
-@@ -14,7 +14,6 @@
- # limitations under the License.
- #
+@@ -1,3 +1,37 @@
  LOCAL_PATH := $(my-dir)
--include $(CLEAR_VARS)
  
- # This is what we want to do:
- #  liblog_cflags := $(shell \
-@@ -34,52 +33,15 @@ liblog_target_sources += config_read.c log_time.cpp log_is_loggable.c logprint.c
- liblog_target_sources += pmsg_reader.c pmsg_writer.c
- liblog_target_sources += logd_reader.c logd_writer.c logger_read.c
- 
--# Shared and static library for host
--# ========================================================
--LOCAL_MODULE := liblog
--LOCAL_SRC_FILES := $(liblog_host_sources)
--# some files must not be compiled when building against Mingw
--# they correspond to features not used by our host development tools
--# which are also hard or even impossible to port to native Win32
--LOCAL_SRC_FILES_darwin := event_tag_map.c
--LOCAL_SRC_FILES_linux := event_tag_map.c
--LOCAL_SRC_FILES_windows := uio.c
--LOCAL_CFLAGS := -DFAKE_LOG_DEVICE=1 -Werror -fvisibility=hidden $(liblog_cflags)
--LOCAL_MULTILIB := both
--LOCAL_MODULE_HOST_OS := darwin linux windows
--include $(BUILD_HOST_STATIC_LIBRARY)
--
--include $(CLEAR_VARS)
--LOCAL_MODULE := liblog
--LOCAL_WHOLE_STATIC_LIBRARIES := liblog
--LOCAL_LDLIBS_linux := -lrt
--LOCAL_MULTILIB := both
--LOCAL_CXX_STL := none
--LOCAL_MODULE_HOST_OS := darwin linux windows
--include $(BUILD_HOST_SHARED_LIBRARY)
--
--
--# Shared and static library for target
-+# Static library for target
- # ========================================================
- include $(CLEAR_VARS)
- LOCAL_MODULE := liblog
- LOCAL_SRC_FILES := $(liblog_target_sources)
- LOCAL_CFLAGS := -Werror -fvisibility=hidden $(liblog_cflags)
-+LOCAL_C_INCLUDES := ../include ../bionic_include
- # AddressSanitizer runtime library depends on liblog.
- LOCAL_SANITIZE := never
- include $(BUILD_STATIC_LIBRARY)
- 
--include $(CLEAR_VARS)
--LOCAL_MODULE := liblog
--LOCAL_WHOLE_STATIC_LIBRARIES := liblog
--LOCAL_CFLAGS := -Werror -fvisibility=hidden $(liblog_cflags)
--
--# TODO: This is to work around b/24465209. Remove after root cause is fixed
--LOCAL_LDFLAGS_arm := -Wl,--hash-style=both
--
--LOCAL_SANITIZE := never
--LOCAL_CXX_STL := none
--
--include $(BUILD_SHARED_LIBRARY)
--
- include $(call first-makefiles-under,$(LOCAL_PATH))
+-include $(call first-makefiles-under,$(LOCAL_PATH))
++include $(CLEAR_VARS)
++LOCAL_MODULE := liblog
++LOCAL_SRC_FILES := \
++	config_read.c \
++	config_write.c \
++	local_logger.c \
++	log_event_list.c \
++	log_event_write.c \
++	log_ratelimit.cpp \
++	logger_lock.c \
++	logger_name.c \
++	logger_read.c \
++	logger_write.c \
++	logprint.c \
++	stderr_write.c \
++	event_tag_map.cpp \
++	log_time.cpp \
++	properties.c \
++	pmsg_reader.c \
++	pmsg_writer.c \
++	logd_reader.c \
++	logd_writer.c
++
++LOCAL_C_INCLUDES := \
++	include \
++	../libcutils/include \
++	../libsystem/include \
++	../libutils/include
++LOCAL_CFLAGS := \
++	-Werror \
++	-fvisibility=hidden \
++	-DLIBLOG_LOG_TAG=1006 \
++	-DSNET_EVENT_LOG_TAG=1397638484
++LOCAL_CPPFLAGS := -std=gnu++1y
++include $(BUILD_STATIC_LIBRARY)
 diff --git a/libpixelflinger/Android.mk b/libpixelflinger/Android.mk
-index 9a937f8..e808313 100644
+index 55891db99..53da9a411 100644
 --- a/libpixelflinger/Android.mk
 +++ b/libpixelflinger/Android.mk
-@@ -26,58 +26,65 @@ PIXELFLINGER_SRC_FILES:= \
+@@ -26,54 +26,64 @@ PIXELFLINGER_SRC_FILES:= \
  
  PIXELFLINGER_CFLAGS := -fstrict-aliasing -fomit-frame-pointer
  
@@ -7455,7 +7154,7 @@ index 9a937f8..e808313 100644
  
 -PIXELFLINGER_SRC_FILES_mips64 := \
 +ifeq ($(TARGET_ARCH),mips64)
-+PIXELFLINGER_SRC_FILES := \
++PIXELFLINGER_SRC_FILES += \
          codeflinger/MIPSAssembler.cpp \
  	codeflinger/MIPS64Assembler.cpp \
  	codeflinger/mips64_disassem.c \
@@ -7476,31 +7175,31 @@ index 9a937f8..e808313 100644
 -LOCAL_SRC_FILES_mips := $(PIXELFLINGER_SRC_FILES_mips)
 -LOCAL_SRC_FILES_mips64 := $(PIXELFLINGER_SRC_FILES_mips64)
  LOCAL_CFLAGS := $(PIXELFLINGER_CFLAGS)
++LOCAL_CPPFLAGS := -std=gnu++11
  LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include
- LOCAL_C_INCLUDES += $(LOCAL_EXPORT_C_INCLUDE_DIRS) \
+-LOCAL_C_INCLUDES += $(LOCAL_EXPORT_C_INCLUDE_DIRS) \
 -		    external/safe-iop/include
-+		    external/safe-iop/include ../include
- LOCAL_SHARED_LIBRARIES := libcutils liblog libutils
+-LOCAL_SHARED_LIBRARIES := libcutils liblog libutils
++LOCAL_C_INCLUDES += \
++	$(LOCAL_EXPORT_C_INCLUDE_DIRS) \
++	../libcutils/include \
++	../liblog/include \
++	../libutils/include \
++	external/safe-iop/include
++LOCAL_STATIC_LIBRARIES := libcutils liblog libutils
  
+-include $(BUILD_SHARED_LIBRARY)
 +ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
 +LOCAL_ARM_NEON := true
 +endif
-+
- # Really this should go away entirely or at least not depend on
- # libhardware, but this at least gets us built.
--LOCAL_SHARED_LIBRARIES += libhardware_legacy
--LOCAL_CFLAGS += -DWITH_LIB_HARDWARE
--include $(BUILD_SHARED_LIBRARY)
-+#LOCAL_SHARED_LIBRARIES += libhardware_legacy
-+#LOCAL_CFLAGS += -DWITH_LIB_HARDWARE
-+include $(BUILD_STATIC_LIBRARY)
  
- include $(call all-makefiles-under,$(LOCAL_PATH))
+-include $(call all-makefiles-under,$(LOCAL_PATH))
++include $(BUILD_STATIC_LIBRARY)
 diff --git a/libpixelflinger/codeflinger/CodeCache.cpp b/libpixelflinger/codeflinger/CodeCache.cpp
-index 4b498c1..4ad4f1f 100644
+index 851664070..5b6737d3d 100644
 --- a/libpixelflinger/codeflinger/CodeCache.cpp
 +++ b/libpixelflinger/codeflinger/CodeCache.cpp
-@@ -63,7 +63,7 @@ static void heap_error(const char* msg, const char* function, void* p);
+@@ -61,7 +61,7 @@ static void heap_error(const char* msg, const char* function, void* p);
  #define USAGE_ERROR_ACTION(m,p) \
      heap_error("ARGUMENT IS INVALID HEAP ADDRESS", __FUNCTION__, p)
  
@@ -7510,82 +7209,56 @@ index 4b498c1..4ad4f1f 100644
  static void heap_error(const char* msg, const char* function, void* p) {
      ALOG(LOG_FATAL, LOG_TAG, "@@@ ABORTING: CODE FLINGER: %s IN %s addr=%p",
 diff --git a/libutils/Android.mk b/libutils/Android.mk
-index 84bac32..74fde34 100644
---- a/libutils/Android.mk
+new file mode 100644
+index 000000000..634bb955b
+--- /dev/null
 +++ b/libutils/Android.mk
-@@ -39,23 +39,6 @@ commonSources:= \
- 
- host_commonCflags := -DLIBUTILS_NATIVE=1 $(TOOL_CFLAGS) -Werror
- 
--# For the host
--# =====================================================
--include $(CLEAR_VARS)
--LOCAL_SRC_FILES:= $(commonSources)
--LOCAL_SRC_FILES_linux := Looper.cpp ProcessCallStack.cpp
--LOCAL_CFLAGS_darwin := -Wno-unused-parameter
--LOCAL_MODULE:= libutils
--LOCAL_STATIC_LIBRARIES := liblog
--LOCAL_CFLAGS += $(host_commonCflags)
--# Under MinGW, ctype.h doesn't need multi-byte support
--LOCAL_CFLAGS_windows := -DMB_CUR_MAX=1
--LOCAL_MULTILIB := both
--LOCAL_MODULE_HOST_OS := darwin linux windows
--LOCAL_C_INCLUDES += external/safe-iop/include
--include $(BUILD_HOST_STATIC_LIBRARY)
--
--
- # For the device, static
- # =====================================================
- include $(CLEAR_VARS)
-@@ -73,6 +56,7 @@ ifeq ($(TARGET_ARCH),mips)
- LOCAL_CFLAGS += -DALIGN_DOUBLE
- endif
- LOCAL_CFLAGS += -Werror -fvisibility=protected
-+LOCAL_CFLAGS += -std=gnu++11
- 
- LOCAL_STATIC_LIBRARIES := \
- 	libcutils \
-@@ -86,26 +70,9 @@ LOCAL_SHARED_LIBRARIES := \
- LOCAL_MODULE := libutils
- LOCAL_CLANG := true
- LOCAL_SANITIZE := integer
--LOCAL_C_INCLUDES += external/safe-iop/include
-+LOCAL_C_INCLUDES += ../common_$(TARGET_ARCH_ABI)/safe-iop/include ../include
- include $(BUILD_STATIC_LIBRARY)
- 
--# For the device, shared
--# =====================================================
--include $(CLEAR_VARS)
--LOCAL_MODULE:= libutils
--LOCAL_WHOLE_STATIC_LIBRARIES := libutils
--LOCAL_SHARED_LIBRARIES := \
--        libbacktrace \
--        libcutils \
--        libdl \
--        liblog
--LOCAL_CFLAGS := -Werror
--LOCAL_C_INCLUDES += external/safe-iop/include
--
--LOCAL_CLANG := true
--LOCAL_SANITIZE := integer
--include $(BUILD_SHARED_LIBRARY)
--
- include $(CLEAR_VARS)
- LOCAL_MODULE := SharedBufferTest
- LOCAL_STATIC_LIBRARIES := libutils
-@@ -113,12 +80,5 @@ LOCAL_SHARED_LIBRARIES := liblog
- LOCAL_SRC_FILES := SharedBufferTest.cpp
- include $(BUILD_NATIVE_TEST)
- 
--include $(CLEAR_VARS)
--LOCAL_MODULE := SharedBufferTest
--LOCAL_STATIC_LIBRARIES := libutils
--LOCAL_SHARED_LIBRARIES := liblog
--LOCAL_SRC_FILES := SharedBufferTest.cpp
--include $(BUILD_HOST_NATIVE_TEST)
--
- # Build the tests in the tests/ subdirectory.
- include $(call first-makefiles-under,$(LOCAL_PATH))
+@@ -0,0 +1,45 @@
++LOCAL_PATH:= $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_MODULE := libutils
++LOCAL_SRC_FILES:= \
++	CallStack.cpp \
++	FileMap.cpp \
++	JenkinsHash.cpp \
++	NativeHandle.cpp \
++	Printer.cpp \
++	PropertyMap.cpp \
++	RefBase.cpp \
++	SharedBuffer.cpp \
++	Static.cpp \
++	StopWatch.cpp \
++	String8.cpp \
++	String16.cpp \
++	StrongPointer.cpp \
++	SystemClock.cpp \
++	Threads.cpp \
++	Timers.cpp \
++	Tokenizer.cpp \
++	Unicode.cpp \
++	VectorImpl.cpp \
++	misc.cpp \
++	Looper.cpp \
++	ProcessCallStack.cpp \
++	Trace.cpp
++
++LOCAL_CFLAGS := -Werror -fvisibility=protected
++ifeq ($(TARGET_ARCH),mips)
++LOCAL_CFLAGS += -DALIGN_DOUBLE
++endif
++LOCAL_CPPFLAGS := -std=gnu++11
++
++LOCAL_STATIC_LIBRARIES := libcutils libc
++LOCAL_C_INCLUDES := \
++	include \
++	../libbacktrace/include \
++	../libcutils/include \
++	../liblog/include \
++	../libsystem/include \
++	../libvndksupport/include \
++	../common/safe-iop/include
++include $(BUILD_STATIC_LIBRARY)
 -- 
-2.9.3
+2.17.1
 

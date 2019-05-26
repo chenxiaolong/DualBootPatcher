@@ -8,20 +8,12 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     target_link_libraries(
         libmbpatcher_test
         PRIVATE
+        interface.global.CXXVersion
         mbpatcher-shared
-        mbpio-static
+        mbpio-shared
         mbdevice-shared
         mblog-shared
     )
-
-    if(NOT MSVC)
-        set_target_properties(
-            libmbpatcher_test
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
 
     # desparse tool
 
@@ -32,19 +24,11 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     target_link_libraries(
         desparse
         PRIVATE
+        interface.global.CXXVersion
         mbsparse-shared
         mblog-shared
         mbcommon-shared
     )
-
-    if(NOT MSVC)
-        set_target_properties(
-            desparse
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
 
     # binary grep tool
 
@@ -55,15 +39,38 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     target_link_libraries(
         bingrep
         PRIVATE
+        interface.global.CXXVersion
         mbcommon-shared
     )
+endif()
 
-    if(NOT MSVC)
-        set_target_properties(
-            bingrep
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
+if(${MBP_BUILD_TARGET} STREQUAL desktop OR ${MBP_BUILD_TARGET} STREQUAL android-app)
+    # boot image compare tool
+
+    add_executable(
+        bootimg_compare
+        bootimg_compare.cpp
+    )
+    target_link_libraries(
+        bootimg_compare
+        PRIVATE
+        interface.global.CXXVersion
+        mbbootimg-shared
+    )
+endif()
+
+if(UNIX AND (${MBP_BUILD_TARGET} STREQUAL desktop
+        OR ${MBP_BUILD_TARGET} STREQUAL android-system))
+    # Simple frontend to libmbsystrace
+
+    add_executable(
+        mbtrace
+        mbtrace.cpp
+    )
+    target_link_libraries(
+        mbtrace
+        PRIVATE
+        interface.global.CXXVersion
+        mbsystrace-static
+    )
 endif()

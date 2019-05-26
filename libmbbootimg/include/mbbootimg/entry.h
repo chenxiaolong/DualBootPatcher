@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,57 +19,54 @@
 
 #pragma once
 
-#ifdef __cplusplus
-#  include <cstdint>
-#else
-#  include <stdint.h>
-#endif
+#include <memory>
+#include <optional>
+
+#include <cstdint>
 
 #include "mbcommon/common.h"
+#include "mbcommon/flags.h"
 
-#define MB_BI_ENTRY_KERNEL              (1 << 0)
-#define MB_BI_ENTRY_RAMDISK             (1 << 1)
-#define MB_BI_ENTRY_SECONDBOOT          (1 << 2)
-#define MB_BI_ENTRY_DEVICE_TREE         (1 << 3)
-#define MB_BI_ENTRY_ABOOT               (1 << 4)
-#define MB_BI_ENTRY_MTK_KERNEL_HEADER   (1 << 5)
-#define MB_BI_ENTRY_MTK_RAMDISK_HEADER  (1 << 6)
-#define MB_BI_ENTRY_SONY_IPL            (1 << 7)
-#define MB_BI_ENTRY_SONY_RPM            (1 << 8)
-#define MB_BI_ENTRY_SONY_APPSBL         (1 << 9)
+namespace mb::bootimg
+{
 
-MB_BEGIN_C_DECLS
+enum class EntryType
+{
+    Kernel           = 1 << 0,
+    Ramdisk          = 1 << 1,
+    SecondBoot       = 1 << 2,
+    DeviceTree       = 1 << 3,
+    Aboot            = 1 << 4,
+    MtkKernelHeader  = 1 << 5,
+    MtkRamdiskHeader = 1 << 6,
+    SonyCmdline      = 1 << 7,
+    SonyIpl          = 1 << 8,
+    SonyRpm          = 1 << 9,
+    SonyAppsbl       = 1 << 10,
+};
+MB_DECLARE_FLAGS(EntryTypes, EntryType)
+MB_DECLARE_OPERATORS_FOR_FLAGS(EntryTypes)
 
-struct MbBiEntry;
+class MB_EXPORT Entry
+{
+public:
+    Entry(EntryType type) noexcept;
+    ~Entry() noexcept;
 
-// Basic object manipulation
+    MB_DEFAULT_COPY_CONSTRUCT_AND_ASSIGN(Entry)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Entry)
 
-MB_EXPORT struct MbBiEntry * mb_bi_entry_new();
-MB_EXPORT void mb_bi_entry_free(struct MbBiEntry *entry);
-MB_EXPORT void mb_bi_entry_clear(struct MbBiEntry *entry);
-MB_EXPORT struct MbBiEntry * mb_bi_entry_clone(struct MbBiEntry *entry);
+    bool operator==(const Entry &rhs) const noexcept;
+    bool operator!=(const Entry &rhs) const noexcept;
 
-// Fields
+    EntryType type() const;
 
-// Entry type field
+    std::optional<uint64_t> size() const;
+    void set_size(std::optional<uint64_t> size);
 
-MB_EXPORT int mb_bi_entry_type_is_set(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_type(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_set_type(struct MbBiEntry *entry, int type);
-MB_EXPORT int mb_bi_entry_unset_type(struct MbBiEntry *entry);
+private:
+    EntryType m_type;
+    std::optional<uint64_t> m_size;
+};
 
-// Entry name field
-
-MB_EXPORT const char * mb_bi_entry_name(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_set_name(struct MbBiEntry *entry,
-                                   const char *name);
-
-// Entry size field
-
-MB_EXPORT int mb_bi_entry_size_is_set(struct MbBiEntry *entry);
-MB_EXPORT uint64_t mb_bi_entry_size(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_set_size(struct MbBiEntry *entry,
-                                   uint64_t size);
-MB_EXPORT int mb_bi_entry_unset_size(struct MbBiEntry *entry);
-
-MB_END_C_DECLS
+}

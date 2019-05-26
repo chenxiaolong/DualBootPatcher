@@ -144,7 +144,7 @@ int GUICheckbox::NotifyTouch(TOUCH_STATE state, int x __unused, int y __unused)
         lastState = (lastState == 0) ? 1 : 0;
         DataManager::SetValue(mVarName, lastState);
 
-        DataManager::Vibrate(TW_BUTTON_VIBRATE);
+        DataManager::Vibrate(VAR_TW_BUTTON_VIBRATE);
     }
     return 0;
 }

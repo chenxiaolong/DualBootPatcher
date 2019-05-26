@@ -10,6 +10,7 @@
     - fs5
     - CMFS5
     - cmfs5
+    - RGxS5
   architecture: arm64-v8a
  
   block_devs:
@@ -68,3 +69,185 @@
       - fbdev
     theme: portrait_hdpi
 
+- name: Cherry Mobile Flare S5 Max
+  id: Flare_S5_Max
+  codenames:
+    - FLARE_S5_MAX
+    - Flare_S5_Max
+    - flare_s5_max
+    - Cherry_Mobile
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p20
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+- name: Cherry Mobile Touch XL 2
+  id: Touch_XL_2
+  codenames:
+    - TOUCH_XL_2
+    - TouchXL2_V2
+    - Touch_XL2_V2
+    - Touch_XL_2
+    - touch_xl_2
+    - Cherry_Mobile
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p20
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+- name: Cherry Mobile Flare J3
+  id: Flare J3
+  codenames:
+    - Flare_J3
+    - FlareJ3
+    - H680
+    - h680
+    - Cherry_Mobile
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p20
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+- name: Cherry Mobile Flare 5
+  id: Flare_5
+  codenames:
+    - Flare_5
+    - Flare 5
+    - F5
+    - '5'
+    - flare_5
+    - f5
+    - CMF5
+    - cmf5
+  architecture: arm64-v8a
+ 
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/mmcblk0p22
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      - /dev/block/platform/mtk-msdc.0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/by-name/uboot
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/uboot
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH 
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi

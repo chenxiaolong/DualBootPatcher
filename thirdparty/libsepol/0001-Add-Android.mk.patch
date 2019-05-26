@@ -1,0 +1,104 @@
+From 218d7b97854dd5ad2829640c8818122c4ba395fe Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
+Date: Sat, 23 Dec 2017 19:08:02 -0500
+Subject: [PATCH 1/2] Add Android.mk
+
+---
+ libsepol/Android.mk | 85 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 85 insertions(+)
+ create mode 100644 libsepol/Android.mk
+
+diff --git a/libsepol/Android.mk b/libsepol/Android.mk
+new file mode 100644
+index 00000000..c5e20f57
+--- /dev/null
++++ b/libsepol/Android.mk
+@@ -0,0 +1,85 @@
++LOCAL_PATH:= $(call my-dir)
++
++include $(CLEAR_VARS)
++
++LOCAL_MODULE := libsepol
++LOCAL_C_INCLUDES := \
++	$(LOCAL_PATH)/include/ \
++	$(LOCAL_PATH)/src/ \
++	$(LOCAL_PATH)/cil/include/ \
++	$(LOCAL_PATH)/cil/src/
++LOCAL_CFLAGS := \
++	-D_GNU_SOURCE \
++	-Wall \
++	-W \
++	-Wundef \
++	-Wshadow \
++	-Wmissing-noreturn \
++	-Wmissing-format-attribute
++LOCAL_SRC_FILES := \
++	src/assertion.c \
++	src/avrule_block.c \
++	src/avtab.c \
++	src/boolean_record.c \
++	src/booleans.c \
++	src/conditional.c \
++	src/constraint.c \
++	src/context.c \
++	src/context_record.c \
++	src/debug.c \
++	src/ebitmap.c \
++	src/expand.c \
++	src/genbools.c \
++	src/genusers.c \
++	src/handle.c \
++	src/hashtab.c \
++	src/hierarchy.c \
++	src/iface_record.c \
++	src/interfaces.c \
++	src/kernel_to_cil.c \
++	src/kernel_to_common.c \
++	src/kernel_to_conf.c \
++	src/link.c \
++	src/mls.c \
++	src/module.c \
++	src/module_to_cil.c \
++	src/node_record.c \
++	src/nodes.c \
++	src/polcaps.c \
++	src/policydb.c \
++	src/policydb_convert.c \
++	src/policydb_public.c \
++	src/port_record.c \
++	src/ports.c \
++	src/roles.c \
++	src/services.c \
++	src/sidtab.c \
++	src/symtab.c \
++	src/user_record.c \
++	src/users.c \
++	src/util.c \
++	src/write.c \
++	cil/src/android.c \
++	cil/src/cil_binary.c \
++	cil/src/cil_build_ast.c \
++	cil/src/cil.c \
++	cil/src/cil_copy_ast.c \
++	cil/src/cil_find.c \
++	cil/src/cil_fqn.c \
++	cil/src/cil_lexer.l \
++	cil/src/cil_list.c \
++	cil/src/cil_log.c \
++	cil/src/cil_mem.c \
++	cil/src/cil_parser.c \
++	cil/src/cil_policy.c \
++	cil/src/cil_post.c \
++	cil/src/cil_reset_ast.c \
++	cil/src/cil_resolve_ast.c \
++	cil/src/cil_stack.c \
++	cil/src/cil_strpool.c \
++	cil/src/cil_symtab.c \
++	cil/src/cil_tree.c \
++	cil/src/cil_verify.c \
++	cil/src/cil_write_ast.c
++
++include $(BUILD_STATIC_LIBRARY)
+-- 
+2.14.3
+

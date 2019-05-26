@@ -21,15 +21,15 @@
 
 #include "mbbootimg/guard_p.h"
 
-#ifdef __cplusplus
-#  include <type_traits>
-#endif
+#include <type_traits>
 
-#ifdef __cplusplus
+namespace mb::bootimg
+{
+
 template<typename T>
 static inline T align_page_size(const T item_size, const T page_size)
 {
-    static_assert(!std::is_signed<T>::value, "Type is not unsigned");
+    static_assert(!std::is_signed_v<T>, "Type is not unsigned");
 
     T mask = page_size - 1;
 
@@ -39,4 +39,5 @@ static inline T align_page_size(const T item_size, const T page_size)
 
     return page_size - (item_size & mask);
 }
-#endif
+
+}

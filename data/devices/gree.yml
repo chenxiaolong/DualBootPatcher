@@ -1,0 +1,50 @@
+---
+- name: Gree G0215D
+  id: G0215D
+  codenames:
+    - G0215D
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/624000.ufshc/by-name
+      - /dev/block/platform/soc/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc/624000.ufshc/by-name/system
+      - /dev/block/platform/soc/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/sde18
+    cache:
+      - /dev/block/platform/soc/624000.ufshc/by-name/cache
+      - /dev/block/platform/soc/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/sda3
+    data:
+      - /dev/block/platform/soc/624000.ufshc/by-name/userdata
+      - /dev/block/platform/soc/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/sda9
+    boot:
+      - /dev/block/platform/soc/624000.ufshc/by-name/boot
+      - /dev/block/platform/soc/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/sde17
+    recovery:
+      - /dev/block/platform/soc/624000.ufshc/by-name/recovery
+      - /dev/block/platform/soc/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/sde19
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi

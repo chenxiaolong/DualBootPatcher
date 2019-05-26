@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -24,84 +24,40 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
 
 #include "mblog/logging.h"
 
 #ifdef _WIN32
-#include "mbpatcher/private/win32.h"
-#include <windows.h>
+#  include <windows.h>
 #else
-#include <sys/stat.h>
+#  include <sys/stat.h>
 #endif
 
+#define LOG_TAG "mbpatcher/private/fileutils"
 
-namespace mb
-{
-namespace patcher
+
+namespace mb::patcher
 {
 
-ErrorCode FileUtils::open_file(StandardFile &file, const std::string &path,
-                               FileOpenMode mode)
+oc::result<void> FileUtils::open_file(StandardFile &file,
+                                      const std::string &path,
+                                      FileOpenMode mode)
 {
-    bool ret;
-
 #ifdef _WIN32
-    std::wstring w_filename;
+    auto w_filename = utf8_to_wcs(path);
 
-    if (!utf8_to_wcs(w_filename, path)) {
-        LOGE("%s: Failed to convert from UTF8 to WCS", path.c_str());
-        return ErrorCode::FileOpenError;
+    if (!w_filename) {
+        LOGE("%s: Failed to convert from UTF8 to WCS: %s",
+             path.c_str(), w_filename.error().message().c_str());
+        return w_filename.as_failure();
     }
 
-    ret = file.open(w_filename, mode);
+    return file.open(w_filename.value(), mode);
 #else
-    ret = file.open(path, mode);
+    return file.open(path, mode);
 #endif
-
-    return ret ? ErrorCode::NoError : ErrorCode::FileOpenError;
-}
-
-/*!
- * \brief Read contents of a file into memory
- *
- * \param path Path to file
- * \param contents Output vector (not modified unless reading succeeds)
- *
- * \return Success or not
- */
-ErrorCode FileUtils::read_to_memory(const std::string &path,
-                                    std::vector<unsigned char> *contents)
-{
-    StandardFile file;
-
-    auto error = open_file(file, path, FileOpenMode::READ_ONLY);
-    if (error != ErrorCode::NoError) {
-        LOGE("%s: Failed to open for reading: %s",
-             path.c_str(), file.error_string().c_str());
-        return ErrorCode::FileOpenError;
-    }
-
-    uint64_t size;
-    if (!file.seek(0, SEEK_END, &size) || !file.seek(0, SEEK_SET, nullptr)) {
-        LOGE("%s: Failed to seek file: %s",
-             path.c_str(), file.error_string().c_str());
-        return ErrorCode::FileSeekError;
-    }
-
-    std::vector<unsigned char> data(size);
-
-    size_t bytes_read;
-    if (!file.read(data.data(), data.size(), bytes_read)
-            || bytes_read != size) {
-        LOGE("%s: Failed to read file: %s",
-             path.c_str(), file.error_string().c_str());
-        return ErrorCode::FileReadError;
-    }
-
-    data.swap(*contents);
-
-    return ErrorCode::NoError;
 }
 
 /*!
@@ -117,55 +73,37 @@ ErrorCode FileUtils::read_to_string(const std::string &path,
 {
     StandardFile file;
 
-    auto error = open_file(file, path, FileOpenMode::READ_ONLY);
-    if (error != ErrorCode::NoError) {
+    auto ret = open_file(file, path, FileOpenMode::ReadOnly);
+    if (!ret) {
         LOGE("%s: Failed to open for reading: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), ret.error().message().c_str());
         return ErrorCode::FileOpenError;
     }
 
-    uint64_t size;
-    if (!file.seek(0, SEEK_END, &size) || !file.seek(0, SEEK_SET, nullptr)) {
+    auto size = file.seek(0, SEEK_END);
+    if (!size) {
         LOGE("%s: Failed to seek file: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), size.error().message().c_str());
+        return ErrorCode::FileSeekError;
+    }
+    auto seek_ret = file.seek(0, SEEK_SET);
+    if (!seek_ret) {
+        LOGE("%s: Failed to seek file: %s",
+             path.c_str(), seek_ret.error().message().c_str());
         return ErrorCode::FileSeekError;
     }
 
     std::string data;
-    data.resize(size);
+    data.resize(static_cast<size_t>(size.value()));
 
-    size_t bytes_read;
-    if (!file.read(&data[0], data.size(), bytes_read)
-            || bytes_read != size) {
+    auto bytes_read = file.read(data.data(), data.size());
+    if (!bytes_read || bytes_read.value() != size.value()) {
         LOGE("%s: Failed to read file: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), bytes_read.error().message().c_str());
         return ErrorCode::FileReadError;
     }
 
     data.swap(*contents);
-
-    return ErrorCode::NoError;
-}
-
-ErrorCode FileUtils::write_from_memory(const std::string &path,
-                                       const std::vector<unsigned char> &contents)
-{
-    StandardFile file;
-
-    auto error = open_file(file, path, FileOpenMode::WRITE_ONLY);
-    if (error != ErrorCode::NoError) {
-        LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), file.error_string().c_str());
-        return ErrorCode::FileOpenError;
-    }
-
-    size_t bytes_written;
-    if (!file.write(contents.data(), contents.size(), bytes_written)
-            || bytes_written != contents.size()) {
-        LOGE("%s: Failed to write file: %s",
-             path.c_str(), file.error_string().c_str());
-        return ErrorCode::FileWriteError;
-    }
 
     return ErrorCode::NoError;
 }
@@ -175,18 +113,17 @@ ErrorCode FileUtils::write_from_string(const std::string &path,
 {
     StandardFile file;
 
-    auto error = open_file(file, path, FileOpenMode::WRITE_ONLY);
-    if (error != ErrorCode::NoError) {
+    auto ret = open_file(file, path, FileOpenMode::WriteOnly);
+    if (!ret) {
         LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), ret.error().message().c_str());
         return ErrorCode::FileOpenError;
     }
 
-    size_t bytes_written;
-    if (!file.write(contents.data(), contents.size(), bytes_written)
-            || bytes_written != contents.size()) {
+    auto bytes_written = file.write(contents.data(), contents.size());
+    if (!bytes_written || bytes_written.value() != contents.size()) {
         LOGE("%s: Failed to write file: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), bytes_written.error().message().c_str());
         return ErrorCode::FileWriteError;
     }
 
@@ -240,7 +177,8 @@ std::string FileUtils::system_temporary_dir()
     }
 
 done:
-    return wcs_to_utf8(w_path);
+    auto result = wcs_to_utf8(w_path);
+    return result ? std::move(result.value()) : std::string();
 #else
     const char *value;
 
@@ -284,7 +222,7 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
     );
     if (!ret) {
         LOGE("CryptAcquireContext() failed: %s",
-             win32_error_to_string(GetLastError()).c_str());
+             ec_from_win32().message().c_str());
         return std::string();
     }
 
@@ -299,13 +237,13 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
         uint64_t v;
 
         ret = CryptGenRandom(
-            h_prov,     // hProv
-            sizeof(v),  // dwLen
-            (BYTE *) &v // pbBuffer
+            h_prov,                      // hProv
+            sizeof(v),                   // dwLen
+            reinterpret_cast<BYTE *>(&v) // pbBuffer
         );
         if (!ret) {
             LOGE("CryptGenRandom() failed: %s",
-                 win32_error_to_string(GetLastError()).c_str());
+                 ec_from_win32().message().c_str());
             break;
         }
 
@@ -315,23 +253,23 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
         }
 
         // This is not particularly fast, but it'll do for now
-        std::wstring w_new_path;
-        if (!utf8_to_wcs(w_new_path, new_path)) {
+        auto w_new_path = utf8_to_wcs(new_path);
+        if (!w_new_path) {
             LOGE("Failed to convert UTF-8 to WCS: %s",
-                 win32_error_to_string(GetLastError()).c_str());
+                 w_new_path.error().message().c_str());
             break;
         }
 
         ret = CreateDirectoryW(
-            w_new_path.c_str(), // lpPathName
-            nullptr             // lpSecurityAttributes
+            w_new_path.value().c_str(), // lpPathName
+            nullptr                     // lpSecurityAttributes
         );
 
         if (ret) {
             break;
         } else if (GetLastError() != ERROR_ALREADY_EXISTS) {
             LOGE("CreateDirectoryW() failed: %s",
-                 win32_error_to_string(GetLastError()).c_str());
+                 ec_from_win32().message().c_str());
             new_path.clear();
             break;
         }
@@ -348,7 +286,7 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
     std::string dir_template(directory);
     dir_template += "/mbpatcher-XXXXXX";
 
-    if (mkdtemp(&dir_template[0])) {
+    if (mkdtemp(dir_template.data())) {
         return dir_template;
     }
 
@@ -356,5 +294,4 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
 #endif
 }
 
-}
 }

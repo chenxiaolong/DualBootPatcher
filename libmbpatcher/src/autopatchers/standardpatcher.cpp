@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,6 +19,8 @@
 
 #include "mbpatcher/autopatchers/standardpatcher.h"
 
+#include <optional>
+
 #include <cstring>
 
 #include "mbcommon/string.h"
@@ -26,25 +28,14 @@
 
 #include "mbpatcher/edify/tokenizer.h"
 #include "mbpatcher/private/fileutils.h"
-#include "mbpatcher/private/stringutils.h"
+
+#define LOG_TAG "mbpatcher/autopatchers/standardpatcher"
 
 #define DUMP_DEBUG 0
 
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
-/*! \cond INTERNAL */
-class StandardPatcherPrivate
-{
-public:
-    const PatcherConfig *pc;
-    const FileInfo *info;
-};
-/*! \endcond */
-
 
 const std::string StandardPatcher::Id
         = "StandardPatcher";
@@ -63,18 +54,13 @@ static constexpr char FORMAT_FMT[] =
         "(run_program(\"/update-binary-tool\", \"format\", \"%s\") == 0)";
 
 
-StandardPatcher::StandardPatcher(const PatcherConfig * const pc,
-                                 const FileInfo * const info)
-    : _priv_ptr(new StandardPatcherPrivate())
+StandardPatcher::StandardPatcher(const PatcherConfig &pc, const FileInfo &info)
+    : m_info(info)
 {
-    MB_PRIVATE(StandardPatcher);
-    priv->pc = pc;
-    priv->info = info;
+    (void) pc;
 }
 
-StandardPatcher::~StandardPatcher()
-{
-}
+StandardPatcher::~StandardPatcher() = default;
 
 ErrorCode StandardPatcher::error() const
 {
@@ -96,11 +82,11 @@ std::vector<std::string> StandardPatcher::existing_files() const
     return { UpdaterScript, SystemTransferList };
 }
 
-static bool find_items_in_string(const char *haystack,
-                                 const char * const *needles)
+static bool find_items_in_string(const std::string &haystack,
+                                 const std::vector<std::string> &needles)
 {
-    for (auto iter = needles; *iter; ++iter) {
-        if (strstr(haystack, *iter)) {
+    for (auto const &needle : needles) {
+        if (haystack.find(needle) != std::string::npos) {
             return true;
         }
     }
@@ -108,23 +94,27 @@ static bool find_items_in_string(const char *haystack,
     return false;
 }
 
-static bool find_function(const std::vector<EdifyToken *>::iterator begin,
-                          const std::vector<EdifyToken *>::iterator end,
-                          std::vector<EdifyToken *>::iterator *out_func_name,
-                          std::vector<EdifyToken *>::iterator *out_left_paren,
-                          std::vector<EdifyToken *>::iterator *out_right_paren)
+using TokenIter = std::vector<EdifyToken>::iterator;
+
+struct FunctionBounds
 {
-    std::vector<EdifyToken *>::iterator func_name;
-    std::vector<EdifyToken *>::iterator left_paren;
-    std::vector<EdifyToken *>::iterator right_paren;
+    TokenIter func_name;
+    TokenIter left_paren;
+    TokenIter right_paren;
+};
+
+static std::optional<FunctionBounds>
+find_function(const TokenIter begin, const TokenIter end)
+{
+    FunctionBounds bounds;
 
     for (auto it = begin; it != end; ++it) {
         // Find string representing the function name
-        if ((*it)->type() != EdifyTokenType::String) {
+        if (!std::holds_alternative<EdifyTokenString>(*it)) {
             continue;
         }
 
-        func_name = it;
+        bounds.func_name = it;
 
         bool found_left_paren = false;
         bool found_right_paren = false;
@@ -132,13 +122,13 @@ static bool find_function(const std::vector<EdifyToken *>::iterator begin,
         // Barring any whitespace, newlines, or comments, the function name
         // should be followed by a left parenthesis
         for (auto it2 = it + 1; it2 != end; ++it2) {
-            if ((*it2)->type() == EdifyTokenType::Whitespace
-                    || (*it2)->type() == EdifyTokenType::Newline
-                    || (*it2)->type() == EdifyTokenType::Comment) {
+            if (std::holds_alternative<EdifyTokenWhitespace>(*it2)
+                    || std::holds_alternative<EdifyTokenNewline>(*it2)
+                    || std::holds_alternative<EdifyTokenComment>(*it2)) {
                 continue;
-            } else if ((*it2)->type() == EdifyTokenType::LeftParen) {
+            } else if (std::holds_alternative<EdifyTokenLeftParen>(*it2)) {
                 found_left_paren = true;
-                left_paren = it2;
+                bounds.left_paren = it2;
             }
             break;
         }
@@ -152,15 +142,15 @@ static bool find_function(const std::vector<EdifyToken *>::iterator begin,
         // Left for matching right parenthesis
         std::size_t depth = 0;
 
-        for (auto it2 = left_paren; it2 != end; ++it2) {
-            if ((*it2)->type() == EdifyTokenType::LeftParen) {
+        for (auto it2 = bounds.left_paren; it2 != end; ++it2) {
+            if (std::holds_alternative<EdifyTokenLeftParen>(*it2)) {
                 ++depth;
-            } else if ((*it2)->type() == EdifyTokenType::RightParen) {
+            } else if (std::holds_alternative<EdifyTokenRightParen>(*it2)) {
                 --depth;
             }
             if (depth == 0) {
                 found_right_paren = true;
-                right_paren = it2;
+                bounds.right_paren = it2;
                 break;
             }
         }
@@ -169,67 +159,46 @@ static bool find_function(const std::vector<EdifyToken *>::iterator begin,
         // parenthesis were found, then assume there's a syntax error and bail
         // out
         if (!found_right_paren) {
-            return false;
+            return {};
         }
 
-        *out_func_name = func_name;
-        *out_left_paren = left_paren;
-        *out_right_paren = right_paren;
-
-        return true;
+        return bounds;
     }
 
-    return false;
+    return {};
 }
 
 /*!
  * \brief Replace edify function
  *
  * \param tokens List of edify tokens
- * \param func_name Function name token of the replaced function
- * \param left_paren Left parenthesis token of the replaced function
- * \param right_paren Right parenthesis token of the replaced function
+ * \param bounds Iterator bounds of the function to replace
  * \param replacement Replacement edify function (in string form)
  *
  * \return New iterator pointing to position *after* the right parenthesis of
- *         the replaced function. Returns tokens->end() if the replacement
+ *         the replaced function. Returns tokens.end() if the replacement
  *         string could not be tokenized.
  */
-static std::vector<EdifyToken *>::iterator
-replace_function(std::vector<EdifyToken *> *tokens,
-                 std::vector<EdifyToken *>::iterator func_name,
-                 std::vector<EdifyToken *>::iterator left_paren,
-                 std::vector<EdifyToken *>::iterator right_paren,
-                 const std::string &replacement)
+static TokenIter
+replace_function(std::vector<EdifyToken> &tokens,
+                 const FunctionBounds &bounds, const std::string &replacement)
 {
-    // Included for completeness' sake
-    (void) left_paren;
-
-    std::vector<EdifyToken *> replacement_tokens;
-    bool result = EdifyTokenizer::tokenize(
-            replacement.data(), replacement.size(), &replacement_tokens);
-    if (!result) {
-        LOGE("Failed to tokenize replacement function string: %s",
-             replacement.c_str());
-        return tokens->end();
+    auto ret = EdifyTokenizer::tokenize(replacement);
+    if (!ret) {
+        LOGE("Failed to tokenize replacement function string: %s: %s",
+             replacement.c_str(), ret.error().message().c_str());
+        return tokens.end();
     }
-
-    // Deallocate replaced tokens
-    for (auto it = func_name; it != right_paren; ++it) {
-        delete *it;
-    }
-    delete *right_paren;
+    auto &rtokens = ret.value();
 
     // Remove replaced tokens
-    auto it = tokens->erase(func_name, right_paren);
-    it = tokens->erase(it);
+    auto it = tokens.erase(bounds.func_name, bounds.right_paren + 1);
 
     // Add replacement tokens
-    it = tokens->insert(it, replacement_tokens.begin(),
-                        replacement_tokens.end());
+    it = tokens.insert(it, rtokens.begin(), rtokens.end());
 
     // Move iterator to the end of the replaced tokens
-    it += replacement_tokens.size();
+    it += static_cast<ptrdiff_t>(rtokens.size());
 
     return it;
 }
@@ -238,33 +207,30 @@ replace_function(std::vector<EdifyToken *> *tokens,
  * \brief Replace edify mount() command
  *
  * \param tokens List of edify tokens
- * \param func_name Function name token
- * \param left_paren Left parenthesis token
- * \param right_paren Right parenthesis token
+ * \param bounds Iterator bounds of the function to replace
  * \param system_devs List of system partition block devices
  * \param cache_devs List of cache partition block devices
  * \param data_devs List of data partition block devices
  *
  * \return Iterator pointing to position immediately after the right parenthesis
+ *         or tokens.end() if an error occurs.
  */
-static std::vector<EdifyToken *>::iterator
-replace_edify_mount(std::vector<EdifyToken *> *tokens,
-                    const std::vector<EdifyToken *>::iterator func_name,
-                    const std::vector<EdifyToken *>::iterator left_paren,
-                    const std::vector<EdifyToken *>::iterator right_paren,
-                    const char * const *system_devs,
-                    const char * const *cache_devs,
-                    const char * const *data_devs)
+static TokenIter
+replace_edify_mount(std::vector<EdifyToken> &tokens,
+                    const FunctionBounds &bounds,
+                    const std::vector<std::string> &system_devs,
+                    const std::vector<std::string> &cache_devs,
+                    const std::vector<std::string> &data_devs)
 {
     // For the mount() edify function, replace with the corresponding
     // update-binary-tool command
-    for (auto it = left_paren + 1; it != right_paren; ++it) {
-        if ((*it)->type() != EdifyTokenType::String) {
+    for (auto it = bounds.left_paren + 1; it != bounds.right_paren; ++it) {
+        if (!std::holds_alternative<EdifyTokenString>(*it)) {
             continue;
         }
 
-        EdifyTokenString *token = (EdifyTokenString *)(*it);
-        const std::string str = token->string();
+        auto const &token = std::get<EdifyTokenString>(*it);
+        const std::string str = token.raw_string();
 
         bool is_system = str.find("/system") != std::string::npos
                 || find_items_in_string(str.c_str(), system_devs);
@@ -275,50 +241,47 @@ replace_edify_mount(std::vector<EdifyToken *> *tokens,
                 || find_items_in_string(str.c_str(), data_devs);
 
         if (is_system) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(MOUNT_FMT, "/system"));
         } else if (is_cache) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(MOUNT_FMT, "/cache"));
         } else if (is_data) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(MOUNT_FMT, "/data"));
         }
     }
-    return right_paren + 1;
+    return bounds.right_paren + 1;
 }
 
 /*!
  * \brief Replace edify unmount() command
  *
  * \param tokens List of edify tokens
- * \param func_name Function name token
- * \param left_paren Left parenthesis token
- * \param right_paren Right parenthesis token
+ * \param bounds Iterator bounds of the function to replace
  * \param system_devs List of system partition block devices
  * \param cache_devs List of cache partition block devices
  * \param data_devs List of data partition block devices
  *
  * \return Iterator pointing to position immediately after the right parenthesis
+ *         or tokens.end() if an error occurs.
  */
-static std::vector<EdifyToken *>::iterator
-replace_edify_unmount(std::vector<EdifyToken *> *tokens,
-                      const std::vector<EdifyToken *>::iterator func_name,
-                      const std::vector<EdifyToken *>::iterator left_paren,
-                      const std::vector<EdifyToken *>::iterator right_paren,
-                      const char * const *system_devs,
-                      const char * const *cache_devs,
-                      const char * const *data_devs)
+static TokenIter
+replace_edify_unmount(std::vector<EdifyToken> &tokens,
+                      const FunctionBounds &bounds,
+                      const std::vector<std::string> &system_devs,
+                      const std::vector<std::string> &cache_devs,
+                      const std::vector<std::string> &data_devs)
 {
     // For the unmount() edify function, replace with the corresponding
     // update-binary-tool command
-    for (auto it = left_paren + 1; it != right_paren; ++it) {
-        if ((*it)->type() != EdifyTokenType::String) {
+    for (auto it = bounds.left_paren + 1; it != bounds.right_paren; ++it) {
+        if (!std::holds_alternative<EdifyTokenString>(*it)) {
             continue;
         }
 
-        EdifyTokenString *token = (EdifyTokenString *)(*it);
-        const std::string str = token->string();
+        auto const &token = std::get<EdifyTokenString>(*it);
+        const std::string str = token.raw_string();
 
         bool is_system = str.find("/system") != std::string::npos
                 || find_items_in_string(str.c_str(), system_devs);
@@ -329,40 +292,37 @@ replace_edify_unmount(std::vector<EdifyToken *> *tokens,
                 || find_items_in_string(str.c_str(), data_devs);
 
         if (is_system) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(UNMOUNT_FMT, "/system"));
         } else if (is_cache) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(UNMOUNT_FMT, "/cache"));
         } else if (is_data) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(UNMOUNT_FMT, "/data"));
         }
     }
-    return right_paren + 1;
+    return bounds.right_paren + 1;
 }
 
 /*!
  * \brief Replace edify run_program() command
  *
  * \param tokens List of edify tokens
- * \param func_name Function name token
- * \param left_paren Left parenthesis token
- * \param right_paren Right parenthesis token
+ * \param bounds Iterator bounds of the function to replace
  * \param system_devs List of system partition block devices
  * \param cache_devs List of cache partition block devices
  * \param data_devs List of data partition block devices
  *
  * \return Iterator pointing to position immediately after the right parenthesis
+ *         or tokens.end() if an error occurs.
  */
-static std::vector<EdifyToken *>::iterator
-replace_edify_run_program(std::vector<EdifyToken *> *tokens,
-                          const std::vector<EdifyToken *>::iterator func_name,
-                          const std::vector<EdifyToken *>::iterator left_paren,
-                          const std::vector<EdifyToken *>::iterator right_paren,
-                          const char * const *system_devs,
-                          const char * const *cache_devs,
-                          const char * const *data_devs)
+static TokenIter
+replace_edify_run_program(std::vector<EdifyToken> &tokens,
+                          const FunctionBounds &bounds,
+                          const std::vector<std::string> &system_devs,
+                          const std::vector<std::string> &cache_devs,
+                          const std::vector<std::string> &data_devs)
 {
     bool found_reboot = false;
     bool found_mount = false;
@@ -373,13 +333,19 @@ replace_edify_run_program(std::vector<EdifyToken *> *tokens,
     bool is_cache = false;
     bool is_data = false;
 
-    for (auto it = left_paren + 1; it != right_paren; ++it) {
-        if ((*it)->type() != EdifyTokenType::String) {
+    for (auto it = bounds.left_paren + 1; it != bounds.right_paren; ++it) {
+        if (!std::holds_alternative<EdifyTokenString>(*it)) {
             continue;
         }
 
-        EdifyTokenString *token = (EdifyTokenString *)(*it);
-        const std::string unescaped = token->unescaped_string();
+        auto const &token = std::get<EdifyTokenString>(*it);
+        auto ret = token.unescaped_string();
+        if (!ret) {
+            LOGE("Failed to unescape string token: %s: %s",
+                 token.raw_string().c_str(), ret.error().message().c_str());
+            return tokens.end();
+        }
+        auto const &unescaped = ret.value();
 
         if (ends_with(unescaped, "reboot")) {
             found_reboot = true;
@@ -413,115 +379,115 @@ replace_edify_run_program(std::vector<EdifyToken *> *tokens,
     }
 
     if (found_reboot) {
-        return replace_function(tokens, func_name, left_paren, right_paren,
+        return replace_function(tokens, bounds,
                                 "(ui_print(\"Removed reboot command\") == 0)");
     } else if (found_umount) {
         if (is_system) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(UNMOUNT_FMT, "/system"));
         } else if (is_cache) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(UNMOUNT_FMT, "/cache"));
         } else if (is_data) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(UNMOUNT_FMT, "/data"));
         }
     } else if (found_mount) {
         if (is_system) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(MOUNT_FMT, "/system"));
         } else if (is_cache) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(MOUNT_FMT, "/cache"));
         } else if (is_data) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(MOUNT_FMT, "/data"));
         }
     } else if (found_format_sh) {
-        return replace_function(tokens, func_name, left_paren, right_paren,
+        return replace_function(tokens, bounds,
                                 format(FORMAT_FMT, "/system"));
     } else if (found_mke2fs) {
         if (is_system) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/system"));
         } else if (is_cache) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/cache"));
         } else if (is_data) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/data"));
         }
     }
 
-    return right_paren + 1;
+    return bounds.right_paren + 1;
 }
 
 /*!
  * \brief Replace edify delete_recursive() command
  *
  * \param tokens List of edify tokens
- * \param func_name Function name token
- * \param left_paren Left parenthesis token
- * \param right_paren Right parenthesis token
+ * \param bounds Iterator bounds of the function to replace
  *
  * \return Iterator pointing to position immediately after the right parenthesis
+ *         or tokens.end() if an error occurs.
  */
-static std::vector<EdifyToken *>::iterator
-replace_edify_delete_recursive(std::vector<EdifyToken *> *tokens,
-                               const std::vector<EdifyToken *>::iterator func_name,
-                               const std::vector<EdifyToken *>::iterator left_paren,
-                               const std::vector<EdifyToken *>::iterator right_paren)
+static TokenIter
+replace_edify_delete_recursive(std::vector<EdifyToken> &tokens,
+                               const FunctionBounds &bounds)
 {
-    for (auto it = left_paren + 1; it != right_paren; ++it) {
-        if ((*it)->type() != EdifyTokenType::String) {
+    for (auto it = bounds.left_paren + 1; it != bounds.right_paren; ++it) {
+        if (!std::holds_alternative<EdifyTokenString>(*it)) {
             continue;
         }
 
-        EdifyTokenString *token = (EdifyTokenString *)(*it);
-        const std::string unescaped = token->unescaped_string();
+        auto const &token = std::get<EdifyTokenString>(*it);
+        auto ret = token.unescaped_string();
+        if (!ret) {
+            LOGE("Failed to unescape string token: %s: %s",
+                 token.raw_string().c_str(), ret.error().message().c_str());
+            return tokens.end();
+        }
+        auto const &unescaped = ret.value();
 
         if (unescaped == "/system" || unescaped == "/system/") {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/system"));
         } else if (unescaped == "/cache" || unescaped == "/cache/") {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/cache"));
         }
     }
-    return right_paren + 1;
+    return bounds.right_paren + 1;
 }
 
 /*!
  * \brief Replace edify format() command
  *
  * \param tokens List of edify tokens
- * \param func_name Function name token
- * \param left_paren Left parenthesis token
- * \param right_paren Right parenthesis token
+ * \param bounds Iterator bounds of the function to replace
  * \param system_devs List of system partition block devices
  * \param cache_devs List of cache partition block devices
  * \param data_devs List of data partition block devices
  *
  * \return Iterator pointing to position immediately after the right parenthesis
+ *         or tokens.end() if an error occurs.
  */
-static std::vector<EdifyToken *>::iterator
-replace_edify_format(std::vector<EdifyToken *> *tokens,
-                     const std::vector<EdifyToken *>::iterator func_name,
-                     const std::vector<EdifyToken *>::iterator left_paren,
-                     const std::vector<EdifyToken *>::iterator right_paren,
-                     const char * const *system_devs,
-                     const char * const *cache_devs,
-                     const char * const *data_devs)
+static TokenIter
+replace_edify_format(std::vector<EdifyToken> &tokens,
+                     const FunctionBounds &bounds,
+                     const std::vector<std::string> &system_devs,
+                     const std::vector<std::string> &cache_devs,
+                     const std::vector<std::string> &data_devs)
 {
     // For the format() edify function, replace with the corresponding
     // update-binary-tool command
-    for (auto it = left_paren + 1; it != right_paren; ++it) {
-        if ((*it)->type() != EdifyTokenType::String) {
+    for (auto it = bounds.left_paren + 1; it != bounds.right_paren; ++it) {
+        if (!std::holds_alternative<EdifyTokenString>(*it)) {
             continue;
         }
 
-        EdifyTokenString *token = (EdifyTokenString *)(*it);
-        const std::string str = token->string();
+        auto const &token = std::get<EdifyTokenString>(*it);
+        const std::string str = token.raw_string();
 
         bool is_system = str.find("/system") != std::string::npos
                 || find_items_in_string(str.c_str(), system_devs);
@@ -532,17 +498,17 @@ replace_edify_format(std::vector<EdifyToken *> *tokens,
                 || find_items_in_string(str.c_str(), data_devs);
 
         if (is_system) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/system"));
         } else if (is_cache) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/cache"));
         } else if (is_data) {
-            return replace_function(tokens, func_name, left_paren, right_paren,
+            return replace_function(tokens, bounds,
                                     format(FORMAT_FMT, "/data"));
         }
     }
-    return right_paren + 1;
+    return bounds.right_paren + 1;
 }
 
 bool StandardPatcher::patch_files(const std::string &directory)
@@ -560,8 +526,6 @@ bool StandardPatcher::patch_files(const std::string &directory)
 
 bool StandardPatcher::patch_updater(const std::string &directory)
 {
-    MB_PRIVATE(StandardPatcher);
-
     std::string contents;
     std::string path;
 
@@ -571,32 +535,31 @@ bool StandardPatcher::patch_updater(const std::string &directory)
 
     FileUtils::read_to_string(path, &contents);
 
-    if (contents.size() >= 2 && std::memcmp(contents.data(), "#!", 2) == 0) {
+    if (starts_with(contents, "#!")) {
         // Ignore any script with a shebang line
         return true;
     }
 
-    std::vector<EdifyToken *> tokens;
-    bool result = EdifyTokenizer::tokenize(
-            contents.data(), contents.size(), &tokens);
-    if (!result) {
-        LOGE("Failed to tokenize updater-script");
+    auto ret = EdifyTokenizer::tokenize(contents);
+    if (!ret) {
+        LOGE("Failed to tokenize updater-script: %s",
+             ret.error().message().c_str());
         return false;
     }
+    auto &tokens = ret.value();
 
 #if DUMP_DEBUG
     EdifyTokenizer::dump(tokens);
 #endif
 
-    Device *device = priv->info->device();
-    auto systemDevs = mb_device_system_block_devs(device);
-    auto cacheDevs = mb_device_cache_block_devs(device);
-    auto dataDevs = mb_device_data_block_devs(device);
+    auto &&device = m_info.device();
+    auto system_devs = device.system_block_devs();
+    auto cache_devs = device.cache_block_devs();
+    auto data_devs = device.data_block_devs();
 
-    std::vector<EdifyToken *>::iterator begin = tokens.begin();
-    std::vector<EdifyToken *>::iterator end;
+    TokenIter begin = tokens.begin();
+    TokenIter end;
 
-    // TODO: Catch errors
     while (true) {
         end = tokens.end();
 
@@ -604,33 +567,42 @@ bool StandardPatcher::patch_updater(const std::string &directory)
         // 1. String containing function name
         // 2. Left parenthesis for the function
         // 3. Right parenthesis for the function
-        std::vector<EdifyToken *>::iterator func_name;
-        std::vector<EdifyToken *>::iterator left_paren;
-        std::vector<EdifyToken *>::iterator right_paren;
-
-        if (!find_function(begin, end, &func_name, &left_paren, &right_paren)) {
+        auto bounds = find_function(begin, end);
+        if (!bounds) {
             break;
         }
 
         // Tokens (types are checked by findFunction())
-        EdifyTokenString *t_func_name = (EdifyTokenString *)(*func_name);
+        auto const &t_func_name = std::get<EdifyTokenString>(*bounds->func_name);
+        auto unescaped = t_func_name.unescaped_string();
+        if (!unescaped) {
+            LOGE("Failed to unescape string token: %s: %s",
+                 t_func_name.raw_string().c_str(),
+                 unescaped.error().message().c_str());
+            return false;
+        }
 
-        if (t_func_name->unescaped_string() == "mount") {
-            begin = replace_edify_mount(&tokens, func_name, left_paren, right_paren,
-                                        systemDevs, cacheDevs, dataDevs);
-        } else if (t_func_name->unescaped_string() == "unmount") {
-            begin = replace_edify_unmount(&tokens, func_name, left_paren, right_paren,
-                                          systemDevs, cacheDevs, dataDevs);
-        } else if (t_func_name->unescaped_string() == "run_program") {
-            begin = replace_edify_run_program(&tokens, func_name, left_paren, right_paren,
-                                              systemDevs, cacheDevs, dataDevs);
-        } else if (t_func_name->unescaped_string() == "delete_recursive") {
-            begin = replace_edify_delete_recursive(&tokens, func_name, left_paren, right_paren);
-        } else if (t_func_name->unescaped_string() == "format") {
-            begin = replace_edify_format(&tokens, func_name, left_paren, right_paren,
-                                         systemDevs, cacheDevs, dataDevs);
+        if (unescaped.value() == "mount") {
+            begin = replace_edify_mount(tokens, *bounds,
+                                        system_devs, cache_devs, data_devs);
+        } else if (unescaped.value() == "unmount") {
+            begin = replace_edify_unmount(tokens, *bounds,
+                                          system_devs, cache_devs, data_devs);
+        } else if (unescaped.value() == "run_program") {
+            begin = replace_edify_run_program(tokens, *bounds,
+                                              system_devs, cache_devs, data_devs);
+        } else if (unescaped.value() == "delete_recursive") {
+            begin = replace_edify_delete_recursive(tokens, *bounds);
+        } else if (unescaped.value() == "format") {
+            begin = replace_edify_format(tokens, *bounds,
+                                         system_devs, cache_devs, data_devs);
         } else {
-            begin = func_name + 1;
+            // Only skip function name so that we catch nested function calls
+            begin = bounds->func_name + 1;
+        }
+
+        if (begin == tokens.end()) {
+            return false;
         }
     }
 
@@ -640,10 +612,6 @@ bool StandardPatcher::patch_updater(const std::string &directory)
 
     FileUtils::write_from_string(path, EdifyTokenizer::untokenize(tokens));
 
-    for (EdifyToken *t : tokens) {
-        delete t;
-    }
-
     return true;
 }
 
@@ -651,7 +619,6 @@ bool StandardPatcher::patch_transfer_list(const std::string &directory)
 {
     std::string contents;
     std::string path;
-    std::vector<std::string> lines;
 
     path += directory;
     path += "/";
@@ -662,7 +629,7 @@ bool StandardPatcher::patch_transfer_list(const std::string &directory)
         return ret == ErrorCode::FileOpenError;
     }
 
-    lines = StringUtils::split(contents, '\n');
+    auto lines = split_sv(contents, '\n');
 
     for (auto it = lines.begin(); it != lines.end();) {
         if (starts_with(*it, "erase ")) {
@@ -672,11 +639,10 @@ bool StandardPatcher::patch_transfer_list(const std::string &directory)
         }
     }
 
-    contents = StringUtils::join(lines, "\n");
+    contents = join(lines, "\n");
     FileUtils::write_from_string(path, contents);
 
     return true;
 }
 
-}
 }

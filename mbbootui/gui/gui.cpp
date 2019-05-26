@@ -19,13 +19,13 @@
 #include "gui/gui.h"
 
 #include <atomic>
+#include <chrono>
 
 #include <linux/input.h>
 #include <unistd.h>
 
 #include "mblog/logging.h"
 #include "mbutil/path.h"
-#include "mbutil/time.h"
 
 #include "data.hpp"
 #include "twrp-functions.hpp"
@@ -41,6 +41,8 @@
 #include "gui/objects.hpp"
 #include "gui/pages.hpp"
 
+#define LOG_TAG "mbbootui/gui/gui"
+
 // Enable to print render time of each frame to the log file
 //#define PRINT_RENDER_TIME 1
 
@@ -49,6 +51,8 @@
 #else
 #define LOGEVENT(...) do {} while (0)
 #endif
+
+using namespace std::chrono;
 
 // Global values
 static int gGuiInitialized = 0;
@@ -101,9 +105,9 @@ public:
         state = AS_NO_ACTION;
         x = y = 0;
 
-        if (!(tw_flags & TW_FLAG_NO_SCREEN_TIMEOUT)) {
+        if (!(tw_device.tw_flags() & mb::device::TwFlag::NoScreenTimeout)) {
             std::string seconds;
-            DataManager::GetValue(TW_SCREEN_TIMEOUT_SECS, seconds);
+            DataManager::GetValue(VAR_TW_SCREEN_TIMEOUT_SECS, seconds);
             blankTimer.setTime(atoi(seconds.c_str()));
             blankTimer.resetTimerAndUnblank();
         } else {
@@ -365,29 +369,28 @@ void InputHandler::handleDrag()
 // the last time it was called
 static void loopTimer(int input_timeout_ms)
 {
-    static timespec lastCall;
+    static steady_clock::time_point lastCall;
     static int initialized = 0;
 
     if (!initialized) {
-        clock_gettime(CLOCK_MONOTONIC, &lastCall);
+        lastCall = steady_clock::now();
         initialized = 1;
         return;
     }
 
     do {
         bool got_event = input_handler.processInput(input_timeout_ms); // get inputs but don't send drag notices
-        timespec curTime, diff;
-        clock_gettime(CLOCK_MONOTONIC, &curTime);
-
-        mb::util::timespec_diff(lastCall, curTime, &diff);
+        auto curTime = steady_clock::now();
+        auto diff = duration_cast<nanoseconds>(curTime - lastCall);
 
         // This is really 2 or 30 times per second
         // As long as we get events, increase the timeout so we can catch up with input
         long timeout = got_event ? 500000000 : 33333333;
 
-        if (diff.tv_sec || diff.tv_nsec > timeout) {
-            // int64_t input_time = mb::util::timespec_diff_ms(lastCall, curTime);
-            // LOGI("loopTimer(): %" PRId64 " ms, count: %u", input_time, count);
+        if (diff.count() > timeout) {
+            //auto input_time = duration_cast<milliseconds>(curTime - lastCall);
+            //LOGI("loopTimer(): %" PRId64 " ms, count: %u",
+            //     input_time.count(), count);
 
             lastCall = curTime;
             input_handler.handleDrag(); // send only drag notices if needed
@@ -403,8 +406,8 @@ static void loopTimer(int input_timeout_ms)
 
 static int runPages(const char *page_name, const int stop_on_page_done)
 {
-    DataManager::SetValue(TW_PAGE_DONE, 0);
-    DataManager::SetValue(TW_GUI_DONE, 0);
+    DataManager::SetValue(VAR_TW_PAGE_DONE, 0);
+    DataManager::SetValue(VAR_TW_GUI_DONE, 0);
 
     if (page_name) {
         PageManager::SetStartPage(page_name);
@@ -413,7 +416,7 @@ static int runPages(const char *page_name, const int stop_on_page_done)
 
     gGuiRunning = 1;
 
-    DataManager::SetValue(TW_LOADED, 1);
+    DataManager::SetValue(VAR_TW_LOADED, 1);
 
     struct timeval timeout;
     fd_set fdset;
@@ -458,19 +461,18 @@ static int runPages(const char *page_name, const int stop_on_page_done)
             }
 #else
             if (ret > 1) {
-                timespec start, end;
-                int64_t render_t, flip_t;
-                clock_gettime(CLOCK_MONOTONIC, &start);
+                auto start = steady_clock::now();
                 PageManager::Render();
-                clock_gettime(CLOCK_MONOTONIC, &end);
-                render_t = mb::util::timespec_diff_ms(start, end);
+                auto end = steady_clock::now();
+                auto render_t = duration_cast<milliseconds>(end - start);
 
                 flip();
-                clock_gettime(CLOCK_MONOTONIC, &start);
-                flip_t = mb::util::timespec_diff_ms(end, start);
+                auto flip_end = steady_clock::now();
+                auto flip_t = duration_cast<milliseconds>(flip_end - end);
 
                 LOGI("Render(): %" PRId64 " ms, flip(): %" PRId64 " ms, total: %" PRId64 " ms",
-                     render_t, flip_t, render_t + flip_t);
+                     render_t.count(), flip_t.count(),
+                     render_t.count() + flip_t.count());
             } else if (ret > 0) {
                 flip();
             }
@@ -483,11 +485,11 @@ static int runPages(const char *page_name, const int stop_on_page_done)
         }
 
         blankTimer.checkForTimeout();
-        if (stop_on_page_done && DataManager::GetIntValue(TW_PAGE_DONE) != 0) {
+        if (stop_on_page_done && DataManager::GetIntValue(VAR_TW_PAGE_DONE) != 0) {
             gui_changePage("main");
             break;
         }
-        if (DataManager::GetIntValue(TW_GUI_DONE) != 0) {
+        if (DataManager::GetIntValue(VAR_TW_GUI_DONE) != 0) {
             break;
         }
     }
@@ -592,7 +594,7 @@ extern "C" int gui_init()
         return -1;
     }
 
-    TWFunc::Set_Brightness(DataManager::GetStrValue(TW_BRIGHTNESS));
+    TWFunc::Set_Brightness(DataManager::GetStrValue(VAR_TW_BRIGHTNESS));
 
     // load and show splash screen
     if (PageManager::LoadPackage("splash", TWFunc::get_resource_path("splash.xml"), "splash")) {
@@ -612,7 +614,7 @@ extern "C" int gui_loadResources()
 {
 #ifndef TW_OEM_BUILD
     int check = 0;
-    DataManager::GetValue(TW_IS_ENCRYPTED, check);
+    DataManager::GetValue(VAR_TW_IS_ENCRYPTED, check);
 
     if (check) {
         if (PageManager::LoadPackage("TWRP", TWFunc::get_resource_path("ui.xml"), "decrypt")) {

@@ -1,0 +1,34 @@
+/*
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ *
+ * This file is part of DualBootPatcher
+ *
+ * DualBootPatcher is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * DualBootPatcher is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "util/validcerts.h"
+
+/*
+ * Android's "signatures" in /data/system/packages.xml and also in the Java
+ * class android.content.pm.Signature are just hexadecimal representations of
+ * the signing key's certificate.
+ *
+ * To get this "signature" from the keystore, run the following command:
+ *
+ *   $ keytool -alias YOUR_KEY_ALIAS -keystore YOUR_KEYSTORE_FILE -exportcert \
+ *         | hexdump -ve '1/1 "%.2x"'; echo
+ */
+
+// Certificate for key specified at build time
+const char *signing_cert = "@MBP_SIGN_JAVA_CERT_HEX@";

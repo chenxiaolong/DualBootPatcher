@@ -7,64 +7,30 @@ configure_file(
     @ONLY
 )
 
-set(MBCOMMON_SOURCES
-    src/file/callbacks.cpp
-    src/file/fd.cpp
-    src/file/memory.cpp
-    src/file/open_mode.cpp
-    src/file/posix.cpp
-    src/file/standard.cpp
-    src/file.cpp
-    src/file_error.cpp
-    src/file_util.cpp
-    src/libc/stdio.cpp
-    src/libc/string.cpp
-    src/locale.cpp
-    src/string.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
-)
-
-set(MBCOMMON_TESTS_SOURCES
-    # Helpers
-    tests/main.cpp
-    tests/file/mock_test_file.cpp
-    # Tests
-    tests/file/test_callbacks.cpp
-    tests/file/test_fd.cpp
-    tests/file/test_memory.cpp
-    tests/file/test_posix.cpp
-    tests/test_endian.cpp
-    tests/test_file.cpp
-    tests/test_file_error.cpp
-    tests/test_file_util.cpp
-    tests/test_locale.cpp
-    tests/test_string.cpp
-)
-
-if(WIN32)
-    list(APPEND MBCOMMON_SOURCES src/file/win32.cpp)
-
-    list(APPEND MBCOMMON_TESTS_SOURCES tests/file/test_win32.cpp)
+# _FILE_OFFSET_BITS is now meaningful in NDK r15c. We can't define it unless we
+# target API 24 or newer or else fgetpos() and fsetpos() will be undefined,
+# which prevents <cstdio> from being included.
+# See: https://github.com/android-ndk/ndk/issues/480
+if(NOT ANDROID)
+    add_definitions(-D_FILE_OFFSET_BITS=64)
 endif()
 
-if(ANDROID)
-    list(APPEND MBCOMMON_SOURCES
-         src/external/musl/memmem.c)
-
-    if(${ANDROID_PLATFORM_LEVEL} LESS 21)
-        list(APPEND MBCOMMON_SOURCES
-             src/external/gnulib/getdelim.c
-             src/external/gnulib/getline.c)
-    endif()
-elseif(WIN32)
-    list(APPEND MBCOMMON_SOURCES
-         src/external/gnulib/getdelim.c
-         src/external/gnulib/getline.c
-         src/external/musl/memmem.c
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    # mb::format() requires non-literal format string
+    set_source_files_properties(
+        src/string.cpp
+        PROPERTIES
+        COMPILE_FLAGS
+        "-Wno-format-nonliteral"
     )
 endif()
 
-add_definitions(-DMBCOMMON_BUILD -D_FILE_OFFSET_BITS=64)
+set_source_files_properties(
+    src/external/iconv.cpp
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-conversion -Wno-sign-conversion -Wno-shadow"
+)
 
 set(variants)
 
@@ -80,19 +46,52 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbcommon-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBCOMMON_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBCOMMON_SOURCES})
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/capi/util.cpp
+        src/common.cpp
+        src/error.cpp
+        src/error_code.cpp
+        src/file/fd.cpp
+        src/file/memory.cpp
+        src/file/open_mode.cpp
+        src/file/posix.cpp
+        src/file/standard.cpp
+        src/file.cpp
+        src/file_error.cpp
+        src/file_util.cpp
+        src/locale.cpp
+        src/string.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
+    )
+
+    if(${MBP_BUILD_TARGET} STREQUAL android-app)
+        target_sources(
+            ${lib_target}
+            PRIVATE
+            src/external/iconv.cpp
+        )
+        target_compile_definitions(
+            ${lib_target}
+            PRIVATE
+            -DUSE_EXTERNAL_ICONV
+        )
+    elseif(WIN32)
+        target_sources(
+            ${lib_target}
+            PRIVATE
+            src/file/win32.cpp
+        )
     endif()
 
     # Includes
     target_include_directories(
         ${lib_target}
         PUBLIC include
-        PRIVATE ${MBP_LIBICONV_INCLUDES}
     )
 
     # Only build static library if needed
@@ -100,25 +99,9 @@ foreach(variant ${variants})
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
     endif()
 
-    # Export symbols
-    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
-
-    # Win32 DLL export
-    if(${variant} STREQUAL shared)
-        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
-    endif()
-
-    # Build with -fPIC
-    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
-    # Target C++11
     if(NOT MSVC)
-        set_target_properties(
-            ${lib_target}
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
+        # Don't warn on empty format strings
+        target_compile_options(${lib_target} PRIVATE -Wno-format-zero-length)
     endif()
 
     # Set library name
@@ -127,7 +110,13 @@ foreach(variant ${variants})
     # Link dependencies
     target_link_libraries(
         ${lib_target}
-        PRIVATE ${MBP_LIBICONV_LIBRARIES}
+        PUBLIC
+        outcome
+        PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
+        interface.mbcommon.private-headers
+        $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
     )
 
     # Install shared library
@@ -146,30 +135,75 @@ if(variants AND MBP_ENABLE_TESTS)
     # Build tests
     add_executable(
         mbcommon_tests
-        ${MBCOMMON_TESTS_SOURCES}
+        # Helpers
+        tests/main.cpp
+        # Tests
+        tests/file/test_fd.cpp
+        tests/file/test_memory.cpp
+        tests/file/test_posix.cpp
+        tests/test_endian.cpp
+        tests/test_error_code.cpp
+        tests/test_file_error.cpp
+        tests/test_file_util.cpp
+        tests/test_flags.cpp
+        tests/test_integer.cpp
+        tests/test_locale.cpp
+        tests/test_string.cpp
     )
+
+    if(WIN32)
+        target_sources(
+            mbcommon_tests
+            PRIVATE
+            tests/file/test_win32.cpp
+        )
+    endif()
+
+    # Don't warn on empty format strings
+    if(NOT MSVC)
+        target_compile_options(mbcommon_tests PRIVATE -Wno-format-zero-length)
+    endif()
 
     # Link dependencies
     target_link_libraries(
         mbcommon_tests
+        interface.global.CXXVersion
+        interface.mbcommon.private-headers
         mbcommon-static
         gmock
         gmock_main
     )
 
-    # Target C++11
-    if(NOT MSVC)
-        set_target_properties(
-            mbcommon_tests
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
+    if(${MBP_BUILD_TARGET} STREQUAL android-system)
+        unix_link_executable_statically(mbcommon_tests)
     endif()
 
     # Add to ctest
-    add_test(
-        NAME mbcommon_tests
-        COMMAND mbcommon_tests
-    )
+    add_gtest_test(mbcommon_tests)
 endif()
+
+# Interfaces
+
+add_library(interface.mbcommon.library INTERFACE)
+
+target_compile_definitions(
+    interface.mbcommon.library
+    INTERFACE
+    -DMB_LIBRARY
+)
+
+add_library(interface.mbcommon.dynamic-link INTERFACE)
+
+target_compile_definitions(
+    interface.mbcommon.dynamic-link
+    INTERFACE
+    -DMB_DYNAMIC_LINK
+)
+
+add_library(interface.mbcommon.private-headers INTERFACE)
+
+target_compile_definitions(
+    interface.mbcommon.private-headers
+    INTERFACE
+    -DMBCOMMON_BUILD
+)

@@ -21,7 +21,7 @@
 
 #include <cassert>
 
-#include "mbpatcher/cwrapper/private/util.h"
+#include "mbcommon/capi/util.h"
 
 #include "mbpatcher/fileinfo.h"
 
@@ -44,7 +44,8 @@
  * \sa FileInfo
  */
 
-extern "C" {
+extern "C"
+{
 
 /*!
  * \brief Create a new FileInfo object.
@@ -84,7 +85,7 @@ void mbpatcher_fileinfo_destroy(CFileInfo *info)
 char * mbpatcher_fileinfo_input_path(const CFileInfo *info)
 {
     CCAST(info);
-    return string_to_cstring(fi->input_path());
+    return mb::capi_str_to_cstr(fi->input_path());
 }
 
 /*!
@@ -104,7 +105,7 @@ void mbpatcher_fileinfo_set_input_path(CFileInfo *info, const char *path)
 char * mbpatcher_fileinfo_output_path(const CFileInfo *info)
 {
     CCAST(info);
-    return string_to_cstring(fi->output_path());
+    return mb::capi_str_to_cstr(fi->output_path());
 }
 
 void mbpatcher_fileinfo_set_output_path(CFileInfo *info, const char *path)
@@ -122,10 +123,11 @@ void mbpatcher_fileinfo_set_output_path(CFileInfo *info, const char *path)
  *
  * \sa FileInfo::device()
  */
-struct Device * mbpatcher_fileinfo_device(const CFileInfo *info)
+CDevice * mbpatcher_fileinfo_device(const CFileInfo *info)
 {
     CCAST(info);
-    return fi->device();
+    auto *device = new mb::device::Device(fi->device());
+    return reinterpret_cast<CDevice *>(device);
 }
 
 /*!
@@ -136,16 +138,16 @@ struct Device * mbpatcher_fileinfo_device(const CFileInfo *info)
  *
  * \sa FileInfo::setDevice()
  */
-void mbpatcher_fileinfo_set_device(CFileInfo *info, struct Device *device)
+void mbpatcher_fileinfo_set_device(CFileInfo *info, CDevice *device)
 {
     CAST(info);
-    fi->set_device(device);
+    fi->set_device(*reinterpret_cast<mb::device::Device *>(device));
 }
 
 char * mbpatcher_fileinfo_rom_id(const CFileInfo *info)
 {
     CCAST(info);
-    return string_to_cstring(fi->rom_id());
+    return mb::capi_str_to_cstr(fi->rom_id());
 }
 
 void mbpatcher_fileinfo_set_rom_id(CFileInfo *info, const char *id)

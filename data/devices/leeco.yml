@@ -2,10 +2,15 @@
 - name: LeEco Le Max 2
   id: le_x2
   codenames:
+    - x2
+    - X820
+    - x821
+    - x822
+    - x829
     - le_x2
-  # Requires 32-bit version even though the device is 64-bit because the TWRP
-  # is compiled as 32-bit
-  architecture: armeabi-v7a
+    - le_x2_india
+    - le_x2_na_oversea
+  architecture: arm64-v8a
 
   block_devs:
     base_dirs:
@@ -38,6 +43,18 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde20
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
 - name: LeEco Le 2 (MTK)
   id: x620
   codenames:
@@ -62,6 +79,12 @@
     recovery:
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
       - /dev/block/mmcblk0p1
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
 
 - name: LeEco Le 2
   id: s2
@@ -135,7 +158,6 @@
       - drm
     theme: portrait_hdpi
 
-
 - name: LeEco Le 1S
   id: x3
   codenames:
@@ -165,11 +187,9 @@
     boot:
       - /dev/block/platform/mtk-msdc.0/by-name/boot
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/boot
-      - boot
     recovery:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
-      - recovery
     extra:
       - /dev/block/platform/mtk-msdc.0/by-name/metadata
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
@@ -190,7 +210,6 @@
       - /dev/block/sda
       - /dev/block/sda1
       - /dev/block/mmcblk0p4
-      - misc
 
   boot_ui:
     supported: true
@@ -203,4 +222,110 @@
     cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
     graphics_backends:
       - fbdev
+    theme: portrait_hdpi
+    
+- name: LePro3
+  id: le_zl1
+  codenames:
+    - zl1
+    - X720
+    - x721
+    - x727
+    - le_zl1
+    - le_zl1_oversea
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/624000.ufshc/by-name
+      - /dev/block/platform/soc/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc/624000.ufshc/by-name/system
+      - /dev/block/platform/soc/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/sde19
+    cache:
+      - /dev/block/platform/soc/624000.ufshc/by-name/cache
+      - /dev/block/platform/soc/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/sda3
+    data:
+      - /dev/block/platform/soc/624000.ufshc/by-name/userdata
+      - /dev/block/platform/soc/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/sda9
+    boot:
+      - /dev/block/platform/soc/624000.ufshc/by-name/boot
+      - /dev/block/platform/soc/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/sde18
+    recovery:
+      - /dev/block/platform/soc/624000.ufshc/by-name/recovery
+      - /dev/block/platform/soc/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/sde20
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: LePro3 Elite
+  id: le_zl0
+  codenames:
+    - zl0
+    - X722
+    - le_zl0
+    - le_zl0_whole_netcom
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/624000.ufshc/by-name
+      - /dev/block/platform/soc/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc/624000.ufshc/by-name/system
+      - /dev/block/platform/soc/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/sde19
+    cache:
+      - /dev/block/platform/soc/624000.ufshc/by-name/cache
+      - /dev/block/platform/soc/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/sda3
+    data:
+      - /dev/block/platform/soc/624000.ufshc/by-name/userdata
+      - /dev/block/platform/soc/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/sda9
+    boot:
+      - /dev/block/platform/soc/624000.ufshc/by-name/boot
+      - /dev/block/platform/soc/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/sde18
+    recovery:
+      - /dev/block/platform/soc/624000.ufshc/by-name/recovery
+      - /dev/block/platform/soc/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/sde20
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
     theme: portrait_hdpi

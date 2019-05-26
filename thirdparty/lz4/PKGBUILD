@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,16 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=lz4
-pkgver=131
+pkgver=1.8.3
 pkgrel=1
 pkgdesc="Very fast lossless compression algorithm"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://github.com/Cyan4973/lz4"
 license=(BSD)
-source=("git+https://github.com/Cyan4973/lz4.git#tag=r${pkgver}"
+source=("git+https://github.com/Cyan4973/lz4.git#tag=v${pkgver}"
         0001-Add-Android.mk.patch)
 sha512sums=('SKIP'
-            '76f3db87f888da8628eccc379f6abcc81b20c572e1a395481fd2cdd306c08789d1f8b6ebae070560df4659d3eadea3bf1f3e3e287a638701ad07277d01a8a8d0')
+            '1ce80d412600eb02b2059413ca5abf9311d3a0a0d43af8bff595f8bb6f4fd7b56ad3164f6263e8d68e23695a94586d89abcfbaabd2448c1557500d61d17c8cb7')
 
 prepare() {
     cd lz4
@@ -38,10 +38,10 @@ build() {
 
     ndk-build \
         NDK_PROJECT_PATH=. \
-        NDK_TOOLCHAIN_VERSION=4.9 \
+        NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-21 \
+        APP_PLATFORM=android-28 \
         "${MAKEFLAGS}"
 }
 

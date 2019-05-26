@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -24,66 +24,76 @@
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/loki_p.h"
 #include "mbbootimg/format/segment_reader_p.h"
-#include "mbbootimg/reader.h"
+#include "mbbootimg/reader_p.h"
 
 
-MB_BEGIN_C_DECLS
-
-struct LokiReaderCtx
+namespace mb::bootimg::loki
 {
-    // Header values
-    struct AndroidHeader hdr;
-    struct LokiHeader loki_hdr;
 
-    // Offsets
-    bool have_header_offset;
-    uint64_t header_offset;
-    bool have_loki_offset;
-    uint64_t loki_offset;
-
-    struct SegmentReaderCtx segctx;
+struct ReadHeaderResult
+{
+    Header header;
+    uint64_t kernel_offset;
+    uint64_t ramdisk_offset;
+    uint64_t dt_offset;
+    uint32_t kernel_size;
+    uint32_t ramdisk_size;
 };
 
-int find_loki_header(struct MbBiReader *bir, mb::File *file,
-                     struct LokiHeader *header_out, uint64_t *offset_out);
-int loki_find_ramdisk_address(struct MbBiReader *bir, mb::File *file,
-                              const struct AndroidHeader *hdr,
-                              const struct LokiHeader *loki_hdr,
-                              uint32_t *ramdisk_addr_out);
-int loki_old_find_gzip_offset(struct MbBiReader *bir, mb::File *file,
-                              uint32_t start_offset, uint64_t *gzip_offset_out);
-int loki_old_find_ramdisk_size(struct MbBiReader *bir, mb::File *file,
-                               const struct AndroidHeader *hdr,
-                               uint32_t ramdisk_offset,
-                               uint32_t *ramdisk_size_out);
-int find_linux_kernel_size(MbBiReader *bir, mb::File *file,
-                           uint32_t kernel_offset, uint32_t *kernel_size_out);
-int loki_read_old_header(struct MbBiReader *bir, mb::File *file,
-                         struct AndroidHeader *hdr, struct LokiHeader *loki_hdr,
-                         struct MbBiHeader *header,
-                         uint64_t *kernel_offset_out,
-                         uint32_t *kernel_size_out,
-                         uint64_t *ramdisk_offset_out,
-                         uint32_t *ramdisk_size_out);
-int loki_read_new_header(struct MbBiReader *bir, mb::File *file,
-                         struct AndroidHeader *hdr, struct LokiHeader *loki_hdr,
-                         struct MbBiHeader *header,
-                         uint64_t *kernel_offset_out,
-                         uint32_t *kernel_size_out,
-                         uint64_t *ramdisk_offset_out,
-                         uint32_t *ramdisk_size_out,
-                         uint64_t *dt_offset_out);
+class LokiFormatReader : public detail::FormatReader
+{
+public:
+    LokiFormatReader() noexcept;
+    virtual ~LokiFormatReader() noexcept;
 
-int loki_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int loki_reader_read_header(struct MbBiReader *bir, void *userdata,
-                            struct MbBiHeader *header);
-int loki_reader_read_entry(struct MbBiReader *bir, void *userdata,
-                           struct MbBiEntry *entry);
-int loki_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
-                            struct MbBiEntry *entry, int entry_type);
-int loki_reader_read_data(struct MbBiReader *bir, void *userdata,
-                          void *buf, size_t buf_size,
-                          size_t &bytes_read);
-int loki_reader_free(struct MbBiReader *bir, void *userdata);
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(LokiFormatReader)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(LokiFormatReader)
 
-MB_END_C_DECLS
+    Format type() override;
+
+    oc::result<int> open(File &file, int best_bid) override;
+    oc::result<void> close(File &file) override;
+    oc::result<Header> read_header(File &file) override;
+    oc::result<Entry> read_entry(File &file) override;
+    oc::result<Entry> go_to_entry(File &file,
+                                  std::optional<EntryType> entry_type) override;
+    oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
+
+    static oc::result<std::pair<LokiHeader, uint64_t>>
+    find_loki_header(File &file);
+    static oc::result<uint32_t>
+    find_ramdisk_address(File &file,
+                         const android::AndroidHeader &ahdr,
+                         const LokiHeader &lhdr);
+    static oc::result<uint64_t>
+    find_gzip_offset_old(File &file,
+                         uint32_t start_offset);
+    static oc::result<uint32_t>
+    find_ramdisk_size_old(File &file,
+                          const android::AndroidHeader &ahdr,
+                          uint32_t ramdisk_offset);
+    static oc::result<uint32_t>
+    find_linux_kernel_size(File &file,
+                           uint32_t kernel_offset);
+    static oc::result<ReadHeaderResult>
+    read_header_old(File &file,
+                    const android::AndroidHeader &ahdr,
+                    const LokiHeader &lhdr);
+    static oc::result<ReadHeaderResult>
+    read_header_new(File &file,
+                    const android::AndroidHeader &ahdr,
+                    const LokiHeader &lhdr);
+
+private:
+    // Header values
+    android::AndroidHeader m_ahdr;
+    LokiHeader m_lhdr;
+
+    // Offsets
+    std::optional<uint64_t> m_ahdr_offset;
+    std::optional<uint64_t> m_lhdr_offset;
+
+    std::optional<SegmentReader> m_seg;
+};
+
+}

@@ -1,26 +1,25 @@
-From 1575a66295498225c4489cf73ca45d003720960c Mon Sep 17 00:00:00 2001
+From d2ff7c06d0e6b08ebb5f811950232d15bfb6d64b Mon Sep 17 00:00:00 2001
 From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
-Date: Sun, 26 Mar 2017 15:53:30 -0400
+Date: Sun, 24 Dec 2017 15:33:58 -0500
 Subject: [PATCH] Make this NDK buildable
 
 Signed-off-by: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
 ---
- Android.mk | 20 --------------------
- 1 file changed, 20 deletions(-)
+ Android.mk | 40 ----------------------------------------
+ 1 file changed, 40 deletions(-)
 
 diff --git a/Android.mk b/Android.mk
-index 76df4f1..0c27755 100644
+index 501b12eb..847ddc8f 100644
 --- a/Android.mk
 +++ b/Android.mk
-@@ -47,23 +47,3 @@ LOCAL_CFLAGS := \
- 	$(common_CFLAGS)
- 
+@@ -57,25 +57,6 @@ LOCAL_CFLAGS := \
+ include $(LIBDRM_COMMON_MK)
  include $(BUILD_STATIC_LIBRARY)
--
+ 
 -# Dynamic library for the device
 -include $(CLEAR_VARS)
 -
--LOCAL_MODULE := libdrm
+-LOCAL_MODULE := libdrm_platform
 -
 -LOCAL_SRC_FILES := $(filter-out %.h,$(LIBDRM_FILES))
 -LOCAL_EXPORT_C_INCLUDE_DIRS := \
@@ -33,9 +32,38 @@ index 76df4f1..0c27755 100644
 -LOCAL_CFLAGS := \
 -	$(common_CFLAGS)
 -
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_SHARED_LIBRARY)
+-
+ 
+ ifneq ($(TARGET_USE_PRIVATE_LIBDRM),true)
+ 
+@@ -108,25 +89,4 @@ LOCAL_CFLAGS := \
+ include $(LIBDRM_COMMON_MK)
+ include $(BUILD_STATIC_LIBRARY)
+ 
+-# Dynamic library for the device
+-include $(CLEAR_VARS)
+-
+-LOCAL_MODULE := libdrm
+-LOCAL_VENDOR_MODULE := true
+-
+-LOCAL_SRC_FILES := $(filter-out %.h,$(LIBDRM_FILES))
+-LOCAL_EXPORT_C_INCLUDE_DIRS := \
+-	$(LOCAL_PATH) \
+-	$(LOCAL_PATH)/include/drm
+-
+-LOCAL_C_INCLUDES := \
+-	$(LOCAL_PATH)/include/drm
+-
+-LOCAL_CFLAGS := \
+-	$(common_CFLAGS)
+-
+-include $(LIBDRM_COMMON_MK)
 -include $(BUILD_SHARED_LIBRARY)
 -
 -include $(call all-makefiles-under,$(LOCAL_PATH))
+ endif # if TARGET_USE_PRIVATE_LIBDRM is not true
 -- 
-2.9.3
+2.14.3
 

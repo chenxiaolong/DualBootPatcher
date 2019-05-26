@@ -130,7 +130,7 @@ extern "C" struct minui_backend * BACKEND_FUNCTION(BACKEND_NAME)()
     fb_fix_screeninfo fi;
     int fd;
 
-    fd = open("/dev/graphics/fb0", O_RDWR);
+    fd = open("/dev/graphics/fb0", O_RDWR | O_CLOEXEC);
     if (fd < 0) {
         perror("open_overlay cannot open fb0");
         return nullptr;
@@ -156,12 +156,16 @@ extern "C" struct minui_backend * BACKEND_FUNCTION(BACKEND_NAME)()
 
 static void overlay_blank(minui_backend* backend __unused, bool blank)
 {
-    if ((tw_flags & TW_FLAG_NO_SCREEN_BLANK) && tw_brightness_path && tw_max_brightness >= 0) {
+    auto const &brightness_path = tw_device.tw_brightness_path();
+
+    if ((tw_device.tw_flags() & mb::device::TwFlag::NoScreenBlank)
+            && !brightness_path.empty()
+            && tw_device.tw_max_brightness() >= 0) {
         int fd;
         char brightness[4];
-        snprintf(brightness, 4, "%03d", tw_max_brightness/2);
+        snprintf(brightness, 4, "%03d", tw_device.tw_max_brightness() / 2);
 
-        fd = open(tw_brightness_path, O_RDWR);
+        fd = open(brightness_path.c_str(), O_RDWR | O_CLOEXEC);
         if (fd < 0) {
             perror("cannot open LCD backlight");
             return;
@@ -169,8 +173,10 @@ static void overlay_blank(minui_backend* backend __unused, bool blank)
         write(fd, blank ? "000" : brightness, 3);
         close(fd);
 
-        if (tw_secondary_brightness_path) {
-            fd = open(tw_secondary_brightness_path, O_RDWR);
+        auto const &secondary_brightness_path =
+                tw_device.tw_secondary_brightness_path();
+        if (!secondary_brightness_path.empty()) {
+            fd = open(secondary_brightness_path.c_str(), O_RDWR | O_CLOEXEC);
             if (fd < 0) {
                 perror("cannot open LCD backlight 2");
                 return;
@@ -195,7 +201,7 @@ void setDisplaySplit(void)
     if (!isMDP5) {
         return;
     }
-    FILE* fp = fopen("/sys/class/graphics/fb0/msm_fb_split", "r");
+    FILE* fp = fopen("/sys/class/graphics/fb0/msm_fb_split", "re");
     if (fp) {
         //Format "left right" space as delimiter
         if (fread(split, sizeof(char), 64, fp)) {
@@ -267,7 +273,7 @@ int alloc_ion_mem(unsigned int size)
     struct ion_fd_data fd_data;
     struct ion_allocation_data ionAllocData;
 
-    mem_info.ion_fd = open("/dev/ion", O_RDWR|O_DSYNC);
+    mem_info.ion_fd = open("/dev/ion", O_RDWR | O_DSYNC | O_CLOEXEC);
     if (mem_info.ion_fd < 0) {
         perror("ERROR: Can't open ion ");
         return -errno;
@@ -345,7 +351,7 @@ int allocate_overlay(int fd, GRSurface gr_fb)
             overlayL.dst_rect.w = gr_fb.width;
             overlayL.dst_rect.h = gr_fb.height;
             overlayL.alpha = 0xFF;
-            if (tw_flags & TW_FLAG_BOARD_HAS_FLIPPED_SCREEN) {
+            if (tw_device.tw_flags() & mb::device::TwFlag::BoardHasFlippedScreen) {
                 overlayL.flags = MDP_ROT_180;
             }
             overlayL.transp_mask = MDP_TRANSP_NOP;
@@ -385,7 +391,7 @@ int allocate_overlay(int fd, GRSurface gr_fb)
             overlayL.dst_rect.w = lWidth;
             overlayL.dst_rect.h = height;
             overlayL.alpha = 0xFF;
-            if (tw_flags & TW_FLAG_BOARD_HAS_FLIPPED_SCREEN) {
+            if (tw_device.tw_flags() & mb::device::TwFlag::BoardHasFlippedScreen) {
                 overlayL.flags = MDP_ROT_180;
             }
             overlayL.transp_mask = MDP_TRANSP_NOP;
@@ -415,7 +421,7 @@ int allocate_overlay(int fd, GRSurface gr_fb)
             overlayR.dst_rect.w = rWidth;
             overlayR.dst_rect.h = height;
             overlayR.alpha = 0xFF;
-            if (tw_flags & TW_FLAG_BOARD_HAS_FLIPPED_SCREEN) {
+            if (tw_device.tw_flags() & mb::device::TwFlag::BoardHasFlippedScreen) {
                 overlayR.flags = MDSS_MDP_RIGHT_MIXER | MDP_ROT_180;
             } else {
                 overlayR.flags = MDSS_MDP_RIGHT_MIXER;
@@ -510,7 +516,7 @@ int overlay_display_frame(int fd, void* data, size_t size)
 
 static GRSurface* overlay_flip(minui_backend* backend __unused)
 {
-    if (tw_pixel_format == TW_PXFMT_BGRA_8888) {
+    if (tw_device.tw_pixel_format() == mb::device::TwPixelFormat::Bgra8888) {
         // In case of BGRA, do some byte swapping
         unsigned int idx;
         unsigned char tmp;
@@ -577,7 +583,7 @@ int free_overlay(int fd)
 
 static GRSurface* overlay_init(minui_backend* backend)
 {
-    int fd = open("/dev/graphics/fb0", O_RDWR);
+    int fd = open("/dev/graphics/fb0", O_RDWR | O_CLOEXEC);
     if (fd == -1) {
         perror("cannot open fb0");
         return nullptr;

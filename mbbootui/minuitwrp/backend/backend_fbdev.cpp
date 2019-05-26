@@ -65,12 +65,16 @@ extern "C" struct minui_backend * BACKEND_FUNCTION(fbdev)()
 
 static void fbdev_blank(minui_backend* backend __unused, bool blank)
 {
-    if ((tw_flags & TW_FLAG_NO_SCREEN_BLANK) && tw_brightness_path && tw_max_brightness >= 0) {
+    auto const &brightness_path = tw_device.tw_brightness_path();
+
+    if ((tw_device.tw_flags() & mb::device::TwFlag::NoScreenBlank)
+            && !brightness_path.empty()
+            && tw_device.tw_max_brightness() >= 0) {
         int fd;
         char brightness[4];
-        snprintf(brightness, 4, "%03d", tw_max_brightness/2);
+        snprintf(brightness, 4, "%03d", tw_device.tw_max_brightness() / 2);
 
-        fd = open(tw_brightness_path, O_RDWR);
+        fd = open(brightness_path.c_str(), O_RDWR | O_CLOEXEC);
         if (fd < 0) {
             perror("cannot open LCD backlight");
             return;
@@ -78,8 +82,10 @@ static void fbdev_blank(minui_backend* backend __unused, bool blank)
         write(fd, blank ? "000" : brightness, 3);
         close(fd);
 
-        if (tw_secondary_brightness_path) {
-            fd = open(tw_secondary_brightness_path, O_RDWR);
+        auto const &secondary_brightness_path =
+                tw_device.tw_secondary_brightness_path();
+        if (!secondary_brightness_path.empty()) {
+            fd = open(secondary_brightness_path.c_str(), O_RDWR | O_CLOEXEC);
             if (fd < 0) {
                 perror("cannot open LCD backlight 2");
                 return;
@@ -87,7 +93,7 @@ static void fbdev_blank(minui_backend* backend __unused, bool blank)
             write(fd, blank ? "000" : brightness, 3);
             close(fd);
         }
-    } else if (!(tw_flags & TW_FLAG_NO_SCREEN_BLANK)) {
+    } else if (!(tw_device.tw_flags() & mb::device::TwFlag::NoScreenBlank)) {
         int ret;
 
         ret = ioctl(fb_fd, FBIOBLANK, blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK);
@@ -117,7 +123,7 @@ static GRSurface* fbdev_init(minui_backend* backend)
     int retry = 20;
     int fd = -1;
     while (fd == -1) {
-        fd = open("/dev/graphics/fb0", O_RDWR);
+        fd = open("/dev/graphics/fb0", O_RDWR | O_CLOEXEC);
         if (fd == -1) {
             if (--retry) {
                 // wait for init to create the device node
@@ -173,7 +179,8 @@ static GRSurface* fbdev_init(minui_backend* backend)
 
     memset(bits, 0, fi.smem_len);
 
-    if (tw_force_pixel_format == TW_FORCE_PXFMT_RGB_565) {
+    if (tw_device.tw_force_pixel_format()
+            == mb::device::TwForcePixelFormat::Rgb565) {
         printf("Forcing pixel format: RGB_565\n");
         vi.blue.offset    = 0;
         vi.green.offset   = 5;
@@ -193,7 +200,7 @@ static GRSurface* fbdev_init(minui_backend* backend)
     gr_framebuffer[0].height = vi.yres;
     gr_framebuffer[0].row_bytes = fi.line_length;
     gr_framebuffer[0].pixel_bytes = vi.bits_per_pixel / 8;
-    if (tw_flags & TW_FLAG_GRAPHICS_FORCE_USE_LINELENGTH) {
+    if (tw_device.tw_flags() & mb::device::TwFlag::GraphicsForceUseLineLength) {
         printf("Forcing line length\n");
         vi.xres_virtual = fi.line_length / gr_framebuffer[0].pixel_bytes;
     }
@@ -252,7 +259,7 @@ static GRSurface* fbdev_init(minui_backend* backend)
         double_buffered = false;
         printf("single buffered\n");
     }
-    if (tw_pixel_format == TW_PXFMT_BGRA_8888) {
+    if (tw_device.tw_pixel_format() == mb::device::TwPixelFormat::Bgra8888) {
         printf("RECOVERY_BGRA\n");
     }
     fb_fd = fd;
@@ -270,7 +277,7 @@ static GRSurface* fbdev_init(minui_backend* backend)
 
 static GRSurface* fbdev_flip(minui_backend* backend __unused)
 {
-    if (tw_pixel_format == TW_PXFMT_BGRA_8888) {
+    if (tw_device.tw_pixel_format() == mb::device::TwPixelFormat::Bgra8888) {
         // In case of BGRA, do some byte swapping
         unsigned int idx;
         unsigned char tmp;
@@ -282,7 +289,7 @@ static GRSurface* fbdev_flip(minui_backend* backend __unused)
             ucfb_vaddr[idx + 2] = tmp;
         }
     }
-    if (!(tw_flags & TW_FLAG_BOARD_HAS_FLIPPED_SCREEN)) {
+    if (!(tw_device.tw_flags() & mb::device::TwFlag::BoardHasFlippedScreen)) {
         if (double_buffered) {
             // Copy from the in-memory surface to the framebuffer.
             memcpy(gr_framebuffer[1-displayed_buffer].data, gr_draw->data,

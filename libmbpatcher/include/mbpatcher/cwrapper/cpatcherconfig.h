@@ -24,9 +24,7 @@
 #include "mbcommon/common.h"
 #include "mbpatcher/cwrapper/ctypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+MB_BEGIN_C_DECLS
 
 MB_EXPORT CPatcherConfig * mbpatcher_config_create(void);
 MB_EXPORT void mbpatcher_config_destroy(CPatcherConfig *pc);
@@ -50,6 +48,4 @@ MB_EXPORT CAutoPatcher * mbpatcher_config_create_autopatcher(CPatcherConfig *pc,
 MB_EXPORT void mbpatcher_config_destroy_patcher(CPatcherConfig *pc, CPatcher *patcher);
 MB_EXPORT void mbpatcher_config_destroy_autopatcher(CPatcherConfig *pc, CAutoPatcher *patcher);
 
-#ifdef __cplusplus
-}
-#endif
+MB_END_C_DECLS

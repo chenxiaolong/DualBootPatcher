@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,59 +23,66 @@
 
 #include <getopt.h>
 
-#include <jansson.h>
+#include <rapidjson/filewritestream.h>
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/writer.h>
 #include <yaml-cpp/yaml.h>
 
 #include "mbdevice/json.h"
-#include "mbdevice/validate.h"
+#include "mbdevice/schema.h"
 
 
-static void * xmalloc(size_t size)
-{
-    void *result = malloc(size);
-    if (!result) {
-        abort();
-    }
-    return result;
-}
+using namespace rapidjson;
 
-static json_t * yaml_node_to_json_node(const YAML::Node &yaml_node)
+using namespace mb::device;
+
+template<typename Allocator>
+static Value yaml_node_to_json(const YAML::Node &yaml_node, Allocator &alloc)
 {
     switch (yaml_node.Type()) {
     case YAML::NodeType::Null:
-        return json_object();
+        return Value(kNullType);
 
-    case YAML::NodeType::Scalar:
+    case YAML::NodeType::Scalar: {
+        Value value;
+        if (yaml_node.Tag() != "!") {
+            try {
+                value.SetInt64(yaml_node.as<int64_t>());
+                return value;
+            } catch (const YAML::BadConversion &e) {}
+            try {
+                value.SetDouble(yaml_node.as<double>());
+                return value;
+            } catch (const YAML::BadConversion &e) {}
+            try {
+                value.SetBool(yaml_node.as<bool>());
+                return value;
+            } catch (const YAML::BadConversion &e) {}
+        }
         try {
-            return json_integer(yaml_node.as<json_int_t>());
-        } catch (const YAML::BadConversion &e) {}
-        try {
-            return json_real(yaml_node.as<double>());
-        } catch (const YAML::BadConversion &e) {}
-        try {
-            return json_boolean(yaml_node.as<bool>());
-        } catch (const YAML::BadConversion &e) {}
-        try {
-            return json_string(yaml_node.as<std::string>().c_str());
+            value.SetString(yaml_node.as<std::string>(), alloc);
+            return value;
         } catch (const YAML::BadConversion &e) {}
         throw std::runtime_error("Cannot convert scalar value to known type");
+    }
 
     case YAML::NodeType::Sequence: {
-        json_t *array = json_array();
+        Value array(kArrayType);
 
         for (auto const &item : yaml_node) {
-            json_array_append_new(array, yaml_node_to_json_node(item));
+            array.PushBack(yaml_node_to_json(item, alloc), alloc);
         }
 
         return array;
     }
 
     case YAML::NodeType::Map: {
-        json_t *object = json_object();
+        Value object(kObjectType);
 
         for (auto const &item : yaml_node) {
-            json_object_set_new(object, item.first.as<std::string>().c_str(),
-                                yaml_node_to_json_node(item.second));
+            Value key;
+            key.SetString(item.first.as<std::string>(), alloc);
+            object.AddMember(key, yaml_node_to_json(item.second, alloc), alloc);
         }
 
         return object;
@@ -87,117 +94,70 @@ static json_t * yaml_node_to_json_node(const YAML::Node &yaml_node)
     }
 }
 
-static void print_json_error(const char *path, MbDeviceJsonError *error)
+template<typename Allocator>
+static bool convert_files(int argc, char *argv[], Value &value,
+                          Allocator &alloc)
 {
-    fprintf(stderr, "%s: Error: ", path);
+    value.SetArray();
 
-    switch (error->type) {
-    case MB_DEVICE_JSON_STANDARD_ERROR:
-        fprintf(stderr, "Internal error\n");
-        break;
-    case MB_DEVICE_JSON_PARSE_ERROR:
-        fprintf(stderr, "Failed to parse generated JSON\n");
-        break;
-    case MB_DEVICE_JSON_MISMATCHED_TYPE:
-        fprintf(stderr, "Expected %s, but found %s at %s\n",
-                error->expected_type, error->actual_type, error->context);
-        break;
-    case MB_DEVICE_JSON_UNKNOWN_KEY:
-        fprintf(stderr, "Unknown key at %s\n", error->context);
-        break;
-    case MB_DEVICE_JSON_UNKNOWN_VALUE:
-        fprintf(stderr, "Unknown value at %s\n", error->context);
-        break;
-    default:
-        fprintf(stderr, "Unknown error\n");
-        break;
-    }
-}
+    for (int i = 0; i < argc; ++i) {
+        try {
+            YAML::Node root = YAML::LoadFile(argv[i]);
 
-static void print_validation_error(const char *path, const char *id,
-                                   uint64_t flags)
-{
-    fprintf(stderr, "%s: [%s] Error during validation (0x%" PRIx64 "):\n",
-            path, id ? id : "unknown", flags);
-
-    struct mapping {
-        uint64_t flag;
-        const char *msg;
-    } mappings[] = {
-        { MB_DEVICE_MISSING_ID,                        "Missing device ID" },
-        { MB_DEVICE_MISSING_CODENAMES,                 "Missing device codenames" },
-        { MB_DEVICE_MISSING_NAME,                      "Missing device name" },
-        { MB_DEVICE_MISSING_ARCHITECTURE,              "Missing device architecture" },
-        { MB_DEVICE_MISSING_SYSTEM_BLOCK_DEVS,         "Missing system block device paths" },
-        { MB_DEVICE_MISSING_CACHE_BLOCK_DEVS,          "Missing cache block device paths" },
-        { MB_DEVICE_MISSING_DATA_BLOCK_DEVS,           "Missing data block device paths" },
-        { MB_DEVICE_MISSING_BOOT_BLOCK_DEVS,           "Missing boot block device paths" },
-        { MB_DEVICE_MISSING_RECOVERY_BLOCK_DEVS,       "Missing recovery block device paths" },
-        { MB_DEVICE_MISSING_BOOT_UI_THEME,             "Missing Boot UI theme" },
-        { MB_DEVICE_MISSING_BOOT_UI_GRAPHICS_BACKENDS, "Missing Boot UI graphics backends" },
-        { 0, nullptr }
-    };
-
-    for (auto it = mappings; it->flag; ++it) {
-        if (flags & it->flag) {
-            fprintf(stderr, "- %s\n", it->msg);
-            flags &= ~it->flag;
-        }
-    }
-
-    if (flags) {
-        fprintf(stderr, "- Unknown remaining flags (0x%" PRIx64 ")", flags);
-    }
-}
-
-static bool validate(const char *path, const char *json, bool is_array)
-{
-    MbDeviceJsonError error;
-
-    if (is_array) {
-        Device **devices = mb_device_new_list_from_json(json, &error);
-        if (!devices) {
-            print_json_error(path, &error);
-            return false;
-        }
-
-        bool failed = false;
-
-        for (Device **iter = devices; *iter; ++iter) {
-            uint64_t flags = mb_device_validate(*iter);
-            if (flags) {
-                print_validation_error(path, mb_device_id(*iter), flags);
-                failed = true;
+            if (root.Type() != YAML::NodeType::Sequence) {
+                fprintf(stderr, "%s: Root is not an array\n", argv[i]);
+                return false;
             }
-            mb_device_free(*iter);
-        }
-        free(devices);
 
-        if (failed) {
-            return false;
-        }
-    } else {
-        Device *device = mb_device_new_from_json(json, &error);
-        if (!device) {
-            print_json_error(path, &error);
-            return false;
-        }
-
-        bool failed = false;
-        uint64_t flags = mb_device_validate(device);
-
-        if (flags) {
-            print_validation_error(path, mb_device_id(device), flags);
-            failed = true;
-        }
-
-        mb_device_free(device);
-
-        if (failed) {
+            for (auto const &item : root) {
+                value.PushBack(yaml_node_to_json(item, alloc), alloc);
+            }
+        } catch (const std::exception &e) {
+            fprintf(stderr, "%s: Failed to convert file: %s\n",
+                    argv[i], e.what());
             return false;
         }
     }
 
+    return true;
+}
+
+template<typename Writer>
+static bool validate_and_write(Document &d, const SchemaDocument &sd,
+                               Writer &writer)
+{
+    GenericSchemaValidator<SchemaDocument, Writer> sv(sd, writer);
+    if (!d.Accept(sv)) {
+        if (!sv.IsValid()) {
+            char write_buf[65536];
+            FileWriteStream os(stderr, write_buf, sizeof(write_buf));
+            PrettyWriter<FileWriteStream> error_writer(os);
+
+            // Copy error data to add context
+            Value error(sv.GetError(), d.GetAllocator());
+
+            for (auto &item : error.GetObject()) {
+                auto const &instance_ref = item.value["instanceRef"];
+                Pointer instance_ptr(instance_ref.GetString(),
+                                     instance_ref.GetStringLength());
+
+                if (auto const *value = instance_ptr.Get(d)) {
+                    item.value.AddMember("instanceData",
+                                         Value(*value, d.GetAllocator()),
+                                         d.GetAllocator());
+                }
+            }
+
+            fprintf(stderr, "Schema validation failed:\n");
+            error.Accept(error_writer);
+            os.Put('\n');
+            os.Flush();
+        } else {
+            fprintf(stderr, "Failed to write JSON\n");
+        }
+
+        return false;
+    }
     return true;
 }
 
@@ -256,45 +216,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    json_set_alloc_funcs(&xmalloc, &free);
-
-    json_t *json_root = json_array();
-
-    for (int i = optind; i < argc; ++i) {
-        try {
-            YAML::Node root = YAML::LoadFile(argv[i]);
-            json_t *node = yaml_node_to_json_node(root);
-
-            char *output = json_dumps(node, JSON_COMPACT);
-            bool valid = validate(argv[i], output, json_is_array(node));
-            free(output);
-            if (!valid) {
-                return EXIT_FAILURE;
-            }
-
-            if (json_is_array(node)) {
-                size_t index;
-                json_t *elem;
-
-                json_array_foreach(node, index, elem) {
-                    json_array_append(json_root, elem);
-                }
-
-                json_decref(node);
-            } else {
-                json_array_append_new(json_root, node);
-            }
-        } catch (const std::exception &e) {
-            fprintf(stderr, "%s: Failed to convert file: %s\n",
-                    argv[i], e.what());
-            return EXIT_FAILURE;
-        }
-    }
-
     FILE *fp = stdout;
 
     if (output_file) {
-        fp = fopen(output_file, "w");
+        fp = fopen(output_file, "we");
         if (!fp) {
             fprintf(stderr, "%s: Failed to open file: %s\n",
                     output_file, strerror(errno));
@@ -302,19 +227,31 @@ int main(int argc, char *argv[])
         }
     }
 
-    char *output;
+    char write_buf[65536];
+    FileWriteStream os(fp, write_buf, sizeof(write_buf));
+    bool ret;
+
+    DeviceSchemaProvider<> sp;
+    const SchemaDocument *sd = sp.GetSchema("device_list.json");
+    if (!sd) {
+        assert(false);
+        return EXIT_FAILURE;
+    }
+
+    Document d;
+    auto &alloc = d.GetAllocator();
+
+    if (!convert_files(argc - optind, argv + optind, d, alloc)) {
+        return EXIT_FAILURE;
+    }
+
     if (styled) {
-        output = json_dumps(json_root, JSON_INDENT(4) | JSON_SORT_KEYS);
+        PrettyWriter<FileWriteStream> writer(os);
+        ret = validate_and_write(d, *sd, writer);
     } else {
-        output = json_dumps(json_root, JSON_COMPACT);
+        Writer<FileWriteStream> writer(os);
+        ret = validate_and_write(d, *sd, writer);
     }
-
-    if (fputs(output, fp) == EOF) {
-        fprintf(stderr, "Failed to write JSON: %s\n", strerror(errno));
-    }
-
-    free(output);
-    json_decref(json_root);
 
     if (output_file) {
         if (fclose(fp) != 0) {
@@ -324,5 +261,5 @@ int main(int argc, char *argv[])
         }
     }
 
-    return EXIT_SUCCESS;
+    return ret ? EXIT_SUCCESS : EXIT_FAILURE;
 }

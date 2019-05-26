@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,50 +21,50 @@
 
 #include "mbbootimg/guard_p.h"
 
-#include <openssl/sha.h>
+#include <optional>
+#include <string>
 
-#include "mbbootimg/entry.h"
 #include "mbbootimg/format/sony_elf_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
-#include "mbbootimg/header.h"
-#include "mbbootimg/writer.h"
+#include "mbbootimg/writer_p.h"
 
 
-MB_BEGIN_C_DECLS
-
-struct SonyElfWriterCtx
+namespace mb::bootimg::sonyelf
 {
+
+class SonyElfFormatWriter : public detail::FormatWriter
+{
+public:
+    SonyElfFormatWriter() noexcept;
+    virtual ~SonyElfFormatWriter() noexcept;
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SonyElfFormatWriter)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(SonyElfFormatWriter)
+
+    Format type() override;
+
+    oc::result<void> open(File &file) override;
+    oc::result<void> close(File &file) override;
+    oc::result<Header> get_header(File &file) override;
+    oc::result<void> write_header(File &file, const Header &header) override;
+    oc::result<Entry> get_entry(File &file) override;
+    oc::result<void> write_entry(File &file, const Entry &entry) override;
+    oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size) override;
+    oc::result<void> finish_entry(File &file) override;
+
+private:
     // Header values
-    struct Sony_Elf32_Ehdr hdr;
-    struct Sony_Elf32_Phdr hdr_kernel;
-    struct Sony_Elf32_Phdr hdr_ramdisk;
-    struct Sony_Elf32_Phdr hdr_cmdline;
-    struct Sony_Elf32_Phdr hdr_ipl;
-    struct Sony_Elf32_Phdr hdr_rpm;
-    struct Sony_Elf32_Phdr hdr_appsbl;
+    Sony_Elf32_Ehdr m_hdr;
+    Sony_Elf32_Phdr m_hdr_kernel;
+    Sony_Elf32_Phdr m_hdr_ramdisk;
+    Sony_Elf32_Phdr m_hdr_cmdline;
+    Sony_Elf32_Phdr m_hdr_ipl;
+    Sony_Elf32_Phdr m_hdr_rpm;
+    Sony_Elf32_Phdr m_hdr_appsbl;
 
-    bool have_file_size;
-    uint64_t file_size;
+    std::string m_cmdline;
 
-    char *cmdline;
-    size_t cmdline_size;
-
-    struct SegmentWriterCtx segctx;
+    std::optional<SegmentWriter> m_seg;
 };
 
-int sony_elf_writer_get_header(struct MbBiWriter *biw, void *userdata,
-                               struct MbBiHeader *header);
-int sony_elf_writer_write_header(struct MbBiWriter *biw, void *userdata,
-                                 struct MbBiHeader *header);
-int sony_elf_writer_get_entry(struct MbBiWriter *biw, void *userdata,
-                              struct MbBiEntry *entry);
-int sony_elf_writer_write_entry(struct MbBiWriter *biw, void *userdata,
-                                struct MbBiEntry *entry);
-int sony_elf_writer_write_data(struct MbBiWriter *biw, void *userdata,
-                               const void *buf, size_t buf_size,
-                               size_t &bytes_written);
-int sony_elf_writer_finish_entry(struct MbBiWriter *biw, void *userdata);
-int sony_elf_writer_close(struct MbBiWriter *biw, void *userdata);
-int sony_elf_writer_free(struct MbBiWriter *bir, void *userdata);
-
-MB_END_C_DECLS
+}

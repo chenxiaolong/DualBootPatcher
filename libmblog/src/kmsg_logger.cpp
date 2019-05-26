@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,37 +19,39 @@
 
 #include "mblog/kmsg_logger.h"
 
+#include <array>
+
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
 
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
-#include "mblog/logging.h"
-
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
-#define KMSG_LEVEL_DEBUG    "<7>"
-#define KMSG_LEVEL_INFO     "<6>"
-#define KMSG_LEVEL_NOTICE   "<5>"
-#define KMSG_LEVEL_WARNING  "<4>"
-#define KMSG_LEVEL_ERROR    "<3>"
-#define KMSG_LEVEL_CRITICAL "<2>"
-#define KMSG_LEVEL_ALERT    "<1>"
-#define KMSG_LEVEL_EMERG    "<0>"
-#define KMSG_LEVEL_DEFAULT  "<d>"
+static constexpr std::size_t KMSG_BUF_SIZE                  = 512;
+
+static constexpr char KMSG_LEVEL_DEBUG[]                    = "<7>";
+static constexpr char KMSG_LEVEL_INFO[]                     = "<6>";
+static constexpr char KMSG_LEVEL_NOTICE[[maybe_unused]][]   = "<5>";
+static constexpr char KMSG_LEVEL_WARNING[]                  = "<4>";
+static constexpr char KMSG_LEVEL_ERROR[]                    = "<3>";
+static constexpr char KMSG_LEVEL_CRITICAL[[maybe_unused]][] = "<2>";
+static constexpr char KMSG_LEVEL_ALERT[[maybe_unused]][]    = "<1>";
+static constexpr char KMSG_LEVEL_EMERG[[maybe_unused]][]    = "<0>";
+static constexpr char KMSG_LEVEL_DEFAULT[]                  = "<d>";
 
 KmsgLogger::KmsgLogger(bool force_error_prio)
     : _force_error_prio(force_error_prio)
 {
-    static int open_mode = O_WRONLY | O_NOCTTY | O_CLOEXEC;
-    static const char *kmsg = "/dev/kmsg";
-    static const char *kmsg2 = "/dev/kmsg.mbtool";
+    static constexpr int open_mode = O_WRONLY | O_NOCTTY | O_CLOEXEC;
+    static constexpr char kmsg[] = "/dev/kmsg";
+    static constexpr char kmsg2[] = "/dev/kmsg.mblog";
 
     _fd = open(kmsg, open_mode);
     if (_fd < 0) {
@@ -71,20 +73,18 @@ KmsgLogger::~KmsgLogger()
     }
 }
 
-void KmsgLogger::log(LogLevel prio, const char *fmt, va_list ap)
+void KmsgLogger::log(const LogRecord &rec)
 {
     if (_fd < 0) {
         return;
     }
 
-    const char *kprio;
+    const char *kprio = KMSG_LEVEL_DEFAULT;
 
     if (_force_error_prio) {
         kprio = KMSG_LEVEL_ERROR;
     } else {
-        kprio = KMSG_LEVEL_DEFAULT;
-
-        switch (prio) {
+        switch (rec.prio) {
         case LogLevel::Error:
             kprio = KMSG_LEVEL_ERROR;
             break;
@@ -103,24 +103,27 @@ void KmsgLogger::log(LogLevel prio, const char *fmt, va_list ap)
         }
     }
 
-    char new_fmt[64];
-    if (snprintf(new_fmt, sizeof(new_fmt), "%s%s: %s\n",
-                 kprio, get_log_tag(), fmt) >= (int) sizeof(new_fmt)) {
-        // Doesn't fit
-        return;
+    std::array<iovec, 3> iov;
+    iov[0].iov_base = const_cast<char *>(kprio);
+    iov[0].iov_len = strlen(kprio);
+    iov[1].iov_base = const_cast<char *>(rec.fmt_msg.c_str());
+    iov[1].iov_len = rec.fmt_msg.size();
+    iov[2].iov_base = const_cast<char *>("\n");
+    iov[2].iov_len = 1;
+
+    if (iov[0].iov_len + iov[1].iov_len >= KMSG_BUF_SIZE) {
+        static constexpr char trunc[] = " [trunc...]\n";
+        iov[1].iov_len = KMSG_BUF_SIZE - iov[0].iov_len - sizeof(trunc) + 1;
+        iov[2].iov_base = const_cast<char *>(trunc);
+        iov[2].iov_len = sizeof(trunc) - 1;
     }
 
-    std::size_t len = vsnprintf(_buf, KMSG_BUF_SIZE, new_fmt, ap);
-
-    // Make user aware of any truncation
-    if (len >= KMSG_BUF_SIZE) {
-        static const char trunc[] = " [trunc...]\n";
-        memcpy(_buf + sizeof(_buf) - sizeof(trunc), trunc, sizeof(trunc));
-    }
-
-    write(_fd, _buf, strlen(_buf));
-    //vdprintf(_fd, new_fmt.c_str(), ap);
+    writev(_fd, iov.data(), iov.size());
 }
 
+bool KmsgLogger::formatted()
+{
+    return true;
 }
+
 }

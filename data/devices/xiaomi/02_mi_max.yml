@@ -1,0 +1,149 @@
+---
+- name: Xiaomi Mi Max
+  id: hydrogen
+  codenames:
+    - hydrogen
+    - hydrolium
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p64
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p62
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p65
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p60
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p61
+    extra:
+      - /dev/block/platform/7824900.sdhci/by-name/cust
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cust
+      - /dev/block/bootdevice/by-name/cust
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    default_brightness: 80
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
+
+- name: Xiaomi Mi Max Pro
+  id: helium
+  codenames:
+    - helium
+    - hydrolium
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p64
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p62
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p65
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p60
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p61
+    extra:
+      - /dev/block/platform/7824900.sdhci/by-name/cust
+      - /dev/block/bootdevice/by-name/cust
+      - /dev/block/mmcblk0p63
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    default_brightness: 80
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
+
+- name: Xiaomi Mi Max 2
+  id: oxygen
+  codenames:
+    - oxygen
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p65
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p63
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p66
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p59
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p60
+    extra:
+      - /dev/block/platform/7824900.sdhci/by-name/cust
+      - /dev/block/bootdevice/by-name/cust
+      - /dev/block/mmcblk0p64
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 4095
+    default_brightness: 2047
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi

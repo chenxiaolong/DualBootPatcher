@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,26 +20,24 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 
-namespace mb
+#include "mbcommon/outcome.h"
+
+namespace mb::util
 {
-namespace util
-{
 
-bool create_empty_file(const std::string &path);
-bool file_first_line(const std::string &path,
-                     std::string *line_out);
-bool file_write_data(const std::string &path,
-                     const char *data, size_t size);
-bool file_find_one_of(const std::string &path, std::vector<std::string> items);
-bool file_read_all(const std::string &path,
-                   std::vector<unsigned char> *data_out);
-bool file_read_all(const std::string &path,
-                   unsigned char **data_out,
-                   std::size_t *size_out);
+oc::result<void> create_empty_file(const std::string &path);
+oc::result<std::string> file_first_line(const std::string &path);
+oc::result<void> file_write_data(const std::string &path,
+                                 const void *data, size_t size);
+oc::result<void> file_write_string(const std::string &path,
+                                   std::string_view contents);
+oc::result<bool> file_find_one_of(const std::string &path,
+                                  const std::vector<std::string> &items);
+oc::result<std::string> file_read_all(const std::string &path);
 
-bool get_blockdev_size(const char *path, uint64_t *size_out);
+oc::result<uint64_t> get_blockdev_size(const std::string &path);
 
-}
 }

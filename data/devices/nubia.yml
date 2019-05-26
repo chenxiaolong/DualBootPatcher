@@ -1,9 +1,11 @@
 ---
-- name: Nubia z7 mini
+- name: Nubia z7 (mini&max)
   id: NX507J
   codenames:
     - NX507J
     - nx507j
+    - NX505J
+    - nx505j
   architecture: armeabi-v7a
 
   block_devs:
@@ -33,6 +35,16 @@
     extra:
       - /dev/block/bootdevice/by-name/modem
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 100
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Nubia Z11 mini
   id: nx529j
@@ -73,7 +85,16 @@
       - /dev/block/bootdevice/by-name/recovery2
       - /dev/block/bootdevice/by-name/tz
       
-      
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
+
 - name: Nubia Z11 miniS
   id: NX549J
   codenames:
@@ -112,12 +133,24 @@
       - /dev/block/bootdevice/by-name/recovery2
       - /dev/block/bootdevice/by-name/tz
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
 
 - name: Nubia Z9Max(NX510J)
   id: NX510J
   codenames:
     - NX510J
     - nx510j
+    - NX518J
   architecture: arm64-v8a
   block_devs:
     base_dirs:
@@ -133,7 +166,7 @@
       - /dev/block/platform/f9824900.sdhci/by-name/cache
       - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p31
-    
+
     data:
       - /dev/block/platform/f9824900.sdhci/by-name/userdata
       - /dev/block/bootdevice/by-name/userdata
@@ -156,7 +189,16 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/bootdevice/by-name/tz
       
-    
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
+
 - name: Nubia Z9 mini
   id: NX511J
   codenames:
@@ -196,6 +238,15 @@
       - /dev/block/bootdevice/by-name/recovery2
       - /dev/block/bootdevice/by-name/tz
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
 
 - name: Nubia Z11 Max
   id: NX523J_V1
@@ -221,3 +272,185 @@
     recovery:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p22
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
+
+- name: Nubia Z17&Z17mini
+  id: NX563J
+  codenames:
+    - NX563J
+    - nx563j
+    - NX569J
+    - nx569j
+    - NX569H
+    - nx569h
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    default_brightness: 240
+
+- name: Nubia NX595J
+  id: NX595J
+  codenames:
+    - NX595J
+    - nx595j
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/1da4000.ufshc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/system
+      - /dev/block/sda9
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cache
+      - /dev/block/sda3
+    data:
+      - /dev/block/bootdevice/by-name/data
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/data
+      - /dev/block/sda10
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/boot
+      - /dev/block/sde18
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
+      - /dev/block/sde19
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBA_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    default_brightness: 2047
+    theme: portrait_hdpi
+
+- name: Nubia M2 (NX551J)
+  id: NX551J
+  codenames:
+    - NX551
+    - NX551J
+  architecture: arm64-v8a
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p26
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p25
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p49
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p21
+      - /dev/block/mmcblk0p26
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p22
+      - /dev/block/mmcblk0p23
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery2
+    extra:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/DDR
+      - /dev/block/platform/soc/7824900.sdhci/by-name/aboot
+      - /dev/block/platform/soc/7824900.sdhci/by-name/abootbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/apdp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cmnlib
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cmnlib64
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cmnlib64bak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cmnlibbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/config
+      - /dev/block/platform/soc/7824900.sdhci/by-name/devcfg
+      - /dev/block/platform/soc/7824900.sdhci/by-name/devcfgbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/devinfo
+      - /dev/block/platform/soc/7824900.sdhci/by-name/dip
+      - /dev/block/platform/soc/7824900.sdhci/by-name/dpo
+      - /dev/block/platform/soc/7824900.sdhci/by-name/dsp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/fsc
+      - /dev/block/platform/soc/7824900.sdhci/by-name/fsg
+      - /dev/block/platform/soc/7824900.sdhci/by-name/keymaster
+      - /dev/block/platform/soc/7824900.sdhci/by-name/keymasterbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/keystore
+      - /dev/block/platform/soc/7824900.sdhci/by-name/limits
+      - /dev/block/platform/soc/7824900.sdhci/by-name/lksecapp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/lksecappbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/mcfg
+      - /dev/block/platform/soc/7824900.sdhci/by-name/mdtp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/misc
+      - /dev/block/platform/soc/7824900.sdhci/by-name/modem
+      - /dev/block/platform/soc/7824900.sdhci/by-name/modemst1
+      - /dev/block/platform/soc/7824900.sdhci/by-name/modemst2
+      - /dev/block/platform/soc/7824900.sdhci/by-name/mota
+      - /dev/block/platform/soc/7824900.sdhci/by-name/msadp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/oem
+      - /dev/block/platform/soc/7824900.sdhci/by-name/persist
+      - /dev/block/platform/soc/7824900.sdhci/by-name/rpm
+      - /dev/block/platform/soc/7824900.sdhci/by-name/rpmbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/sbl1
+      - /dev/block/platform/soc/7824900.sdhci/by-name/sbl1bak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/sec
+      - /dev/block/platform/soc/7824900.sdhci/by-name/splash
+      - /dev/block/platform/soc/7824900.sdhci/by-name/ssd
+      - /dev/block/platform/soc/7824900.sdhci/by-name/syscfg
+      - /dev/block/platform/soc/7824900.sdhci/by-name/tz
+      - /dev/block/platform/soc/7824900.sdhci/by-name/tzbak
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi

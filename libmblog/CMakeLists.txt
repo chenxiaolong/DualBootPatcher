@@ -1,17 +1,3 @@
-set(MBLOG_SOURCES
-    src/logging.cpp
-    src/stdio_logger.cpp
-)
-
-if(ANDROID)
-    list(
-        APPEND
-        MBLOG_SOURCES
-        src/android_logger.cpp
-        src/kmsg_logger.cpp
-    )
-endif()
-
 set(variants)
 
 if(MBP_TARGET_HAS_BUILDS)
@@ -26,12 +12,24 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mblog-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBLOG_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBLOG_SOURCES})
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/base_logger.cpp
+        src/logging.cpp
+        src/stdio_logger.cpp
+    )
+
+    if(ANDROID)
+        target_sources(
+            ${lib_target}
+            PRIVATE
+            src/android_logger.cpp
+            src/kmsg_logger.cpp
+        )
     endif()
 
     # Includes
@@ -45,25 +43,9 @@ foreach(variant ${variants})
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
     endif()
 
-    # Export symbols
-    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
-
-    # Win32 DLL export
-    if(${variant} STREQUAL shared)
-        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
-    endif()
-
-    # Build with -fPIC
-    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
-    # Target C++11
+    # Ignore non-literal format strings
     if(NOT MSVC)
-        set_target_properties(
-            ${lib_target}
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
+        target_compile_options(${lib_target} PRIVATE -Wno-format-nonliteral)
     endif()
 
     # Set library name
@@ -72,7 +54,12 @@ foreach(variant ${variants})
     # Link dependencies
     target_link_libraries(
         ${lib_target}
-        PUBLIC mbcommon-${variant}
+        PUBLIC
+        mbcommon-${variant}
+        PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
+        $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
     )
 
     if(ANDROID AND ${variant} STREQUAL shared)

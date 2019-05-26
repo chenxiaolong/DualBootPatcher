@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,23 +14,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=libsepol
-pkgver=7.1.1_r28
-pkgrel=1
+pkgver=8.1.0_r2
+pkgrel=3
 pkgdesc="SELinux binary policy manipulation library"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://android.googlesource.com/platform/external/selinux/"
 license=(LGPL)
 source=("git+https://android.googlesource.com/platform/external/selinux#tag=android-${pkgver}"
-        0001-Build-for-Android-targets.patch
-        0001-Support-Android-M-and-official-v30-sepolicy-format.patch)
+        0001-Add-Android.mk.patch
+        0002-Support-Android-M-and-official-v30-sepolicy-format.patch)
 sha512sums=('SKIP'
-            'd0cf1a3325af4b715b3237afc30e0b1e95437d72433e8b3f07cc7d8603804373885127e3d335b3cd6dbde7d466afb90f99518844e74d5fcc8bc0bb5017702a08'
-            '7c4a22441a75f88910a1ad30d6f61a0fc6deecab2c24d52b00dfa3cda09c266974942e981bd7c2436c54406ab4c145201103aeb3a7c0031cd2c21f7a12c3d391')
+            '0d0c56a34e6d153ab24dbf1007659a8bea540e2752e6e5e908d50fe73c933c73be4d5287610b3a968213bfc5d3551e492bf749990747aa2c948cace68cd9e687'
+            '8ceb527f5be03488f0e3c079c9c08b43f60773966842b1cf0a72f0db047ec2adc73ebafda176d7499766ab46d8e6046828d8ab58a6eb2a634a5e54b79537d307')
 
 prepare() {
     cd selinux
-    git am ../0001-Build-for-Android-targets.patch
-    git am ../0001-Support-Android-M-and-official-v30-sepolicy-format.patch
+    git am ../0001-Add-Android.mk.patch
+    git am ../0002-Support-Android-M-and-official-v30-sepolicy-format.patch
 }
 
 build() {
@@ -44,7 +44,7 @@ build() {
         NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-24 \
+        APP_PLATFORM=android-28 \
         "${MAKEFLAGS}"
 }
 

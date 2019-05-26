@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,271 +20,282 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
+#include <variant>
+
+#include <cassert>
 
 #include "mbcommon/common.h"
+#include "mbcommon/outcome.h"
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
-enum class EdifyTokenType
+enum class EdifyError
 {
-    // Keyword tokens
-    If,
-    Then,
-    Else,
-    Endif,
-    And,
-    Or,
-    Equals,
-    NotEquals,
-    Not,
-    LeftParen,
-    RightParen,
-    Semicolon,
-    Comma,
-    Concat,
-    Newline,
-    // String-based tokens
-    Whitespace,
-    Comment,
-    String,
-    // Unknown
-    Unknown
+    UnterminatedQuote,
+    ValueNotQuoted,
+    InvalidUnquotedCharcter,
+    UnterminatedEscapeCharacter,
+    IncompleteEscapeSequence,
+    InvalidHexEscapeCharacter,
+    InvalidEscapeCharacter,
 };
 
-class EdifyToken
+MB_EXPORT std::error_code make_error_code(EdifyError e);
+
+MB_EXPORT const std::error_category & edify_error_category();
+
+class EdifyTokenIf
 {
 public:
-    virtual ~EdifyToken();
-
-    EdifyTokenType type() const;
-    virtual std::string generate() = 0;
-
-protected:
-    EdifyToken(EdifyTokenType type);
-
-private:
-    EdifyTokenType m_type;
+    std::string generate() const
+    {
+        return "if";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-// Keyword token base class
-class EdifyKeywordToken : public EdifyToken
+class EdifyTokenThen
 {
 public:
-    virtual std::string generate() override;
-
-protected:
-    EdifyKeywordToken(EdifyTokenType type, std::string keyword);
-
-private:
-    std::string m_keyword;
+    std::string generate() const
+    {
+        return "then";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenIf : public EdifyKeywordToken
+class EdifyTokenElse
 {
 public:
-    EdifyTokenIf();
+    std::string generate() const
+    {
+        return "else";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenThen : public EdifyKeywordToken
+class EdifyTokenEndif
 {
 public:
-    EdifyTokenThen();
+    std::string generate() const
+    {
+        return "endif";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenElse : public EdifyKeywordToken
+class EdifyTokenAnd
 {
 public:
-    EdifyTokenElse();
+    std::string generate() const
+    {
+        return "&&";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenEndif : public EdifyKeywordToken
+class EdifyTokenOr
 {
 public:
-    EdifyTokenEndif();
+    std::string generate() const
+    {
+        return "||";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenAnd : public EdifyKeywordToken
+class EdifyTokenEquals
 {
 public:
-    EdifyTokenAnd();
+    std::string generate() const
+    {
+        return "==";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenOr : public EdifyKeywordToken
+class EdifyTokenNotEquals
 {
 public:
-    EdifyTokenOr();
+    std::string generate() const
+    {
+        return "!=";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenEquals : public EdifyKeywordToken
+class EdifyTokenNot
 {
 public:
-    EdifyTokenEquals();
+    std::string generate() const
+    {
+        return "!";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenNotEquals : public EdifyKeywordToken
+class EdifyTokenLeftParen
 {
 public:
-    EdifyTokenNotEquals();
+    std::string generate() const
+    {
+        return "(";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenNot : public EdifyKeywordToken
+class EdifyTokenRightParen
 {
 public:
-    EdifyTokenNot();
+    std::string generate() const
+    {
+        return ")";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenLeftParen : public EdifyKeywordToken
+class EdifyTokenSemicolon
 {
 public:
-    EdifyTokenLeftParen();
+    std::string generate() const
+    {
+        return ";";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenRightParen : public EdifyKeywordToken
+class EdifyTokenComma
 {
 public:
-    EdifyTokenRightParen();
+    std::string generate() const
+    {
+        return ",";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenSemicolon : public EdifyKeywordToken
+class EdifyTokenConcat
 {
 public:
-    EdifyTokenSemicolon();
+    std::string generate() const
+    {
+        return "+";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenComma : public EdifyKeywordToken
+class EdifyTokenNewline
 {
 public:
-    EdifyTokenComma();
+    std::string generate() const
+    {
+        return "\n";
+    }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenConcat : public EdifyKeywordToken
+class EdifyTokenWhitespace
 {
 public:
-    EdifyTokenConcat();
-};
+    EdifyTokenWhitespace(std::string str) : m_str(std::move(str))
+    {
+        assert(!m_str.empty());
 
-////////////////////////////////////////////////////////////////////////////////
+        for (char c [[maybe_unused]] : m_str) {
+            assert(std::isspace(c));
+        }
+    }
 
-class EdifyTokenNewline : public EdifyKeywordToken
-{
-public:
-    EdifyTokenNewline();
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenWhitespace : public EdifyToken
-{
-public:
-    EdifyTokenWhitespace(std::string str);
-    virtual std::string generate() override;
+    std::string generate() const
+    {
+        return m_str;
+    }
 
 private:
     std::string m_str;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenComment : public EdifyToken
+class EdifyTokenComment
 {
 public:
-    EdifyTokenComment(std::string str);
-    virtual std::string generate() override;
+    EdifyTokenComment(std::string str) : m_str(std::move(str))
+    {
+    }
+
+    std::string generate() const
+    {
+        return '#' + m_str;
+    }
 
 private:
     std::string m_str;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenString : public EdifyToken
+class EdifyTokenString
 {
 public:
-    enum Type {
-        NotQuoted,
-        MakeQuoted,
-        AlreadyQuoted
-    };
+    static oc::result<EdifyTokenString> from_raw(std::string str, bool quoted);
+    static oc::result<EdifyTokenString> from_string(std::string str, bool make_quoted);
 
-    EdifyTokenString(std::string str, Type type);
-    virtual std::string generate() override;
+    std::string generate() const;
 
-    std::string unescaped_string();
-    std::string string();
+    oc::result<std::string> unescaped_string() const;
+
+    std::string raw_string() const;
+
+    bool quoted() const;
+
+    static bool is_valid_unquoted(char c);
 
 protected:
     std::string m_str;
-    Type m_type;
     bool m_quoted;
 
-    static void escape(const std::string &str, std::string *out);
-    static bool unescape(const std::string &str, std::string *out);
+    EdifyTokenString() = default;
+
+    static std::string escape(std::string_view str);
+    static oc::result<std::string> unescape(std::string_view str);
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-class EdifyTokenUnknown : public EdifyToken
+class EdifyTokenUnknown
 {
 public:
-    EdifyTokenUnknown(char c);
-    virtual std::string generate() override;
+    EdifyTokenUnknown(char c) : m_char(c)
+    {
+    }
+
+    std::string generate() const
+    {
+        return std::string(1, m_char);
+    }
 
 private:
     char m_char;
 };
 
-////////////////////////////////////////////////////////////////////////////////
+using EdifyToken = std::variant<
+    EdifyTokenIf,
+    EdifyTokenThen,
+    EdifyTokenElse,
+    EdifyTokenEndif,
+    EdifyTokenAnd,
+    EdifyTokenOr,
+    EdifyTokenEquals,
+    EdifyTokenNotEquals,
+    EdifyTokenNot,
+    EdifyTokenLeftParen,
+    EdifyTokenRightParen,
+    EdifyTokenSemicolon,
+    EdifyTokenComma,
+    EdifyTokenConcat,
+    EdifyTokenNewline,
+    EdifyTokenWhitespace,
+    EdifyTokenComment,
+    EdifyTokenString,
+    EdifyTokenUnknown
+>;
 
 class EdifyTokenizer
 {
 public:
-    static bool tokenize(const char *data, std::size_t size,
-                         std::vector<EdifyToken *> *tokens);
-    static std::string untokenize(const std::vector<EdifyToken *> &tokens);
-    static std::string untokenize(const std::vector<EdifyToken *>::iterator &begin,
-                                  const std::vector<EdifyToken *>::iterator &end);
+    static oc::result<std::vector<EdifyToken>> tokenize(std::string_view str);
+    static std::string untokenize(const std::vector<EdifyToken> &tokens);
+    static std::string untokenize(std::vector<EdifyToken>::const_iterator begin,
+                                  std::vector<EdifyToken>::const_iterator end);
 
-    static void dump(const std::vector<EdifyToken *> &tokens);
+    static void dump(const std::vector<EdifyToken> &tokens);
 
 private:
-    static bool is_valid_unquoted(char c);
-
-    static bool next_token(const char *data, std::size_t size, std::size_t *pos,
-                           EdifyToken **token);
+    static oc::result<EdifyToken> next_token(std::string_view str,
+                                             std::size_t &consumed);
 
     MB_DISABLE_DEFAULT_CONSTRUCTOR(EdifyTokenizer)
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(EdifyTokenizer)
@@ -292,4 +303,11 @@ private:
 };
 
 }
+
+namespace std
+{
+    template<>
+    struct MB_EXPORT is_error_code_enum<mb::patcher::EdifyError> : true_type
+    {
+    };
 }

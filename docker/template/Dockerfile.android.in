@@ -1,4 +1,4 @@
-# Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2017-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
 FROM @REPO@:@VERSION@-@RELEASE@-base
 
 # Install Android SDK
-ARG ANDROID_SDK_VERSION=3859397
-ARG ANDROID_SDK_CHECKSUM=444e22ce8ca0f67353bda4b85175ed3731cae3ffa695ca18119cbacef1c1bea0
+ARG ANDROID_SDK_VERSION=4333796
+ARG ANDROID_SDK_CHECKSUM=92ffee5a1d98d856634e8b71132e8a95d96c83a63fde1099be3d86df3106def9
 ENV ANDROID_HOME /opt/android-sdk
 
 RUN mkdir ${ANDROID_HOME} \
@@ -31,27 +31,18 @@ RUN mkdir ${ANDROID_HOME} \
     && dnf clean all
 
 # Install Android SDK dependencies
-RUN dnf -y install java-1.8.0-openjdk-devel glibc.i686 libstdc++.i686 \
+RUN dnf -y install java-1.8.0-openjdk-devel glibc.i686 libstdc++.i686 which \
     && dnf clean all
 
 # Set up path
 ENV PATH ${PATH}:${ANDROID_NDK_HOME}:${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools
 
 # Install Android SDK components
-# Change to "sdkmanager --licenses" once it's available in a stable release
-RUN mkdir -p "${ANDROID_HOME}/licenses" \
-    && echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" \
-        > "${ANDROID_HOME}/licenses/android-sdk-license" \
-    && sdkmanager \
-        'build-tools;25.0.3' \
-        'extras;android;m2repository' \
-        'extras;google;m2repository' \
-        'platforms;android-25' \
-        'platform-tools' \
-        'tools'
-
-# Gradle uses hardcoded references to JVM internals
-# - https://bugzilla.redhat.com/show_bug.cgi?id=1448802
-# - https://github.com/gradle/gradle/issues/1782
-RUN ln -s /etc/pki/java/cacerts \
-    /usr/lib/jvm/java-1.8.0-openjdk/jre/lib/security/cacerts
+RUN yes | sdkmanager \
+    'build-tools;28.0.3' \
+    'extras;android;m2repository' \
+    'extras;google;m2repository' \
+    'platforms;android-28' \
+    'platform-tools' \
+    'tools' \
+    | grep -v '\[[= ]\+\]'

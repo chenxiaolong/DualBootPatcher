@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,120 +19,37 @@
 
 #include "mbutil/cmdline.h"
 
-#include <vector>
+#include "mbcommon/string.h"
 
-#include <cerrno>
-#include <cstring>
-
-#include <fcntl.h>
-#include <unistd.h>
-
-#include "mblog/logging.h"
 #include "mbutil/file.h"
-#include "mbutil/string.h"
 
-namespace mb
-{
-namespace util
+
+namespace mb::util
 {
 
-bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata)
+oc::result<KernelCmdlineArgs> kernel_cmdline()
 {
-    char buf[10240];
+    OUTCOME_TRY(data, file_read_all("/proc/cmdline"));
 
-    int fd = open("/proc/cmdline", O_RDONLY);
-    if (fd < 0) {
-        LOGE("%s: Failed to open file: %s", "/proc/cmdline", strerror(errno));
-        return false;
+    if (!data.empty() && data.back() == '\n') {
+        data.pop_back();
     }
 
-    ssize_t n = read(fd, buf, sizeof(buf) - 1);
-    if (n < 0) {
-        LOGE("%s: Failed to read file: %s", "/proc/cmdline", strerror(errno));
-        close(fd);
-        return false;
-    }
+    KernelCmdlineArgs result;
 
-    close(fd);
-
-    // Truncate newline and NULL-terminate
-    if (n > 0 && buf[n - 1] == '\n') {
-        --n;
-    }
-    buf[n] = '\0';
-
-    LOGD("Kernel cmdline: %s", buf);
-
-    char *save_ptr;
-    char *token;
-
-    for (token = strtok_r(buf, " ", &save_ptr); token;
-            token = strtok_r(nullptr, " ", &save_ptr)) {
-        const char *name = token;
-        const char *value = nullptr;
-
-        char *equals = strchr(token, '=');
-        if (equals) {
-            *equals = '\0';
-            value = equals + 1;
-        }
-
-        CmdlineIterAction action = fn(name, value, userdata);
-        switch (action) {
-        case CmdlineIterAction::Continue:
+    for (auto const &item : split_sv(data, " ")) {
+        if (item.empty()) {
             continue;
-        case CmdlineIterAction::Stop:
-            break;
-        case CmdlineIterAction::Error:
-        default:
-            return false;
         }
-    }
 
-    return true;
-}
-
-struct Ctx
-{
-    const char *option;
-    bool exists;
-    std::string value;
-};
-
-static CmdlineIterAction get_option_cb(const char *name, const char *value,
-                                       void *userdata)
-{
-    Ctx *ctx = static_cast<Ctx *>(userdata);
-
-    if (strcmp(name, ctx->option) == 0) {
-        if (value) {
-            ctx->exists = true;
-            ctx->value = value;
+        if (auto pos = item.find('='); pos != std::string_view::npos) {
+            result.emplace(item.substr(0, pos), item.substr(pos + 1));
         } else {
-            ctx->exists = false;
+            result.emplace(item, std::nullopt);
         }
-        return CmdlineIterAction::Stop;
     }
 
-    return CmdlineIterAction::Continue;
+    return std::move(result);
 }
 
-bool kernel_cmdline_get_option(const char *option, std::string *out)
-{
-    Ctx ctx;
-    ctx.option = option;
-
-    if (!kernel_cmdline_iter(get_option_cb, &ctx)) {
-        return false;
-    }
-
-    if (ctx.exists) {
-        out->swap(ctx.value);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-}
 }

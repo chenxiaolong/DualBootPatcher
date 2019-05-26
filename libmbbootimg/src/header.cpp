@@ -23,341 +23,204 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "mbbootimg/defs.h"
-#include "mbbootimg/header_p.h"
-#include "mbbootimg/macros_p.h"
+#define IS_SUPPORTED(FLAG) \
+    (m_fields_supported & (FLAG))
+
+#define ENSURE_SUPPORTED(FLAG) \
+    do { \
+        if (!IS_SUPPORTED(FLAG)) { \
+            return false; \
+        } \
+    } while (0)
 
 
-MB_BEGIN_C_DECLS
-
-MbBiHeader * mb_bi_header_new()
+namespace mb::bootimg
 {
-    MbBiHeader *header = static_cast<MbBiHeader *>(calloc(1, sizeof(*header)));
-    if (header) {
-        header->fields_supported = MB_BI_HEADER_ALL_FIELDS;
-    }
-    return header;
+
+Header::Header() noexcept
+    : m_fields_supported(ALL_FIELDS)
+{
 }
 
-void mb_bi_header_free(MbBiHeader *header)
+Header::~Header() noexcept = default;
+
+bool Header::operator==(const Header &rhs) const noexcept
 {
-    mb_bi_header_clear(header);
-    free(header);
+    return m_kernel_addr == rhs.m_kernel_addr
+            && m_ramdisk_addr == rhs.m_ramdisk_addr
+            && m_second_addr == rhs.m_second_addr
+            && m_tags_addr == rhs.m_tags_addr
+            && m_ipl_addr == rhs.m_ipl_addr
+            && m_rpm_addr == rhs.m_rpm_addr
+            && m_appsbl_addr == rhs.m_appsbl_addr
+            && m_page_size == rhs.m_page_size
+            && m_board_name == rhs.m_board_name
+            && m_cmdline == rhs.m_cmdline
+            && m_hdr_kernel_size == rhs.m_hdr_kernel_size
+            && m_hdr_ramdisk_size == rhs.m_hdr_ramdisk_size
+            && m_hdr_second_size == rhs.m_hdr_second_size
+            && m_hdr_dt_size == rhs.m_hdr_dt_size
+            && m_hdr_unused == rhs.m_hdr_unused
+            && m_hdr_id[0] == rhs.m_hdr_id[0]
+            && m_hdr_id[1] == rhs.m_hdr_id[1]
+            && m_hdr_id[2] == rhs.m_hdr_id[2]
+            && m_hdr_id[3] == rhs.m_hdr_id[3]
+            && m_hdr_id[4] == rhs.m_hdr_id[4]
+            && m_hdr_id[5] == rhs.m_hdr_id[5]
+            && m_hdr_id[6] == rhs.m_hdr_id[6]
+            && m_hdr_id[7] == rhs.m_hdr_id[7]
+            && m_hdr_entrypoint == rhs.m_hdr_entrypoint;
 }
 
-void mb_bi_header_clear(MbBiHeader *header)
+bool Header::operator!=(const Header &rhs) const noexcept
 {
-    if (header) {
-        uint64_t supported = header->fields_supported;
-        free(header->field.board_name);
-        free(header->field.cmdline);
-        memset(header, 0, sizeof(*header));
-        header->fields_supported = supported;
-    }
+    return !(*this == rhs);
 }
 
-MbBiHeader * mb_bi_header_clone(MbBiHeader *header)
+// Supported fields
+
+HeaderFields Header::supported_fields() const
 {
-    MbBiHeader *dup;
-
-    dup = mb_bi_header_new();
-    if (!dup) {
-        return nullptr;
-    }
-
-    // Copy global options
-    dup->fields_supported = header->fields_supported;
-    dup->fields_set = header->fields_set;
-
-    // Shallow copy trivial fields
-    dup->field.kernel_addr = header->field.kernel_addr;
-    dup->field.ramdisk_addr = header->field.ramdisk_addr;
-    dup->field.second_addr = header->field.second_addr;
-    dup->field.tags_addr = header->field.tags_addr;
-    dup->field.ipl_addr = header->field.ipl_addr;
-    dup->field.rpm_addr = header->field.rpm_addr;
-    dup->field.appsbl_addr = header->field.appsbl_addr;
-    dup->field.page_size = header->field.page_size;
-    dup->field.hdr_kernel_size = header->field.hdr_kernel_size;
-    dup->field.hdr_ramdisk_size = header->field.hdr_ramdisk_size;
-    dup->field.hdr_second_size = header->field.hdr_second_size;
-    dup->field.hdr_dt_size = header->field.hdr_dt_size;
-    dup->field.hdr_unused = header->field.hdr_unused;
-    memcpy(dup->field.hdr_id, header->field.hdr_id,
-           sizeof(header->field.hdr_id));
-    dup->field.hdr_entrypoint = header->field.hdr_entrypoint;
-
-    // Deep copy strings
-    bool deep_copy_error =
-            (header->field.board_name
-                    && !(dup->field.board_name = strdup(header->field.board_name)))
-            || (header->field.cmdline
-                    && !(dup->field.cmdline = strdup(header->field.cmdline)));
-
-    if (deep_copy_error) {
-        mb_bi_header_free(dup);
-        return nullptr;
-    }
-
-    return dup;
+    return m_fields_supported;
 }
 
-uint64_t mb_bi_header_supported_fields(MbBiHeader *header)
+void Header::set_supported_fields(HeaderFields fields)
 {
-    return header->fields_supported;
-}
-
-void mb_bi_header_set_supported_fields(MbBiHeader *header, uint64_t fields)
-{
-    header->fields_supported = fields & MB_BI_HEADER_ALL_FIELDS;
+    m_fields_supported = fields & ALL_FIELDS;
 }
 
 // Fields
 
-const char * mb_bi_header_board_name(MbBiHeader *header)
+std::optional<std::string> Header::board_name() const
 {
-    return header->field.board_name;
+    return m_board_name;
 }
 
-int mb_bi_header_set_board_name(MbBiHeader *header, const char *name)
+bool Header::set_board_name(std::optional<std::string> name)
 {
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_BOARD_NAME);
-    SET_STRING_FIELD(header, MB_BI_HEADER_FIELD_BOARD_NAME, board_name, name);
-    return MB_BI_OK;
+    ENSURE_SUPPORTED(HeaderField::BoardName);
+    m_board_name = std::move(name);
+    return true;
 }
 
-const char * mb_bi_header_kernel_cmdline(MbBiHeader *header)
+std::optional<std::string> Header::kernel_cmdline() const
 {
-    return header->field.cmdline;
+    return m_cmdline;
 }
 
-int mb_bi_header_set_kernel_cmdline(MbBiHeader *header, const char *cmdline)
+bool Header::set_kernel_cmdline(std::optional<std::string> cmdline)
 {
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_KERNEL_CMDLINE);
-    SET_STRING_FIELD(header, MB_BI_HEADER_FIELD_KERNEL_CMDLINE,
-                     cmdline, cmdline);
-    return MB_BI_OK;
+    ENSURE_SUPPORTED(HeaderField::KernelCmdline);
+    m_cmdline = std::move(cmdline);
+    return true;
 }
 
-int mb_bi_header_page_size_is_set(MbBiHeader *header)
+std::optional<uint32_t> Header::page_size() const
 {
-    return IS_SET(header, MB_BI_HEADER_FIELD_PAGE_SIZE);
+    return m_page_size;
 }
 
-uint32_t mb_bi_header_page_size(MbBiHeader *header)
+bool Header::set_page_size(std::optional<uint32_t> page_size)
 {
-    return header->field.page_size;
+    ENSURE_SUPPORTED(HeaderField::PageSize);
+    m_page_size = std::move(page_size);
+    return true;
 }
 
-int mb_bi_header_set_page_size(MbBiHeader *header, uint32_t page_size)
+std::optional<uint32_t> Header::kernel_address() const
 {
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_PAGE_SIZE);
-    SET_FIELD(header, MB_BI_HEADER_FIELD_PAGE_SIZE, page_size, page_size);
-    return MB_BI_OK;
+    return m_kernel_addr;
 }
 
-int mb_bi_header_unset_page_size(MbBiHeader *header)
+bool Header::set_kernel_address(std::optional<uint32_t> address)
 {
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_PAGE_SIZE);
-    UNSET_FIELD(header, MB_BI_HEADER_FIELD_PAGE_SIZE, page_size, 0);
-    return MB_BI_OK;
+    ENSURE_SUPPORTED(HeaderField::KernelAddress);
+    m_kernel_addr = std::move(address);
+    return true;
 }
 
-int mb_bi_header_kernel_address_is_set(MbBiHeader *header)
+std::optional<uint32_t> Header::ramdisk_address() const
 {
-    return IS_SET(header, MB_BI_HEADER_FIELD_KERNEL_ADDRESS);
+    return m_ramdisk_addr;
 }
 
-uint32_t mb_bi_header_kernel_address(MbBiHeader *header)
+bool Header::set_ramdisk_address(std::optional<uint32_t> address)
 {
-    return header->field.kernel_addr;
+    ENSURE_SUPPORTED(HeaderField::RamdiskAddress);
+    m_ramdisk_addr = std::move(address);
+    return true;
 }
 
-int mb_bi_header_set_kernel_address(MbBiHeader *header, uint32_t address)
+std::optional<uint32_t> Header::secondboot_address() const
 {
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_KERNEL_ADDRESS);
-    SET_FIELD(header, MB_BI_HEADER_FIELD_KERNEL_ADDRESS, kernel_addr, address);
-    return MB_BI_OK;
+    return m_second_addr;
 }
 
-int mb_bi_header_unset_kernel_address(MbBiHeader *header)
+bool Header::set_secondboot_address(std::optional<uint32_t> address)
 {
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_KERNEL_ADDRESS);
-    UNSET_FIELD(header, MB_BI_HEADER_FIELD_KERNEL_ADDRESS, kernel_addr, 0);
-    return MB_BI_OK;
+    ENSURE_SUPPORTED(HeaderField::SecondbootAddress);
+    m_second_addr = std::move(address);
+    return true;
 }
 
-int mb_bi_header_ramdisk_address_is_set(MbBiHeader *header)
+std::optional<uint32_t> Header::kernel_tags_address() const
 {
-    return IS_SET(header, MB_BI_HEADER_FIELD_RAMDISK_ADDRESS);
+    return m_tags_addr;
 }
 
-uint32_t mb_bi_header_ramdisk_address(MbBiHeader *header)
+bool Header::set_kernel_tags_address(std::optional<uint32_t> address)
 {
-    return header->field.ramdisk_addr;
+    ENSURE_SUPPORTED(HeaderField::KernelTagsAddress);
+    m_tags_addr = std::move(address);
+    return true;
 }
 
-int mb_bi_header_set_ramdisk_address(MbBiHeader *header, uint32_t address)
+std::optional<uint32_t> Header::sony_ipl_address() const
 {
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_RAMDISK_ADDRESS);
-    SET_FIELD(header, MB_BI_HEADER_FIELD_RAMDISK_ADDRESS,
-              ramdisk_addr, address);
-    return MB_BI_OK;
+    return m_ipl_addr;
 }
 
-int mb_bi_header_unset_ramdisk_address(MbBiHeader *header)
+bool Header::set_sony_ipl_address(std::optional<uint32_t> address)
 {
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_RAMDISK_ADDRESS);
-    UNSET_FIELD(header, MB_BI_HEADER_FIELD_RAMDISK_ADDRESS,
-                ramdisk_addr, 0);
-    return MB_BI_OK;
+    ENSURE_SUPPORTED(HeaderField::SonyIplAddress);
+    m_ipl_addr = std::move(address);
+    return true;
 }
 
-int mb_bi_header_secondboot_address_is_set(MbBiHeader *header)
+std::optional<uint32_t> Header::sony_rpm_address() const
 {
-    return IS_SET(header, MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS);
+    return m_rpm_addr;
 }
 
-uint32_t mb_bi_header_secondboot_address(MbBiHeader *header)
+bool Header::set_sony_rpm_address(std::optional<uint32_t> address)
 {
-    return header->field.second_addr;
+    ENSURE_SUPPORTED(HeaderField::SonyRpmAddress);
+    m_rpm_addr = std::move(address);
+    return true;
 }
 
-int mb_bi_header_set_secondboot_address(MbBiHeader *header, uint32_t address)
+std::optional<uint32_t> Header::sony_appsbl_address() const
 {
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS);
-    SET_FIELD(header, MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS,
-              second_addr, address);
-    return MB_BI_OK;
+    return m_appsbl_addr;
 }
 
-int mb_bi_header_unset_secondboot_address(MbBiHeader *header)
+bool Header::set_sony_appsbl_address(std::optional<uint32_t> address)
 {
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS);
-    UNSET_FIELD(header, MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS, second_addr, 0);
-    return MB_BI_OK;
+    ENSURE_SUPPORTED(HeaderField::SonyAppsblAddress);
+    m_appsbl_addr = std::move(address);
+    return true;
 }
 
-int mb_bi_header_kernel_tags_address_is_set(MbBiHeader *header)
+std::optional<uint32_t> Header::entrypoint_address() const
 {
-    return IS_SET(header, MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS);
+    return m_hdr_entrypoint;
 }
 
-uint32_t mb_bi_header_kernel_tags_address(MbBiHeader *header)
+bool Header::set_entrypoint_address(std::optional<uint32_t> address)
 {
-    return header->field.tags_addr;
+    ENSURE_SUPPORTED(HeaderField::Entrypoint);
+    m_hdr_entrypoint = std::move(address);
+    return true;
 }
 
-int mb_bi_header_set_kernel_tags_address(MbBiHeader *header, uint32_t address)
-{
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS);
-    SET_FIELD(header, MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS,
-              tags_addr, address);
-    return MB_BI_OK;
 }
-
-int mb_bi_header_unset_kernel_tags_address(MbBiHeader *header)
-{
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS);
-    UNSET_FIELD(header, MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS, tags_addr, 0);
-    return MB_BI_OK;
-}
-
-int mb_bi_header_sony_ipl_address_is_set(MbBiHeader *header)
-{
-    return IS_SET(header, MB_BI_HEADER_FIELD_SONY_IPL_ADDRESS);
-}
-
-uint32_t mb_bi_header_sony_ipl_address(MbBiHeader *header)
-{
-    return header->field.ipl_addr;
-}
-
-int mb_bi_header_set_sony_ipl_address(MbBiHeader *header, uint32_t address)
-{
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_SONY_IPL_ADDRESS);
-    SET_FIELD(header, MB_BI_HEADER_FIELD_SONY_IPL_ADDRESS, ipl_addr, address);
-    return MB_BI_OK;
-}
-
-int mb_bi_header_unset_sony_ipl_address(MbBiHeader *header)
-{
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_SONY_IPL_ADDRESS);
-    UNSET_FIELD(header, MB_BI_HEADER_FIELD_SONY_IPL_ADDRESS, ipl_addr, 0);
-    return MB_BI_OK;
-}
-
-int mb_bi_header_sony_rpm_address_is_set(MbBiHeader *header)
-{
-    return IS_SET(header, MB_BI_HEADER_FIELD_SONY_RPM_ADDRESS);
-}
-
-uint32_t mb_bi_header_sony_rpm_address(MbBiHeader *header)
-{
-    return header->field.rpm_addr;
-}
-
-int mb_bi_header_set_sony_rpm_address(MbBiHeader *header, uint32_t address)
-{
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_SONY_RPM_ADDRESS);
-    SET_FIELD(header, MB_BI_HEADER_FIELD_SONY_RPM_ADDRESS, rpm_addr, address);
-    return MB_BI_OK;
-}
-
-int mb_bi_header_unset_sony_rpm_address(MbBiHeader *header)
-{
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_SONY_RPM_ADDRESS);
-    UNSET_FIELD(header, MB_BI_HEADER_FIELD_SONY_RPM_ADDRESS, rpm_addr, 0);
-    return MB_BI_OK;
-}
-
-int mb_bi_header_sony_appsbl_address_is_set(MbBiHeader *header)
-{
-    return IS_SET(header, MB_BI_HEADER_FIELD_SONY_APPSBL_ADDRESS);
-}
-
-uint32_t mb_bi_header_sony_appsbl_address(MbBiHeader *header)
-{
-    return header->field.appsbl_addr;
-}
-
-int mb_bi_header_set_sony_appsbl_address(MbBiHeader *header, uint32_t address)
-{
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_SONY_APPSBL_ADDRESS);
-    SET_FIELD(header, MB_BI_HEADER_FIELD_SONY_APPSBL_ADDRESS,
-              appsbl_addr, address);
-    return MB_BI_OK;
-}
-
-int mb_bi_header_unset_sony_appsbl_address(MbBiHeader *header)
-{
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_SONY_APPSBL_ADDRESS);
-    UNSET_FIELD(header, MB_BI_HEADER_FIELD_SONY_APPSBL_ADDRESS, appsbl_addr, 0);
-    return MB_BI_OK;
-}
-
-int mb_bi_header_entrypoint_address_is_set(MbBiHeader *header)
-{
-    return IS_SET(header, MB_BI_HEADER_FIELD_ENTRYPOINT);
-}
-
-uint32_t mb_bi_header_entrypoint_address(MbBiHeader *header)
-{
-    return header->field.hdr_entrypoint;
-}
-
-int mb_bi_header_set_entrypoint_address(MbBiHeader *header, uint32_t address)
-{
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_ENTRYPOINT);
-    SET_FIELD(header, MB_BI_HEADER_FIELD_ENTRYPOINT, hdr_entrypoint, address);
-    return MB_BI_OK;
-}
-
-int mb_bi_header_unset_entrypoint_address(MbBiHeader *header)
-{
-    ENSURE_SUPPORTED(header, MB_BI_HEADER_FIELD_ENTRYPOINT);
-    UNSET_FIELD(header, MB_BI_HEADER_FIELD_ENTRYPOINT, hdr_entrypoint, 0);
-    return MB_BI_OK;
-}
-
-MB_END_C_DECLS

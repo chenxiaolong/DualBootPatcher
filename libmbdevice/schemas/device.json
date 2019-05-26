@@ -1,0 +1,264 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://dbp.noobdev.io/schemas/device.json",
+    "definitions": {
+        "dev_path": {
+            "type": "string",
+            "pattern": "^/dev/[^/]+(/[^/]+)*$"
+        },
+        "dev_path_list": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+                "$ref": "#/definitions/dev_path"
+            }
+        },
+        "sysfs_path": {
+            "type": "string",
+            "pattern": "^/sys/[^/]+(/[^/]+)*$"
+        },
+        "absolute_path": {
+            "type": "string",
+            "pattern": "^/[^/]+(/[^/]+)*$"
+        }
+    },
+    "title": "Device definition",
+    "description": "Contains all necessary information about a device to allow it to work with DualBootPatcher",
+    "type": "object",
+    "properties": {
+        "name": {
+            "title": "Human readable device name",
+            "type": "string",
+            "minLength": 1
+        },
+        "id": {
+            "title": "Device ID",
+            "description": "The device ID can be any string unique to the set of supported devices. It can be any non-empty string, but should match the device's codename or model if possible.",
+            "type": "string",
+            "minLength": 1
+        },
+        "codenames": {
+            "title": "List of device codenames",
+            "description": "The codename is the value of 'ro.product.device' or 'ro.build.product' in the /system/build.prop file. WARNING: All of the devices listed MUST have the same partition table. Otherwise, there's a chance of hard-bricking the device.",
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+                "type": "string",
+                "minLength": 1
+            }
+        },
+        "architecture": {
+            "title": "Device architecture",
+            "description": "Target Android ABI. Binaries compiled for the selected ABI will be used during flashing and normal operation of the app.",
+            "type": "string",
+            "enum": [
+                "armeabi-v7a",
+                "arm64-v8a",
+                "x86",
+                "x86_64"
+            ]
+        },
+        "flags": {
+            "title": "List of device flags",
+            "description": "The device flags control DualBootPatcher behavior for the device.",
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+                "type": "string",
+                "enum": [
+                    "HAS_COMBINED_BOOT_AND_RECOVERY",
+                    "FSTAB_SKIP_SDCARD0"
+                ]
+            }
+        },
+        "block_devs": {
+            "title": "Block device paths",
+            "type": "object",
+            "properties": {
+                "base_dirs": {
+                    "title": "Base directories",
+                    "description": "This is a list of the 'by-name' directories in /dev/ that contain the partition block devices.",
+                    "$ref": "#/definitions/dev_path_list"
+                },
+                "system": {
+                    "title": "System partition block device paths",
+                    "type": "array",
+                    "$ref": "#/definitions/dev_path_list"
+                },
+                "cache": {
+                    "title": "Cache partition block device paths",
+                    "type": "array",
+                    "$ref": "#/definitions/dev_path_list"
+                },
+                "data": {
+                    "title": "Data partition block device paths",
+                    "type": "array",
+                    "$ref": "#/definitions/dev_path_list"
+                },
+                "boot": {
+                    "title": "Boot partition block device paths",
+                    "type": "array",
+                    "$ref": "#/definitions/dev_path_list"
+                },
+                "recovery": {
+                    "title": "Recovery partition block device paths",
+                    "type": "array",
+                    "$ref": "#/definitions/dev_path_list"
+                },
+                "extra": {
+                    "title": "Extra block device paths",
+                    "description": "This is a list of block devices that will be available during the flashing process. Any block devices not listed here cannot be touched by a ROM's installer.",
+                    "$ref": "#/definitions/dev_path_list"
+                }
+            },
+            "required": [
+                "system",
+                "cache",
+                "data",
+                "boot"
+            ],
+            "additionalProperties": false
+        },
+        "boot_ui": {
+            "title": "Boot UI",
+            "type": "object",
+            "properties": {
+                "supported": {
+                    "title": "Whether Boot UI is supported",
+                    "type": "boolean"
+                },
+                "flags": {
+                    "title": "List of TWRP flags",
+                    "description": "These flags correspond to the TWRP flags with the same name.",
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "TW_TOUCHSCREEN_SWAP_XY",
+                            "TW_TOUCHSCREEN_FLIP_X",
+                            "TW_TOUCHSCREEN_FLIP_Y",
+                            "TW_GRAPHICS_FORCE_USE_LINELENGTH",
+                            "TW_SCREEN_BLANK_ON_BOOT",
+                            "TW_BOARD_HAS_FLIPPED_SCREEN",
+                            "TW_IGNORE_MAJOR_AXIS_0",
+                            "TW_IGNORE_MT_POSITION_0",
+                            "TW_IGNORE_ABS_MT_TRACKING_ID",
+                            "TW_NEW_ION_HEAP",
+                            "TW_NO_SCREEN_BLANK",
+                            "TW_NO_SCREEN_TIMEOUT",
+                            "TW_ROUND_SCREEN",
+                            "TW_NO_CPU_TEMP",
+                            "TW_QCOM_RTC_FIX",
+                            "TW_HAS_DOWNLOAD_MODE",
+                            "TW_PREFER_LCD_BACKLIGHT"
+                        ]
+                    }
+                },
+                "pixel_format": {
+                    "title": "TWRP pixel format",
+                    "type": "string",
+                    "enum": [
+                        "DEFAULT",
+                        "ABGR_8888",
+                        "RGBX_8888",
+                        "BGRA_8888",
+                        "RGBA_8888"
+                    ]
+                },
+                "force_pixel_format": {
+                    "title": "TWRP force pixel format",
+                    "type": "string",
+                    "enum": [
+                        "NONE",
+                        "RGB_565"
+                    ]
+                },
+                "overscan_percent": {
+                    "title": "TWRP overscan percentage",
+                    "type": "integer"
+                },
+                "default_x_offset": {
+                    "title": "TWRP default X offset",
+                    "type": "integer"
+                },
+                "default_y_offset": {
+                    "title": "TWRP default Y offset",
+                    "type": "integer"
+                },
+                "brightness_path": {
+                    "title": "TWRP brightness sysfs path",
+                    "$ref": "#/definitions/sysfs_path"
+                },
+                "secondary_brightness_path": {
+                    "title": "TWRP secondary brightness sysfs path",
+                    "$ref": "#/definitions/sysfs_path"
+                },
+                "max_brightness": {
+                    "title": "TWRP max brightness",
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "default_brightness": {
+                    "title": "TWRP default brightness",
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "battery_path": {
+                    "title": "TWRP battery sysfs path",
+                    "$ref": "#/definitions/sysfs_path"
+                },
+                "cpu_temp_path": {
+                    "title": "TWRP CPU temperature sys path",
+                    "$ref": "#/definitions/sysfs_path"
+                },
+                "input_blacklist": {
+                    "title": "TWRP input device blacklist",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "input_whitelist": {
+                    "title": "TWRP input device whitelist",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "graphics_backends": {
+                    "title": "TWRP graphics backend list",
+                    "type": "array",
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "overlay_msm_old",
+                            "drm",
+                            "fbdev"
+                        ]
+                    }
+                },
+                "theme": {
+                    "title": "TWRP theme",
+                    "type": "string",
+                    "enum": [
+                        "portrait_hdpi"
+                    ]
+                }
+            },
+            "required": [
+                "graphics_backends",
+                "theme"
+            ],
+            "additionalProperties": false
+        }
+    },
+    "required": [
+        "name",
+        "id",
+        "codenames",
+        "architecture",
+        "block_devs"
+    ],
+    "additionalProperties": false
+}

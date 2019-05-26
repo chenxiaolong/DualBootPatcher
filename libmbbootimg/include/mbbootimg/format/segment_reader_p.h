@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,72 +21,57 @@
 
 #include "mbbootimg/guard_p.h"
 
-#ifdef __cplusplus
-#  include <cstdint>
-#else
-#  include <stdint.h>
-#endif
+#include <optional>
+#include <vector>
 
-#include "mbbootimg/reader.h"
+#include <cstdint>
 
-#define SEGMENT_READER_MAX_ENTRIES      10
+#include "mbcommon/file.h"
 
-enum
-#ifdef __cplusplus
-class
-#endif
-SegmentReaderState
+#include "mbbootimg/entry.h"
+
+namespace mb::bootimg
 {
-    BEGIN,
-    ENTRIES,
-    END,
+
+enum class SegmentReaderState
+{
+    Begin,
+    Entries,
+    End,
 };
 
 struct SegmentReaderEntry
 {
-    int type;
+    EntryType type;
     uint64_t offset;
     uint32_t size;
     bool can_truncate;
 };
 
-struct SegmentReaderCtx
+class SegmentReader
 {
-    enum SegmentReaderState state;
+public:
+    SegmentReader() noexcept;
 
-    struct SegmentReaderEntry entries[SEGMENT_READER_MAX_ENTRIES];
-    size_t entries_len;
-    struct SegmentReaderEntry *entry;
+    const std::vector<SegmentReaderEntry> & entries() const;
+    oc::result<void> set_entries(std::vector<SegmentReaderEntry> entries);
 
-    uint64_t read_start_offset;
-    uint64_t read_end_offset;
-    uint64_t read_cur_offset;
+    oc::result<Entry> move_to_entry(File &file,
+                                    std::vector<SegmentReaderEntry>::iterator srentry);
+
+    oc::result<Entry> read_entry(File &file);
+    oc::result<Entry> go_to_entry(File &file, std::optional<EntryType> entry_type);
+    oc::result<size_t> read_data(File &file, void *buf, size_t buf_size);
+
+private:
+    SegmentReaderState m_state;
+
+    std::vector<SegmentReaderEntry> m_entries;
+    decltype(m_entries)::iterator m_entry;
+
+    uint64_t m_read_start_offset;
+    uint64_t m_read_end_offset;
+    uint64_t m_read_cur_offset;
 };
 
-int _segment_reader_init(struct SegmentReaderCtx *ctx);
-int _segment_reader_deinit(struct SegmentReaderCtx *ctx);
-
-size_t _segment_reader_entries_size(struct SegmentReaderCtx *ctx);
-void _segment_reader_entries_clear(struct SegmentReaderCtx *ctx);
-int _segment_reader_entries_add(struct SegmentReaderCtx *ctx,
-                                int type, uint64_t offset, uint32_t size,
-                                bool can_truncate, struct MbBiReader *bir);
-
-struct SegmentReaderEntry * _segment_reader_entry(struct SegmentReaderCtx *ctx);
-struct SegmentReaderEntry * _segment_reader_next_entry(struct SegmentReaderCtx *ctx);
-struct SegmentReaderEntry * _segment_reader_find_entry(struct SegmentReaderCtx *ctx,
-                                                       int entry_type);
-
-int _segment_reader_move_to_entry(struct SegmentReaderCtx *ctx, mb::File *file,
-                                  struct MbBiEntry *entry,
-                                  struct SegmentReaderEntry *srentry,
-                                  struct MbBiReader *bir);
-
-int _segment_reader_read_entry(struct SegmentReaderCtx *ctx, mb::File *file,
-                               struct MbBiEntry *entry, struct MbBiReader *bir);
-int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, mb::File *file,
-                                struct MbBiEntry *entry, int entry_type,
-                                struct MbBiReader *bir);
-int _segment_reader_read_data(struct SegmentReaderCtx *ctx, mb::File *file,
-                              void *buf, size_t buf_size, size_t &bytes_read,
-                              struct MbBiReader *bir);
+}

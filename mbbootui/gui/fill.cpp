@@ -4,6 +4,8 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG "mbbootui/gui/fill"
+
 GUIFill::GUIFill(xml_node<>* node) : GUIObject(node)
 {
     bool has_color = false;

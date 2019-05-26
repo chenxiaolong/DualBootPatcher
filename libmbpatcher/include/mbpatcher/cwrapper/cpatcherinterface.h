@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -25,10 +25,7 @@
 #include "mbcommon/common.h"
 #include "mbpatcher/cwrapper/ctypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+MB_BEGIN_C_DECLS
 
 typedef void (*ProgressUpdatedCallback) (uint64_t, uint64_t, void *);
 typedef void (*FilesUpdatedCallback) (uint64_t, uint64_t, void *);
@@ -38,10 +35,10 @@ MB_EXPORT /* enum ErrorCode */ int mbpatcher_patcher_error(const CPatcher *patch
 MB_EXPORT char * mbpatcher_patcher_id(const CPatcher *patcher);
 MB_EXPORT void mbpatcher_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info);
 MB_EXPORT bool mbpatcher_patcher_patch_file(CPatcher *patcher,
-                                            ProgressUpdatedCallback progressCb,
-                                      FilesUpdatedCallback filesCb,
-                                      DetailsUpdatedCallback detailsCb,
-                                      void *userData);
+                                            ProgressUpdatedCallback progress_cb,
+                                      FilesUpdatedCallback files_cb,
+                                      DetailsUpdatedCallback details_cb,
+                                      void *userdata);
 MB_EXPORT void mbpatcher_patcher_cancel_patching(CPatcher *patcher);
 
 
@@ -51,7 +48,4 @@ MB_EXPORT char ** mbpatcher_autopatcher_new_files(const CAutoPatcher *patcher);
 MB_EXPORT char ** mbpatcher_autopatcher_existing_files(const CAutoPatcher *patcher);
 MB_EXPORT bool mbpatcher_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory);
 
-
-#ifdef __cplusplus
-}
-#endif
+MB_END_C_DECLS

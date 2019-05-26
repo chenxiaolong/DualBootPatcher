@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,42 +21,42 @@
 
 #include "mbbootimg/guard_p.h"
 
-#include <openssl/sha.h>
+#include <optional>
 
-#include "mbbootimg/entry.h"
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/mtk_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
-#include "mbbootimg/header.h"
-#include "mbbootimg/writer.h"
+#include "mbbootimg/writer_p.h"
 
 
-MB_BEGIN_C_DECLS
-
-struct MtkWriterCtx
+namespace mb::bootimg::mtk
 {
+
+class MtkFormatWriter : public detail::FormatWriter
+{
+public:
+    MtkFormatWriter() noexcept;
+    virtual ~MtkFormatWriter() noexcept;
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MtkFormatWriter)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(MtkFormatWriter)
+
+    Format type() override;
+
+    oc::result<void> open(File &file) override;
+    oc::result<void> close(File &file) override;
+    oc::result<Header> get_header(File &file) override;
+    oc::result<void> write_header(File &file, const Header &header) override;
+    oc::result<Entry> get_entry(File &file) override;
+    oc::result<void> write_entry(File &file, const Entry &entry) override;
+    oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size) override;
+    oc::result<void> finish_entry(File &file) override;
+
+private:
     // Header values
-    struct AndroidHeader hdr;
+    android::AndroidHeader m_hdr;
 
-    bool have_file_size;
-    uint64_t file_size;
-
-    struct SegmentWriterCtx segctx;
+    std::optional<SegmentWriter> m_seg;
 };
 
-int mtk_writer_get_header(struct MbBiWriter *biw, void *userdata,
-                          struct MbBiHeader *header);
-int mtk_writer_write_header(struct MbBiWriter *biw, void *userdata,
-                            struct MbBiHeader *header);
-int mtk_writer_get_entry(struct MbBiWriter *biw, void *userdata,
-                         struct MbBiEntry *entry);
-int mtk_writer_write_entry(struct MbBiWriter *biw, void *userdata,
-                           struct MbBiEntry *entry);
-int mtk_writer_write_data(struct MbBiWriter *biw, void *userdata,
-                          const void *buf, size_t buf_size,
-                          size_t &bytes_written);
-int mtk_writer_finish_entry(struct MbBiWriter *biw, void *userdata);
-int mtk_writer_close(struct MbBiWriter *biw, void *userdata);
-int mtk_writer_free(struct MbBiWriter *bir, void *userdata);
-
-MB_END_C_DECLS
+}

@@ -19,19 +19,18 @@
 
 #pragma once
 
-#include "mbcommon/guard_p.h"
-
 #include <windows.h>
-
-#include "mbcommon/file/win32.h"
-#include "mbcommon/file_p.h"
 
 /*! \cond INTERNAL */
 namespace mb
 {
+namespace detail
+{
 
 struct Win32FileFuncs
 {
+    virtual ~Win32FileFuncs();
+
     // windows.h
     virtual BOOL fn_CloseHandle(HANDLE hObject) = 0;
     virtual HANDLE fn_CreateFileW(LPCWSTR lpFileName,
@@ -46,7 +45,10 @@ struct Win32FileFuncs
                              DWORD nNumberOfBytesToRead,
                              LPDWORD lpNumberOfBytesRead,
                              LPOVERLAPPED lpOverlapped) = 0;
-    virtual BOOL fn_SetEndOfFile(HANDLE hFile) = 0;
+    virtual BOOL fn_SetFileInformationByHandle(HANDLE hFile,
+                                               FILE_INFO_BY_HANDLE_CLASS FileInformationClass,
+                                               LPVOID lpFileInformation,
+                                               DWORD dwBufferSize) = 0;
     virtual BOOL fn_SetFilePointerEx(HANDLE hFile,
                                      LARGE_INTEGER liDistanceToMove,
                                      PLARGE_INTEGER lpNewFilePointer,
@@ -58,43 +60,6 @@ struct Win32FileFuncs
                               LPOVERLAPPED lpOverlapped) = 0;
 };
 
-class Win32FilePrivate : public FilePrivate
-{
-public:
-    Win32FilePrivate();
-    virtual ~Win32FilePrivate();
-
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Win32FilePrivate)
-
-    void clear();
-
-    static bool convert_mode(FileOpenMode mode,
-                             DWORD &access_out,
-                             DWORD &sharing_out,
-                             SECURITY_ATTRIBUTES &sa_out,
-                             DWORD &creation_out,
-                             DWORD &attrib_out,
-                             bool &append_out);
-
-    Win32FileFuncs *funcs;
-
-    HANDLE handle;
-    bool owned;
-    std::wstring filename;
-
-    DWORD access;
-    DWORD sharing;
-    SECURITY_ATTRIBUTES sa;
-    DWORD creation;
-    DWORD attrib;
-
-    bool append;
-
-    LPWSTR error;
-
-protected:
-    Win32FilePrivate(Win32FileFuncs *funcs);
-};
-
+}
 }
 /*! \endcond */

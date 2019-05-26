@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,31 +20,25 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #include "mbcommon/file/standard.h"
 
 #include "mbpatcher/errors.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 class FileUtils
 {
 public:
-    static ErrorCode open_file(StandardFile &file, const std::string &path,
-                               FileOpenMode mode);
+    static oc::result<void> open_file(StandardFile &file,
+                                      const std::string &path,
+                                      FileOpenMode mode);
 
-    static ErrorCode read_to_memory(const std::string &path,
-                                    std::vector<unsigned char> *contents);
     static ErrorCode read_to_string(const std::string &path,
                                     std::string *contents);
 
-    static ErrorCode write_from_memory(const std::string &path,
-                                       const std::vector<unsigned char> &contents);
     static ErrorCode write_from_string(const std::string &path,
                                        const std::string &contents);
 
@@ -53,5 +47,4 @@ public:
     static std::string create_temporary_dir(const std::string &directory);
 };
 
-}
 }

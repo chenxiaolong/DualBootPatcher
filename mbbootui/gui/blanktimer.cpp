@@ -18,10 +18,6 @@
 
 #include "gui/blanktimer.hpp"
 
-#include <ctime>
-
-#include "mbutil/time.h"
-
 #include "minuitwrp/minui.h"
 
 #include "data.hpp"
@@ -30,6 +26,8 @@
 
 #include "config/config.hpp"
 #include "gui/pages.hpp"
+
+using namespace std::chrono;
 
 blanktimer::blanktimer()
 {
@@ -55,27 +53,26 @@ void blanktimer::setTime(int newtime)
 
 void blanktimer::setTimer()
 {
-    clock_gettime(CLOCK_MONOTONIC, &btimer);
+    btimer = steady_clock::now();
 }
 
 void blanktimer::checkForTimeout()
 {
-    if (!(tw_flags & TW_FLAG_NO_SCREEN_TIMEOUT)) {
+    if (!(tw_device.tw_flags() & mb::device::TwFlag::NoScreenTimeout)) {
         pthread_mutex_lock(&mutex);
-        timespec curTime, diff;
-        clock_gettime(CLOCK_MONOTONIC, &curTime);
-        mb::util::timespec_diff(btimer, curTime, &diff);
-        if (sleepTimer > 2 && diff.tv_sec > (sleepTimer - 2) && state == kOn) {
+        auto curTime = steady_clock::now();
+        auto diff = duration_cast<seconds>(curTime - btimer);
+        if (sleepTimer > 2 && diff.count() > (sleepTimer - 2) && state == kOn) {
             orig_brightness = getBrightness();
             state = kDim;
             TWFunc::Set_Brightness("5");
         }
-        if (sleepTimer && diff.tv_sec > sleepTimer && state < kOff) {
+        if (sleepTimer && diff.count() > sleepTimer && state < kOff) {
             state = kOff;
             TWFunc::Set_Brightness("0");
             PageManager::ChangeOverlay("lock");
         }
-        if (!(tw_flags & TW_FLAG_NO_SCREEN_BLANK)) {
+        if (!(tw_device.tw_flags() & mb::device::TwFlag::NoScreenBlank)) {
             if (state == kOff) {
                 gr_fb_blank(true);
                 state = kBlanked;
@@ -89,8 +86,8 @@ std::string blanktimer::getBrightness()
 {
     std::string result;
 
-    if (DataManager::GetIntValue(TW_HAS_BRIGHTNESS_FILE)) {
-        DataManager::GetValue(TW_BRIGHTNESS, result);
+    if (DataManager::GetIntValue(VAR_TW_HAS_BRIGHTNESS_FILE)) {
+        DataManager::GetValue(VAR_TW_BRIGHTNESS, result);
         if (result.empty()) {
             result = "255";
         }
@@ -100,12 +97,12 @@ std::string blanktimer::getBrightness()
 
 void blanktimer::resetTimerAndUnblank()
 {
-    if (!(tw_flags & TW_FLAG_NO_SCREEN_TIMEOUT)) {
+    if (!(tw_device.tw_flags() & mb::device::TwFlag::NoScreenTimeout)) {
         pthread_mutex_lock(&mutex);
         setTimer();
         switch (state) {
         case kBlanked:
-            if (!(tw_flags & TW_FLAG_NO_SCREEN_BLANK)) {
+            if (!(tw_device.tw_flags() & mb::device::TwFlag::NoScreenBlank)) {
                 gr_fb_blank(false);
             }
             // No break here, we want to keep going

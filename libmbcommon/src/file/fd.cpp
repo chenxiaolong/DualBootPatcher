@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -28,12 +28,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/error_code.h"
+#include "mbcommon/file_error.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/locale.h"
-
-#include "mbcommon/file/fd_p.h"
-
-#define DEFAULT_MODE \
-    (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
 /*!
  * \file mbcommon/file/fd.h
@@ -43,47 +41,52 @@
 namespace mb
 {
 
+using namespace detail;
+
+static constexpr mode_t DEFAULT_MODE =
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+
 /*! \cond INTERNAL */
 struct RealFdFileFuncs : public FdFileFuncs
 {
 #ifdef _WIN32
-    virtual int fn_wopen(const wchar_t *path, int flags, mode_t mode) override
+    int fn_wopen(const wchar_t *path, int flags, mode_t mode) override
     {
         return _wopen(path, flags, mode);
     }
 #else
-    virtual int fn_open(const char *path, int flags, mode_t mode) override
+    int fn_open(const char *path, int flags, mode_t mode) override
     {
         return open(path, flags, mode);
     }
 #endif
 
-    virtual int fn_fstat(int fildes, struct stat *buf) override
+    int fn_fstat(int fildes, struct stat *buf) override
     {
         return fstat(fildes, buf);
     }
 
-    virtual int fn_close(int fd) override
+    int fn_close(int fd) override
     {
         return close(fd);
     }
 
-    virtual int fn_ftruncate64(int fd, off_t length) override
+    int fn_ftruncate64(int fd, off64_t length) override
     {
         return ftruncate64(fd, length);
     }
 
-    virtual off64_t fn_lseek64(int fd, off64_t offset, int whence) override
+    off64_t fn_lseek64(int fd, off64_t offset, int whence) override
     {
         return lseek64(fd, offset, whence);
     }
 
-    virtual ssize_t fn_read(int fd, void *buf, size_t count) override
+    ssize_t fn_read(int fd, void *buf, size_t count) override
     {
         return read(fd, buf, count);
     }
 
-    virtual ssize_t fn_write(int fd, const void *buf, size_t count) override
+    ssize_t fn_write(int fd, const void *buf, size_t count) override
     {
         return write(fd, buf, count);
     }
@@ -94,30 +97,9 @@ static RealFdFileFuncs g_default_funcs;
 
 /*! \cond INTERNAL */
 
-FdFilePrivate::FdFilePrivate()
-    : FdFilePrivate(&g_default_funcs)
-{
-}
+FdFileFuncs::~FdFileFuncs() = default;
 
-FdFilePrivate::FdFilePrivate(FdFileFuncs *funcs)
-    : funcs(funcs)
-{
-    clear();
-}
-
-FdFilePrivate::~FdFilePrivate()
-{
-}
-
-void FdFilePrivate::clear()
-{
-    fd = -1;
-    owned = false;
-    filename.clear();
-    flags = 0;
-}
-
-int FdFilePrivate::convert_mode(FileOpenMode mode)
+static int convert_mode(FileOpenMode mode)
 {
     int ret = 0;
 
@@ -128,27 +110,26 @@ int FdFilePrivate::convert_mode(FileOpenMode mode)
 #endif
 
     switch (mode) {
-    case FileOpenMode::READ_ONLY:
+    case FileOpenMode::ReadOnly:
         ret |= O_RDONLY;
         break;
-    case FileOpenMode::READ_WRITE:
+    case FileOpenMode::ReadWrite:
         ret |= O_RDWR;
         break;
-    case FileOpenMode::WRITE_ONLY:
+    case FileOpenMode::WriteOnly:
         ret |= O_WRONLY | O_CREAT | O_TRUNC;
         break;
-    case FileOpenMode::READ_WRITE_TRUNC:
+    case FileOpenMode::ReadWriteTrunc:
         ret |= O_RDWR | O_CREAT | O_TRUNC;
         break;
-    case FileOpenMode::APPEND:
+    case FileOpenMode::Append:
         ret |= O_WRONLY | O_CREAT | O_APPEND;
         break;
-    case FileOpenMode::READ_APPEND:
+    case FileOpenMode::ReadAppend:
         ret |= O_RDWR | O_CREAT | O_APPEND;
         break;
     default:
-        ret = -1;
-        break;
+        MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
     }
 
     return ret;
@@ -172,7 +153,7 @@ int FdFilePrivate::convert_mode(FileOpenMode mode)
  * need to be called to open a file.
  */
 FdFile::FdFile()
-    : FdFile(new FdFilePrivate())
+    : FdFile(&g_default_funcs)
 {
 }
 
@@ -188,7 +169,7 @@ FdFile::FdFile()
  * \param owned Whether the file descriptor should be owned by the File handle
  */
 FdFile::FdFile(int fd, bool owned)
-    : FdFile(new FdFilePrivate(), fd, owned)
+    : FdFile(&g_default_funcs, fd, owned)
 {
 }
 
@@ -204,7 +185,7 @@ FdFile::FdFile(int fd, bool owned)
  * \param mode Open mode (\ref FileOpenMode)
  */
 FdFile::FdFile(const std::string &filename, FileOpenMode mode)
-    : FdFile(new FdFilePrivate(), filename, mode)
+    : FdFile(&g_default_funcs, filename, mode)
 {
 }
 
@@ -220,43 +201,87 @@ FdFile::FdFile(const std::string &filename, FileOpenMode mode)
  * \param mode Open mode (\ref FileOpenMode)
  */
 FdFile::FdFile(const std::wstring &filename, FileOpenMode mode)
-    : FdFile(new FdFilePrivate(), filename, mode)
+    : FdFile(&g_default_funcs, filename, mode)
 {
 }
 
 /*! \cond INTERNAL */
 
-FdFile::FdFile(FdFilePrivate *priv)
-    : File(priv)
+FdFile::FdFile(FdFileFuncs *funcs)
+    : File(), m_funcs(funcs)
 {
+    clear();
 }
 
-FdFile::FdFile(FdFilePrivate *priv,
+FdFile::FdFile(FdFileFuncs *funcs,
                int fd, bool owned)
-    : File(priv)
+    : FdFile(funcs)
 {
-    open(fd, owned);
+    (void) open(fd, owned);
 }
 
-FdFile::FdFile(FdFilePrivate *priv,
+FdFile::FdFile(FdFileFuncs *funcs,
                const std::string &filename, FileOpenMode mode)
-    : File(priv)
+    : FdFile(funcs)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
-FdFile::FdFile(FdFilePrivate *priv,
+FdFile::FdFile(FdFileFuncs *funcs,
                const std::wstring &filename, FileOpenMode mode)
-    : File(priv)
+    : FdFile(funcs)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
 /*! \endcond */
 
 FdFile::~FdFile()
 {
-    close();
+    (void) close();
+}
+
+/*!
+ * \brief Move construct new File handle.
+ *
+ * \p other will be left in a state as if it was newly constructed with the
+ * default constructor.
+ *
+ * \param other File handle to move from
+ */
+FdFile::FdFile(FdFile &&other) noexcept
+{
+    clear();
+
+    std::swap(m_funcs, other.m_funcs);
+    std::swap(m_fd, other.m_fd);
+    std::swap(m_owned, other.m_owned);
+    std::swap(m_filename, other.m_filename);
+    std::swap(m_flags, other.m_flags);
+}
+
+/*!
+ * \brief Move assign a File handle
+ *
+ * This file handle will be closed and then \p rhs will be moved into this
+ * object. \p rhs will be left in a state as if it was newly constructed with
+ * the default constructor.
+ *
+ * \param rhs File handle to move from
+ */
+FdFile & FdFile::operator=(FdFile &&rhs) noexcept
+{
+    if (this != &rhs) {
+        (void) close();
+
+        std::swap(m_funcs, rhs.m_funcs);
+        std::swap(m_fd, rhs.m_fd);
+        std::swap(m_owned, rhs.m_owned);
+        std::swap(m_filename, rhs.m_filename);
+        std::swap(m_flags, rhs.m_flags);
+    }
+
+    return *this;
 }
 
 /*!
@@ -269,16 +294,17 @@ FdFile::~FdFile()
  * \param fd File descriptor
  * \param owned Whether the file descriptor should be owned by the File handle
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool FdFile::open(int fd, bool owned)
+oc::result<void> FdFile::open(int fd, bool owned)
 {
-    MB_PRIVATE(FdFile);
-    if (priv) {
-        priv->fd = fd;
-        priv->owned = owned;
-    }
-    return File::open();
+    if (is_open()) return FileError::InvalidState;
+
+    m_fd = fd;
+    m_owned = owned;
+
+    return open();
 }
 
 /*!
@@ -291,38 +317,30 @@ bool FdFile::open(int fd, bool owned)
  * \param filename MBS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool FdFile::open(const std::string &filename, FileOpenMode mode)
+oc::result<void> FdFile::open(const std::string &filename, FileOpenMode mode)
 {
-    MB_PRIVATE(FdFile);
-    if (priv) {
-        // Convert filename to platform-native encoding
+    if (is_open()) return FileError::InvalidState;
+
+    // Convert filename to platform-native encoding
 #ifdef _WIN32
-        std::wstring native_filename;
-        if (!mbs_to_wcs(native_filename, filename)) {
-            set_error(make_error_code(FileError::CannotConvertEncoding),
-                      "Failed to convert MBS filename to WCS");
-            return false;
-        }
+    auto converted = mbs_to_wcs(filename);
+    if (!converted) {
+        return FileError::CannotConvertEncoding;
+    }
+    auto &&native_filename = converted.value();
 #else
-        auto native_filename = filename;
+    auto &&native_filename = filename;
 #endif
 
-        // Convert mode to flags
-        int flags = priv->convert_mode(mode);
-        if (flags < 0) {
-            set_error(make_error_code(FileError::InvalidArgument),
-                      "Invalid mode: %d", mode);
-            return false;
-        }
+    m_fd = -1;
+    m_owned = true;
+    m_filename = std::move(native_filename);
+    m_flags = convert_mode(mode);
 
-        priv->fd = -1;
-        priv->owned = true;
-        priv->filename = std::move(native_filename);
-        priv->flags = flags;
-    }
-    return File::open();
+    return open();
 }
 
 /*!
@@ -335,157 +353,147 @@ bool FdFile::open(const std::string &filename, FileOpenMode mode)
  * \param filename WCS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool FdFile::open(const std::wstring &filename, FileOpenMode mode)
+oc::result<void> FdFile::open(const std::wstring &filename, FileOpenMode mode)
 {
-    MB_PRIVATE(FdFile);
-    if (priv) {
-        // Convert filename to platform-native encoding
+    if (is_open()) return FileError::InvalidState;
+
+    // Convert filename to platform-native encoding
 #ifdef _WIN32
-        auto native_filename = filename;
+    auto &&native_filename = filename;
 #else
-        std::string native_filename;
-        if (!wcs_to_mbs(native_filename, filename)) {
-            set_error(make_error_code(FileError::CannotConvertEncoding),
-                      "Failed to convert WCS filename to MBS");
-            return false;
-        }
+    auto converted = wcs_to_mbs(filename);
+    if (!converted) {
+        return FileError::CannotConvertEncoding;
+    }
+    auto &&native_filename = converted.value();
 #endif
 
-        // Convert mode to flags
-        int flags = priv->convert_mode(mode);
-        if (flags < 0) {
-            set_error(make_error_code(FileError::InvalidArgument),
-                      "Invalid mode: %d", mode);
-            return false;
-        }
+    m_fd = -1;
+    m_owned = true;
+    m_filename = std::move(native_filename);
+    m_flags = convert_mode(mode);
 
-        priv->fd = -1;
-        priv->owned = true;
-        priv->filename = std::move(native_filename);
-        priv->flags = flags;
-    }
-    return File::open();
+    return open();
 }
 
-bool FdFile::on_open()
+oc::result<void> FdFile::open()
 {
-    MB_PRIVATE(FdFile);
+    auto reset = finally([&] {
+        (void) close();
+    });
 
-    if (!priv->filename.empty()) {
+    if (!m_filename.empty()) {
 #ifdef _WIN32
-        priv->fd = priv->funcs->fn_wopen(
+        m_fd = m_funcs->fn_wopen(
 #else
-        priv->fd = priv->funcs->fn_open(
+        m_fd = m_funcs->fn_open(
 #endif
-                priv->filename.c_str(), priv->flags, DEFAULT_MODE);
-        if (priv->fd < 0) {
-            set_error(std::error_code(errno, std::generic_category()),
-                      "Failed to open file");
-            return false;
+                m_filename.c_str(), m_flags, DEFAULT_MODE);
+        if (m_fd < 0) {
+            return ec_from_errno();
         }
     }
 
     struct stat sb;
 
-    if (priv->funcs->fn_fstat(priv->fd, &sb) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to stat file");
-        return false;
+    if (m_funcs->fn_fstat(m_fd, &sb) < 0) {
+        return ec_from_errno();
     }
 
     if (S_ISDIR(sb.st_mode)) {
-        set_error(std::make_error_code(std::errc::is_a_directory),
-                  "Failed to open file");
-        return false;
+        return std::make_error_code(std::errc::is_a_directory);
     }
 
-    return true;
+    reset.dismiss();
+
+    return oc::success();
 }
 
-bool FdFile::on_close()
+oc::result<void> FdFile::close()
 {
-    MB_PRIVATE(FdFile);
-
-    bool ret = true;
-
-    if (priv->owned && priv->fd >= 0 && priv->funcs->fn_close(priv->fd) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to close file");
-        ret = false;
-    }
+    if (!is_open()) return FileError::InvalidState;
 
     // Reset to allow opening another file
-    priv->clear();
+    auto reset = finally([&] {
+        clear();
+    });
 
-    return ret;
+    if (m_owned && m_fd >= 0 && m_funcs->fn_close(m_fd) < 0) {
+        return ec_from_errno();
+    }
+
+    return oc::success();
 }
 
-bool FdFile::on_read(void *buf, size_t size, size_t &bytes_read)
+oc::result<size_t> FdFile::read(void *buf, size_t size)
 {
-    MB_PRIVATE(FdFile);
+    if (!is_open()) return FileError::InvalidState;
 
     if (size > SSIZE_MAX) {
         size = SSIZE_MAX;
     }
 
-    ssize_t n = priv->funcs->fn_read(priv->fd, buf, size);
+    ssize_t n = m_funcs->fn_read(m_fd, buf, size);
     if (n < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to read file");
-        return false;
+        return ec_from_errno();
     }
 
-    bytes_read = n;
-    return true;
+    return static_cast<size_t>(n);
 }
 
-bool FdFile::on_write(const void *buf, size_t size, size_t &bytes_written)
+oc::result<size_t> FdFile::write(const void *buf, size_t size)
 {
-    MB_PRIVATE(FdFile);
+    if (!is_open()) return FileError::InvalidState;
 
     if (size > SSIZE_MAX) {
         size = SSIZE_MAX;
     }
 
-    ssize_t n = priv->funcs->fn_write(priv->fd, buf, size);
+    ssize_t n = m_funcs->fn_write(m_fd, buf, size);
     if (n < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to write file");
-        return false;
+        return ec_from_errno();
     }
 
-    bytes_written = n;
-    return true;
+    return static_cast<size_t>(n);
 }
 
-bool FdFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+oc::result<uint64_t> FdFile::seek(int64_t offset, int whence)
 {
-    MB_PRIVATE(FdFile);
+    if (!is_open()) return FileError::InvalidState;
 
-    off64_t ret = priv->funcs->fn_lseek64(priv->fd, offset, whence);
+    off64_t ret = m_funcs->fn_lseek64(m_fd, offset, whence);
     if (ret < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to seek file");
-        return false;
+        return ec_from_errno();
     }
 
-    new_offset = ret;
-    return true;
+    return static_cast<uint64_t>(ret);
 }
 
-bool FdFile::on_truncate(uint64_t size)
+oc::result<void> FdFile::truncate(uint64_t size)
 {
-    MB_PRIVATE(FdFile);
+    if (!is_open()) return FileError::InvalidState;
 
-    if (priv->funcs->fn_ftruncate64(priv->fd, size) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to truncate file");
-        return false;
+    if (m_funcs->fn_ftruncate64(m_fd, static_cast<off64_t>(size)) < 0) {
+        return ec_from_errno();
     }
 
-    return true;
+    return oc::success();
+}
+
+bool FdFile::is_open()
+{
+    return m_fd >= 0;
+}
+
+void FdFile::clear() noexcept
+{
+    m_fd = -1;
+    m_owned = false;
+    m_filename.clear();
+    m_flags = 0;
 }
 
 }

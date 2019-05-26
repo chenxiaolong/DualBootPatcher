@@ -63,11 +63,11 @@ static int open_png(const char* name, png_structp* png_ptr, png_infop* info_ptr,
     int color_type, bit_depth;
     size_t bytesRead;
 
-    snprintf(resPath, sizeof(resPath)-1, "%s/images/%s.png", tw_resource_path, name);
+    snprintf(resPath, sizeof(resPath)-1, "%s/images/%s.png", tw_resource_path.c_str(), name);
     resPath[sizeof(resPath)-1] = '\0';
-    FILE* fp = fopen(resPath, "rb");
+    FILE* fp = fopen(resPath, "rbe");
     if (fp == nullptr) {
-        fp = fopen(name, "rb");
+        fp = fopen(name, "rbe");
         if (fp == nullptr) {
             result = -1;
             goto exit;
@@ -236,8 +236,8 @@ int res_create_surface_png(const char* name, gr_surface* pSurface)
         goto exit;
     }
 
-    if (tw_pixel_format == TW_PXFMT_ABGR_8888
-            || tw_pixel_format == TW_PXFMT_BGRA_8888) {
+    if (tw_device.tw_pixel_format() == mb::device::TwPixelFormat::Abgr8888
+            || tw_device.tw_pixel_format() == mb::device::TwPixelFormat::Bgra8888) {
         png_set_bgr(png_ptr);
     }
 
@@ -279,13 +279,13 @@ int res_create_surface_jpg(const char* name, gr_surface* pSurface)
     unsigned char* pData;
     size_t width, height, stride, pixelSize;
 
-    FILE* fp = fopen(name, "rb");
+    FILE* fp = fopen(name, "rbe");
     if (fp == nullptr) {
         char resPath[256];
 
-        snprintf(resPath, sizeof(resPath)-1, "%s/images/%s", tw_resource_path, name);
+        snprintf(resPath, sizeof(resPath)-1, "%s/images/%s", tw_resource_path.c_str(), name);
         resPath[sizeof(resPath)-1] = '\0';
-        fp = fopen(resPath, "rb");
+        fp = fopen(resPath, "rbe");
         if (fp == nullptr) {
             result = -1;
             goto exit;
@@ -338,8 +338,8 @@ int res_create_surface_jpg(const char* name, gr_surface* pSurface)
             unsigned char g = pRow[sx + 1];
             unsigned char b = pRow[sx + 2];
             unsigned char a = 0xff;
-            if (tw_pixel_format == TW_PXFMT_ABGR_8888
-                    || tw_pixel_format == TW_PXFMT_BGRA_8888) {
+            if (tw_device.tw_pixel_format() == mb::device::TwPixelFormat::Abgr8888
+                    || tw_device.tw_pixel_format() == mb::device::TwPixelFormat::Bgra8888) {
                 pRow[dx    ] = b; // r
                 pRow[dx + 1] = g; // g
                 pRow[dx + 2] = r; // b

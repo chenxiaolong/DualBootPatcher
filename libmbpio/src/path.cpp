@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,12 +19,10 @@
 
 #include "mbpio/path.h"
 
-#include "mbpio/private/common.h"
-
-namespace io
+namespace mb::io
 {
 
-#if IO_PLATFORM_WINDOWS
+#ifdef _WIN32
 static const char *delims = "/\\";
 static const char *pathsep = "\\";
 #else
@@ -37,7 +35,7 @@ static const char *pathsep = "/";
  *
  * Returns everything after the last path separator (slash)
  */
-std::string baseName(const std::string &path)
+std::string base_name(const std::string &path)
 {
     std::size_t pos = path.find_last_of(delims);
     if (pos == std::string::npos) {
@@ -53,18 +51,18 @@ std::string baseName(const std::string &path)
  *
  * Returns everything up to and including the last path separator (slash)
  */
-std::string dirName(const std::string &path)
+std::string dir_name(const std::string &path)
 {
     std::size_t pos = path.find_last_of(delims);
     if (pos == std::string::npos) {
         // No slash, return empty string
-        return std::string();
+        return {};
     }
 
     return path.substr(0, pos + 1);
 }
 
-std::string pathJoin(const std::vector<std::string> &components)
+std::string path_join(const std::vector<std::string> &components)
 {
     std::string path;
     for (auto it = components.begin(); it != components.end(); ++it) {

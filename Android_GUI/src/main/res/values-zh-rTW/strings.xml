@@ -1,0 +1,495 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <!--Name of the app built in release mode-->
+  <string name="app_name_release">多重開機破解器</string>
+  <!--Name of the app built in debug mode-->
+  <string name="app_name_debug">多重開機破解器(偵錯版)</string>
+  <!--Name of the app built in snapshot mode-->
+  <string name="app_name_snapshot">多重開機破解器(快照版)</string>
+  <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
+  <string name="wait_until_finished">請等待所有操作完成</string>
+  <!--Indicate the version of the app on the about screen-->
+  <string name="version">版本：%s</string>
+  <!--GitHub source code web page URL-->
+  <!--GitHub source code link text-->
+  <string name="link_source_code">原始碼</string>
+  <!--XDA forum thread web page URL-->
+  <!--XDA forum thread link text-->
+  <string name="link_xda_thread">XDA討論串</string>
+  <!--Licenses URL-->
+  <!--Licenses link text-->
+  <string name="link_licenses">授權</string>
+  <!--Thank you message for contributors and links to relavent URLs-->
+  <string name="credits">特別感謝每一位貢獻者！
+作者：chenxiaolong
+繁體中文翻譯：abc0922001@github、孟武．尼德霍格．龍</string>
+  <!--Title for card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_title">無法連線到mbtool</string>
+  <!--Message for the card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_message">該應用程式無法連線到mbtool。 如果沒有給予root權限或者ramdisk不是最新的，則可能會發生這種情況。\ n \ n請重試。</string>
+  <!--Navigation drawer item for selecting the ROM-->
+  <string name="title_roms">系統</string>
+  <!--Navigation drawer item for patching a zip file-->
+  <string name="title_patch_zip">破解 Zip 檔</string>
+  <!--Navigation drawer item for checking free space-->
+  <string name="title_free_space">可用空間</string>
+  <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">設定</string>
+  <!--Navigation drawer item for changing the app sharing settings-->
+  <string name="title_app_sharing">資料共享</string>
+  <!--Nagivation drawer item for rebooting the device-->
+  <string name="title_reboot">重新開機</string>
+  <!--Navigation drawer item for showing the about screen-->
+  <string name="title_about">關於</string>
+  <!--Nagivation drawer item for exiting the app-->
+  <string name="title_exit">離開</string>
+  <!--Accessibility text for opening the app drawer-->
+  <string name="drawer_open">開啟側邊選單</string>
+  <!--Accessibility text for closing the app drawer-->
+  <string name="drawer_close">關閉側邊選單</string>
+  <!--Default name for the primary ROM-->
+  <string name="primary">主系統</string>
+  <!--Default name for the secondary ROM-->
+  <string name="secondary">副系統</string>
+  <!--Default name for the multi-slot ROMs-->
+  <string name="multislot">系統 %s</string>
+  <!--Default name for the data-slot ROMs-->
+  <string name="dataslot">%s (資料分割區)</string>
+  <!--Default name for the extsd-slot ROMs-->
+  <string name="extsdslot">%s (外部儲存空間)</string>
+  <!--Text shown when a ROM's version could not be detected-->
+  <string name="couldnt_determine_version">無法確定系統版本</string>
+  <!--Title of progress dialog shown when switching ROMs-->
+  <string name="switching_rom">切換系統</string>
+  <!--Title of progress dialog shown when setting kernel-->
+  <string name="setting_kernel">設定核心</string>
+  <!--Message shown when switching ROMs succeeds-->
+  <string name="choose_rom_success">切換系統成功</string>
+  <!--Message shown when switching ROMs failed-->
+  <string name="choose_rom_failure">切換系統失敗</string>
+  <!--Message shown when switching ROMs and checksums don't match-->
+  <string name="choose_rom_checksums_invalid">校驗失敗</string>
+  <!--Message shown when switching ROMs and checksums are missing-->
+  <string name="choose_rom_checksums_missing">缺少校驗</string>
+  <!--Message shown when setting the kernel succeeds-->
+  <string name="set_kernel_success">設定核心成功</string>
+  <!--Message shown when setting the kernel fails-->
+  <string name="set_kernel_failure">設定核心失敗</string>
+  <!--Message shown when another application tries to switch the ROM via an intent-->
+  <string name="confirm_automated_switch_rom">另一個應用程式想切換到 %s
+是否繼續？</string>
+  <!--Message shown if the boot partition could not be detected because the device codename is
+         not recognized-->
+  <string name="unknown_boot_partition">不能確認開機分割區，因為無法辨識代號為\'%s\'的裝置</string>
+  <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
+  <string name="checksums_invalid">該系統在 /sdcard/MultiBoot/%s/  路徑下的 boot.img或其他 *.img檔案 不符合 SHA512 的校驗值，可能遭第三方應用程式更改。依然切換系統？</string>
+  <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
+  <string name="checksums_missing">該系統在 /sdcard/MultiBoot/%s/  路徑下的 boot.img 或其他 *.img檔案 缺少 SHA512 的校驗， 這可能是由於此應用程式是從舊版本升級引起的。依然切換系統？</string>
+  <!--Version text shown on ROM card if the version could not be detected-->
+  <string name="rom_card_unknown_version">未知的 Android版本</string>
+  <!--Build text shown on ROM card if the build could not be detected-->
+  <string name="rom_card_unknown_build">未知的編譯版本</string>
+  <!--ROM menu item for updating the ramdisk-->
+  <string name="rom_menu_update_ramdisk">升級 ramdisk</string>
+  <!--ROM menu item for setting kernel-->
+  <string name="rom_menu_set_kernel">設定核心</string>
+  <!--ROM menu item for backing up the ROM-->
+  <string name="rom_menu_backup_rom">備份系統</string>
+  <!--ROM menu item for adding an icon to the home screen-->
+  <string name="rom_menu_add_to_home_screen">新增到主畫面</string>
+  <!--ROM menu item for changing the name-->
+  <string name="rom_menu_edit_name">重新命名</string>
+  <!--ROM menu item for changing the image-->
+  <string name="rom_menu_change_image">變更圖示</string>
+  <!--ROM menu item for resetting back to the default image-->
+  <string name="rom_menu_reset_image">重設圖示</string>
+  <!--ROM menu item for wiping the ROM-->
+  <string name="rom_menu_wipe_rom">擦除系統</string>
+  <!--Snack bar message shown when a launcher is successfully created-->
+  <string name="successfully_created_launcher">已將%s加到主畫面</string>
+  <!--Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching-->
+  <string name="auto_reboot_after_switching">切換系統後自動重新開機？</string>
+  <!--Target for wiping ROM's /system-->
+  <string name="wipe_target_system">系統分割區</string>
+  <!--Target for wiping ROM's /cache-->
+  <string name="wipe_target_cache">快取分割區</string>
+  <!--Target for wiping ROM's /data-->
+  <string name="wipe_target_data">資料分割區</string>
+  <!--Target for wiping ROM's dalvik cache-->
+  <string name="wipe_target_dalvik_cache">虛擬機快取</string>
+  <!--Target for wiping ROM's multiboot files-->
+  <string name="wipe_target_multiboot_files">多重開機檔</string>
+  <!--Title of dialog box asking for which targets to wipe-->
+  <string name="wipe_rom_dialog_title">擦除目標</string>
+  <!--Title of progress dialog shown when wiping targets-->
+  <string name="wiping_targets">擦除中</string>
+  <!--Toast message indicating successfully wiped targets-->
+  <string name="wipe_rom_successfully_wiped">擦除成功：%s</string>
+  <!--Toast message indicating targets that failed to wipe-->
+  <string name="wipe_rom_failed_to_wipe">擦除失敗：%s</string>
+  <!--Toast message indicating that the wipe process failed to start-->
+  <string name="wipe_rom_initiate_fail">執行系統擦除失敗</string>
+  <!--Toast message shown if the user did not select any target to wipe-->
+  <string name="wipe_rom_none_selected">毫無反應，因為沒有選擇目標。</string>
+  <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
+  <string name="wipe_rom_no_wipe_current_rom">您現在正執行此系統，無法被擦除！</string>
+  <!--Switcher service notification title-->
+  <string name="switcher_service_background_service">背景服務執行中</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
+  <string name="switcher_storage_permission_required">無法載入系統縮圖和名稱，因為儲存權限被拒絕。</string>
+  <!--Accessibility text for the ROM logo images-->
+  <string name="switcher_rom_image">系統標誌</string>
+  <!--Title for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_title">設定核心名稱</string>
+  <!--Message for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_desc">目前執行的核心將被儲存為 %s 的核心。</string>
+  <!--Title for the dialog box to rename a ROM-->
+  <string name="rename_rom_title">重新命名 %s</string>
+  <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">輸入 %s 的新名稱，留白則使用預設名稱</string>
+  <!--Dialog message shown when the kernel has not been set-->
+  <string name="kernel_not_set_desc">目前的系統還未設定核心，現在設定？</string>
+  <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
+  <string name="kernel_different_from_saved_desc">已儲存的核心與目前執行的核心存在差異，要重新設定核心嗎？</string>
+  <!--Positive dialog button shown for the above two messages-->
+  <string name="set_kernel_now">立即設定</string>
+  <!--Negative dialog button shown for the above two messages-->
+  <string name="set_kernel_later">稍後設定</string>
+  <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
+  <string name="set_kernel_mismatched_rom">目前選擇的系統是 %1$s，但您正在嘗試設定核心為%2$s。 確定？</string>
+  <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <string name="in_app_flashing_title_backup_rom">備份系統</string>
+  <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <string name="in_app_flashing_title_restore_rom">還原系統</string>
+  <!--In-app flashing output activity title - shown when flashing a single file-->
+  <string name="in_app_flashing_title_flash_file">刷入檔案</string>
+  <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <string name="in_app_flashing_title_flash_files">刷入多個檔案</string>
+  <!--In-app flashing activity title-->
+  <string name="in_app_flashing_title">在應用程式內刷機</string>
+  <!--FAB button text for adding a patched file to flash-->
+  <string name="in_app_flashing_fab_add_patched_file">新增破解檔</string>
+  <!--FAB button text for adding a backup to flash-->
+  <string name="in_app_flashing_fab_add_backup">新增備份</string>
+  <!--Title of pending action card for flashing a file-->
+  <string name="in_app_flashing_action_flash_file">刷入檔案</string>
+  <!--Title of pending action card for restoring a backup-->
+  <string name="in_app_flashing_action_restore_backup">還原備份</string>
+  <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
+  <string name="in_app_flashing_filename">檔案名稱： %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <string name="in_app_flashing_backup_name">備份名稱： %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
+  <string name="in_app_flashing_restore_targets">目標：%s</string>
+  <!--Subtitle text in pending action card showing the installation location-->
+  <string name="in_app_flashing_location">系統 ID: %s</string>
+  <!--Title shown in dialog asking for the installation location of a zip file-->
+  <string name="in_app_flashing_dialog_installation_location">安裝到：</string>
+  <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
+  <string name="in_app_flashing_dialog_verifying_zip">驗證 zip 檔</string>
+  <!--Error message shown when the selected zip file is not found-->
+  <string name="in_app_flashing_error_zip_not_found">找不到檔案。</string>
+  <!--Error message shown when the selected zip file could not be read-->
+  <string name="in_app_flashing_error_zip_read_fail">無法讀取檔案。</string>
+  <!--Error message shown when the selected zip file isn't patched-->
+  <string name="in_app_flashing_error_not_multiboot">此檔案沒有破解過，請在刷入前破解它。</string>
+  <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
+  <string name="in_app_flashing_error_version_too_old">需要使用 %s 或更高版本的破解程式才能使用應用程式內刷機。</string>
+  <!--Error message shown when the user tries to flash a zip file to the current ROM-->
+  <string name="in_app_flashing_error_no_overwrite_rom">為了防止目前的系統崩潰或無限重新啟動，禁止刷入執行中的系統。</string>
+  <!--Dialog message asking if the user wants to change the installation location of the zip-->
+  <string name="in_app_flashing_change_install_location_desc">這個檔案將會被安裝到 %s
+是否更換？</string>
+  <!--Dialog button for keeping the current installation location-->
+  <string name="in_app_flashing_keep_current_location">保持這個位置</string>
+  <!--Dialog button for changing the installation location-->
+  <string name="in_app_flashing_change_install_location">更改刷入位置</string>
+  <!--Message shown in the first-use dialog for zip flashing-->
+  <string name="in_app_flashing_dialog_first_use">應用程式內刷機可以刷入經破解過的檔案，或者多重開機破解器的備份檔。
+點選「+」開始刷機\n\n你可以
+1. 拖動項目可以更改刷入順序
+2. 滑動項目可以刪除任務
+注意：此功能還是實驗性的模組，如果要繼續操作請先備份！</string>
+  <!--Dialog description when choosing a backup to restore-->
+  <string name="in_app_flashing_select_backup_dialog_desc">選擇要還原的備份。</string>
+  <!--Toast message shown if there are no backups available-->
+  <string name="in_app_flashing_no_backups_available">沒有可用備份。</string>
+  <!--ROM details item showing which slot the ROM is installed to-->
+  <string name="rom_details_info_slot">分割區</string>
+  <!--ROM details item showing the version of the ROM-->
+  <string name="rom_details_info_version">版本</string>
+  <!--ROM details item showing the build name of the ROM-->
+  <string name="rom_details_info_build">編譯版本號</string>
+  <!--ROM details item showing the mbtool version used to boot the ROM-->
+  <string name="rom_details_info_mbtool_status">mbtool狀態</string>
+  <!--ROM details item showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts">應用程式</string>
+  <!--ROM details value showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts_value">%1$s 個系統應用程式，%2$s 個更新的應用程式，%3$s 個使用者應用程式</string>
+  <!--ROM details item showing the path to the system directory or image-->
+  <string name="rom_details_info_system_path">系統分割區掛載路徑</string>
+  <!--ROM details item showing the path to the cache directory or image-->
+  <string name="rom_details_info_cache_path">快取分割區掛載路徑</string>
+  <!--ROM details item showing the path to the data directory or image-->
+  <string name="rom_details_info_data_path">資料分割區掛載路徑</string>
+  <!--ROM details item showing the size of the system directory or image-->
+  <string name="rom_details_info_system_size">系統空間</string>
+  <!--ROM details item showing the size of the cache directory or image-->
+  <string name="rom_details_info_cache_size">快取空間</string>
+  <!--ROM details item showing the size of the data directory or image-->
+  <string name="rom_details_info_data_size">資料空間</string>
+  <!--ROM details item value shown when calculating the directory or image sizes-->
+  <string name="rom_details_info_calculating">計算中…</string>
+  <!--Backup ROM activity title-->
+  <string name="br_backup_title">備份系統</string>
+  <!--Restore ROM activity title-->
+  <string name="br_restore_title">還原系統</string>
+  <!--Backup targets dialog description-->
+  <string name="br_backup_targets_dialog_desc">選擇要備份的對象</string>
+  <!--Restore targets dialog description-->
+  <string name="br_restore_targets_dialog_desc">選擇要還原的對象</string>
+  <!--Backup/restore target for ROM's /system files-->
+  <string name="br_target_system">系統分割區</string>
+  <!--Backup/restore target for ROM's /cache files-->
+  <string name="br_target_cache">快取分割區</string>
+  <!--Backup/restore target for ROM's /data files-->
+  <string name="br_target_data">資料分割區</string>
+  <!--Backup/restore target for ROM's boot image-->
+  <string name="br_target_boot">開機鏡像檔(IMG)</string>
+  <!--Backup/restore target for ROM's multiboot configuration files-->
+  <string name="br_target_config">多重開機設定</string>
+  <!--Toast message shown if no backup/restore targets are selected-->
+  <string name="br_no_target_selected">未選擇備份/還原目標。</string>
+  <!--Backup name input dialog description-->
+  <string name="br_name_dialog_desc">輸入備份的名稱，名稱中不能有正斜槓(「/」)、「.」或「..」等符號。</string>
+  <!--Backup name input field hint for backup name dialog-->
+  <string name="br_name_dialog_hint">輸入備份名稱…</string>
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <string name="patcher_background_message">點擊「+」新增要破解的檔案。</string>
+  <!--Label for FAB to add a flashable zip-->
+  <string name="patcher_add_flashable_zip">新增 zip 刷機包</string>
+  <!--Label for FAB to add an Odin image-->
+  <string name="patcher_add_odin_image">新增 Odin鏡像檔(Samsung 專用)</string>
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <string name="patcher_storage_permission_required">破解器無法破解檔案，因為沒有授予內部儲存空間的讀寫權限。 請授予儲存權限以便能夠破解檔案。</string>
+  <!--Snackbar message shown if the user tries to patch the same file more than once-->
+  <string name="patcher_cannot_add_same_item">所選檔案已在佇列中</string>
+  <!--Title of the device selection box in the patcher-->
+  <string name="patcher_device_title">裝置：</string>
+  <!--Title of the partition configuration box in the patcher-->
+  <string name="patcher_partconfig_title">刷入位置：</string>
+  <!--Title of the partition configuration description in the patcher-->
+  <string name="patcher_partconfig_desc_title">備註：</string>
+  <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
+  <!--Subtitle shown in patch file card when patching succeeded-->
+  <string name="patcher_card_subtitle_succeeded">完成</string>
+  <!--Subtitle shown in patch file card when patching failed-->
+  <string name="patcher_card_subtitle_failed">失敗(錯誤碼：%s)</string>
+  <!--Subtitle shown in patch file card when file is waiting to be patched-->
+  <string name="patcher_card_subtitle_pending">等待</string>
+  <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
+  <string name="patcher_card_subtitle_queued">處理佇列</string>
+  <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <string name="patcher_card_subtitle_cancelled">取消</string>
+  <!--Patcher options dialog title-->
+  <string name="patcher_options_dialog_title">破解器選項</string>
+  <!--Description for all other installation locations-->
+  <string name="install_location_desc">系統會被安裝到%s</string>
+  <!--Text box hint for specifying the data slot ID-->
+  <string name="install_location_named_slot_id_hint">輸入ID</string>
+  <!--Description text shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_empty">輸入上面的ID</string>
+  <!--Error tooltip shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_error_is_empty">ID不能為空白。</string>
+  <!--Error tooltip shown if the data slot ID contains invalid characters-->
+  <string name="install_location_named_slot_id_error_invalid">ID只能使用小寫字母和數字。</string>
+  <!--Name for the data-slot installation location-->
+  <string name="install_location_data_slot">安裝到資料分割區(/data)</string>
+  <!--Name for the extsd-slot installation location-->
+  <string name="install_location_extsd_slot">安裝到外部儲存空間</string>
+  <!--Title for the dialog box indicating that no file manager is installed-->
+  <string name="filemanager_missing_title">沒有找到檔案管理器，請到系統設定&gt;所有應用程式中檢查「文件」是否被停用。</string>
+  <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
+  <string name="filemanager_missing_desc">沒有適合的檔案管理器，請到系統設定&gt;所有應用程式中檢查「文件」是否被停用。</string>
+  <!--Text for the details card indicating that the patching is done-->
+  <string name="details_done">完成</string>
+  <!--Text for the progress card showing how many files have been added to the new zip-->
+  <string name="overall_progress_files">檔案 %1$s/%2$s</string>
+  <!--Title for total size of partition-->
+  <string name="free_space_total_size">總容量：</string>
+  <!--Title for occupied space on partition-->
+  <string name="free_space_occupied_size">已使用空間：</string>
+  <!--Title for free space on partition-->
+  <string name="free_space_free_size">剩餘空間：</string>
+  <!--Format string for exbibytes-->
+  <!--Format string for pebibytes-->
+  <!--Format string for tebibytes-->
+  <!--Format string for gibibytes-->
+  <!--Format string for mebibytes-->
+  <!--Format string for kibibytes-->
+  <!--Format string for bytes-->
+  <!--Title for the individual application sharing section of the ROM settings-->
+  <string name="a_s_settings_indiv_app_sharing_section_title">個人應用程式共享</string>
+  <!--Title for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_title">分享個人應用程式</string>
+  <!--Description for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_desc">分享應用程式資料給其他系統(需要重新開機)</string>
+  <!--Title for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_title">管理分享資料的應用程式</string>
+  <!--Description for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_desc">選擇要分享資料的應用程式</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
+  <string name="a_s_settings_storage_permission_required">由於儲存權限被拒絕，因此無法儲存應用程式分享設定。 請授予儲存權限以更改應用程式共享設定。</string>
+  <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
+  <string name="a_s_settings_version_too_old">mbtool 需要更新才能使用資料分享功能
+請更新 ramdisk。</string>
+  <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">更新 ramdisk</string>
+  <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
+  <string name="update_ramdisk_missing_desc">目前 ramdisk 沒有任何版本的 mbtool。</string>
+  <!--Description for the ramdisk update preference when the ramdisk is outdated-->
+  <string name="update_ramdisk_outdated_desc">目前 ramdisk 有一個過時的 mbtool 版本。</string>
+  <!--Description for the ramdisk update preference when the ramdisk is already up to date-->
+  <string name="update_ramdisk_up_to_date_desc">ramdisk 已經是最新的。</string>
+  <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">ramdisk 更新成功</string>
+  <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">ramdisk 已經更新成功。立即重新開機？</string>
+  <!--Message telling user that the ramdisk updating succeeded-->
+  <string name="update_ramdisk_no_reboot_desc">ramdisk 已經更新成功。</string>
+  <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">ramdisk 更新失敗</string>
+  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">ramdisk 更新失敗，日誌儲存在 /sdcard/MultiBoot/ramdisk-update.log。</string>
+  <!--Toast popup message containing the countdown for forcing a ramdisk update-->
+  <plurals name="force_update_ramdisk_countdown">
+    <item quantity="other">再點選 %1$d 次，將強制更新 ramdisk。</item>
+  </plurals>
+  <!--Toast popup message shown when the user forces a ramdisk update-->
+  <string name="force_updating_ramdisk">強制更新 ramdisk</string>
+  <!--Title for the section in the settings to manage the Boot UI-->
+  <string name="rom_settings_boot_ui_title">開機介面(實驗性功能)</string>
+  <!--Title for the preference to install the Boot UI-->
+  <string name="rom_settings_boot_ui_install_title">安裝開機介面</string>
+  <!--Title for the preference to update the Boot UI-->
+  <string name="rom_settings_boot_ui_update_title">更新開機介面</string>
+  <!--Title for the preference to uninstall the Boot UI-->
+  <string name="rom_settings_boot_ui_uninstall_title">卸除開機介面</string>
+  <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <string name="rom_settings_boot_ui_update_available">可用更新：%s</string>
+  <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <string name="rom_settings_boot_ui_up_to_date">最新版</string>
+  <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <string name="rom_settings_boot_ui_not_installed">未安裝</string>
+  <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <string name="rom_settings_boot_ui_not_supported">不支援在此裝置上</string>
+  <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <string name="rom_settings_boot_ui_install_success">開機介面安裝成功</string>
+  <!--Toast message to indicate that the Boot UI failed to install-->
+  <string name="rom_settings_boot_ui_install_failure">開機介面安裝失敗</string>
+  <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <string name="rom_settings_boot_ui_uninstall_success">開機介面卸載成功</string>
+  <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <string name="rom_settings_boot_ui_uninstall_failure">開機介面卸載失敗</string>
+  <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
+  <string name="rom_settings_boot_ui_update_ramdisk_msg">啟動引導已成功安裝。\n\n請確保每個系統中的ramdisk已被更新。 否則，啟動引導將不會在引導過程中運行。</string>
+  <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <string name="rom_settings_backup_title">備份/還原(實驗性功能)</string>
+  <!--Title for the preference to change the backup directory-->
+  <string name="rom_settings_backup_change_directory">更改預設備份目錄</string>
+  <!--Title for the section in ROM Settings to change settings related to the patcher-->
+  <string name="rom_settings_patcher_title">破解器</string>
+  <!--Title for the preference to show the exit button in the navigation drawer-->
+  <string name="rom_settings_show_exit_title">顯示 離開 按鈕</string>
+  <!--Title for the preference to show the reboot button in the navigation drawer-->
+  <string name="rom_settings_show_reboot_title">顯示 重新開機 按鈕</string>
+  <!--Title for the preference to choose the initial screen to show when opening the app-->
+  <string name="rom_settings_initial_screen_title">初始畫面</string>
+  <!--Description for the initial screen preference-->
+  <string name="rom_settings_initial_screen_desc">啟動時，預設顯示哪個選單</string>
+  <!--Title for the preference to use the dark theme-->
+  <string name="rom_settings_use_dark_theme">使用暗色主題</string>
+  <!--Title for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_title">允許外部程式請求</string>
+  <!--Description for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_desc">允許外部請求，如切換系統或破解檔案</string>
+  <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_title">顯示 重新開機 對話框</string>
+  <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_desc">顯示 Android 的重新開機對話框，而不是直接重新開機。支援具有進階重新開機選單的系統</string>
+  <!--Title for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_title">多執行緒操作</string>
+  <!--Description for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_desc">當執行緒中有多個檔案要破解佇列時，同時進行 %d 個任務</string>
+  <!--Title for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_title">應用程式資料共享</string>
+  <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_desc">應用程式分享會將應用程式資料儲存在每個系統都可瀏覽的位置都能夠在不同系統之間同步某一應用程式的資料(例如：Chrome 的設定)\n\n
+注意：重新開機後生效，要使用應用程式資料分享功能，必須在你要分享資料的系統中都啟用資料共享（至少是兩個）\n\n
+例如：以 Chrome 為例，在主系統中啟用 Chrome 的資料分享，Chrome 開始使用分享的資料目錄\n\n然後你還得啟動到另一個系統，同樣啟用 Chrome 的資料分享，此時 Chrome 的資料在兩個系統之間是互通的。</string>
+  <!--App label in the individual app sharing screen shown if the app uses shared data-->
+  <string name="indiv_app_sharing_shared_data">分享的資料</string>
+  <!--App label in the individual app sharing screen shown if the app is not shared-->
+  <string name="indiv_app_sharing_not_shared">未分享</string>
+  <!--App sharing dialog checkbox text for using shared app data-->
+  <string name="indiv_app_sharing_dialog_share_data">使用分享的資料</string>
+  <!--App sharing dialog message shown by default-->
+  <string name="indiv_app_sharing_dialog_default_message">選擇需要使用分享資料目錄的應用程式</string>
+  <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
+  <string name="indiv_app_sharing_other_roms_using_shared_data">使用其他系統的分享資料：%s</string>
+  <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
+  <string name="indiv_app_sharing_reboot_needed_message">更改將在重新開機後生效。</string>
+  <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
+  <string name="indiv_app_sharing_app_no_longer_shared">%s 應用程式資料不再分享</string>
+  <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <string name="third_party_intents_not_allowed">拒絕外部請求。要想接受來自外部程式的請求，請在設定中啟用相關選項。</string>
+  <!--Progress dialog message shown when starting mbtool (with root)-->
+  <string name="mbtool_dialog_starting_mbtool">執行mbtool… \n(這個將需要重新開機)</string>
+  <!--Progress dialog message shown when updating mbtool (with root)-->
+  <string name="mbtool_dialog_updating_mbtool">更新mbtool… \n(這個需要重新開機)</string>
+  <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <string name="mbtool_dialog_signature_check_fail">mbtool 拒絕了請求。
+可能是由於使用了被修改過的程式所導致。如果繼續執行，mbtool 將會終止執行並以 root 權限執行。</string>
+  <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <string name="mbtool_dialog_version_too_old">mbtool版本過低，要更新某些功能後才能使用，例如：切換系統。
+需要 root  權限</string>
+  <!--Confirm dialog message shown when updating mbtool failed-->
+  <string name="mbtool_dialog_update_failed">無法更新 mbtool，切換系統等將操作會失敗。</string>
+  <!--Path chooser dialog textbox hint for entering a filename-->
+  <string name="path_chooser_enter_a_filename">輸入檔名</string>
+  <!--Path chooser dialog button to select a directory-->
+  <string name="path_chooser_choose_label">選擇</string>
+  <!--Path chooser dialog button to save a file-->
+  <string name="path_chooser_save_label">儲存</string>
+  <!--Path chooser dialog button to create a new folder-->
+  <string name="path_chooser_new_folder_label">新增資料夾</string>
+  <!--Android 8.0+ notification channel name for background services-->
+  <!--Android 8.0+ notification channel description for background services-->
+  <!--Word/phrase for Search (used in action bars)-->
+  <string name="search">搜尋</string>
+  <!--Word/phrase for None (used in eg. a list)-->
+  <string name="none">沒有</string>
+  <!--Word/phrase for OK (used in dialog boxes)-->
+  <string name="ok">好</string>
+  <!--Word/phrase for Cancel (used in dialog boxes)-->
+  <string name="cancel">取消</string>
+  <!--Word/phrase for Continue (used in dialog boxes)-->
+  <string name="proceed">繼續</string>
+  <!--Word/phrase for Yes (used in dialog boxes)-->
+  <string name="yes">是</string>
+  <!--Word/phrase for No (used in dialog boxes)-->
+  <string name="no">否</string>
+  <!--Word/phrase for try again (used in dialog boxes)-->
+  <string name="try_again">再試一次</string>
+  <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">立即重新開機</string>
+  <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">稍後重新開機</string>
+  <!--Unknown (used when a value cannot be determined)-->
+  <string name="unknown">未知</string>
+  <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
+  <string name="do_not_show_again">不再顯示</string>
+  <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">請稍候</string>
+</resources>

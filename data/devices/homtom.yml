@@ -1,0 +1,33 @@
+---
+- name: Homtom HT10
+  id: aeon
+  codenames:
+    - aeon
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/mmcblk0p27
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/mmcblk0p28
+    data:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/mmcblk0p29
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/mmcblk0p21
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/mmcblk0p1
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -24,9 +24,10 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mbcommon/error_code.h"
+#include "mbcommon/file_error.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/locale.h"
-
-#include "mbcommon/file/win32_p.h"
 
 static_assert(sizeof(DWORD) == 4, "DWORD is not 32 bits");
 
@@ -37,6 +38,8 @@ static_assert(sizeof(DWORD) == 4, "DWORD is not 32 bits");
 
 namespace mb
 {
+
+using namespace detail;
 
 /*! \cond INTERNAL */
 struct RealWin32FileFuncs : public Win32FileFuncs
@@ -70,9 +73,13 @@ struct RealWin32FileFuncs : public Win32FileFuncs
                         lpNumberOfBytesRead, lpOverlapped);
     }
 
-    virtual BOOL fn_SetEndOfFile(HANDLE hFile) override
+    virtual BOOL fn_SetFileInformationByHandle(HANDLE hFile,
+                                               FILE_INFO_BY_HANDLE_CLASS FileInformationClass,
+                                               LPVOID lpFileInformation,
+                                               DWORD dwBufferSize) override
     {
-        return SetEndOfFile(hFile);
+        return SetFileInformationByHandle(hFile, FileInformationClass,
+                                          lpFileInformation, dwBufferSize);
     }
 
     virtual BOOL fn_SetFilePointerEx(HANDLE hFile,
@@ -100,42 +107,15 @@ static RealWin32FileFuncs g_default_funcs;
 
 /*! \cond INTERNAL */
 
-Win32FilePrivate::Win32FilePrivate()
-    : Win32FilePrivate(&g_default_funcs)
-{
-}
+Win32FileFuncs::~Win32FileFuncs() = default;
 
-Win32FilePrivate::Win32FilePrivate(Win32FileFuncs *funcs)
-    : funcs(funcs), error(nullptr)
-{
-    clear();
-}
-
-Win32FilePrivate::~Win32FilePrivate()
-{
-    LocalFree(error);
-}
-
-void Win32FilePrivate::clear()
-{
-    handle = INVALID_HANDLE_VALUE;
-    owned = false;
-    filename.clear();
-    access = 0;
-    sharing = 0;
-    sa = {};
-    creation = 0;
-    attrib = 0;
-    append = false;
-}
-
-bool Win32FilePrivate::convert_mode(FileOpenMode mode,
-                                    DWORD &access_out,
-                                    DWORD &sharing_out,
-                                    SECURITY_ATTRIBUTES &sa_out,
-                                    DWORD &creation_out,
-                                    DWORD &attrib_out,
-                                    bool &append_out)
+static void convert_mode(FileOpenMode mode,
+                         DWORD &access_out,
+                         DWORD &sharing_out,
+                         SECURITY_ATTRIBUTES &sa_out,
+                         DWORD &creation_out,
+                         DWORD &attrib_out,
+                         bool &append_out)
 {
     DWORD access = 0;
     // Match open()/_wopen() behavior
@@ -147,34 +127,34 @@ bool Win32FilePrivate::convert_mode(FileOpenMode mode,
     bool append = false;
 
     switch (mode) {
-    case FileOpenMode::READ_ONLY:
+    case FileOpenMode::ReadOnly:
         access = GENERIC_READ;
         creation = OPEN_EXISTING;
         break;
-    case FileOpenMode::READ_WRITE:
+    case FileOpenMode::ReadWrite:
         access = GENERIC_READ | GENERIC_WRITE;
         creation = OPEN_EXISTING;
         break;
-    case FileOpenMode::WRITE_ONLY:
+    case FileOpenMode::WriteOnly:
         access = GENERIC_WRITE;
         creation = CREATE_ALWAYS;
         break;
-    case FileOpenMode::READ_WRITE_TRUNC:
+    case FileOpenMode::ReadWriteTrunc:
         access = GENERIC_READ | GENERIC_WRITE;
         creation = CREATE_ALWAYS;
         break;
-    case FileOpenMode::APPEND:
+    case FileOpenMode::Append:
         access = GENERIC_WRITE;
         creation = OPEN_ALWAYS;
         append = true;
         break;
-    case FileOpenMode::READ_APPEND:
+    case FileOpenMode::ReadAppend:
         access = GENERIC_READ | GENERIC_WRITE;
         creation = OPEN_ALWAYS;
         append = true;
         break;
     default:
-        return false;
+        MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
     }
 
     sa.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -187,8 +167,6 @@ bool Win32FilePrivate::convert_mode(FileOpenMode mode,
     creation_out = creation;
     attrib_out = attrib;
     append_out = append;
-
-    return true;
 }
 
 /*! \endcond */
@@ -208,7 +186,7 @@ bool Win32FilePrivate::convert_mode(FileOpenMode mode,
  * need to be called to open a file.
  */
 Win32File::Win32File()
-    : Win32File(new Win32FilePrivate())
+    : Win32File(&g_default_funcs)
 {
 }
 
@@ -225,7 +203,7 @@ Win32File::Win32File()
  * \param append Whether append mode should be enabled
  */
 Win32File::Win32File(HANDLE handle, bool owned, bool append)
-    : Win32File(new Win32FilePrivate(), handle, owned, append)
+    : Win32File(&g_default_funcs, handle, owned, append)
 {
 }
 
@@ -241,7 +219,7 @@ Win32File::Win32File(HANDLE handle, bool owned, bool append)
  * \param mode Open mode (\ref FileOpenMode)
  */
 Win32File::Win32File(const std::string &filename, FileOpenMode mode)
-    : Win32File(new Win32FilePrivate(), filename, mode)
+    : Win32File(&g_default_funcs, filename, mode)
 {
 }
 
@@ -257,43 +235,97 @@ Win32File::Win32File(const std::string &filename, FileOpenMode mode)
  * \param mode Open mode (\ref FileOpenMode)
  */
 Win32File::Win32File(const std::wstring &filename, FileOpenMode mode)
-    : Win32File(new Win32FilePrivate(), filename, mode)
+    : Win32File(&g_default_funcs, filename, mode)
 {
 }
 
 /*! \cond INTERNAL */
 
-Win32File::Win32File(Win32FilePrivate *priv)
-    : File(priv)
+Win32File::Win32File(Win32FileFuncs *funcs)
+    : File(), m_funcs(funcs)
 {
+    clear();
 }
 
-Win32File::Win32File(Win32FilePrivate *priv,
+Win32File::Win32File(Win32FileFuncs *funcs,
                      HANDLE handle, bool owned, bool append)
-    : File(priv)
+    : Win32File(funcs)
 {
-    open(handle, owned, append);
+    (void) open(handle, owned, append);
 }
 
-Win32File::Win32File(Win32FilePrivate *priv,
+Win32File::Win32File(Win32FileFuncs *funcs,
                      const std::string &filename, FileOpenMode mode)
-    : File(priv)
+    : Win32File(funcs)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
-Win32File::Win32File(Win32FilePrivate *priv,
+Win32File::Win32File(Win32FileFuncs *funcs,
                      const std::wstring &filename, FileOpenMode mode)
-    : File(priv)
+    : Win32File(funcs)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
 /*! \endcond */
 
 Win32File::~Win32File()
 {
-    close();
+    (void) close();
+}
+
+/*!
+ * \brief Move construct new File handle.
+ *
+ * \p other will be left in a state as if it was newly constructed with the
+ * default constructor.
+ *
+ * \param other File handle to move from
+ */
+Win32File::Win32File(Win32File &&other) noexcept
+{
+    clear();
+
+    std::swap(m_funcs, other.m_funcs);
+    std::swap(m_handle, other.m_handle);
+    std::swap(m_owned, other.m_owned);
+    std::swap(m_filename, other.m_filename);
+    std::swap(m_access, other.m_access);
+    std::swap(m_sharing, other.m_sharing);
+    std::swap(m_sa, other.m_sa);
+    std::swap(m_creation, other.m_creation);
+    std::swap(m_attrib, other.m_attrib);
+    std::swap(m_append, other.m_append);
+}
+
+/*!
+ * \brief Move assign a File handle
+ *
+ * This file handle will be closed and then \p rhs will be moved into this
+ * object. \p rhs will be left in a state as if it was newly constructed with
+ * the default constructor.
+ *
+ * \param rhs File handle to move from
+ */
+Win32File & Win32File::operator=(Win32File &&rhs) noexcept
+{
+    if (this != &rhs) {
+        (void) close();
+
+        std::swap(m_funcs, rhs.m_funcs);
+        std::swap(m_handle, rhs.m_handle);
+        std::swap(m_owned, rhs.m_owned);
+        std::swap(m_filename, rhs.m_filename);
+        std::swap(m_access, rhs.m_access);
+        std::swap(m_sharing, rhs.m_sharing);
+        std::swap(m_sa, rhs.m_sa);
+        std::swap(m_creation, rhs.m_creation);
+        std::swap(m_attrib, rhs.m_attrib);
+        std::swap(m_append, rhs.m_append);
+    }
+
+    return *this;
 }
 
 /*!
@@ -310,17 +342,18 @@ Win32File::~Win32File()
  * \param owned Whether the Win32 `HANDLE` should be owned by the File handle
  * \param append Whether append mode should be enabled
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool Win32File::open(HANDLE handle, bool owned, bool append)
+oc::result<void> Win32File::open(HANDLE handle, bool owned, bool append)
 {
-    MB_PRIVATE(Win32File);
-    if (priv) {
-        priv->handle = handle;
-        priv->owned = owned;
-        priv->append = append;
-    }
-    return File::open();
+    if (is_open()) return FileError::InvalidState;
+
+    m_handle = handle;
+    m_owned = owned;
+    m_append = append;
+
+    return open();
 }
 
 /*!
@@ -331,45 +364,27 @@ bool Win32File::open(HANDLE handle, bool owned, bool append)
  * \param filename MBS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool Win32File::open(const std::string &filename, FileOpenMode mode)
+oc::result<void> Win32File::open(const std::string &filename, FileOpenMode mode)
 {
-    MB_PRIVATE(Win32File);
-    if (priv) {
-        // Convert filename to platform-native encoding
-        std::wstring native_filename;
-        if (!mbs_to_wcs(native_filename, filename)) {
-            set_error(make_error_code(FileError::CannotConvertEncoding),
-                      "Failed to convert MBS filename to WCS");
-            return false;
-        }
+    if (is_open()) return FileError::InvalidState;
 
-        DWORD access;
-        DWORD sharing;
-        SECURITY_ATTRIBUTES sa;
-        DWORD creation;
-        DWORD attrib;
-        bool append;
-
-        if (!priv->convert_mode(mode, access, sharing, sa, creation, attrib,
-                                append)) {
-            set_error(make_error_code(FileError::InvalidArgument),
-                      "Invalid mode: %d", mode);
-            return false;
-        }
-
-        priv->handle = INVALID_HANDLE_VALUE;
-        priv->owned = true;
-        priv->filename = std::move(native_filename);
-        priv->access = access;
-        priv->sharing = sharing;
-        priv->sa = sa;
-        priv->creation = creation;
-        priv->attrib = attrib;
-        priv->append = append;
+    // Convert filename to platform-native encoding
+    auto converted = mbs_to_wcs(filename);
+    if (!converted) {
+        return FileError::CannotConvertEncoding;
     }
-    return File::open();
+
+    m_handle = INVALID_HANDLE_VALUE;
+    m_owned = true;
+    m_filename = std::move(converted.value());
+
+    convert_mode(mode, m_access, m_sharing, m_sa, m_creation, m_attrib,
+                 m_append);
+
+    return open();
 }
 
 /*!
@@ -380,79 +395,63 @@ bool Win32File::open(const std::string &filename, FileOpenMode mode)
  * \param filename WCS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool Win32File::open(const std::wstring &filename, FileOpenMode mode)
+oc::result<void> Win32File::open(const std::wstring &filename, FileOpenMode mode)
 {
-    MB_PRIVATE(Win32File);
-    if (priv) {
-        DWORD access;
-        DWORD sharing;
-        SECURITY_ATTRIBUTES sa;
-        DWORD creation;
-        DWORD attrib;
-        bool append;
+    if (is_open()) return FileError::InvalidState;
 
-        if (!priv->convert_mode(mode, access, sharing, sa, creation, attrib,
-                                append)) {
-            set_error(make_error_code(FileError::InvalidArgument),
-                      "Invalid mode: %d", mode);
-            return false;
-        }
+    m_handle = INVALID_HANDLE_VALUE;
+    m_owned = true;
+    m_filename = filename;
 
-        priv->handle = INVALID_HANDLE_VALUE;
-        priv->owned = true;
-        priv->filename = filename;
-        priv->access = access;
-        priv->sharing = sharing;
-        priv->sa = sa;
-        priv->creation = creation;
-        priv->attrib = attrib;
-        priv->append = append;
-    }
-    return File::open();
+    convert_mode(mode, m_access, m_sharing, m_sa, m_creation, m_attrib,
+                 m_append);
+
+    return open();
 }
 
-bool Win32File::on_open()
+oc::result<void> Win32File::open()
 {
-    MB_PRIVATE(Win32File);
+    auto reset = finally([&] {
+        (void) close();
+    });
 
-    if (!priv->filename.empty()) {
-        priv->handle = priv->funcs->fn_CreateFileW(
-                priv->filename.c_str(), priv->access, priv->sharing, &priv->sa,
-                priv->creation, priv->attrib, nullptr);
-        if (priv->handle == INVALID_HANDLE_VALUE) {
-            set_error(std::error_code(GetLastError(), std::system_category()),
-                      "Failed to open file");
-            return false;
+    if (!m_filename.empty()) {
+        m_handle = m_funcs->fn_CreateFileW(
+                m_filename.c_str(), m_access, m_sharing, &m_sa, m_creation,
+                m_attrib, nullptr);
+        if (m_handle == INVALID_HANDLE_VALUE) {
+            return ec_from_win32();
         }
     }
 
-    return true;
+    reset.dismiss();
+
+    return oc::success();
 }
 
-bool Win32File::on_close()
+oc::result<void> Win32File::close()
 {
-    MB_PRIVATE(Win32File);
-
-    bool ret = true;
-
-    if (priv->owned && priv->handle != INVALID_HANDLE_VALUE
-            && !priv->funcs->fn_CloseHandle(priv->handle)) {
-        set_error(std::error_code(GetLastError(), std::system_category()),
-                  "Failed to close file");
-        ret = false;
-    }
+    if (!is_open()) return FileError::InvalidState;
 
     // Reset to allow opening another file
-    priv->clear();
+    auto reset = finally([&] {
+        clear();
+    });
 
-    return ret;
+    if (m_owned && m_handle != INVALID_HANDLE_VALUE
+            && !m_funcs->fn_CloseHandle(m_handle)) {
+        return ec_from_win32();
+    }
+
+    return oc::success();
 }
 
-bool Win32File::on_read(void *buf, size_t size, size_t &bytes_read)
+oc::result<size_t> Win32File::read(void *buf, size_t size)
 {
-    MB_PRIVATE(Win32File);
+    if (!is_open()) return FileError::InvalidState;
 
     DWORD n = 0;
 
@@ -460,64 +459,55 @@ bool Win32File::on_read(void *buf, size_t size, size_t &bytes_read)
         size = UINT_MAX;
     }
 
-    bool ret = priv->funcs->fn_ReadFile(
-        priv->handle,   // hFile
-        buf,            // lpBuffer
-        size,           // nNumberOfBytesToRead
-        &n,             // lpNumberOfBytesRead
-        nullptr         // lpOverlapped
+    bool ret = m_funcs->fn_ReadFile(
+        m_handle,   // hFile
+        buf,        // lpBuffer
+        size,       // nNumberOfBytesToRead
+        &n,         // lpNumberOfBytesRead
+        nullptr     // lpOverlapped
     );
 
     if (!ret) {
-        set_error(std::error_code(GetLastError(), std::system_category()),
-                  "Failed to read file");
-        return false;
+        return ec_from_win32();
     }
 
-    bytes_read = n;
-    return true;
+    return n;
 }
 
-bool Win32File::on_write(const void *buf, size_t size, size_t &bytes_written)
+oc::result<size_t> Win32File::write(const void *buf, size_t size)
 {
-    MB_PRIVATE(Win32File);
+    if (!is_open()) return FileError::InvalidState;
 
     DWORD n = 0;
 
     // We have to seek manually in append mode because the Win32 API has no
     // native append mode.
-    if (priv->append) {
-        uint64_t pos;
-        if (!on_seek(0, SEEK_END, pos)) {
-            return false;
-        }
+    if (m_append) {
+        OUTCOME_TRYV(seek(0, SEEK_END));
     }
 
     if (size > UINT_MAX) {
         size = UINT_MAX;
     }
 
-    bool ret = priv->funcs->fn_WriteFile(
-        priv->handle,   // hFile
-        buf,            // lpBuffer
-        size,           // nNumberOfBytesToWrite
-        &n,             // lpNumberOfBytesWritten
-        nullptr         // lpOverlapped
+    bool ret = m_funcs->fn_WriteFile(
+        m_handle,   // hFile
+        buf,        // lpBuffer
+        size,       // nNumberOfBytesToWrite
+        &n,         // lpNumberOfBytesWritten
+        nullptr     // lpOverlapped
     );
 
     if (!ret) {
-        set_error(std::error_code(GetLastError(), std::system_category()),
-                  "Failed to write file");
-        return false;
+        return ec_from_win32();
     }
 
-    bytes_written = n;
-    return true;
+    return n;
 }
 
-bool Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+oc::result<uint64_t> Win32File::seek(int64_t offset, int whence)
 {
-    MB_PRIVATE(Win32File);
+    if (!is_open()) return FileError::InvalidState;
 
     DWORD move_method;
     LARGE_INTEGER pos;
@@ -534,64 +524,59 @@ bool Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         move_method = FILE_END;
         break;
     default:
-        set_error(make_error_code(FileError::InvalidArgument),
-                  "Invalid whence argument: %d", whence);
-        return false;
+        MB_UNREACHABLE("Invalid whence argument: %d", whence);
     }
 
     pos.QuadPart = offset;
 
-    bool ret = priv->funcs->fn_SetFilePointerEx(
-        priv->handle,   // hFile
-        pos,            // liDistanceToMove
-        &new_pos,       // lpNewFilePointer
-        move_method     // dwMoveMethod
+    bool ret = m_funcs->fn_SetFilePointerEx(
+        m_handle,   // hFile
+        pos,        // liDistanceToMove
+        &new_pos,   // lpNewFilePointer
+        move_method // dwMoveMethod
     );
 
     if (!ret) {
-        set_error(std::error_code(GetLastError(), std::system_category()),
-                  "Failed to seek file");
-        return false;
+        return ec_from_win32();
     }
 
-    new_offset = new_pos.QuadPart;
-    return true;
+    return static_cast<uint64_t>(new_pos.QuadPart);
 }
 
-bool Win32File::on_truncate(uint64_t size)
+oc::result<void> Win32File::truncate(uint64_t size)
 {
-    MB_PRIVATE(Win32File);
+    if (!is_open()) return FileError::InvalidState;
 
-    bool ret = true;
-    uint64_t current_pos;
-    uint64_t temp;
+    FILE_END_OF_FILE_INFO info;
+    info.EndOfFile.QuadPart = static_cast<int64_t>(size);
 
-    // Get current position
-    if (!on_seek(0, SEEK_CUR, current_pos)) {
-        return false;
+    bool ret = m_funcs->fn_SetFileInformationByHandle(m_handle,
+                                                      FileEndOfFileInfo,
+                                                      &info, sizeof(info));
+
+    if (!ret) {
+        return ec_from_win32();
     }
 
-    // Move to new position
-    if (!on_seek(size, SEEK_SET, temp)) {
-        return false;
-    }
+    return oc::success();
+}
 
-    // Truncate
-    if (!priv->funcs->fn_SetEndOfFile(priv->handle)) {
-        set_error(std::error_code(GetLastError(), std::system_category()),
-                  "Failed to set EOF position");
-        ret = false;
-    }
+bool Win32File::is_open()
+{
+    return m_handle != INVALID_HANDLE_VALUE;
+}
 
-    // Move back to initial position
-    if (!on_seek(current_pos, SEEK_SET, temp)) {
-        // We can't guarantee the file position so the handle shouldn't be used
-        // anymore
-        set_fatal(true);
-        ret = false;
-    }
-
-    return ret;
+void Win32File::clear() noexcept
+{
+    m_handle = INVALID_HANDLE_VALUE;
+    m_owned = false;
+    m_filename.clear();
+    m_access = 0;
+    m_sharing = 0;
+    m_sa = {};
+    m_creation = 0;
+    m_attrib = 0;
+    m_append = false;
 }
 
 }

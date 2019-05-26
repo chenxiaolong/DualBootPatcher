@@ -22,7 +22,7 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "mbpatcher/cwrapper/private/util.h"
+#include "mbcommon/capi/util.h"
 
 #include "mbpatcher/patcherconfig.h"
 
@@ -46,7 +46,8 @@
  * \sa PatcherConfig
  */
 
-extern "C" {
+extern "C"
+{
 
 /*!
  * \brief Create a new CPatcherConfig object.
@@ -106,7 +107,7 @@ void mbpatcher_config_destroy(CPatcherConfig *pc)
 char * mbpatcher_config_data_directory(const CPatcherConfig *pc)
 {
     CCAST(pc);
-    return string_to_cstring(config->data_directory());
+    return mb::capi_str_to_cstr(config->data_directory());
 }
 
 /*!
@@ -123,7 +124,7 @@ char * mbpatcher_config_data_directory(const CPatcherConfig *pc)
 char * mbpatcher_config_temp_directory(const CPatcherConfig *pc)
 {
     CCAST(pc);
-    return string_to_cstring(config->temp_directory());
+    return mb::capi_str_to_cstr(config->temp_directory());
 }
 
 /*!
@@ -157,8 +158,8 @@ void mbpatcher_config_set_temp_directory(CPatcherConfig *pc, char *path)
 /*!
  * \brief Get list of Patcher IDs
  *
- * \note The returned array should be freed with `mbpatcher_free_array()` when
- *       it is no longer needed.
+ * \note The returned array and its contents should be freed with `free()` when
+ *       they are no longer needed.
  *
  * \param pc CPatcherConfig object
  * \return NULL-terminated array of Patcher IDs
@@ -168,14 +169,14 @@ void mbpatcher_config_set_temp_directory(CPatcherConfig *pc, char *path)
 char ** mbpatcher_config_patchers(const CPatcherConfig *pc)
 {
     CCAST(pc);
-    return vector_to_cstring_array(config->patchers());
+    return mb::capi_vector_to_cstr_array(config->patchers());
 }
 
 /*!
  * \brief Get list of AutoPatcher IDs
  *
- * \note The returned array should be freed with `mbpatcher_free_array()` when
- *       it is no longer needed.
+ * \note The returned array and its contents should be freed with `free()` when
+ *       they are no longer needed.
  *
  * \param pc CPatcherConfig object
  * \return NULL-terminated array of AutoPatcher IDs
@@ -185,7 +186,7 @@ char ** mbpatcher_config_patchers(const CPatcherConfig *pc)
 char ** mbpatcher_config_autopatchers(const CPatcherConfig *pc)
 {
     CCAST(pc);
-    return vector_to_cstring_array(config->auto_patchers());
+    return mb::capi_vector_to_cstr_array(config->auto_patchers());
 }
 
 /*!
@@ -221,7 +222,7 @@ CAutoPatcher * mbpatcher_config_create_autopatcher(CPatcherConfig *pc,
 {
     CAST(pc);
     auto const *fi = reinterpret_cast<const mb::patcher::FileInfo *>(info);
-    auto *ap = config->create_auto_patcher(id, fi);
+    auto *ap = config->create_auto_patcher(id, *fi);
     return reinterpret_cast<CAutoPatcher *>(ap);
 }
 

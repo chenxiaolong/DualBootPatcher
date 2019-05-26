@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,17 +22,15 @@
 #include "mbcommon/file.h"
 
 #include "mbcommon/file/open_mode.h"
+#include "mbcommon/file/posix_p.h"
 
 #include <cstdio>
 
 namespace mb
 {
 
-class PosixFilePrivate;
 class MB_EXPORT PosixFile : public File
 {
-    MB_DECLARE_PRIVATE(PosixFile)
-
 public:
     PosixFile();
     PosixFile(FILE *fp, bool owned);
@@ -40,33 +38,55 @@ public:
     PosixFile(const std::wstring &filename, FileOpenMode mode);
     virtual ~PosixFile();
 
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(PosixFile)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(PosixFile)
+    PosixFile(PosixFile &&other) noexcept;
+    PosixFile & operator=(PosixFile &&rhs) noexcept;
 
-    bool open(FILE *fp, bool owned);
-    bool open(const std::string &filename, FileOpenMode mode);
-    bool open(const std::wstring &filename, FileOpenMode mode);
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(PosixFile)
+
+    oc::result<void> open(FILE *fp, bool owned);
+    oc::result<void> open(const std::string &filename, FileOpenMode mode);
+    oc::result<void> open(const std::wstring &filename, FileOpenMode mode);
+
+    oc::result<void> close() override;
+
+    oc::result<size_t> read(void *buf, size_t size) override;
+    oc::result<size_t> write(const void *buf, size_t size) override;
+    oc::result<uint64_t> seek(int64_t offset, int whence) override;
+    oc::result<void> truncate(uint64_t size) override;
+
+    bool is_open() override;
 
 protected:
     /*! \cond INTERNAL */
-    PosixFile(PosixFilePrivate *priv);
-    PosixFile(PosixFilePrivate *priv,
+    PosixFile(detail::PosixFileFuncs *funcs);
+    PosixFile(detail::PosixFileFuncs *funcs,
               FILE *fp, bool owned);
-    PosixFile(PosixFilePrivate *priv,
+    PosixFile(detail::PosixFileFuncs *funcs,
               const std::string &filename, FileOpenMode mode);
-    PosixFile(PosixFilePrivate *priv,
+    PosixFile(detail::PosixFileFuncs *funcs,
               const std::wstring &filename, FileOpenMode mode);
     /*! \endcond */
 
-    virtual bool on_open() override;
-    virtual bool on_close() override;
-    virtual bool on_read(void *buf, size_t size,
-                         size_t &bytes_read) override;
-    virtual bool on_write(const void *buf, size_t size,
-                          size_t &bytes_written) override;
-    virtual bool on_seek(int64_t offset, int whence,
-                         uint64_t &new_offset) override;
-    virtual bool on_truncate(uint64_t size) override;
+private:
+    /*! \cond INTERNAL */
+    oc::result<void> open();
+
+    void clear() noexcept;
+
+    detail::PosixFileFuncs *m_funcs;
+
+    FILE *m_fp;
+    bool m_owned;
+#ifdef _WIN32
+    std::wstring m_filename;
+    const wchar_t *m_mode;
+#else
+    std::string m_filename;
+    const char *m_mode;
+#endif
+
+    bool m_can_seek;
+    /*! \endcond */
 };
 
 }

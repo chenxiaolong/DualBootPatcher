@@ -26,6 +26,18 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p14
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy V (Ace 4 Lite)
   id: vivalto3g
@@ -46,9 +58,21 @@
       - /dev/block/mmcblk0p11
     recovery:
       - /dev/block/mmcblk0p12
-      
-      
-name: Samsung Galaxy Ace 4 Neo
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Ace 4 Neo
   id: vivalto3mve
   codenames:
     - vivalto3mve
@@ -73,3 +97,94 @@ name: Samsung Galaxy Ace 4 Neo
     recovery:
       - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
       - /dev/block/mmcblk0p21
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Ace 3 Duos (GT-S7272)
+  id: logands
+  codenames:
+    - logands
+  architecture: armeabi-v7a
+  
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdhci.1/by-name
+    system:
+      - /dev/block/platform/sdhci.1/by-name/system
+    cache:
+      - /dev/block/platform/sdhci.1/by-name/CSC
+    data:
+      - /dev/block/platform/sdhci.1/by-name/userdata
+    boot:
+      - /dev/block/platform/sdhci.1/by-name/KERNEL
+    recovery:
+      - /dev/block/platform/sdhci.1/by-name/RECOVERY
+    extra:
+      - /dev/block/platform/sdhci.1/by-name/HIDDEN
+      - /dev/block/platform/sdhci.1/by-name/efs
+      - /dev/block/platform/sdhci.1/by-name/modem
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+      - TW_NO_SCREEN_TIMEOUT
+      - TW_NO_CPU_TEMP
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_PREFER_LCD_BACKLIGHT
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 168
+    pixel_format: BGRA_8888
+    battery_path: /sys/class/power_supply/battery/capacity
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Ace 4 (SM-G316HU)
+  id: vivalto5mve3g
+  codenames:
+    - vivalto5mve3g
+    - SM-G316HU
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sprd-sdhci.3/by-name
+    system:
+      - /dev/block/platform/sprd-sdhci.3/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/sprd-sdhci.3/by-name/CSC
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/sprd-sdhci.3/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/sprd-sdhci.3/by-name/KERNEL
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
+      - /dev/block/mmcblk0p21
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/backlight/panel/brightness
+    default_brightness: 255
+    theme: portrait_hdpi

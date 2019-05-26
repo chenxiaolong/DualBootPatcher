@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,19 +13,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-_commit=bbfe603519bc54fbc4c8dd87efe1ed385df550b4
+_commit=dc332205326340ec1bf7d553452c7699904054b4
 
 pkgname=boringssl
-pkgver=r3955.bbfe603
+pkgver=r5501.dc3322053
 pkgrel=1
 pkgdesc="BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs."
 arch=(armv7 aarch64 x86 x86_64)
 url="https://boringssl.googlesource.com/boringssl/"
 license=(custom:BSD)
-source=("git+https://boringssl.googlesource.com/boringssl#commit=${_commit}"
-        'https://raw.githubusercontent.com/chenxiaolong/DualBootPatcher/v9.1.0/cmake/android.toolchain.cmake')
-sha512sums=('SKIP'
-            '918d01b63c935b735874c16ea5396f084a43bc2e66669c244b7e816669a900fcb25e19021377941a5b662150df585a8b52226d6ab20ea3e328e219d02ff24e14')
+source=("git+https://boringssl.googlesource.com/boringssl#commit=${_commit}")
+sha512sums=('SKIP')
 
 pkgver() {
     cd "${pkgname}"
@@ -56,9 +54,10 @@ build() {
         -DCMAKE_ASM_FLAGS="${asflags}"
         -DCMAKE_C_FLAGS="${cflags}"
         -DCMAKE_CXX_FLAGS="${cxxflags}"
-        -DCMAKE_TOOLCHAIN_FILE=../android.toolchain.cmake
+        -DCMAKE_TOOLCHAIN_FILE="${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake"
         -DANDROID_ABI="${abi}"
         -DANDROID_PLATFORM="${api}"
+        -DOPENSSL_SMALL=TRUE
     )
 
     cmake .. "${args[@]}"

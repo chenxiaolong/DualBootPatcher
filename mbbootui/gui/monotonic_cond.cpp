@@ -24,6 +24,8 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG "mbbootui/gui/monotonic_cond"
+
 MonotonicCond::MonotonicCond::MonotonicCond() : m_initialized(false)
 {
     if (pthread_condattr_init(&m_condattr) < 0) {

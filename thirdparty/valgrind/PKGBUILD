@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,80 +14,82 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=valgrind
-pkgver=3.12.0
-pkgrel=1
+pkgver=3.13.0
+pkgrel=2
 pkgdesc="A tool to help find memory-management problems in programs"
 arch=(armv7 aarch64 x86) # x86_64 not supported on Android
 url="http://valgrind.org/"
 license=(GPL)
-source=("http://valgrind.org/downloads/valgrind-${pkgver}.tar.bz2")
-sha512sums=('2c083f7c2e74dc58600397726d9d3af7a2cea40fe3d8733149886d1d77867e6c09996e5be1c58dd932f3662acf7363e04eeadbc0f9c8f0dac089e605024229be')
+source=("ftp://sourceware.org/pub/valgrind/valgrind-${pkgver}.tar.bz2"
+        0001-Fix-build-with-NDK-unified-headers.patch)
+md5sums=('817dd08f1e8a66336b9ff206400a5369'
+         '85e39e9969b9414c9d4ef34c1ed6a553')
+
+prepare() {
+    cd "${pkgname}-${pkgver}"
+
+    patch -p1 -i ../0001-Fix-build-with-NDK-unified-headers.patch
+}
 
 build() {
     cd "${pkgname}-${pkgver}"
 
-    local abi api toolchain toolchain_ver sysroot_dir
+    local api
+    local args=()
+    local cflags
+
+    case "${CARCH}" in
+    armv7)
+        api=18
+        args+=(--host=armv7-unknown-linux --target=armv7-unknown-linux)
+        ;;
+    aarch64)
+        api=21
+        args+=(--host=aarch64-unknown-linux --target=aarch64-unknown-linux)
+        ;;
+    x86)
+        api=18
+        args+=(--host=i686-android-linux --target=i686-android-linux)
+        cflags+=' -fno-pic'
+        ;;
+    esac
+
+    # __ANDROID_API__ is automatically set only for clang
+    cflags+=" -D__ANDROID_API__=${api}"
+
+    android_build_standalone_toolchain "${srcdir}/toolchain" "${api}"
+    export PATH="${srcdir}/toolchain/bin:${PATH}"
+
+    # Make valgrind's build scripts happy
+    local triplet
+    triplet=$("${srcdir}"/toolchain/bin/*-gcc -dumpmachine)
+    export AR="${srcdir}/toolchain/bin/${triplet}-ar"
+    export LD="${srcdir}/toolchain/bin/${triplet}-ld"
+    export CC="${srcdir}/toolchain/bin/${triplet}-gcc"
+
+    local abi
     abi=$(android_get_abi_name)
-    toolchain=$(android_get_toolchain_name "${abi}")
-    toolchain_ver=4.9
 
     mkdir -p "build_${abi}"
     cd "build_${abi}"
 
-    local cflags=""
-    local cxxflags=""
-    local cppflags=""
-
-    args=()
-
-    case "${abi}" in
-    armeabi-v7a)
-        api=android-18
-        args+=(--host=armv7-unknown-linux --target=armv7-unknown-linux)
-        ;;
-    arm64-v8a)
-        api=android-21
-        args+=(--host=aarch64-unknown-linux --target=aarch64-unknown-linux)
-        ;;
-    x86)
-        api=android-18
-        args+=(--host=i686-android-linux --target=i686-android-linux)
-        cflags+=" -fno-pic"
-        ;;
-    esac
-
-    sysroot_dir=$(android_get_ndk_sysroot "${api}" "${abi}")
-    cflags+=" --sysroot=${sysroot_dir}"
-    cxxflags+=" --sysroot=${sysroot_dir}"
-    cppflags+=" --sysroot=${sysroot_dir}"
-
-    android_enter_toolchain_env "${toolchain}" "${toolchain_ver}"
-
-    CFLAGS="${cflags}" CXXFLAGS="${cxxflags}" CPPFLAGS="${cppflags}" \
+    CFLAGS="${cflags}" \
     ../configure \
-        --prefix=/data/local/Inst \
+        --prefix=/cache/valgrind \
         --with-tmpdir=/sdcard \
         "${args[@]}"
 
-    CFLAGS="${cflags}" CXXFLAGS="${cxxflags}" CPPFLAGS="${cppflags}" \
+    CFLAGS="${cflags}" \
     make
-
-    android_leave_toolchain_env
 }
 
 package() {
     cd "${pkgname}-${pkgver}"
 
-    local abi toolchain toolchain_ver
+    local abi
     abi=$(android_get_abi_name)
-    toolchain=$(android_get_toolchain_name "${abi}")
-    toolchain_ver=4.9
 
     cd "build_${abi}"
 
-    android_enter_toolchain_env "${toolchain}" "${toolchain_ver}"
-
     make install DESTDIR="${pkgdir}"
-
-    android_leave_toolchain_env
 }

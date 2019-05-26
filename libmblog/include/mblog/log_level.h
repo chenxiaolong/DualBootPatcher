@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,12 +19,11 @@
 
 #pragma once
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
-enum class LogLevel {
+enum class LogLevel
+{
     Error,
     Warning,
     Info,
@@ -32,5 +31,4 @@ enum class LogLevel {
     Verbose
 };
 
-}
 }

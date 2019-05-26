@@ -26,6 +26,8 @@
 
 #include "infomanager.hpp"
 
+#define LOG_TAG "mbbootui/infomanager"
+
 InfoManager::InfoManager()
 {
     file_version = 0;
@@ -69,7 +71,7 @@ int InfoManager::LoadValues()
     std::string str;
 
     // Read in the file, if possible
-    FILE* in = fopen(File.c_str(), "rb");
+    FILE* in = fopen(File.c_str(), "rbe");
     if (!in) {
         LOGI("InfoManager file '%s' not found.", File.c_str());
         return -1;
@@ -137,7 +139,7 @@ int InfoManager::SaveValues()
     }
 
     LOGI("InfoManager saving '%s'", File.c_str());
-    FILE* out = fopen(File.c_str(), "wb");
+    FILE* out = fopen(File.c_str(), "wbe");
     if (!out) {
         return -1;
     }

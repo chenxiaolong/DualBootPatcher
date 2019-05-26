@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,59 +19,53 @@
 
 #include "mbutil/chmod.h"
 
-#include <cerrno>
 #include <cstdlib>
-#include <cstring>
 
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/string.h"
-#include "mblog/logging.h"
 #include "mbutil/fts.h"
-#include "mbutil/string.h"
 
-namespace mb
-{
-namespace util
+
+namespace mb::util
 {
 
-class RecursiveChmod : public FTSWrapper {
+class RecursiveChmod : public FtsWrapper {
 public:
+    std::error_code ec;
+
     RecursiveChmod(std::string path, mode_t perms)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
-        _perms(perms)
+        : FtsWrapper(std::move(path), FtsFlag::GroupSpecialFiles)
+        , _perms(perms)
     {
     }
 
-    virtual int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
-        // Do nothing. Need depth-first search, so directories are deleted in
-        // on_reached_directory_post()
-        return Action::FTS_OK;
+        // Do nothing. Need depth-first search.
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
-        return chmod_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chmod_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
-        return chmod_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chmod_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
-        // Avoid security issue
-        LOGW("%s: Not setting permissions on symlink",
-             _curr->fts_path);
-        return Action::FTS_Skip;
+        return Action::Skip;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
-        return chmod_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chmod_path() ? Action::Ok : Action::Fail;
     }
 
 private:
@@ -80,9 +74,7 @@ private:
     bool chmod_path()
     {
         if (::chmod(_curr->fts_accpath, _perms) < 0) {
-            mb::format(_error_msg, "%s: Failed to chmod: %s",
-                       _curr->fts_path, strerror(errno));
-            LOGW("%s", _error_msg.c_str());
+            ec = ec_from_errno();
             return false;
         }
         return true;
@@ -90,15 +82,20 @@ private:
 };
 
 
-bool chmod(const std::string &path, mode_t perms, int flags)
+oc::result<void> chmod(const std::string &path, mode_t perms, ChmodFlags flags)
 {
-    if (flags & CHMOD_RECURSIVE) {
+    if (flags & ChmodFlag::Recursive) {
         RecursiveChmod fts(path, perms);
-        return fts.run();
+        if (!fts.run()) {
+            return fts.ec;
+        }
     } else {
-        return ::chmod(path.c_str(), perms) == 0;
+        if (::chmod(path.c_str(), perms) < 0) {
+            return ec_from_errno();
+        }
     }
+
+    return oc::success();
 }
 
-}
 }

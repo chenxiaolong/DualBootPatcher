@@ -1,4 +1,4 @@
-From 63a3d9f35fd221a4d7cb786823fc9d9e816f2428 Mon Sep 17 00:00:00 2001
+From 8cc859fe5bb342863941dc0cc1f92f3305501cbf Mon Sep 17 00:00:00 2001
 From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
 Date: Sun, 3 Jan 2016 02:18:10 -0500
 Subject: [PATCH 2/3] Create multicall binary
@@ -11,7 +11,7 @@ Subject: [PATCH 2/3] Create multicall binary
  create mode 100644 unified.c
 
 diff --git a/fsck/main.c b/fsck/main.c
-index b413c58..8398f01 100644
+index b5e6f48..c31765b 100644
 --- a/fsck/main.c
 +++ b/fsck/main.c
 @@ -133,7 +133,7 @@ static void usage(const char* prog)
@@ -24,7 +24,7 @@ index b413c58..8398f01 100644
  	int opt;
  	const char* spec = NULL;
 diff --git a/fuse/main.c b/fuse/main.c
-index b66e876..9220100 100644
+index f74ca4c..731a4e9 100644
 --- a/fuse/main.c
 +++ b/fuse/main.c
 @@ -491,7 +491,7 @@ static char* add_fuse_options(char* options, const char* spec)
@@ -79,5 +79,5 @@ index 0000000..f9f4438
 +    return EXIT_FAILURE;
 +}
 -- 
-2.11.0
+2.14.3
 

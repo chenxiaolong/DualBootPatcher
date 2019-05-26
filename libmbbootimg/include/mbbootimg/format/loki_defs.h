@@ -29,74 +29,84 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+
 #include "mbbootimg/header.h"
 
-#define LOKI_MAGIC              "LOKI"
-#define LOKI_MAGIC_SIZE         4
-#define LOKI_MAGIC_OFFSET       0x400
+namespace mb::bootimg::loki
+{
 
-#define LOKI_SHELLCODE          \
-        "\xfe\xb5"              \
-        "\x0d\x4d"              \
-        "\xd5\xf8"              \
-        "\x88\x04"              \
-        "\xab\x68"              \
-        "\x98\x42"              \
-        "\x12\xd0"              \
-        "\xd5\xf8"              \
-        "\x90\x64"              \
-        "\x0a\x4c"              \
-        "\xd5\xf8"              \
-        "\x8c\x74"              \
-        "\x07\xf5\x80\x57"      \
-        "\x0f\xce"              \
-        "\x0f\xc4"              \
-        "\x10\x3f"              \
-        "\xfb\xdc"              \
-        "\xd5\xf8"              \
-        "\x88\x04"              \
-        "\x04\x49"              \
-        "\xd5\xf8"              \
-        "\x8c\x24"              \
-        "\xa8\x60"              \
-        "\x69\x61"              \
-        "\x2a\x61"              \
-        "\x00\x20"              \
-        "\xfe\xbd"              \
-        "\xff\xff\xff\xff"      \
-        "\xee\xee\xee\xee"
+constexpr char LOKI_MAGIC[] = "LOKI";
+constexpr size_t LOKI_MAGIC_SIZE = 4;
+constexpr size_t LOKI_MAGIC_OFFSET = 0x400;
+
+constexpr unsigned char LOKI_SHELLCODE[] =
+        "\xfe\xb5"
+        "\x0d\x4d"
+        "\xd5\xf8"
+        "\x88\x04"
+        "\xab\x68"
+        "\x98\x42"
+        "\x12\xd0"
+        "\xd5\xf8"
+        "\x90\x64"
+        "\x0a\x4c"
+        "\xd5\xf8"
+        "\x8c\x74"
+        "\x07\xf5\x80\x57"
+        "\x0f\xce"
+        "\x0f\xc4"
+        "\x10\x3f"
+        "\xfb\xdc"
+        "\xd5\xf8"
+        "\x88\x04"
+        "\x04\x49"
+        "\xd5\xf8"
+        "\x8c\x24"
+        "\xa8\x60"
+        "\x69\x61"
+        "\x2a\x61"
+        "\x00\x20"
+        "\xfe\xbd"
+        "\xff\xff\xff\xff"
+        "\xee\xee\xee\xee";
 
 // This is supposed to include the NULL-terminator
-#define LOKI_SHELLCODE_SIZE     65
+constexpr size_t LOKI_SHELLCODE_SIZE = 65;
 
-#define LOKI_IS_LG_RAMDISK_ADDR(ADDR) \
-        ((ADDR) > 0x88f00000 || (ADDR) < 0xfa00000)
+constexpr bool is_lg_ramdisk_address(uint32_t address)
+{
+    return address > 0x88f00000 || address < 0xfa00000;
+}
 
-#define LOKI_MAX_HEADER_OFFSET  32
+constexpr size_t LOKI_MAX_HEADER_OFFSET = 32;
 
-#define LOKI_OLD_SUPPORTED_FIELDS \
-        (MB_BI_HEADER_FIELD_KERNEL_SIZE \
-        | MB_BI_HEADER_FIELD_KERNEL_ADDRESS \
-        | MB_BI_HEADER_FIELD_RAMDISK_SIZE \
-        | MB_BI_HEADER_FIELD_RAMDISK_ADDRESS \
-        | MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS \
-        | MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS \
-        | MB_BI_HEADER_FIELD_PAGE_SIZE \
-        | MB_BI_HEADER_FIELD_UNUSED \
-        | MB_BI_HEADER_FIELD_BOARD_NAME \
-        | MB_BI_HEADER_FIELD_KERNEL_CMDLINE \
-        | MB_BI_HEADER_FIELD_ID)
+constexpr HeaderFields OLD_SUPPORTED_FIELDS =
+        HeaderField::KernelSize
+        | HeaderField::KernelAddress
+        | HeaderField::RamdiskSize
+        | HeaderField::RamdiskAddress
+        | HeaderField::SecondbootAddress
+        | HeaderField::KernelTagsAddress
+        | HeaderField::PageSize
+        | HeaderField::Unused
+        | HeaderField::BoardName
+        | HeaderField::KernelCmdline
+        | HeaderField::Id;
 
-#define LOKI_NEW_SUPPORTED_FIELDS \
-        (MB_BI_HEADER_FIELD_KERNEL_SIZE \
-        | MB_BI_HEADER_FIELD_KERNEL_ADDRESS \
-        | MB_BI_HEADER_FIELD_RAMDISK_SIZE \
-        | MB_BI_HEADER_FIELD_RAMDISK_ADDRESS \
-        | MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS \
-        | MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS \
-        | MB_BI_HEADER_FIELD_PAGE_SIZE \
-        | MB_BI_HEADER_FIELD_DEVICE_TREE_SIZE \
-        | MB_BI_HEADER_FIELD_UNUSED \
-        | MB_BI_HEADER_FIELD_BOARD_NAME \
-        | MB_BI_HEADER_FIELD_KERNEL_CMDLINE \
-        | MB_BI_HEADER_FIELD_ID)
+constexpr HeaderFields NEW_SUPPORTED_FIELDS =
+        HeaderField::KernelSize
+        | HeaderField::KernelAddress
+        | HeaderField::RamdiskSize
+        | HeaderField::RamdiskAddress
+        | HeaderField::SecondbootAddress
+        | HeaderField::KernelTagsAddress
+        | HeaderField::PageSize
+        | HeaderField::DeviceTreeSize
+        | HeaderField::Unused
+        | HeaderField::BoardName
+        | HeaderField::KernelCmdline
+        | HeaderField::Id;
+
+}

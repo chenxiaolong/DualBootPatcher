@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,121 +22,102 @@
 #include <memory>
 
 #include "mbbootimg/entry.h"
-#include "mbbootimg/entry_p.h"
 
-typedef std::unique_ptr<MbBiEntry, decltype(mb_bi_entry_free) *> ScopedEntry;
+using namespace mb::bootimg;
 
 
 TEST(BootImgEntryTest, CheckDefaultValues)
 {
-    ScopedEntry entry(mb_bi_entry_new(), mb_bi_entry_free);
-    ASSERT_TRUE(!!entry);
+    Entry entry(EntryType::Kernel);
 
-    // Check private fields
-    ASSERT_EQ(entry->fields_set, 0u);
-    ASSERT_EQ(entry->field.type, 0);
-    ASSERT_EQ(entry->field.name, nullptr);
-    ASSERT_EQ(entry->field.size, 0u);
-
-    // Check public API
-    ASSERT_EQ(mb_bi_entry_type(entry.get()), 0);
-    ASSERT_FALSE(mb_bi_entry_type_is_set(entry.get()));
-    ASSERT_EQ(mb_bi_entry_name(entry.get()), nullptr);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0u);
-    ASSERT_FALSE(mb_bi_entry_size_is_set(entry.get()));
+    ASSERT_FALSE(entry.size());
 }
 
 TEST(BootImgEntryTest, CheckGettersSetters)
 {
-    ScopedEntry entry(mb_bi_entry_new(), mb_bi_entry_free);
-    ASSERT_TRUE(!!entry);
+    Entry entry(EntryType::Kernel);
 
     // Type field
 
-    mb_bi_entry_set_type(entry.get(), 1234);
-    ASSERT_TRUE(mb_bi_entry_type_is_set(entry.get()));
-    ASSERT_TRUE(entry->fields_set & MB_BI_ENTRY_FIELD_TYPE);
-    ASSERT_EQ(entry->field.type, 1234);
-    ASSERT_EQ(mb_bi_entry_type(entry.get()), 1234);
-
-    mb_bi_entry_unset_type(entry.get());
-    ASSERT_FALSE(mb_bi_entry_type_is_set(entry.get()));
-    ASSERT_FALSE(entry->fields_set & MB_BI_ENTRY_FIELD_TYPE);
-    ASSERT_EQ(entry->field.type, 0);
-    ASSERT_EQ(mb_bi_entry_type(entry.get()), 0);
-
-    // Name field
-
-    mb_bi_entry_set_name(entry.get(), "Hello, world!");
-    ASSERT_TRUE(entry->fields_set & MB_BI_ENTRY_FIELD_NAME);
-    ASSERT_STREQ(entry->field.name, "Hello, world!");
-    ASSERT_STREQ(mb_bi_entry_name(entry.get()), "Hello, world!");
-
-    mb_bi_entry_set_name(entry.get(), nullptr);
-    ASSERT_FALSE(entry->fields_set & MB_BI_ENTRY_FIELD_NAME);
-    ASSERT_EQ(entry->field.name, nullptr);
-    ASSERT_EQ(mb_bi_entry_name(entry.get()), nullptr);
+    ASSERT_EQ(entry.type(), EntryType::Kernel);
 
     // Size field
 
-    mb_bi_entry_set_size(entry.get(), 1234);
-    ASSERT_TRUE(mb_bi_entry_size_is_set(entry.get()));
-    ASSERT_TRUE(entry->fields_set & MB_BI_ENTRY_FIELD_SIZE);
-    ASSERT_EQ(entry->field.size, 1234u);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 1234u);
+    entry.set_size(1234);
+    auto size = entry.size();
+    ASSERT_TRUE(size);
+    ASSERT_EQ(*size, 1234u);
 
-    mb_bi_entry_unset_size(entry.get());
-    ASSERT_FALSE(mb_bi_entry_size_is_set(entry.get()));
-    ASSERT_FALSE(entry->fields_set & MB_BI_ENTRY_FIELD_SIZE);
-    ASSERT_EQ(entry->field.size, 0u);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0u);
+    entry.set_size({});
+    ASSERT_FALSE(entry.size());
 }
 
-TEST(BootImgEntryTest, CheckClone)
+TEST(BootImgEntryTest, CheckCopyConstructAndAssign)
 {
-    ScopedEntry entry(mb_bi_entry_new(), mb_bi_entry_free);
-    ASSERT_TRUE(!!entry);
+    Entry entry(EntryType::Ramdisk);
 
-    // Set fields
-    entry->fields_set =
-            MB_BI_ENTRY_FIELD_TYPE
-            | MB_BI_ENTRY_FIELD_NAME
-            | MB_BI_ENTRY_FIELD_SIZE;
-    entry->field.type = 1;
-    entry->field.name = strdup("test");
-    ASSERT_NE(entry->field.name, nullptr);
-    entry->field.size = 1024;
+    entry.set_size(1024);
 
-    ScopedEntry dup(mb_bi_entry_clone(entry.get()), mb_bi_entry_free);
-    ASSERT_TRUE(!!dup);
+    {
+        Entry entry2{entry};
 
-    // Compare values
-    ASSERT_EQ(entry->fields_set, dup->fields_set);
-    ASSERT_EQ(entry->field.type, dup->field.type);
-    ASSERT_NE(entry->field.name, dup->field.name);
-    ASSERT_STREQ(entry->field.name, dup->field.name);
-    ASSERT_EQ(entry->field.size, dup->field.size);
+        ASSERT_EQ(entry2.type(), EntryType::Ramdisk);
+        auto size = entry2.size();
+        ASSERT_TRUE(size);
+        ASSERT_EQ(*size, 1024u);
+    }
+
+    {
+        Entry entry2(EntryType::Kernel);
+        entry2 = entry;
+
+        ASSERT_EQ(entry2.type(), EntryType::Ramdisk);
+        auto size = entry2.size();
+        ASSERT_TRUE(size);
+        ASSERT_EQ(*size, 1024u);
+    }
 }
 
-TEST(BootImgEntryTest, CheckClear)
+TEST(BootImgEntryTest, CheckMoveConstructAndAssign)
 {
-    ScopedEntry entry(mb_bi_entry_new(), mb_bi_entry_free);
-    ASSERT_TRUE(!!entry);
+    Entry entry(EntryType::Ramdisk);
 
-    // Set fields
-    entry->fields_set =
-            MB_BI_ENTRY_FIELD_TYPE
-            | MB_BI_ENTRY_FIELD_NAME
-            | MB_BI_ENTRY_FIELD_SIZE;
-    entry->field.type = 1;
-    entry->field.name = strdup("test");
-    ASSERT_NE(entry->field.name, nullptr);
-    entry->field.size = 1024;
+    {
+        entry.set_size(1024);
 
-    mb_bi_entry_clear(entry.get());
+        Entry entry2{std::move(entry)};
 
-    ASSERT_EQ(entry->fields_set, 0u);
-    ASSERT_EQ(entry->field.type, 0);
-    ASSERT_EQ(entry->field.name, nullptr);
-    ASSERT_EQ(entry->field.size, 0u);
+        ASSERT_EQ(entry2.type(), EntryType::Ramdisk);
+        auto size = entry2.size();
+        ASSERT_TRUE(size);
+        ASSERT_EQ(*size, 1024u);
+    }
+
+    {
+        entry = Entry(EntryType::Ramdisk);
+        entry.set_size(1024);
+
+        Entry entry2(EntryType::Kernel);
+        entry2 = std::move(entry);
+
+        ASSERT_EQ(entry2.type(), EntryType::Ramdisk);
+        auto size = entry2.size();
+        ASSERT_TRUE(size);
+        ASSERT_EQ(*size, 1024u);
+    }
+}
+
+TEST(BootImgEntryTest, CheckEquality)
+{
+    Entry entry(EntryType::Ramdisk);
+
+    entry.set_size(1024);
+
+    Entry entry2(EntryType::Ramdisk);
+
+    entry2.set_size(1024);
+
+    ASSERT_EQ(entry, entry2);
+    entry2.set_size(2048);
+    ASSERT_NE(entry, entry2);
 }

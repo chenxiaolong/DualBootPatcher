@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -24,40 +24,47 @@
 namespace mb
 {
 
-class MemoryFilePrivate;
 class MB_EXPORT MemoryFile : public File
 {
-    MB_DECLARE_PRIVATE(MemoryFile)
-
 public:
     MemoryFile();
-    MemoryFile(const void *buf, size_t size);
+    MemoryFile(void *buf, size_t size);
     MemoryFile(void **buf_ptr, size_t *size_ptr);
     virtual ~MemoryFile();
 
+    MemoryFile(MemoryFile &&other) noexcept;
+    MemoryFile & operator=(MemoryFile &&rhs) noexcept;
+
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MemoryFile)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(MemoryFile)
 
-    bool open(const void *buf, size_t size);
-    bool open(void **buf_ptr, size_t *size_ptr);
+    oc::result<void> open(void *buf, size_t size);
+    oc::result<void> open(void **buf_ptr, size_t *size_ptr);
 
-protected:
+    oc::result<void> close() override;
+
+    oc::result<size_t> read(void *buf, size_t size) override;
+    oc::result<size_t> write(const void *buf, size_t size) override;
+    oc::result<uint64_t> seek(int64_t offset, int whence) override;
+    oc::result<void> truncate(uint64_t size) override;
+
+    bool is_open() override;
+
+private:
     /*! \cond INTERNAL */
-    MemoryFile(MemoryFilePrivate *priv);
-    MemoryFile(MemoryFilePrivate *priv,
-               const void *buf, size_t size);
-    MemoryFile(MemoryFilePrivate *priv,
-               void **buf_ptr, size_t *size_ptr);
-    /*! \endcond */
+    void clear() noexcept;
 
-    virtual bool on_close() override;
-    virtual bool on_read(void *buf, size_t size,
-                         size_t &bytes_read) override;
-    virtual bool on_write(const void *buf, size_t size,
-                          size_t &bytes_written) override;
-    virtual bool on_seek(int64_t offset, int whence,
-                         uint64_t &new_offset) override;
-    virtual bool on_truncate(uint64_t size) override;
+    bool m_is_open;
+
+    void *m_data;
+    size_t m_size;
+
+    void **m_data_ptr;
+    size_t *m_size_ptr;
+
+    size_t m_pos;
+
+    bool m_fixed_size;
+    /*! \endcond */
 };
 
 }

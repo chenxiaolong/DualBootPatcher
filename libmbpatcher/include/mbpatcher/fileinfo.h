@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,41 +19,33 @@
 
 #pragma once
 
-#include <memory>
-
 #include "mbcommon/common.h"
 #include "mbdevice/device.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
-class FileInfoPrivate;
 class MB_EXPORT FileInfo
 {
-    MB_DECLARE_PRIVATE(FileInfo)
-
 public:
-    explicit FileInfo();
-    ~FileInfo();
-
-    std::string input_path() const;
+    const std::string & input_path() const;
     void set_input_path(std::string path);
 
-    std::string output_path() const;
+    const std::string & output_path() const;
     void set_output_path(std::string path);
 
-    Device * device() const;
-    void set_device(Device * const device);
+    const device::Device & device() const;
+    void set_device(device::Device device);
 
-    std::string rom_id() const;
+    const std::string & rom_id() const;
     void set_rom_id(std::string id);
 
 private:
-    std::unique_ptr<FileInfoPrivate> _priv_ptr;
+    device::Device m_device;
+    std::string m_input_path;
+    std::string m_output_path;
+    std::string m_rom_id;
 };
 
-}
 }

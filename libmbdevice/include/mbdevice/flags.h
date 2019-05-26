@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,53 +19,84 @@
 
 #pragma once
 
-/*
- * NOTE: Keep these options synchronized with mbbootui/config/config.{c,h}pp
- */
+#include "mbcommon/flags.h"
 
-#define ARCH_ARMEABI_V7A        "armeabi-v7a"
-#define ARCH_ARM64_V8A          "arm64-v8a"
-#define ARCH_X86                "x86"
-#define ARCH_X86_64             "x86_64"
-
-enum DeviceFlags
+namespace mb::device
 {
-    FLAG_HAS_COMBINED_BOOT_AND_RECOVERY     = 1 << 0,
-    FLAG_FSTAB_SKIP_SDCARD0                 = 1 << 1,
+
+constexpr char ARCH_ARMEABI_V7A[]   = "armeabi-v7a";
+constexpr char ARCH_ARM64_V8A[]     = "arm64-v8a";
+constexpr char ARCH_X86[]           = "x86";
+constexpr char ARCH_X86_64[]        = "x86_64";
+
+enum class DeviceFlag : uint32_t
+{
+    HasCombinedBootAndRecovery  = 1 << 0,
+    FstabSkipSdcard0            = 1 << 1,
+};
+MB_DECLARE_FLAGS(DeviceFlags, DeviceFlag)
+MB_DECLARE_OPERATORS_FOR_FLAGS(DeviceFlags)
+
+constexpr std::underlying_type_t<DeviceFlag> DEVICE_FLAG_MASK = (1 << 2) - 1;
+
+enum class TwFlag : uint32_t
+{
+    TouchscreenSwapXY           = 1 << 0,
+    TouchscreenFlipX            = 1 << 1,
+    TouchscreenFlipY            = 1 << 2,
+    GraphicsForceUseLineLength  = 1 << 3,
+    ScreenBlankOnBoot           = 1 << 4,
+    BoardHasFlippedScreen       = 1 << 5,
+    IgnoreMajorAxis0            = 1 << 6,
+    IgnoreMtPosition0           = 1 << 7,
+    IgnoreAbsMtTrackingId       = 1 << 8,
+    NewIonHeap                  = 1 << 9,
+    NoScreenBlank               = 1 << 10,
+    NoScreenTimeout             = 1 << 11,
+    RoundScreen                 = 1 << 12,
+    NoCpuTemp                   = 1 << 13,
+    QcomRtcFix                  = 1 << 14,
+    HasDownloadMode             = 1 << 15,
+    PreferLcdBacklight          = 1 << 16,
+};
+MB_DECLARE_FLAGS(TwFlags, TwFlag)
+MB_DECLARE_OPERATORS_FOR_FLAGS(TwFlags)
+
+constexpr std::underlying_type_t<TwFlag> TW_FLAG_MASK = (1 << 17) - 1;
+
+enum class TwPixelFormat : uint16_t
+{
+    Default = 0u,
+    Abgr8888,
+    Rgbx8888,
+    Bgra8888,
+    Rgba8888,
 };
 
-enum TwFlags
+enum class TwForcePixelFormat : uint16_t
 {
-    FLAG_TW_TOUCHSCREEN_SWAP_XY             = 1 << 0,
-    FLAG_TW_TOUCHSCREEN_FLIP_X              = 1 << 1,
-    FLAG_TW_TOUCHSCREEN_FLIP_Y              = 1 << 2,
-    FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH   = 1 << 3,
-    FLAG_TW_SCREEN_BLANK_ON_BOOT            = 1 << 4,
-    FLAG_TW_BOARD_HAS_FLIPPED_SCREEN        = 1 << 5,
-    FLAG_TW_IGNORE_MAJOR_AXIS_0             = 1 << 6,
-    FLAG_TW_IGNORE_MT_POSITION_0            = 1 << 7,
-    FLAG_TW_IGNORE_ABS_MT_TRACKING_ID       = 1 << 8,
-    FLAG_TW_NEW_ION_HEAP                    = 1 << 9,
-    FLAG_TW_NO_SCREEN_BLANK                 = 1 << 10,
-    FLAG_TW_NO_SCREEN_TIMEOUT               = 1 << 11,
-    FLAG_TW_ROUND_SCREEN                    = 1 << 12,
-    FLAG_TW_NO_CPU_TEMP                     = 1 << 13,
-    FLAG_TW_QCOM_RTC_FIX                    = 1 << 14,
-    FLAG_TW_HAS_DOWNLOAD_MODE               = 1 << 15,
-    FLAG_TW_PREFER_LCD_BACKLIGHT            = 1 << 16,
+    None = 0u,
+    Rgb565,
 };
 
-enum TwPixelFormat
+enum class ValidateFlag : uint32_t
 {
-    TW_PIXEL_FORMAT_DEFAULT,
-    TW_PIXEL_FORMAT_ABGR_8888,
-    TW_PIXEL_FORMAT_RGBX_8888,
-    TW_PIXEL_FORMAT_BGRA_8888,
-    TW_PIXEL_FORMAT_RGBA_8888
+    MissingId                       = 1u << 0,
+    MissingCodenames                = 1u << 1,
+    MissingName                     = 1u << 2,
+    MissingArchitecture             = 1u << 3,
+    MissingSystemBlockDevs          = 1u << 4,
+    MissingCacheBlockDevs           = 1u << 5,
+    MissingDataBlockDevs            = 1u << 6,
+    MissingBootBlockDevs            = 1u << 7,
+    MissingRecoveryBlockDevs        = 1u << 8,
+    MissingBootUiTheme              = 1u << 9,
+    MissingBootUiGraphicsBackends   = 1u << 10,
+    InvalidArchitecture             = 1u << 11,
+    InvalidFlags                    = 1u << 12,
+    InvalidBootUiFlags              = 1u << 13,
 };
+MB_DECLARE_FLAGS(ValidateFlags, ValidateFlag)
+MB_DECLARE_OPERATORS_FOR_FLAGS(ValidateFlags)
 
-enum TwForcePixelFormat
-{
-    TW_FORCE_PIXEL_FORMAT_NONE,
-    TW_FORCE_PIXEL_FORMAT_RGB_565
-};
+}

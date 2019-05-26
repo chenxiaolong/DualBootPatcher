@@ -1,0 +1,34 @@
+---
+- name: Kindle Fire HDX 7
+  id: thor
+  codenames:
+    - thor
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p22
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/data
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p8
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p18
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    default_brightness: 255
+    theme: portrait_hdpi

@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 _commit_fuse=3ecfa58e23f723914cb479262dbf393ee4821295
 
 pkgname=exfat
-pkgver=1.2.6
+pkgver=1.3.0
 pkgrel=1
 pkgdesc="FUSE-based exfat driver"
 arch=(armv7 aarch64 x86 x86_64)
@@ -24,58 +24,53 @@ url="https://github.com/relan/exfat"
 license=(GPL)
 source=("fuse::git+https://github.com/LineageOS/android_external_fuse.git#commit=${_commit_fuse}"
         "exfat::git+https://github.com/relan/exfat.git#tag=v${pkgver}"
-        0001-Manually-call-LFS-functions-since-there-s-no-_FILE_O.patch
         0002-Create-multicall-binary.patch
         0003-Android-does-not-define-__STDC_VERSION__.patch
+        0001-Don-t-use-Android-log.patch
         Android.mk)
 sha512sums=('SKIP'
             'SKIP'
-            '3196b7baaabaec36be2ad7ef5b1c7710deca87ecff218ecdf7d07a4175dff401962bad9a8f02f53eacf0dbbf8e6b99fba3331ca175496c41c9e9bfc5789729d4'
-            'a5c426dc99e27713f7c1f90d847a0cf674ccccea7e5e125c0d10ce9237a9fec297da8483126d0e84efd0c93f1d799c7430b4e2dd1cae6db8fcbf92a377b96705'
-            'f6f40939729816d36fa0aa2c2f47ac7d220535ec5e5db79d68d064c59af09ea27aca17e7f0dbd7533021dbca3660bce715e486af7ae6ebb40fee98d12fefff43'
-            '40df1e10587726737ca28a4a9b2fc6159666e64465f13a0f7e4e33b9356794f905d0717c15f4c184b6ef05d57e409666facfc6f84e7fe3d58d2730097cbca96f')
+            '2f7d5082ccc024ab8c7d91320f2c0e7e8c11e56df05cc84c8420cc3b931d3ad6449892d4e6bf5b7f600fe81339b5ae573657ad4cda0796a999cca30d4a0f2d17'
+            '5082dd6b9b198160896168bdf35d3953a5bc262a447da038b6bb43c10ed1954e16f58e4a2e89744dc37ee62184052c52592300505d5843b64cef14d31bd96c6e'
+            '03673b804c0cba4a5d41764ae5de6eb0272c298f60779d1c892a98f7d77a65aa8a49a5eecc600aae9d381f8991533018afeb5ac62eff483de5f5f39359dc975b'
+            '79d4145a7099881e8a0b6aacb36de14489b0117cd9a7e13f12229b013bf87e47961b35027e7853f810f807512003cb3f7529c9526aa8033a95027ff8fbd8d925')
 
 prepare() {
     cd exfat
-    patch -p1 -i ../0001-Manually-call-LFS-functions-since-there-s-no-_FILE_O.patch
     patch -p1 -i ../0002-Create-multicall-binary.patch
     patch -p1 -i ../0003-Android-does-not-define-__STDC_VERSION__.patch
+    patch -p1 -i ../0001-Don-t-use-Android-log.patch
 
     autoreconf -vfi
 }
 
 build() {
-    local abi api toolchain toolchain_ver sysroot_dir
+    local abi api
     abi=$(android_get_abi_name)
-    api=android-21
-    toolchain=$(android_get_toolchain_name "${abi}")
-    toolchain_ver=4.9
-    sysroot_dir=$(android_get_ndk_sysroot "${api}" "${abi}")
+    api=28
 
-    mkdir -p "build_${abi}"
-    pushd "build_${abi}"
+    android_build_standalone_toolchain "${srcdir}/toolchain" "${api}"
+    export PATH="${srcdir}/toolchain/bin:${PATH}"
 
-    local cflags="--sysroot=${sysroot_dir}"
-    local cxxflags="--sysroot=${sysroot_dir}"
-    local cppflags="--sysroot=${sysroot_dir}"
+    local triplet
+    triplet=("${srcdir}"/toolchain/bin/*-gcc)
+    triplet=${triplet##*/}
+    triplet=${triplet%-gcc}
 
-    android_enter_toolchain_env "${toolchain}" "${toolchain_ver}"
+    mkdir -p build
+    pushd build
 
-    CFLAGS="${cflags}" CXXFLAGS="${cxxflags}" CPPFLAGS="${cppflags}" \
-    ../exfat/configure \
-        --host="${toolchain}"
-
-    android_leave_toolchain_env
+    ../exfat/configure --host="${triplet}"
 
     popd
 
     ndk-build \
         NDK_PROJECT_PATH=. \
-        NDK_TOOLCHAIN_VERSION="${toolchain_ver}" \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM="${api}" \
-        LIBEXFAT_CONFIGURE_DIR="${srcdir}/build_${abi}/libexfat" \
+        APP_PLATFORM="android-${api}" \
+        LIBEXFAT_CONFIGURE_DIR="${srcdir}/build/libexfat" \
+        VERSION="${pkgver}" \
         "${MAKEFLAGS}"
 }
 

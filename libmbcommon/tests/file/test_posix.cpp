@@ -21,12 +21,16 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/posix.h"
-#include "mbcommon/file/posix_p.h"
+#include "mbcommon/file_error.h"
+
+using namespace mb;
+using namespace mb::detail;
+using namespace testing;
 
 // Dummy fp that's never dereferenced
 static FILE *g_fp = reinterpret_cast<FILE *>(-1);
 
-struct MockPosixFileFuncs : public mb::PosixFileFuncs
+struct MockPosixFileFuncs : public PosixFileFuncs
 {
     // sys/stat.h
     MOCK_METHOD2(fn_fstat, int(int fildes, struct stat *buf));
@@ -49,7 +53,7 @@ struct MockPosixFileFuncs : public mb::PosixFileFuncs
                                    FILE *stream));
 
     // unistd.h
-    MOCK_METHOD2(fn_ftruncate64, int(int fd, off_t length));
+    MOCK_METHOD2(fn_ftruncate64, int(int fd, off64_t length));
 
     bool stream_error = false;
 
@@ -57,36 +61,36 @@ struct MockPosixFileFuncs : public mb::PosixFileFuncs
     {
         // Fail everything by default
 #ifdef _WIN32
-        ON_CALL(*this, fn_wfopen(testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, nullptr));
+        ON_CALL(*this, fn_wfopen(_, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, nullptr));
 #else
-        ON_CALL(*this, fn_fopen(testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, nullptr));
+        ON_CALL(*this, fn_fopen(_, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, nullptr));
 #endif
-        ON_CALL(*this, fn_fstat(testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
-        ON_CALL(*this, fn_fclose(testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
-        ON_CALL(*this, fn_ferror(testing::_))
-                .WillByDefault(testing::ReturnPointee(&stream_error));
-        ON_CALL(*this, fn_fileno(testing::_))
-                .WillByDefault(testing::Return(-1));
-        ON_CALL(*this, fn_fread(testing::_, testing::_, testing::_, testing::_))
-                .WillByDefault(testing::DoAll(
-                        testing::InvokeWithoutArgs(
+        ON_CALL(*this, fn_fstat(_, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_fclose(_))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_ferror(_))
+                .WillByDefault(ReturnPointee(&stream_error));
+        ON_CALL(*this, fn_fileno(_))
+                .WillByDefault(Return(-1));
+        ON_CALL(*this, fn_fread(_, _, _, _))
+                .WillByDefault(DoAll(
+                        InvokeWithoutArgs(
                                 this, &MockPosixFileFuncs::set_ferror_fail),
-                        testing::SetErrnoAndReturn(EIO, 0)));
-        ON_CALL(*this, fn_fseeko(testing::_, testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
-        ON_CALL(*this, fn_ftello(testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
-        ON_CALL(*this, fn_fwrite(testing::_, testing::_, testing::_, testing::_))
-                .WillByDefault(testing::DoAll(
-                        testing::InvokeWithoutArgs(
+                        SetErrnoAndReturn(EIO, 0)));
+        ON_CALL(*this, fn_fseeko(_, _, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_ftello(_))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_fwrite(_, _, _, _))
+                .WillByDefault(DoAll(
+                        InvokeWithoutArgs(
                                 this, &MockPosixFileFuncs::set_ferror_fail),
-                        testing::SetErrnoAndReturn(EIO, 0)));
-        ON_CALL(*this, fn_ftruncate64(testing::_, testing::_))
-                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+                        SetErrnoAndReturn(EIO, 0)));
+        ON_CALL(*this, fn_ftruncate64(_, _))
+                .WillByDefault(SetErrnoAndReturn(EIO, -1));
     }
 
     void set_ferror_fail()
@@ -97,48 +101,37 @@ struct MockPosixFileFuncs : public mb::PosixFileFuncs
     void open_with_success()
     {
 #ifdef _WIN32
-        ON_CALL(*this, fn_wfopen(testing::_, testing::_))
-                .WillByDefault(testing::Return(g_fp));
+        ON_CALL(*this, fn_wfopen(_, _))
+                .WillByDefault(Return(g_fp));
 #else
-        ON_CALL(*this, fn_fopen(testing::_, testing::_))
-                .WillByDefault(testing::Return(g_fp));
+        ON_CALL(*this, fn_fopen(_, _))
+                .WillByDefault(Return(g_fp));
 #endif
     }
 };
 
-class TestablePosixFilePrivate : public mb::PosixFilePrivate
+class TestablePosixFile : public PosixFile
 {
 public:
-    TestablePosixFilePrivate(mb::PosixFileFuncs *funcs)
-        : mb::PosixFilePrivate(funcs)
-    {
-    }
-};
-
-class TestablePosixFile : public mb::PosixFile
-{
-public:
-    MB_DECLARE_PRIVATE(TestablePosixFile)
-
-    TestablePosixFile(mb::PosixFileFuncs *funcs)
-        : mb::PosixFile(new TestablePosixFilePrivate(funcs))
+    TestablePosixFile(PosixFileFuncs *funcs)
+        : PosixFile(funcs)
     {
     }
 
-    TestablePosixFile(mb::PosixFileFuncs *funcs, FILE *fp, bool owned)
-        : mb::PosixFile(new TestablePosixFilePrivate(funcs), fp, owned)
+    TestablePosixFile(PosixFileFuncs *funcs, FILE *fp, bool owned)
+        : PosixFile(funcs, fp, owned)
     {
     }
 
-    TestablePosixFile(mb::PosixFileFuncs *funcs,
-                      const std::string &filename, mb::FileOpenMode mode)
-        : mb::PosixFile(new TestablePosixFilePrivate(funcs), filename, mode)
+    TestablePosixFile(PosixFileFuncs *funcs,
+                      const std::string &filename, FileOpenMode mode)
+        : PosixFile(funcs, filename, mode)
     {
     }
 
-    TestablePosixFile(mb::PosixFileFuncs *funcs,
-                      const std::wstring &filename, mb::FileOpenMode mode)
-        : mb::PosixFile(new TestablePosixFilePrivate(funcs), filename, mode)
+    TestablePosixFile(PosixFileFuncs *funcs,
+                      const std::wstring &filename, FileOpenMode mode)
+        : PosixFile(funcs, filename, mode)
     {
     }
 
@@ -147,98 +140,131 @@ public:
     }
 };
 
-struct FilePosixTest : testing::Test
+struct FilePosixTest : Test
 {
-    testing::NiceMock<MockPosixFileFuncs> _funcs;
+    NiceMock<MockPosixFileFuncs> _funcs;
 };
+
+TEST_F(FilePosixTest, CheckInvalidStates)
+{
+    TestablePosixFile file(&_funcs);
+
+    auto error = oc::failure(FileError::InvalidState);
+
+    ASSERT_EQ(file.close(), error);
+    ASSERT_EQ(file.read(nullptr, 0), error);
+    ASSERT_EQ(file.write(nullptr, 0), error);
+    ASSERT_EQ(file.seek(0, SEEK_SET), error);
+    ASSERT_EQ(file.truncate(1024), error);
+
+    _funcs.open_with_success();
+
+#ifdef _WIN32
+    EXPECT_CALL(_funcs, fn_wfopen(_, _))
+            .Times(1);
+#else
+    EXPECT_CALL(_funcs, fn_fopen(_, _))
+            .Times(1);
+#endif
+
+    ASSERT_TRUE(file.open("x", FileOpenMode::ReadOnly));
+    ASSERT_EQ(file.open("x", FileOpenMode::ReadOnly), error);
+    ASSERT_EQ(file.open(L"x", FileOpenMode::ReadOnly), error);
+    ASSERT_EQ(file.open(g_fp, false), error);
+}
 
 TEST_F(FilePosixTest, OpenFilenameMbsSuccess)
 {
     _funcs.open_with_success();
 
 #ifdef _WIN32
-    EXPECT_CALL(_funcs, fn_wfopen(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_wfopen(_, _))
             .Times(1);
 #else
-    EXPECT_CALL(_funcs, fn_fopen(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fopen(_, _))
             .Times(1);
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_TRUE(file.open("x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(file.open("x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FilePosixTest, OpenFilenameMbsFailure)
 {
 #ifdef _WIN32
-    EXPECT_CALL(_funcs, fn_wfopen(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_wfopen(_, _))
             .Times(1);
 #else
-    EXPECT_CALL(_funcs, fn_fopen(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fopen(_, _))
             .Times(1);
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_FALSE(file.open("x", mb::FileOpenMode::READ_ONLY));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    ASSERT_EQ(file.open("x", FileOpenMode::ReadOnly),
+              oc::failure(std::errc::io_error));
 }
 
+#ifndef NDEBUG
 TEST_F(FilePosixTest, OpenFilenameMbsInvalidMode)
 {
-    TestablePosixFile file(&_funcs);
-    ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_DEATH({
+        TestablePosixFile file(&_funcs);
+        ASSERT_FALSE(file.open("x", static_cast<FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FilePosixTest, OpenFilenameWcsSuccess)
 {
     _funcs.open_with_success();
 
 #ifdef _WIN32
-    EXPECT_CALL(_funcs, fn_wfopen(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_wfopen(_, _))
             .Times(1);
 #else
-    EXPECT_CALL(_funcs, fn_fopen(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fopen(_, _))
             .Times(1);
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_TRUE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(file.open(L"x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FilePosixTest, OpenFilenameWcsFailure)
 {
 #ifdef _WIN32
-    EXPECT_CALL(_funcs, fn_wfopen(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_wfopen(_, _))
             .Times(1);
 #else
-    EXPECT_CALL(_funcs, fn_fopen(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fopen(_, _))
             .Times(1);
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_FALSE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    ASSERT_EQ(file.open(L"x", FileOpenMode::ReadOnly),
+              oc::failure(std::errc::io_error));
 }
 
+#ifndef NDEBUG
 TEST_F(FilePosixTest, OpenFilenameWcsInvalidMode)
 {
-    TestablePosixFile file(&_funcs);
-    ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_DEATH({
+        TestablePosixFile file(&_funcs);
+        ASSERT_FALSE(file.open(L"x", static_cast<FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FilePosixTest, OpenFstatFailed)
 {
-    EXPECT_CALL(_funcs, fn_fstat(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fstat(_, _))
             .Times(1);
-    EXPECT_CALL(_funcs, fn_fileno(testing::_))
+    EXPECT_CALL(_funcs, fn_fileno(_))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestablePosixFile file(&_funcs);
-    ASSERT_FALSE(file.open(g_fp, false));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    ASSERT_EQ(file.open(g_fp, false), oc::failure(std::errc::io_error));
 }
 
 TEST_F(FilePosixTest, OpenDirectory)
@@ -246,17 +272,15 @@ TEST_F(FilePosixTest, OpenDirectory)
     struct stat sb{};
     sb.st_mode = S_IFDIR | S_IRWXU | S_IRWXG | S_IRWXO;
 
-    EXPECT_CALL(_funcs, fn_fstat(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fstat(_, _))
             .Times(1)
-            .WillOnce(testing::DoAll(testing::SetArgPointee<1>(sb),
-                                     testing::Return(0)));
-    EXPECT_CALL(_funcs, fn_fileno(testing::_))
+            .WillOnce(DoAll(SetArgPointee<1>(sb), Return(0)));
+    EXPECT_CALL(_funcs, fn_fileno(_))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestablePosixFile file(&_funcs);
-    ASSERT_FALSE(file.open(g_fp, false));
-    ASSERT_EQ(file.error(), std::errc::is_a_directory);
+    ASSERT_EQ(file.open(g_fp, false), oc::failure(std::errc::is_a_directory));
 }
 
 TEST_F(FilePosixTest, OpenFile)
@@ -264,13 +288,12 @@ TEST_F(FilePosixTest, OpenFile)
     struct stat sb{};
     sb.st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
 
-    EXPECT_CALL(_funcs, fn_fstat(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fstat(_, _))
             .Times(1)
-            .WillOnce(testing::DoAll(testing::SetArgPointee<1>(sb),
-                                     testing::Return(0)));
-    EXPECT_CALL(_funcs, fn_fileno(testing::_))
+            .WillOnce(DoAll(SetArgPointee<1>(sb), Return(0)));
+    EXPECT_CALL(_funcs, fn_fileno(_))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestablePosixFile file(&_funcs);
     ASSERT_TRUE(file.open(g_fp, false));
@@ -279,7 +302,7 @@ TEST_F(FilePosixTest, OpenFile)
 TEST_F(FilePosixTest, CloseUnownedFile)
 {
     // Ensure that the close callback is not called
-    EXPECT_CALL(_funcs, fn_fclose(testing::_))
+    EXPECT_CALL(_funcs, fn_fclose(_))
             .Times(0);
 
     TestablePosixFile file(&_funcs, g_fp, false);
@@ -291,9 +314,9 @@ TEST_F(FilePosixTest, CloseUnownedFile)
 TEST_F(FilePosixTest, CloseOwnedFile)
 {
     // Ensure that the close callback is called
-    EXPECT_CALL(_funcs, fn_fclose(testing::_))
+    EXPECT_CALL(_funcs, fn_fclose(_))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
@@ -304,317 +327,231 @@ TEST_F(FilePosixTest, CloseOwnedFile)
 TEST_F(FilePosixTest, CloseFailure)
 {
     // Ensure that the close callback is called
-    EXPECT_CALL(_funcs, fn_fclose(testing::_))
+    EXPECT_CALL(_funcs, fn_fclose(_))
             .Times(1);
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_FALSE(file.close());
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    ASSERT_EQ(file.close(), oc::failure(std::errc::io_error));
 }
 
 TEST_F(FilePosixTest, ReadSuccess)
 {
     // Ensure that the read callback is called
-    EXPECT_CALL(_funcs, fn_fread(testing::_, testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fread(_, _, _, _))
             .Times(1)
-            .WillOnce(testing::ReturnArg<2>());
+            .WillOnce(ReturnArg<2>());
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
     char c;
-    size_t n;
-    ASSERT_TRUE(file.read(&c, 1, n));
-    ASSERT_EQ(n, 1u);
+    ASSERT_EQ(file.read(&c, 1), oc::success(1u));
 }
 
 TEST_F(FilePosixTest, ReadEof)
 {
     // Ensure that the read callback is called
-    EXPECT_CALL(_funcs, fn_fread(testing::_, testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fread(_, _, _, _))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
     char c;
-    size_t n;
-    ASSERT_TRUE(file.read(&c, 1, n));
-    ASSERT_EQ(n, 0u);
+    ASSERT_EQ(file.read(&c, 1), oc::success(0u));
 }
 
 TEST_F(FilePosixTest, ReadFailure)
 {
     // Ensure that the read callback is called
-    EXPECT_CALL(_funcs, fn_fread(testing::_, testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fread(_, _, _, _))
             .Times(1);
-    EXPECT_CALL(_funcs, fn_ferror(testing::_))
+    EXPECT_CALL(_funcs, fn_ferror(_))
             .Times(1);
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
     char c;
-    size_t n;
-    ASSERT_FALSE(file.read(&c, 1, n));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    ASSERT_EQ(file.read(&c, 1), oc::failure(std::errc::io_error));
 }
 
 TEST_F(FilePosixTest, ReadFailureEINTR)
 {
     // Ensure that the read callback is called
-    EXPECT_CALL(_funcs, fn_fread(testing::_, testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fread(_, _, _, _))
             .Times(1)
-            .WillOnce(testing::DoAll(
-                    testing::InvokeWithoutArgs(
+            .WillOnce(DoAll(
+                    InvokeWithoutArgs(
                             &_funcs, &MockPosixFileFuncs::set_ferror_fail),
-                    testing::SetErrnoAndReturn(EINTR, 0)));
-    EXPECT_CALL(_funcs, fn_ferror(testing::_))
+                    SetErrnoAndReturn(EINTR, 0)));
+    EXPECT_CALL(_funcs, fn_ferror(_))
             .Times(1);
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
     char c;
-    size_t n;
-    ASSERT_FALSE(file.read(&c, 1, n));
-    ASSERT_EQ(file.error(), std::errc::interrupted);
+    ASSERT_EQ(file.read(&c, 1), oc::failure(std::errc::interrupted));
 }
 
 TEST_F(FilePosixTest, WriteSuccess)
 {
     // Ensure that the write callback is called
-    EXPECT_CALL(_funcs, fn_fwrite(testing::_, testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fwrite(_, _, _, _))
             .Times(1)
-            .WillOnce(testing::ReturnArg<2>());
+            .WillOnce(ReturnArg<2>());
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    size_t n;
-    ASSERT_TRUE(file.write("x", 1, n));
-    ASSERT_EQ(n, 1u);
+    ASSERT_EQ(file.write("x", 1), oc::success(1u));
 }
 
 TEST_F(FilePosixTest, WriteEof)
 {
     // Ensure that the write callback is called
-    EXPECT_CALL(_funcs, fn_fwrite(testing::_, testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fwrite(_, _, _, _))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    size_t n;
-    ASSERT_TRUE(file.write("x", 1, n));
-    ASSERT_EQ(n, 0u);
+    ASSERT_EQ(file.write("x", 1), oc::success(0u));
 }
 
 TEST_F(FilePosixTest, WriteFailure)
 {
     // Ensure that the write callback is called
-    EXPECT_CALL(_funcs, fn_fwrite(testing::_, testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fwrite(_, _, _, _))
             .Times(1);
-    EXPECT_CALL(_funcs, fn_ferror(testing::_))
+    EXPECT_CALL(_funcs, fn_ferror(_))
             .Times(1);
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    size_t n;
-    ASSERT_FALSE(file.write("x", 1, n));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    ASSERT_EQ(file.write("x", 1), oc::failure(std::errc::io_error));
 }
 
 TEST_F(FilePosixTest, WriteFailureEINTR)
 {
     // Ensure that the write callback is called
-    EXPECT_CALL(_funcs, fn_fwrite(testing::_, testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fwrite(_, _, _, _))
             .Times(1)
-            .WillOnce(testing::DoAll(
-                    testing::InvokeWithoutArgs(
+            .WillOnce(DoAll(
+                    InvokeWithoutArgs(
                             &_funcs, &MockPosixFileFuncs::set_ferror_fail),
-                    testing::SetErrnoAndReturn(EINTR, 0)));
-    EXPECT_CALL(_funcs, fn_ferror(testing::_))
+                    SetErrnoAndReturn(EINTR, 0)));
+    EXPECT_CALL(_funcs, fn_ferror(_))
             .Times(1);
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    size_t n;
-    ASSERT_FALSE(file.write("x", 1, n));
-    ASSERT_EQ(file.error(), std::errc::interrupted);
+    ASSERT_EQ(file.write("x", 1), oc::failure(std::errc::interrupted));
 }
 
 TEST_F(FilePosixTest, SeekSuccess)
 {
-    EXPECT_CALL(_funcs, fn_fseeko(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fseeko(_, _, _))
             .Times(1)
-            .WillOnce(testing::Return(0));
-    EXPECT_CALL(_funcs, fn_ftello(testing::_))
-            .Times(2)
-            .WillOnce(testing::Return(0))
-            .WillOnce(testing::Return(10));
+            .WillOnce(Return(0));
+    EXPECT_CALL(_funcs, fn_ftello(_))
+            .Times(1)
+            .WillOnce(Return(10));
 
-    ON_CALL(_funcs, fn_fileno(testing::_))
-            .WillByDefault(testing::Return(0));
+    ON_CALL(_funcs, fn_fileno(_))
+            .WillByDefault(Return(0));
 
     struct stat sb{};
     sb.st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
 
-    ON_CALL(_funcs, fn_fstat(testing::_, testing::_))
-            .WillByDefault(testing::DoAll(testing::SetArgPointee<1>(sb),
-                                          testing::Return(0)));
+    ON_CALL(_funcs, fn_fstat(_, _))
+            .WillByDefault(DoAll(SetArgPointee<1>(sb), Return(0)));
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    uint64_t offset;
-    ASSERT_TRUE(file.seek(10, SEEK_SET, &offset));
-    ASSERT_EQ(offset, 10u);
+    ASSERT_EQ(file.seek(10, SEEK_SET), oc::success(10u));
 }
 
 #ifndef __ANDROID__
 #define LFS_SIZE (10ULL * 1024 * 1024 * 1024)
 TEST_F(FilePosixTest, SeekSuccessLargeFile)
 {
-    EXPECT_CALL(_funcs, fn_fseeko(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fseeko(_, _, _))
             .Times(1)
-            .WillOnce(testing::Return(0));
-    EXPECT_CALL(_funcs, fn_ftello(testing::_))
-            .Times(2)
-            .WillRepeatedly(testing::Return(LFS_SIZE));
+            .WillOnce(Return(0));
+    EXPECT_CALL(_funcs, fn_ftello(_))
+            .Times(1)
+            .WillOnce(Return(LFS_SIZE));
 
-    ON_CALL(_funcs, fn_fileno(testing::_))
-            .WillByDefault(testing::Return(0));
+    ON_CALL(_funcs, fn_fileno(_))
+            .WillByDefault(Return(0));
 
     struct stat sb{};
     sb.st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
 
-    ON_CALL(_funcs, fn_fstat(testing::_, testing::_))
-            .WillByDefault(testing::DoAll(testing::SetArgPointee<1>(sb),
-                                          testing::Return(0)));
+    ON_CALL(_funcs, fn_fstat(_, _))
+            .WillByDefault(DoAll(SetArgPointee<1>(sb), Return(0)));
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
     // Ensure that the types (off_t, etc.) are large enough for LFS
-    uint64_t offset;
-    ASSERT_TRUE(file.seek(LFS_SIZE, SEEK_SET, &offset));
-    ASSERT_EQ(offset, LFS_SIZE);
+    ASSERT_EQ(file.seek(LFS_SIZE, SEEK_SET), oc::success(LFS_SIZE));
 }
 #undef LFS_SIZE
 #endif
 
 TEST_F(FilePosixTest, SeekFseekFailed)
 {
-    EXPECT_CALL(_funcs, fn_fseeko(testing::_, testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_fseeko(_, _, _))
             .Times(1);
-    EXPECT_CALL(_funcs, fn_ftello(testing::_))
-            .Times(1)
-            .WillOnce(testing::Return(0));
+    EXPECT_CALL(_funcs, fn_ftello(_))
+            .Times(0);
 
-    ON_CALL(_funcs, fn_fileno(testing::_))
-            .WillByDefault(testing::Return(0));
+    ON_CALL(_funcs, fn_fileno(_))
+            .WillByDefault(Return(0));
 
     struct stat sb{};
     sb.st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
 
-    ON_CALL(_funcs, fn_fstat(testing::_, testing::_))
-            .WillByDefault(testing::DoAll(testing::SetArgPointee<1>(sb),
-                                          testing::Return(0)));
+    ON_CALL(_funcs, fn_fstat(_, _))
+            .WillByDefault(DoAll(SetArgPointee<1>(sb), Return(0)));
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    ASSERT_EQ(file.seek(10, SEEK_SET), oc::failure(std::errc::io_error));
 }
 
 TEST_F(FilePosixTest, SeekFtellFailed)
 {
-    EXPECT_CALL(_funcs, fn_fseeko(testing::_, testing::_, testing::_))
-            .Times(0);
-    EXPECT_CALL(_funcs, fn_ftello(testing::_))
+    EXPECT_CALL(_funcs, fn_fseeko(_, _, _))
+            .Times(1)
+            .WillOnce(Return(0));
+    EXPECT_CALL(_funcs, fn_ftello(_))
             .Times(1);
 
-    ON_CALL(_funcs, fn_fileno(testing::_))
-            .WillByDefault(testing::Return(0));
+    ON_CALL(_funcs, fn_fileno(_))
+            .WillByDefault(Return(0));
 
     struct stat sb{};
     sb.st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
 
-    ON_CALL(_funcs, fn_fstat(testing::_, testing::_))
-            .WillByDefault(testing::DoAll(testing::SetArgPointee<1>(sb),
-                                          testing::Return(0)));
+    ON_CALL(_funcs, fn_fstat(_, _))
+            .WillByDefault(DoAll(SetArgPointee<1>(sb), Return(0)));
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
-    ASSERT_EQ(file.error(), std::errc::io_error);
-}
-
-TEST_F(FilePosixTest, SeekSecondFtellFailed)
-{
-    // fseeko will be called a second time to restore the original position
-    EXPECT_CALL(_funcs, fn_fseeko(testing::_, testing::_, testing::_))
-            .Times(2)
-            .WillRepeatedly(testing::Return(0));
-    EXPECT_CALL(_funcs, fn_ftello(testing::_))
-            .Times(2)
-            .WillOnce(testing::Return(0))
-            .WillOnce(testing::SetErrnoAndReturn(EIO, -1));
-
-    ON_CALL(_funcs, fn_fileno(testing::_))
-            .WillByDefault(testing::Return(0));
-
-    struct stat sb{};
-    sb.st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
-
-    ON_CALL(_funcs, fn_fstat(testing::_, testing::_))
-            .WillByDefault(testing::DoAll(testing::SetArgPointee<1>(sb),
-                                          testing::Return(0)));
-
-    TestablePosixFile file(&_funcs, g_fp, true);
-    ASSERT_TRUE(file.is_open());
-
-    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
-    ASSERT_EQ(file.error(), std::errc::io_error);
-}
-
-TEST_F(FilePosixTest, SeekSecondFtellFatal)
-{
-    // fseeko will be called a second time to restore the original position
-    EXPECT_CALL(_funcs, fn_fseeko(testing::_, testing::_, testing::_))
-            .Times(2)
-            .WillOnce(testing::Return(0))
-            .WillOnce(testing::SetErrnoAndReturn(EIO, -1));
-    EXPECT_CALL(_funcs, fn_ftello(testing::_))
-            .Times(2)
-            .WillOnce(testing::Return(0))
-            .WillOnce(testing::SetErrnoAndReturn(EIO, -1));
-
-    ON_CALL(_funcs, fn_fileno(testing::_))
-            .WillByDefault(testing::Return(0));
-
-    struct stat sb{};
-    sb.st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
-
-    ON_CALL(_funcs, fn_fstat(testing::_, testing::_))
-            .WillByDefault(testing::DoAll(testing::SetArgPointee<1>(sb),
-                                          testing::Return(0)));
-
-    TestablePosixFile file(&_funcs, g_fp, true);
-    ASSERT_TRUE(file.is_open());
-
-    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
-    ASSERT_TRUE(file.is_fatal());
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    ASSERT_EQ(file.seek(10, SEEK_SET), oc::failure(std::errc::io_error));
 }
 
 TEST_F(FilePosixTest, SeekUnsupported)
@@ -622,20 +559,19 @@ TEST_F(FilePosixTest, SeekUnsupported)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
-    ASSERT_EQ(file.error(), mb::FileError::UnsupportedSeek);
+    ASSERT_EQ(file.seek(10, SEEK_SET), oc::failure(FileError::UnsupportedSeek));
 }
 
 TEST_F(FilePosixTest, TruncateSuccess)
 {
     // Fail when opening to avoid fstat check
-    EXPECT_CALL(_funcs, fn_fileno(testing::_))
+    EXPECT_CALL(_funcs, fn_fileno(_))
             .Times(2)
-            .WillOnce(testing::Return(-1))
-            .WillOnce(testing::Return(0));
-    EXPECT_CALL(_funcs, fn_ftruncate64(testing::_, testing::_))
+            .WillOnce(Return(-1))
+            .WillOnce(Return(0));
+    EXPECT_CALL(_funcs, fn_ftruncate64(_, _))
             .Times(1)
-            .WillOnce(testing::Return(0));
+            .WillOnce(Return(0));
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
@@ -645,31 +581,29 @@ TEST_F(FilePosixTest, TruncateSuccess)
 
 TEST_F(FilePosixTest, TruncateUnsupported)
 {
-    EXPECT_CALL(_funcs, fn_fileno(testing::_))
+    EXPECT_CALL(_funcs, fn_fileno(_))
             .Times(2);
-    EXPECT_CALL(_funcs, fn_ftruncate64(testing::_, testing::_))
+    EXPECT_CALL(_funcs, fn_ftruncate64(_, _))
             .Times(0);
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_FALSE(file.truncate(1024));
-    ASSERT_EQ(file.error(), mb::FileError::UnsupportedTruncate);
+    ASSERT_EQ(file.truncate(1024), oc::failure(FileError::UnsupportedTruncate));
 }
 
 TEST_F(FilePosixTest, TruncateFailed)
 {
     // Fail when opening to avoid fstat check
-    EXPECT_CALL(_funcs, fn_fileno(testing::_))
+    EXPECT_CALL(_funcs, fn_fileno(_))
             .Times(2)
-            .WillOnce(testing::Return(-1))
-            .WillOnce(testing::Return(0));
-    EXPECT_CALL(_funcs, fn_ftruncate64(testing::_, testing::_))
+            .WillOnce(Return(-1))
+            .WillOnce(Return(0));
+    EXPECT_CALL(_funcs, fn_ftruncate64(_, _))
             .Times(1);
 
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_FALSE(file.truncate(1024));
-    ASSERT_EQ(file.error(), std::errc::io_error);
+    ASSERT_EQ(file.truncate(1024), oc::failure(std::errc::io_error));
 }

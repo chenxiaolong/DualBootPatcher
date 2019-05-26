@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,34 +23,39 @@
 
 #include "mbbootimg/format/segment_reader_p.h"
 #include "mbbootimg/format/sony_elf_p.h"
-#include "mbbootimg/reader.h"
+#include "mbbootimg/reader_p.h"
 
 
-MB_BEGIN_C_DECLS
-
-struct SonyElfReaderCtx
+namespace mb::bootimg::sonyelf
 {
+
+class SonyElfFormatReader : public detail::FormatReader
+{
+public:
+    SonyElfFormatReader() noexcept;
+    virtual ~SonyElfFormatReader() noexcept;
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SonyElfFormatReader)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(SonyElfFormatReader)
+
+    Format type() override;
+
+    oc::result<int> open(File &file, int best_bid) override;
+    oc::result<void> close(File &file) override;
+    oc::result<Header> read_header(File &file) override;
+    oc::result<Entry> read_entry(File &file) override;
+    oc::result<Entry> go_to_entry(File &file,
+                                  std::optional<EntryType> entry_type) override;
+    oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
+
+    static oc::result<Sony_Elf32_Ehdr>
+    find_sony_elf_header(File &file);
+
+private:
     // Header values
-    struct Sony_Elf32_Ehdr hdr;
+    Sony_Elf32_Ehdr m_hdr;
 
-    bool have_header;
-
-    struct SegmentReaderCtx segctx;
+    std::optional<SegmentReader> m_seg;
 };
 
-int find_sony_elf_header(struct MbBiReader *bir, mb::File *file,
-                         struct Sony_Elf32_Ehdr *header_out);
-
-int sony_elf_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int sony_elf_reader_read_header(struct MbBiReader *bir, void *userdata,
-                                struct MbBiHeader *header);
-int sony_elf_reader_read_entry(struct MbBiReader *bir, void *userdata,
-                               struct MbBiEntry *entry);
-int sony_elf_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
-                                struct MbBiEntry *entry, int entry_type);
-int sony_elf_reader_read_data(struct MbBiReader *bir, void *userdata,
-                              void *buf, size_t buf_size,
-                              size_t &bytes_read);
-int sony_elf_reader_free(struct MbBiReader *bir, void *userdata);
-
-MB_END_C_DECLS
+}

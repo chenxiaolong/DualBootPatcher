@@ -46,6 +46,11 @@ include $(BUILD_STATIC_LIBRARY)
 
 ###
 
+common_cflags := \
+	-D_FILE_OFFSET_BITS=64 \
+	-DPACKAGE=\"exfat\" \
+	-DVERSION=\"$(VERSION)\"
+
 include $(CLEAR_VARS)
 LOCAL_MODULE := libexfat
 LOCAL_SRC_FILES = \
@@ -55,13 +60,13 @@ LOCAL_SRC_FILES = \
 	exfat/libexfat/lookup.c \
 	exfat/libexfat/mount.c \
 	exfat/libexfat/node.c \
+	exfat/libexfat/repair.c \
 	exfat/libexfat/time.c \
 	exfat/libexfat/utf.c \
 	exfat/libexfat/utils.c 
 LOCAL_C_INCLUDES := \
 	$(LIBEXFAT_CONFIGURE_DIR)
-LOCAL_CFLAGS = \
-	-D_FILE_OFFSET_BITS=64
+LOCAL_CFLAGS = $(common_cflags)
 include $(BUILD_STATIC_LIBRARY)
 
 ###
@@ -75,8 +80,7 @@ LOCAL_C_INCLUDES += \
 	fuse/include \
 	fuse/android \
 	$(LIBEXFAT_CONFIGURE_DIR)
-LOCAL_CFLAGS = \
-	-D_FILE_OFFSET_BITS=64
+LOCAL_CFLAGS = $(common_cflags)
 include $(BUILD_STATIC_LIBRARY)
 
 ###
@@ -96,8 +100,7 @@ LOCAL_C_INCLUDES += \
 	exfat/libexfat \
 	fuse/include \
 	$(LIBEXFAT_CONFIGURE_DIR)
-LOCAL_CFLAGS = \
-	-D_FILE_OFFSET_BITS=64
+LOCAL_CFLAGS = $(common_cflags)
 include $(BUILD_STATIC_LIBRARY)
 
 ###
@@ -110,8 +113,7 @@ LOCAL_C_INCLUDES += \
 	exfat/libexfat \
 	fuse/include \
 	$(LIBEXFAT_CONFIGURE_DIR)
-LOCAL_CFLAGS = \
-	-D_FILE_OFFSET_BITS=64
+LOCAL_CFLAGS = $(common_cflags)
 include $(BUILD_STATIC_LIBRARY)
 
 ###

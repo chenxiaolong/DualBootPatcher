@@ -1,11 +1,1 @@
-if(ANDROID)
-    set(SAFE_IOP_INCLUDE_DIR
-        ${THIRD_PARTY_SAFE_IOP_DIR}/${ANDROID_ABI}/include)
-    set(SAFE_IOP_LIBRARY
-        ${THIRD_PARTY_SAFE_IOP_DIR}/${ANDROID_ABI}/lib/libsafe_iop.a)
-endif()
-
 find_package(SafeIop REQUIRED)
-
-set(MBP_SAFE_IOP_INCLUDES ${SAFE_IOP_INCLUDE_DIR})
-set(MBP_SAFE_IOP_LIBRARIES ${SAFE_IOP_LIBRARIES})

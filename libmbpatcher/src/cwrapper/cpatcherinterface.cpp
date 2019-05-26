@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,7 +21,7 @@
 
 #include <cassert>
 
-#include "mbpatcher/cwrapper/private/util.h"
+#include "mbcommon/capi/util.h"
 
 #include "mbpatcher/patcherinterface.h"
 
@@ -51,39 +51,8 @@
  * \sa Patcher, AutoPatcher
  */
 
-extern "C" {
-
-struct CallbackWrapper
+extern "C"
 {
-    ProgressUpdatedCallback progress_cb;
-    FilesUpdatedCallback files_cb;
-    DetailsUpdatedCallback details_cb;
-    void *userdata;
-};
-
-void progress_cb_wrapper(uint64_t bytes, uint64_t max_bytes, void *userdata)
-{
-    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
-    if (wrapper->progress_cb != nullptr) {
-        wrapper->progress_cb(bytes, max_bytes, wrapper->userdata);
-    }
-}
-
-void files_cb_wrapper(uint64_t files, uint64_t max_files, void *userdata)
-{
-    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
-    if (wrapper->files_cb) {
-        wrapper->files_cb(files, max_files, userdata);
-    }
-}
-
-void details_cb_wrapper(const std::string &text, void *userdata)
-{
-    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
-    if (wrapper->details_cb) {
-        wrapper->details_cb(text.c_str(), wrapper->userdata);
-    }
-}
 
 /*!
  * \brief Get the error information
@@ -120,7 +89,7 @@ void details_cb_wrapper(const std::string &text, void *userdata)
 char * mbpatcher_patcher_id(const CPatcher *patcher)
 {
     CCASTP(patcher);
-    return string_to_cstring(p->id());
+    return mb::capi_str_to_cstr(p->id());
 }
 
 /*!
@@ -141,30 +110,39 @@ void mbpatcher_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info)
  * \brief Start patching the file
  *
  * \param patcher CPatcher object
- * \param progressCb Callback for receiving current progress value
- * \param detailsCb Callback for receiving detailed progress text
- * \param userData Pointer to pass to callback functions
+ * \param progress_cb Callback for receiving current progress value
+ * \param files_cb Callback for receiving current files count
+ * \param details_cb Callback for receiving detailed progress text
+ * \param userdata Pointer to pass to callback functions
  * \return true on success, otherwise false (and error set appropriately)
  *
  * \sa Patcher::patchFile()
  */
 bool mbpatcher_patcher_patch_file(CPatcher *patcher,
-                                  ProgressUpdatedCallback progressCb,
-                                  FilesUpdatedCallback filesCb,
-                                  DetailsUpdatedCallback detailsCb,
-                                  void *userData)
+                                  ProgressUpdatedCallback progress_cb,
+                                  FilesUpdatedCallback files_cb,
+                                  DetailsUpdatedCallback details_cb,
+                                  void *userdata)
 {
     CASTP(patcher);
 
-    CallbackWrapper wrapper;
-    wrapper.progress_cb = progressCb;
-    wrapper.files_cb = filesCb;
-    wrapper.details_cb = detailsCb;
-    wrapper.userdata = userData;
-
-    return p->patch_file(&progress_cb_wrapper, &files_cb_wrapper,
-                         &details_cb_wrapper,
-                         reinterpret_cast<void *>(&wrapper));
+    return p->patch_file(
+        [&](uint64_t bytes, uint64_t max_bytes) {
+            if (progress_cb) {
+                progress_cb(bytes, max_bytes, userdata);
+            }
+        },
+        [&](uint64_t files, uint64_t max_files) {
+            if (files_cb) {
+                files_cb(files, max_files, userdata);
+            }
+        },
+        [&](const std::string &text) {
+            if (details_cb) {
+                details_cb(text.c_str(), userdata);
+            }
+        }
+    );
 }
 
 /*!
@@ -215,14 +193,14 @@ void mbpatcher_patcher_cancel_patching(CPatcher *patcher)
 char * mbpatcher_autopatcher_id(const CAutoPatcher *patcher)
 {
     CCASTAP(patcher);
-    return string_to_cstring(ap->id());
+    return mb::capi_str_to_cstr(ap->id());
 }
 
 /*!
  * \brief List of new files added by the autopatcher
  *
- * \note The returned array should be freed with `mbpatcher_free_array()` when
- *       it is no longer needed.
+ * \note The returned array and its contents should be freed with `free()` when
+ *       they are no longer needed.
  *
  * \param patcher CAutoPatcher object
  * \return A NULL-terminated array containing the files
@@ -232,14 +210,14 @@ char * mbpatcher_autopatcher_id(const CAutoPatcher *patcher)
 char ** mbpatcher_autopatcher_new_files(const CAutoPatcher *patcher)
 {
     CCASTAP(patcher);
-    return vector_to_cstring_array(ap->new_files());
+    return mb::capi_vector_to_cstr_array(ap->new_files());
 }
 
 /*!
  * \brief List of existing files to be patched in the zip file
  *
- * \note The returned array should be freed with `mbpatcher_free_array()` when
- *       it is no longer needed.
+ * \note The returned array and its contents should be freed with `free()` when
+ *       they are no longer needed.
  *
  * \param patcher CAutoPatcher object
  * \return A NULL-terminated array containing the files
@@ -249,7 +227,7 @@ char ** mbpatcher_autopatcher_new_files(const CAutoPatcher *patcher)
 char ** mbpatcher_autopatcher_existing_files(const CAutoPatcher *patcher)
 {
     CCASTAP(patcher);
-    return vector_to_cstring_array(ap->existing_files());
+    return mb::capi_vector_to_cstr_array(ap->existing_files());
 }
 
 /*!

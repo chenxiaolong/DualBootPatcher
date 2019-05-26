@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,37 +19,67 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
-#include <cstdio>
+#include "mbcommon/outcome.h"
 
-#define PROC_MOUNTS "/proc/mounts"
+namespace mb::util
+{
 
-namespace mb
+enum class MountError
 {
-namespace util
-{
+    PathNotMounted = 1,
+};
+
+std::error_code make_error_code(MountError e);
+
+const std::error_category & mount_error_category();
 
 struct MountEntry
 {
-    std::string fsname;
-    std::string dir;
+    //! [mountinfo[1]] ID
+    std::optional<unsigned int> id;
+    //! [mountinfo[2]] Parent
+    std::optional<unsigned int> parent;
+    //! [mountinfo[3]] Device number of mount point
+    std::optional<dev_t> dev;
+    //! [mountinfo[4]] Root directory for bind mount
+    std::optional<std::string> root;
+    //! [mountinfo[5], mounts[2]] Mount point
+    std::string target;
+    //! [mountinfo[6], mounts[4]] VFS options
+    std::string vfs_options;
+    //! [mountinfo[8], mounts[3]] Filesystem type
     std::string type;
-    std::string opts;
-    int freq;
-    int passno;
+    //! [mountinfo[9], mounts[1]] Source device
+    std::string source;
+    //! [mountinfo[10], mounts[4]] FS options
+    std::string fs_options;
+    //! [mounts[5]] Dump frequency in days
+    std::optional<int> freq;
+    //! [mounts[6]] Parallel fsck pass number
+    std::optional<int> passno;
 };
 
-bool get_mount_entry(std::FILE *fp, MountEntry &entry_out);
+oc::result<std::vector<MountEntry>> get_mount_entries();
 
-bool is_mounted(const std::string &mountpoint);
-bool unmount_all(const std::string &dir);
-bool mount(const char *source, const char *target, const char *fstype,
-           unsigned long mount_flags, const void *data);
-bool umount(const char *target);
+oc::result<void> is_mounted(const std::string &mountpoint);
+oc::result<void> unmount_all(const std::string &dir);
+oc::result<void> mount(const std::string &source, const std::string &target,
+                       const std::string &fstype, unsigned long mount_flags,
+                       const std::string &data);
+oc::result<void> umount(const std::string &target);
 
-uint64_t mount_get_total_size(const char *path);
-uint64_t mount_get_avail_size(const char *path);
+oc::result<uint64_t> mount_get_total_size(const std::string &path);
+oc::result<uint64_t> mount_get_avail_size(const std::string &path);
 
 }
+
+namespace std
+{
+    template<>
+    struct is_error_code_enum<mb::util::MountError> : true_type
+    {
+    };
 }

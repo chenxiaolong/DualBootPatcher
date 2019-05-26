@@ -65,6 +65,8 @@
 #include "gui/text.hpp"
 #include "gui/textbox.hpp"
 
+#define LOG_TAG "mbbootui/gui/pages"
+
 #define TW_THEME_VERSION 1
 #define TW_THEME_VER_ERR -2
 
@@ -820,11 +822,11 @@ int PageSet::LoadLanguage(char* languageFile, ZipArchive* package)
 
     child = parent->first_node("display");
     if (child) {
-        DataManager::SetValue(TW_LANGUAGE_DISPLAY, child->value());
+        DataManager::SetValue(VAR_TW_LANGUAGE_DISPLAY, child->value());
         resource_source = child->value();
     } else {
         LOGE("language file does not have a display value set");
-        DataManager::SetValue(TW_LANGUAGE_DISPLAY, "Not Set");
+        DataManager::SetValue(VAR_TW_LANGUAGE_DISPLAY, "Not Set");
         resource_source = languageFile;
     }
 
@@ -868,7 +870,7 @@ int PageSet::LoadDetails(LoadingContext& ctx, xml_node<>* root)
                 int width = atoi(width_attr->value());
                 int height = atoi(height_attr->value());
                 int offx = 0, offy = 0;
-                if (tw_flags & TW_FLAG_ROUND_SCREEN) {
+                if (tw_device.tw_flags() & mb::device::TwFlag::RoundScreen) {
                     xml_node<>* roundscreen = child->first_node("roundscreen");
                     if (roundscreen) {
                         LOGI("TW_ROUND_SCREEN := true, using round screen XML settings.");
@@ -885,7 +887,7 @@ int PageSet::LoadDetails(LoadingContext& ctx, xml_node<>* root)
                 if (width != 0 && height != 0) {
                     float scale_w = ((float) gr_fb_width() - ((float) offx * 2.0)) / (float) width;
                     float scale_h = ((float) gr_fb_height() - ((float) offy * 2.0)) / (float) height;
-                    if (tw_flags & TW_FLAG_ROUND_SCREEN) {
+                    if (tw_device.tw_flags() & mb::device::TwFlag::RoundScreen) {
                         float scale_off_w = (float) gr_fb_width() / (float) width;
                         float scale_off_h = (float) gr_fb_height() / (float) height;
                         tw_x_offset = offx * scale_off_w;
@@ -1185,7 +1187,7 @@ char* PageManager::LoadFileToBuffer(const std::string& filename,
             return nullptr;
         }
 
-        int fd = open(filename.c_str(), O_RDONLY);
+        int fd = open(filename.c_str(), O_RDONLY | O_CLOEXEC);
         if (fd == -1) {
             LOGE("PageManager::LoadFileToBuffer failed to open '%s' - (%s)", filename.c_str(), strerror(errno));
             free(buffer);
@@ -1227,7 +1229,7 @@ char* PageManager::LoadFileToBuffer(const std::string& filename,
 
 void PageManager::LoadLanguageListDir(const std::string& dir)
 {
-    if (!mb::util::path_exists(dir.c_str(), false)) {
+    if (!mb::util::path_exists(dir, false)) {
         LOGE("LoadLanguageListDir '%s' path not found", dir.c_str());
         return;
     }
@@ -1284,11 +1286,11 @@ void PageManager::LoadLanguageListDir(const std::string& dir)
 void PageManager::LoadLanguageList(ZipArchive* package)
 {
     Language_List.clear();
-    if (mb::util::path_exists(TWFunc::get_resource_path("customlanguages").c_str(), false)) {
-        mb::util::delete_recursive(TWFunc::get_resource_path("customlanguages"));
+    if (mb::util::path_exists(TWFunc::get_resource_path("customlanguages"), false)) {
+        (void) mb::util::delete_recursive(TWFunc::get_resource_path("customlanguages"));
     }
     if (package) {
-        mb::util::mkdir_recursive(TWFunc::get_resource_path("customlanguages"), 0700);
+        (void) mb::util::mkdir_recursive(TWFunc::get_resource_path("customlanguages"), 0700);
         struct utimbuf timestamp = { 1217592000, 1217592000 };  // 8/1/2008 default
 #ifdef HAVE_SELINUX
         mzExtractRecursive(package, "languages", TWFunc::get_resource_path("customlanguages/").c_str(), &timestamp, nullptr, nullptr, nullptr);
@@ -1306,7 +1308,7 @@ void PageManager::LoadLanguageList(ZipArchive* package)
 void PageManager::LoadLanguage(const std::string& filename)
 {
     std::string actual_filename;
-    if (mb::util::path_exists(TWFunc::get_resource_path("customlanguages/" + filename + ".xml").c_str(), false)) {
+    if (mb::util::path_exists(TWFunc::get_resource_path("customlanguages/" + filename + ".xml"), false)) {
         actual_filename = TWFunc::get_resource_path("customlanguages/" + filename + ".xml");
     } else {
         actual_filename = TWFunc::get_resource_path("languages/" + filename + ".xml");
@@ -1342,8 +1344,8 @@ int PageManager::LoadPackage(const std::string& name,
     LOGI("Loading package: %s (%s)", name.c_str(), package.c_str());
     if (package.size() > 4 && package.substr(package.size() - 4) != ".zip") {
         LOGI("Load XML directly");
-        tw_x_offset = tw_default_x_offset;
-        tw_y_offset = tw_default_y_offset;
+        tw_x_offset = tw_device.tw_default_x_offset();
+        tw_y_offset = tw_device.tw_default_y_offset();
         if (name != "splash") {
             LoadLanguageList(nullptr);
             languageFile = LoadFileToBuffer(TWFunc::get_resource_path("languages/en.xml"), nullptr);
@@ -1354,7 +1356,7 @@ int PageManager::LoadPackage(const std::string& name,
         LOGI("Loading zip theme");
         tw_x_offset = 0;
         tw_y_offset = 0;
-        if (!mb::util::path_exists(package.c_str(), false)) {
+        if (!mb::util::path_exists(package, false)) {
             return -1;
         }
         if (sysMapFile(package.c_str(), &map) != 0) {
@@ -1513,7 +1515,7 @@ int PageManager::RunReload()
         }
     }
     if (ret_val == 0) {
-        std::string language = DataManager::GetStrValue(TW_LANGUAGE);
+        std::string language = DataManager::GetStrValue(VAR_TW_LANGUAGE);
         if (language != "en.xml") {
             LOGI("Loading language '%s'", language.c_str());
             LoadLanguage(language);
@@ -1540,7 +1542,7 @@ void PageManager::SetStartPage(const std::string& page_name)
 
 int PageManager::ChangePage(const std::string& name)
 {
-    DataManager::SetValue(TW_OPERATION_STATE, 0);
+    DataManager::SetValue(VAR_TW_OPERATION_STATE, 0);
     int ret = (mCurrentSet ? mCurrentSet->SetPage(name) : -1);
     return ret;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,990 +19,600 @@
 
 #include "mbdevice/json.h"
 
-#include <string.h>
+#include <array>
 
-#include <jansson.h>
+#include <cassert>
+#include <cstring>
+
+#include <rapidjson/document.h>
+#include <rapidjson/error/en.h>
+#include <rapidjson/schema.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #include "mbcommon/string.h"
-
-#include "mbdevice/internal/array.h"
-#include "mbdevice/internal/structs.h"
+#include "mbdevice/schema.h"
 
 
-#define JSON_BOOLEAN JSON_TRUE
+using namespace rapidjson;
 
-struct flag_mapping
+namespace mb::device
 {
-    const char *key;
-    uint64_t flag;
-};
 
-struct flag_mapping device_flag_mappings[] = {
-#define FLAG(F) { #F, FLAG_ ## F }
-    FLAG(HAS_COMBINED_BOOT_AND_RECOVERY),
-    FLAG(FSTAB_SKIP_SDCARD0),
-#undef FLAG
-    { NULL, 0 }
-};
+using DeviceFlagMapping = std::pair<const char *, DeviceFlag>;
+using TwFlagMapping = std::pair<const char *, TwFlag>;
+using TwPixelFormatMapping = std::pair<const char *, TwPixelFormat>;
+using TwForcePixelFormatMapping = std::pair<const char *, TwForcePixelFormat>;
 
-struct flag_mapping tw_flag_mappings[] = {
-#define FLAG(F) { #F, FLAG_ ## F }
-    FLAG(TW_TOUCHSCREEN_SWAP_XY),
-    FLAG(TW_TOUCHSCREEN_FLIP_X),
-    FLAG(TW_TOUCHSCREEN_FLIP_Y),
-    FLAG(TW_GRAPHICS_FORCE_USE_LINELENGTH),
-    FLAG(TW_SCREEN_BLANK_ON_BOOT),
-    FLAG(TW_BOARD_HAS_FLIPPED_SCREEN),
-    FLAG(TW_IGNORE_MAJOR_AXIS_0),
-    FLAG(TW_IGNORE_MT_POSITION_0),
-    FLAG(TW_IGNORE_ABS_MT_TRACKING_ID),
-    FLAG(TW_NEW_ION_HEAP),
-    FLAG(TW_NO_SCREEN_BLANK),
-    FLAG(TW_NO_SCREEN_TIMEOUT),
-    FLAG(TW_ROUND_SCREEN),
-    FLAG(TW_NO_CPU_TEMP),
-    FLAG(TW_QCOM_RTC_FIX),
-    FLAG(TW_HAS_DOWNLOAD_MODE),
-    FLAG(TW_PREFER_LCD_BACKLIGHT),
-#undef FLAG
-    { NULL, 0 }
-};
+static constexpr std::array<DeviceFlagMapping, 2> g_device_flag_mappings{{
+    { "HAS_COMBINED_BOOT_AND_RECOVERY", DeviceFlag::HasCombinedBootAndRecovery },
+    { "FSTAB_SKIP_SDCARD0",             DeviceFlag::FstabSkipSdcard0 },
+}};
 
-struct tw_pxfmt_mapping
+static constexpr std::array<TwFlagMapping, 17> g_tw_flag_mappings{{
+    { "TW_TOUCHSCREEN_SWAP_XY",           TwFlag::TouchscreenSwapXY },
+    { "TW_TOUCHSCREEN_FLIP_X",            TwFlag::TouchscreenFlipX },
+    { "TW_TOUCHSCREEN_FLIP_Y",            TwFlag::TouchscreenFlipY },
+    { "TW_GRAPHICS_FORCE_USE_LINELENGTH", TwFlag::GraphicsForceUseLineLength },
+    { "TW_SCREEN_BLANK_ON_BOOT",          TwFlag::ScreenBlankOnBoot },
+    { "TW_BOARD_HAS_FLIPPED_SCREEN",      TwFlag::BoardHasFlippedScreen },
+    { "TW_IGNORE_MAJOR_AXIS_0",           TwFlag::IgnoreMajorAxis0 },
+    { "TW_IGNORE_MT_POSITION_0",          TwFlag::IgnoreMtPosition0 },
+    { "TW_IGNORE_ABS_MT_TRACKING_ID",     TwFlag::IgnoreAbsMtTrackingId },
+    { "TW_NEW_ION_HEAP",                  TwFlag::NewIonHeap },
+    { "TW_NO_SCREEN_BLANK",               TwFlag::NoScreenBlank },
+    { "TW_NO_SCREEN_TIMEOUT",             TwFlag::NoScreenTimeout },
+    { "TW_ROUND_SCREEN",                  TwFlag::RoundScreen },
+    { "TW_NO_CPU_TEMP",                   TwFlag::NoCpuTemp },
+    { "TW_QCOM_RTC_FIX",                  TwFlag::QcomRtcFix },
+    { "TW_HAS_DOWNLOAD_MODE",             TwFlag::HasDownloadMode },
+    { "TW_PREFER_LCD_BACKLIGHT",          TwFlag::PreferLcdBacklight },
+}};
+
+static constexpr std::array<TwPixelFormatMapping, 5> g_tw_pxfmt_mappings{{
+    { "DEFAULT",   TwPixelFormat::Default },
+    { "ABGR_8888", TwPixelFormat::Abgr8888 },
+    { "RGBX_8888", TwPixelFormat::Rgbx8888 },
+    { "BGRA_8888", TwPixelFormat::Bgra8888 },
+    { "RGBA_8888", TwPixelFormat::Rgba8888 },
+}};
+
+static constexpr std::array<TwForcePixelFormatMapping, 2> g_tw_force_pxfmt_mappings{{
+    { "NONE",    TwForcePixelFormat::None },
+    { "RGB_565", TwForcePixelFormat::Rgb565 },
+}};
+
+static void json_error_set_parse_error(JsonError &error, size_t offset,
+                                       std::string message)
 {
-    const char *key;
-    enum TwPixelFormat value;
-};
-
-struct tw_pxfmt_mapping tw_pxfmt_mappings[] = {
-#define FLAG(F) { #F, TW_PIXEL_FORMAT_ ## F }
-    FLAG(DEFAULT),
-    FLAG(ABGR_8888),
-    FLAG(RGBX_8888),
-    FLAG(BGRA_8888),
-    FLAG(RGBA_8888),
-#undef FLAG
-    { NULL, TW_PIXEL_FORMAT_DEFAULT }
-};
-
-struct tw_force_pxfmt_mapping
-{
-    const char *key;
-    enum TwForcePixelFormat value;
-};
-
-struct tw_force_pxfmt_mapping tw_force_pxfmt_mappings[] = {
-#define FLAG(F) { #F, TW_FORCE_PIXEL_FORMAT_ ## F }
-    FLAG(NONE),
-    FLAG(RGB_565),
-#undef FLAG
-    { NULL, TW_FORCE_PIXEL_FORMAT_NONE }
-};
-
-static const char * json_type_to_string(json_type type)
-{
-    switch (type) {
-    case JSON_OBJECT:
-        return "object";
-    case JSON_ARRAY:
-        return "array";
-    case JSON_STRING:
-        return "string";
-    case JSON_INTEGER:
-        return "integer";
-    case JSON_REAL:
-        return "real";
-    case JSON_TRUE:
-    case JSON_FALSE:
-        return "boolean";
-    case JSON_NULL:
-        return "null";
-    default:
-        return NULL;
-    }
+    error.type = JsonErrorType::ParseError;
+    error.offset = offset;
+    error.message = std::move(message);
 }
 
-static void json_error_set_standard_error(struct MbDeviceJsonError *error,
-                                          int std_error)
+static void json_error_set_schema_validation_failure(JsonError &error,
+                                                     std::string schema_uri,
+                                                     std::string schema_keyword,
+                                                     std::string document_uri)
 {
-    error->type = MB_DEVICE_JSON_STANDARD_ERROR;
-    error->std_error = std_error;
+    error.type = JsonErrorType::SchemaValidationFailure;
+    error.schema_uri = std::move(schema_uri);
+    error.schema_keyword = std::move(schema_keyword);
+    error.document_uri = std::move(document_uri);
 }
 
-static void json_error_set_parse_error(struct MbDeviceJsonError *error,
-                                       int line, int column)
+static inline std::string get_string(const Value &node)
 {
-    error->type = MB_DEVICE_JSON_PARSE_ERROR;
-    error->line = line;
-    error->column = column;
+    return {node.GetString(), node.GetStringLength()};
 }
 
-static void json_error_set_mismatched_type(struct MbDeviceJsonError *error,
-                                           const char *context,
-                                           json_type actual_type,
-                                           json_type expected_type)
+static inline std::vector<std::string> get_string_array(const Value &node)
 {
-    if (!*context) {
-        context = ".";
+    std::vector<std::string> array;
+
+    for (auto const &item : node.GetArray()) {
+        array.push_back(get_string(item));
     }
 
-    error->type = MB_DEVICE_JSON_MISMATCHED_TYPE;
-    strncpy(error->context, context, sizeof(error->context));
-    error->context[sizeof(error->context) - 1] = '\0';
-
-    const char *str_type = json_type_to_string(actual_type);
-    strncpy(error->actual_type, str_type, sizeof(error->actual_type));
-    error->actual_type[sizeof(error->actual_type) - 1] = '\0';
-
-    str_type = json_type_to_string(expected_type);
-    strncpy(error->expected_type, str_type, sizeof(error->expected_type));
-    error->expected_type[sizeof(error->expected_type) - 1] = '\0';
+    return array;
 }
 
-static void json_error_set_unknown_key(struct MbDeviceJsonError *error,
-                                       const char *context)
+static void process_device_flags(Device &device, const Value &node)
 {
-    if (!*context) {
-        context = ".";
-    }
+    DeviceFlags flags = 0;
 
-    error->type = MB_DEVICE_JSON_UNKNOWN_KEY;
-    strncpy(error->context, context, sizeof(error->context));
-    error->context[sizeof(error->context) - 1] = '\0';
-}
+    for (auto const &item : node.GetArray()) {
+        auto const &str = get_string(item);
+        DeviceFlags old_flags = flags;
 
-static void json_error_set_unknown_value(struct MbDeviceJsonError *error,
-                                         const char *context)
-{
-    if (!*context) {
-        context = ".";
-    }
-
-    error->type = MB_DEVICE_JSON_UNKNOWN_VALUE;
-    strncpy(error->context, context, sizeof(error->context));
-    error->context[sizeof(error->context) - 1] = '\0';
-}
-
-typedef int (*setter_boolean)(struct Device *, bool);
-typedef int (*setter_int)(struct Device *, int);
-typedef int (*setter_string)(struct Device *, const char *);
-typedef int (*setter_string_array)(struct Device *, char const * const *);
-
-static inline int device_set_boolean(setter_boolean fn, struct Device *device,
-                                     json_t *value, const char *context,
-                                     struct MbDeviceJsonError *error)
-{
-    int ret;
-
-    if (!json_is_boolean(value)) {
-        json_error_set_mismatched_type(
-                error, context, value->type, JSON_BOOLEAN);
-        return -1;
-    }
-
-    ret = fn(device, json_boolean_value(value));
-    if (ret < 0) {
-        json_error_set_standard_error(error, ret);
-        return -1;
-    }
-
-    return 0;
-}
-
-static inline int device_set_int(setter_int fn, struct Device *device,
-                                 json_t *value, const char *context,
-                                 struct MbDeviceJsonError *error)
-{
-    int ret;
-
-    if (!json_is_integer(value)) {
-        json_error_set_mismatched_type(
-                error, context, value->type, JSON_INTEGER);
-        return -1;
-    }
-
-    ret = fn(device, json_integer_value(value));
-    if (ret < 0) {
-        json_error_set_standard_error(error, ret);
-        return -1;
-    }
-
-    return 0;
-}
-
-static inline int device_set_string(setter_string fn, struct Device *device,
-                                    json_t *value, const char *context,
-                                    struct MbDeviceJsonError *error)
-{
-    int ret;
-
-    if (!json_is_string(value)) {
-        json_error_set_mismatched_type(
-                error, context, value->type, JSON_STRING);
-        return -1;
-    }
-
-    ret = fn(device, json_string_value(value));
-    if (ret < 0) {
-        json_error_set_standard_error(error, ret);
-        return -1;
-    }
-
-    return 0;
-}
-
-static inline int device_set_string_array(setter_string_array fn,
-                                          struct Device *device,
-                                          json_t *node, const char *context,
-                                          struct MbDeviceJsonError *error)
-{
-    int ret = 0;
-    int fn_ret;
-    char subcontext[100];
-    const char **array = NULL;
-    size_t array_size;
-    size_t index;
-    json_t *value;
-
-    if (!json_is_array(node)) {
-        json_error_set_mismatched_type(
-                error, context, node->type, JSON_ARRAY);
-        ret = -1;
-        goto done;
-    }
-
-    array_size = (json_array_size(node) + 1) * sizeof(char *);
-    array = (const char **) malloc(array_size);
-    if (!array) {
-        json_error_set_standard_error(error, MB_DEVICE_ERROR_ERRNO);
-        ret = -1;
-        goto done;
-    }
-    memset(array, 0, array_size);
-
-    json_array_foreach(node, index, value) {
-        snprintf(subcontext, sizeof(subcontext),
-                 "%s[%" MB_PRIzu "]", context, index);
-
-        if (!json_is_string(value)) {
-            json_error_set_mismatched_type(
-                    error, subcontext, value->type, JSON_STRING);
-            ret = -1;
-            goto done;
-        }
-
-        array[index] = json_string_value(value);
-    }
-
-    fn_ret = fn(device, array);
-    if (fn_ret < 0) {
-        json_error_set_standard_error(error, fn_ret);
-        ret = -1;
-        goto done;
-    }
-
-done:
-    free(array);
-    return ret;
-}
-
-static int process_device_flags(struct Device *device, json_t *node,
-                                const char *context,
-                                struct MbDeviceJsonError *error)
-{
-    char subcontext[100];
-    size_t index;
-    json_t *value;
-    uint64_t flags = 0;
-
-    if (!json_is_array(node)) {
-        json_error_set_mismatched_type(error, context, node->type, JSON_ARRAY);
-        return -1;
-    }
-
-    json_array_foreach(node, index, value) {
-        snprintf(subcontext, sizeof(subcontext),
-                 "%s[%" MB_PRIzu "]", context, index);
-
-        if (!json_is_string(value)) {
-            json_error_set_mismatched_type(
-                    error, subcontext, value->type, JSON_STRING);
-            return -1;
-        }
-
-        const char *str = json_string_value(value);
-        uint64_t old_flags = flags;
-
-        for (struct flag_mapping *m = device_flag_mappings; m->key; ++m) {
-            if (strcmp(m->key, str) == 0) {
-                flags |= m->flag;
+        for (auto const &mapping : g_device_flag_mappings) {
+            if (str == mapping.first) {
+                flags |= mapping.second;
                 break;
             }
         }
 
-        if (flags == old_flags) {
-            json_error_set_unknown_value(error, subcontext);
-            return -1;
-        }
+        (void) old_flags;
+        assert(flags != old_flags);
     }
 
-    int fn_ret = mb_device_set_flags(device, flags);
-    if (fn_ret < 0) {
-        json_error_set_standard_error(error, fn_ret);
-        return -1;
-    }
-
-    return 0;
+    device.set_flags(flags);
 }
 
-static int process_boot_ui_flags(struct Device *device, json_t *node,
-                                 const char *context,
-                                 struct MbDeviceJsonError *error)
+static void process_boot_ui_flags(Device &device, const Value &node)
 {
-    char subcontext[100];
-    size_t index;
-    json_t *value;
-    uint64_t flags = 0;
+    TwFlags flags = 0;
 
-    if (!json_is_array(node)) {
-        json_error_set_mismatched_type(error, context, node->type, JSON_ARRAY);
-        return -1;
-    }
+    for (auto const &item : node.GetArray()) {
+        auto const &str = get_string(item);
+        TwFlags old_flags = flags;
 
-    json_array_foreach(node, index, value) {
-        snprintf(subcontext, sizeof(subcontext),
-                 "%s[%" MB_PRIzu "]", context, index);
-
-        if (!json_is_string(value)) {
-            json_error_set_mismatched_type(
-                    error, subcontext, value->type, JSON_STRING);
-            return -1;
-        }
-
-        const char *str = json_string_value(value);
-        uint64_t old_flags = flags;
-
-        for (struct flag_mapping *m = tw_flag_mappings; m->key; ++m) {
-            if (strcmp(m->key, str) == 0) {
-                flags |= m->flag;
+        for (auto const &mapping : g_tw_flag_mappings) {
+            if (str == mapping.first) {
+                flags |= mapping.second;
                 break;
             }
         }
 
-        if (flags == old_flags) {
-            json_error_set_unknown_value(error, subcontext);
-            return -1;
+        (void) old_flags;
+        assert(flags != old_flags);
+    }
+
+    device.set_tw_flags(flags);
+}
+
+static void process_boot_ui_pixel_format(Device &device, const Value &node)
+{
+    auto const &str = get_string(node);
+
+    for (auto const &item : g_tw_pxfmt_mappings) {
+        if (str == item.first) {
+            device.set_tw_pixel_format(item.second);
+            return;
         }
     }
 
-    int fn_ret = mb_device_set_tw_flags(device, flags);
-    if (fn_ret < 0) {
-        json_error_set_standard_error(error, fn_ret);
-        return -1;
-    }
-
-    return 0;
+    assert(false);
 }
 
-static int process_boot_ui_pixel_format(struct Device *device, json_t *node,
-                                        const char *context,
-                                        struct MbDeviceJsonError *error)
+static void process_boot_ui_force_pixel_format(Device &device, const Value &node)
 {
-    const char *str;
+    auto const &str = get_string(node);
 
-    if (!json_is_string(node)) {
-        json_error_set_mismatched_type(error, context, node->type, JSON_STRING);
-        return -1;
-    }
-
-    str = json_string_value(node);
-
-    for (struct tw_pxfmt_mapping *m = tw_pxfmt_mappings; m->key; ++m) {
-        if (strcmp(m->key, str) == 0) {
-            int fn_ret = mb_device_set_tw_pixel_format(device, m->value);
-            if (fn_ret < 0) {
-                json_error_set_standard_error(error, fn_ret);
-                return -1;
-            }
-            return 0;
+    for (auto const &item : g_tw_force_pxfmt_mappings) {
+        if (str == item.first) {
+            device.set_tw_force_pixel_format(item.second);
+            return;
         }
     }
 
-    json_error_set_unknown_value(error, context);
-    return -1;
+    assert(false);
 }
 
-static int process_boot_ui_force_pixel_format(struct Device *device, json_t *node,
-                                              const char *context,
-                                              struct MbDeviceJsonError *error)
+static void process_boot_ui(Device &device, const Value &node)
 {
-    const char *str;
+    for (auto const &item : node.GetObject()) {
+        auto const &key = get_string(item.name);
 
-    if (!json_is_string(node)) {
-        json_error_set_mismatched_type(error, context, node->type, JSON_STRING);
-        return -1;
-    }
-
-    str = json_string_value(node);
-
-    for (struct tw_force_pxfmt_mapping *m = tw_force_pxfmt_mappings;
-            m->key; ++m) {
-        if (strcmp(m->key, str) == 0) {
-            int fn_ret = mb_device_set_tw_force_pixel_format(device, m->value);
-            if (fn_ret < 0) {
-                json_error_set_standard_error(error, fn_ret);
-                return -1;
-            }
-            return 0;
-        }
-    }
-
-    json_error_set_unknown_value(error, context);
-    return -1;
-}
-
-static int process_boot_ui(struct Device *device, json_t *node,
-                           const char *context,
-                           struct MbDeviceJsonError *error)
-{
-    int ret = 0;
-    char subcontext[100];
-    const char *key;
-    json_t *value;
-
-    if (!json_is_object(node)) {
-        json_error_set_mismatched_type(
-                error, context, node->type, JSON_OBJECT);
-        return -1;
-    }
-
-    json_object_foreach(node, key, value) {
-        snprintf(subcontext, sizeof(subcontext), "%s.%s", context, key);
-
-        if (strcmp(key, "supported") == 0) {
-            ret = device_set_boolean(&mb_device_set_tw_supported,
-                                     device, value, subcontext, error);
-        } else if (strcmp(key, "flags") == 0) {
-            ret = process_boot_ui_flags(
-                    device, value, subcontext, error);
-        } else if (strcmp(key, "pixel_format") == 0) {
-            ret = process_boot_ui_pixel_format(
-                    device, value, subcontext, error);
-        } else if (strcmp(key, "force_pixel_format") == 0) {
-            ret = process_boot_ui_force_pixel_format(
-                    device, value, subcontext, error);
-        } else if (strcmp(key, "overscan_percent") == 0) {
-            ret = device_set_int(&mb_device_set_tw_overscan_percent,
-                                 device, value, subcontext, error);
-        } else if (strcmp(key, "default_x_offset") == 0) {
-            ret = device_set_int(&mb_device_set_tw_default_x_offset,
-                                 device, value, subcontext, error);
-        } else if (strcmp(key, "default_y_offset") == 0) {
-            ret = device_set_int(&mb_device_set_tw_default_y_offset,
-                                 device, value, subcontext, error);
-        } else if (strcmp(key, "brightness_path") == 0) {
-            ret = device_set_string(&mb_device_set_tw_brightness_path,
-                                    device, value, subcontext, error);
-        } else if (strcmp(key, "secondary_brightness_path") == 0) {
-            ret = device_set_string(&mb_device_set_tw_secondary_brightness_path,
-                                    device, value, subcontext, error);
-        } else if (strcmp(key, "max_brightness") == 0) {
-            ret = device_set_int(&mb_device_set_tw_max_brightness,
-                                 device, value, subcontext, error);
-        } else if (strcmp(key, "default_brightness") == 0) {
-            ret = device_set_int(&mb_device_set_tw_default_brightness,
-                                 device, value, subcontext, error);
-        } else if (strcmp(key, "battery_path") == 0) {
-            ret = device_set_string(&mb_device_set_tw_battery_path,
-                                    device, value, subcontext, error);
-        } else if (strcmp(key, "cpu_temp_path") == 0) {
-            ret = device_set_string(&mb_device_set_tw_cpu_temp_path,
-                                    device, value, subcontext, error);
-        } else if (strcmp(key, "input_blacklist") == 0) {
-            ret = device_set_string(&mb_device_set_tw_input_blacklist,
-                                    device, value, subcontext, error);
-        } else if (strcmp(key, "input_whitelist") == 0) {
-            ret = device_set_string(&mb_device_set_tw_input_whitelist,
-                                    device, value, subcontext, error);
-        } else if (strcmp(key, "graphics_backends") == 0) {
-            ret = device_set_string_array(&mb_device_set_tw_graphics_backends,
-                                          device, value, subcontext, error);
-        } else if (strcmp(key, "theme") == 0) {
-            ret = device_set_string(&mb_device_set_tw_theme,
-                                    device, value, subcontext, error);
+        if (key == "supported") {
+            device.set_tw_supported(item.value.GetBool());
+        } else if (key == "flags") {
+            process_boot_ui_flags(device, item.value);
+        } else if (key == "pixel_format") {
+            process_boot_ui_pixel_format(device, item.value);
+        } else if (key == "force_pixel_format") {
+            process_boot_ui_force_pixel_format(device, item.value);
+        } else if (key == "overscan_percent") {
+            device.set_tw_overscan_percent(item.value.GetInt());
+        } else if (key == "default_x_offset") {
+            device.set_tw_default_x_offset(item.value.GetInt());
+        } else if (key == "default_y_offset") {
+            device.set_tw_default_y_offset(item.value.GetInt());
+        } else if (key == "brightness_path") {
+            device.set_tw_brightness_path(get_string(item.value));
+        } else if (key == "secondary_brightness_path") {
+            device.set_tw_secondary_brightness_path(get_string(item.value));
+        } else if (key == "max_brightness") {
+            device.set_tw_max_brightness(item.value.GetInt());
+        } else if (key == "default_brightness") {
+            device.set_tw_default_brightness(item.value.GetInt());
+        } else if (key == "battery_path") {
+            device.set_tw_battery_path(get_string(item.value));
+        } else if (key == "cpu_temp_path") {
+            device.set_tw_cpu_temp_path(get_string(item.value));
+        } else if (key == "input_blacklist") {
+            device.set_tw_input_blacklist(get_string(item.value));
+        } else if (key == "input_whitelist") {
+            device.set_tw_input_whitelist(get_string(item.value));
+        } else if (key == "graphics_backends") {
+            device.set_tw_graphics_backends(get_string_array(item.value));
+        } else if (key == "theme") {
+            device.set_tw_theme(get_string(item.value));
         } else {
-            json_error_set_unknown_key(error, subcontext);
-            ret = -1;
-        }
-
-        if (ret != 0) {
-            break;
+            assert(false);
         }
     }
-
-    return ret;
 }
 
-static int process_block_devs(struct Device *device, json_t *node,
-                              const char *context,
-                              struct MbDeviceJsonError *error)
+static void process_block_devs(Device &device, const Value &node)
 {
-    int ret = 0;
-    char subcontext[100];
-    const char *key;
-    json_t *value;
+    for (auto const &item : node.GetObject()) {
+        auto const &key = get_string(item.name);
 
-    if (!json_is_object(node)) {
-        json_error_set_mismatched_type(
-                error, context, node->type, JSON_OBJECT);
-        return -1;
-    }
-
-    json_object_foreach(node, key, value) {
-        snprintf(subcontext, sizeof(subcontext), "%s.%s", context, key);
-
-        if (strcmp(key, "base_dirs") == 0) {
-            ret = device_set_string_array(&mb_device_set_block_dev_base_dirs,
-                                          device, value, subcontext, error);
-        } else if (strcmp(key, "system") == 0) {
-            ret = device_set_string_array(&mb_device_set_system_block_devs,
-                                          device, value, subcontext, error);
-        } else if (strcmp(key, "cache") == 0) {
-            ret = device_set_string_array(&mb_device_set_cache_block_devs,
-                                          device, value, subcontext, error);
-        } else if (strcmp(key, "data") == 0) {
-            ret = device_set_string_array(&mb_device_set_data_block_devs,
-                                          device, value, subcontext, error);
-        } else if (strcmp(key, "boot") == 0) {
-            ret = device_set_string_array(&mb_device_set_boot_block_devs,
-                                          device, value, subcontext, error);
-        } else if (strcmp(key, "recovery") == 0) {
-            ret = device_set_string_array(&mb_device_set_recovery_block_devs,
-                                          device, value, subcontext, error);
-        } else if (strcmp(key, "extra") == 0) {
-            ret = device_set_string_array(&mb_device_set_extra_block_devs,
-                                          device, value, subcontext, error);
+        if (key == "base_dirs") {
+            device.set_block_dev_base_dirs(get_string_array(item.value));
+        } else if (key == "system") {
+            device.set_system_block_devs(get_string_array(item.value));
+        } else if (key == "cache") {
+            device.set_cache_block_devs(get_string_array(item.value));
+        } else if (key == "data") {
+            device.set_data_block_devs(get_string_array(item.value));
+        } else if (key == "boot") {
+            device.set_boot_block_devs(get_string_array(item.value));
+        } else if (key == "recovery") {
+            device.set_recovery_block_devs(get_string_array(item.value));
+        } else if (key == "extra") {
+            device.set_extra_block_devs(get_string_array(item.value));
         } else {
-            json_error_set_unknown_key(error, subcontext);
-            ret = -1;
-        }
-
-        if (ret != 0) {
-            break;
+            assert(false);
         }
     }
-
-    return ret;
 }
 
-static int process_device(struct Device *device, json_t *node,
-                          const char *context,
-                          struct MbDeviceJsonError *error)
+static void process_device(Device &device, const Value &node)
 {
-    int ret = 0;
-    char subcontext[100];
-    const char *key;
-    json_t *value;
+    for (auto const &item : node.GetObject()) {
+        auto const &key = get_string(item.name);
 
-    if (!json_is_object(node)) {
-        json_error_set_mismatched_type(
-                error, context, node->type, JSON_OBJECT);
-        return -1;
-    }
-
-    json_object_foreach(node, key, value) {
-        snprintf(subcontext, sizeof(subcontext), "%s.%s", context, key);
-
-        if (strcmp(key, "name") == 0) {
-            ret = device_set_string(&mb_device_set_name,
-                                    device, value, subcontext, error);
-        } else if (strcmp(key, "id") == 0) {
-            ret = device_set_string(&mb_device_set_id,
-                                    device, value, subcontext, error);
-        } else if (strcmp(key, "codenames") == 0) {
-            ret = device_set_string_array(&mb_device_set_codenames,
-                                          device, value, subcontext, error);
-        } else if (strcmp(key, "architecture") == 0) {
-            ret = device_set_string(&mb_device_set_architecture,
-                                    device, value, subcontext, error);
-        } else if (strcmp(key, "flags") == 0) {
-            ret = process_device_flags(device, value, subcontext, error);
-        } else if (strcmp(key, "block_devs") == 0) {
-            ret = process_block_devs(device, value, subcontext, error);
-        } else if (strcmp(key, "boot_ui") == 0) {
-            ret = process_boot_ui(device, value, subcontext, error);
+        if (key == "name") {
+            device.set_name(get_string(item.value));
+        } else if (key == "id") {
+            device.set_id(get_string(item.value));
+        } else if (key == "codenames") {
+            device.set_codenames(get_string_array(item.value));
+        } else if (key == "architecture") {
+            device.set_architecture(get_string(item.value));
+        } else if (key == "flags") {
+            process_device_flags(device, item.value);
+        } else if (key == "block_devs") {
+            process_block_devs(device, item.value);
+        } else if (key == "boot_ui") {
+            process_boot_ui(device, item.value);
         } else {
-            json_error_set_unknown_key(error, subcontext);
-            ret = -1;
-        }
-
-        if (ret != 0) {
-            break;
+            assert(false);
         }
     }
-
-    return ret;
 }
 
-struct Device * mb_device_new_from_json(const char *json,
-                                        struct MbDeviceJsonError *error)
+bool device_from_json(const std::string &json, Device &device, JsonError &error)
 {
-    struct Device *device = NULL;
-    json_t *root = NULL;
-    json_error_t json_error;
-    bool ok = true;
-
-    root = json_loads(json, 0, &json_error);
-    if (!root) {
-        json_error_set_parse_error(error, json_error.line, json_error.column);
-        ok = false;
-        goto done;
+    DeviceSchemaProvider<> sp;
+    const SchemaDocument *sd = sp.GetSchema("device.json");
+    if (!sd) {
+        assert(false);
+        return false;
     }
 
-    device = mb_device_new();
-    if (!device) {
-        json_error_set_standard_error(error, MB_DEVICE_ERROR_ERRNO);
-        ok = false;
-        goto done;
+    Document d;
+    StringStream is(json.c_str());
+    SchemaValidatingReader<kParseDefaultFlags, StringStream, UTF8<>> reader(is, *sd);
+    d.Populate(reader);
+
+    const ParseResult &result = reader.GetParseResult();
+    if (!result) {
+        if (!reader.IsValid()) {
+            StringBuffer sb;
+            reader.GetInvalidSchemaPointer().StringifyUriFragment(sb);
+            std::string schema_uri{sb.GetString(), sb.GetLength()};
+            sb.Clear();
+            reader.GetInvalidDocumentPointer().StringifyUriFragment(sb);
+            std::string document_uri{sb.GetString(), sb.GetLength()};
+
+            json_error_set_schema_validation_failure(
+                    error, std::move(schema_uri),
+                    reader.GetInvalidSchemaKeyword(), std::move(document_uri));
+        } else {
+            json_error_set_parse_error(error, result.Offset(),
+                                       GetParseError_En(result.Code()));
+        }
+        return false;
     }
 
-    if (process_device(device, root, "", error) < 0) {
-        ok = false;
-        goto done;
-    }
-
-done:
-    if (root) {
-        json_decref(root);
-    }
-    if (!ok) {
-        mb_device_free(device);
-    }
-    return ok ? device : NULL;
+    device = Device();
+    process_device(device, d);
+    return true;
 }
 
-struct Device ** mb_device_new_list_from_json(const char *json,
-                                              struct MbDeviceJsonError *error)
+bool device_list_from_json(const std::string &json,
+                           std::vector<Device> &devices,
+                           JsonError &error)
 {
-    struct Device **devices = NULL;
-    size_t devices_size;
-    json_t *root = NULL;
-    json_t *elem;
-    size_t index;
-    json_error_t json_error;
-    bool ok = true;
-    char context[100];
-
-    root = json_loads(json, 0, &json_error);
-    if (!root) {
-        json_error_set_parse_error(error, json_error.line, json_error.column);
-        ok = false;
-        goto done;
+    DeviceSchemaProvider<> sp;
+    const SchemaDocument *sd = sp.GetSchema("device_list.json");
+    if (!sd) {
+        assert(false);
+        return false;
     }
 
-    if (!json_is_array(root)) {
-        json_error_set_mismatched_type(error, "", root->type, JSON_ARRAY);
-        ok = false;
-        goto done;
-    }
+    Document d;
+    StringStream is(json.c_str());
+    SchemaValidatingReader<kParseDefaultFlags, StringStream, UTF8<>> reader(is, *sd);
+    d.Populate(reader);
 
-    devices_size = (json_array_size(root) + 1) * sizeof(struct Device *);
-    devices = (struct Device **) malloc(devices_size);
-    if (!devices) {
-        json_error_set_standard_error(error, MB_DEVICE_ERROR_ERRNO);
-        ok = false;
-        goto done;
-    }
-    memset(devices, 0, devices_size);
+    const ParseResult &result = reader.GetParseResult();
+    if (!result) {
+        if (!reader.IsValid()) {
+            StringBuffer sb;
+            reader.GetInvalidSchemaPointer().StringifyUriFragment(sb);
+            std::string schema_uri{sb.GetString(), sb.GetLength()};
+            sb.Clear();
+            reader.GetInvalidDocumentPointer().StringifyUriFragment(sb);
+            std::string document_uri{sb.GetString(), sb.GetLength()};
 
-    json_array_foreach(root, index, elem) {
-        snprintf(context, sizeof(context), "[%" MB_PRIzu "]", index);
-
-        devices[index] = mb_device_new();
-        if (!devices[index]) {
-            json_error_set_standard_error(error, MB_DEVICE_ERROR_ERRNO);
-            ok = false;
-            goto done;
+            json_error_set_schema_validation_failure(
+                    error, std::move(schema_uri),
+                    reader.GetInvalidSchemaKeyword(), std::move(document_uri));
+        } else {
+            json_error_set_parse_error(error, result.Offset(),
+                                       GetParseError_En(result.Code()));
         }
-
-        if (process_device(devices[index], elem, context, error) < 0) {
-            ok = false;
-            goto done;
-        }
+        return false;
     }
 
-done:
-    if (root) {
-        json_decref(root);
+    std::vector<Device> array;
+
+    for (auto const &item : d.GetArray()) {
+        Device device;
+        process_device(device, item);
+        array.push_back(std::move(device));
     }
-    if (!ok && devices) {
-        for (struct Device **iter = devices; *iter; ++iter) {
-            mb_device_free(*iter);
-        }
-        free(devices);
-    }
-    return ok ? devices : NULL;
+
+    devices.swap(array);
+    return true;
 }
 
-static json_t * json_string_array(char * const *array)
+bool device_to_json(const Device &device, std::string &json)
 {
-    json_t *j_array = NULL;
+    Document d;
+    d.SetObject();
 
-    j_array = json_array();
-    if (!j_array) {
-        goto error;
+    auto &alloc = d.GetAllocator();
+
+    auto const &id = device.id();
+    if (!id.empty()) {
+        d.AddMember("id", id, alloc);
     }
 
-    for (char * const *it = array; *it; ++it) {
-        if (json_array_append_new(j_array, json_string(*it)) < 0) {
-            goto error;
+    auto const &codenames = device.codenames();
+    if (!codenames.empty()) {
+        Value array(kArrayType);
+        for (auto const &c : codenames) {
+            array.PushBack(StringRef(c), alloc);
         }
+        d.AddMember("codenames", array, alloc);
     }
 
-    return j_array;
-
-error:
-    if (j_array) {
-        json_decref(j_array);
-    }
-    return NULL;
-}
-
-char * mb_device_to_json(struct Device *device)
-{
-    json_t *root = NULL;
-    json_t *block_devs = NULL;
-    json_t *boot_ui = NULL;
-    char *result = NULL;
-
-    root = json_object();
-    if (!root) {
-        goto done;
+    auto const &name = device.name();
+    if (!name.empty()) {
+        d.AddMember("name", name, alloc);
     }
 
-    if (device->id && json_object_set_new(
-            root, "id", json_string(device->id)) < 0) {
-        goto done;
+    auto const &architecture = device.architecture();
+    if (!architecture.empty()) {
+        d.AddMember("architecture", architecture, alloc);
     }
 
-    if (device->codenames && json_object_set_new(
-            root, "codenames", json_string_array(device->codenames)) < 0) {
-        goto done;
-    }
-
-    if (device->name && json_object_set_new(
-            root, "name", json_string(device->name)) < 0) {
-        goto done;
-    }
-
-    if (device->architecture && json_object_set_new(
-            root, "architecture", json_string(device->architecture)) < 0) {
-        goto done;
-    }
-
-    if (device->flags != 0) {
-        json_t *array = json_array();
-
-        if (json_object_set_new(root, "flags", array) < 0) {
-            goto done;
-        }
-
-        for (struct flag_mapping *it = device_flag_mappings; it->key; ++it) {
-            if ((device->flags & it->flag)
-                    && json_array_append_new(array, json_string(it->key)) < 0) {
-                goto done;
+    auto const flags = device.flags();
+    if (flags) {
+        Value array(kArrayType);
+        for (auto const &item : g_device_flag_mappings) {
+            if (flags & item.second) {
+                array.PushBack(StringRef(item.first), alloc);
             }
         }
+        d.AddMember("flags", array, alloc);
     }
 
     /* Block devs */
-    block_devs = json_object();
+    Value block_devs(kObjectType);
 
-    if (json_object_set_new(root, "block_devs", block_devs) < 0) {
-        goto done;
+    auto const &base_dirs = device.block_dev_base_dirs();
+    if (!base_dirs.empty()) {
+        Value array(kArrayType);
+        for (auto const &p : base_dirs) {
+            array.PushBack(StringRef(p), alloc);
+        }
+        block_devs.AddMember("base_dirs", array, alloc);
     }
 
-    if (device->base_dirs && json_object_set_new(
-            block_devs, "base_dirs",
-            json_string_array(device->base_dirs)) < 0) {
-        goto done;
+    auto const &system_devs = device.system_block_devs();
+    if (!system_devs.empty()) {
+        Value array(kArrayType);
+        for (auto const &p : system_devs) {
+            array.PushBack(StringRef(p), alloc);
+        }
+        block_devs.AddMember("system", array, alloc);
     }
 
-    if (device->system_devs && json_object_set_new(
-            block_devs, "system",
-            json_string_array(device->system_devs)) < 0) {
-        goto done;
+    auto const &cache_devs = device.cache_block_devs();
+    if (!cache_devs.empty()) {
+        Value array(kArrayType);
+        for (auto const &p : cache_devs) {
+            array.PushBack(StringRef(p), alloc);
+        }
+        block_devs.AddMember("cache", array, alloc);
     }
 
-    if (device->cache_devs && json_object_set_new(
-            block_devs, "cache",
-            json_string_array(device->cache_devs)) < 0) {
-        goto done;
+    auto const &data_devs = device.data_block_devs();
+    if (!data_devs.empty()) {
+        Value array(kArrayType);
+        for (auto const &p : data_devs) {
+            array.PushBack(StringRef(p), alloc);
+        }
+        block_devs.AddMember("data", array, alloc);
     }
 
-    if (device->data_devs && json_object_set_new(
-            block_devs, "data",
-            json_string_array(device->data_devs)) < 0) {
-        goto done;
+    auto const &boot_devs = device.boot_block_devs();
+    if (!boot_devs.empty()) {
+        Value array(kArrayType);
+        for (auto const &p : boot_devs) {
+            array.PushBack(StringRef(p), alloc);
+        }
+        block_devs.AddMember("boot", array, alloc);
     }
 
-    if (device->boot_devs && json_object_set_new(
-            block_devs, "boot",
-            json_string_array(device->boot_devs)) < 0) {
-        goto done;
+    auto const &recovery_devs = device.recovery_block_devs();
+    if (!recovery_devs.empty()) {
+        Value array(kArrayType);
+        for (auto const &p : recovery_devs) {
+            array.PushBack(StringRef(p), alloc);
+        }
+        block_devs.AddMember("recovery", array, alloc);
     }
 
-    if (device->recovery_devs && json_object_set_new(
-            block_devs, "recovery",
-            json_string_array(device->recovery_devs)) < 0) {
-        goto done;
+    auto const &extra_devs = device.extra_block_devs();
+    if (!extra_devs.empty()) {
+        Value array(kArrayType);
+        for (auto const &p : extra_devs) {
+            array.PushBack(StringRef(p), alloc);
+        }
+        block_devs.AddMember("extra", array, alloc);
     }
 
-    if (device->extra_devs && json_object_set_new(
-            block_devs, "extra",
-            json_string_array(device->extra_devs)) < 0) {
-        goto done;
+    if (!block_devs.ObjectEmpty()) {
+        d.AddMember("block_devs", block_devs, alloc);
     }
 
     /* Boot UI */
+    Value boot_ui(kObjectType);
 
-    boot_ui = json_object();
-
-    if (json_object_set_new(root, "boot_ui", boot_ui) < 0) {
-        goto done;
+    if (device.tw_supported()) {
+        boot_ui.AddMember("supported", true, alloc);
     }
 
-    if (device->tw_options.supported && json_object_set_new(
-            boot_ui, "supported", json_true()) < 0) {
-        goto done;
-    }
-
-    if (device->tw_options.flags != 0) {
-        json_t *array = json_array();
-
-        if (json_object_set_new(boot_ui, "flags", array) < 0) {
-            goto done;
-        }
-
-        for (struct flag_mapping *it = tw_flag_mappings; it->key; ++it) {
-            if ((device->tw_options.flags & it->flag)
-                    && json_array_append_new(array, json_string(it->key)) < 0) {
-                goto done;
+    auto const tw_flags = device.tw_flags();
+    if (tw_flags) {
+        Value array(kArrayType);
+        for (auto const &item : g_tw_flag_mappings) {
+            if (tw_flags & item.second) {
+                array.PushBack(StringRef(item.first), alloc);
             }
         }
+        boot_ui.AddMember("flags", array, alloc);
     }
 
-    if (device->tw_options.pixel_format != TW_PIXEL_FORMAT_DEFAULT) {
-        for (struct tw_pxfmt_mapping *it = tw_pxfmt_mappings; it->key; ++it) {
-            if (device->tw_options.pixel_format == it->value) {
-                if (json_object_set_new(boot_ui, "pixel_format",
-                                        json_string(it->key)) < 0) {
-                    goto done;
-                }
+    auto const pixel_format = device.tw_pixel_format();
+    if (pixel_format != TwPixelFormat::Default) {
+        for (auto const &item : g_tw_pxfmt_mappings) {
+            if (pixel_format == item.second) {
+                boot_ui.AddMember("pixel_format", StringRef(item.first), alloc);
                 break;
             }
         }
     }
 
-    if (device->tw_options.force_pixel_format != TW_FORCE_PIXEL_FORMAT_NONE) {
-        for (struct tw_force_pxfmt_mapping *it = tw_force_pxfmt_mappings;
-                it->key; ++it) {
-            if (device->tw_options.force_pixel_format == it->value) {
-                if (json_object_set_new(boot_ui, "force_pixel_format",
-                                        json_string(it->key)) < 0) {
-                    goto done;
-                }
+    auto const force_pixel_format = device.tw_force_pixel_format();
+    if (force_pixel_format != TwForcePixelFormat::None) {
+        for (auto const &item : g_tw_force_pxfmt_mappings) {
+            if (force_pixel_format == item.second) {
+                boot_ui.AddMember("force_pixel_format", StringRef(item.first),
+                                  alloc);
                 break;
             }
         }
     }
 
-    if (device->tw_options.overscan_percent != 0 && json_object_set_new(
-            boot_ui, "overscan_percent",
-            json_integer(device->tw_options.overscan_percent)) < 0) {
-        goto done;
+    auto const overscan_percent = device.tw_overscan_percent();
+    if (overscan_percent != 0) {
+        boot_ui.AddMember("overscan_percent", overscan_percent, alloc);
     }
 
-    if (device->tw_options.default_x_offset != 0 && json_object_set_new(
-            boot_ui, "default_x_offset",
-            json_integer(device->tw_options.default_x_offset)) < 0) {
-        goto done;
+    auto const default_x_offset = device.tw_default_x_offset();
+    if (default_x_offset != 0) {
+        boot_ui.AddMember("default_x_offset", default_x_offset, alloc);
     }
 
-    if (device->tw_options.default_y_offset != 0 && json_object_set_new(
-            boot_ui, "default_y_offset",
-            json_integer(device->tw_options.default_y_offset)) < 0) {
-        goto done;
+    auto const default_y_offset = device.tw_default_y_offset();
+    if (default_y_offset != 0) {
+        boot_ui.AddMember("default_y_offset", default_y_offset, alloc);
     }
 
-    if (device->tw_options.brightness_path && json_object_set_new(
-            boot_ui, "brightness_path",
-            json_string(device->tw_options.brightness_path)) < 0) {
-        goto done;
+    auto const &brightness_path = device.tw_brightness_path();
+    if (!brightness_path.empty()) {
+        boot_ui.AddMember("brightness_path", brightness_path, alloc);
     }
 
-    if (device->tw_options.secondary_brightness_path && json_object_set_new(
-            boot_ui, "secondary_brightness_path",
-            json_string(device->tw_options.secondary_brightness_path)) < 0) {
-        goto done;
+    auto const &secondary_brightness_path =
+            device.tw_secondary_brightness_path();
+    if (!secondary_brightness_path.empty()) {
+        boot_ui.AddMember("secondary_brightness_path",
+                          secondary_brightness_path, alloc);
     }
 
-    if (device->tw_options.max_brightness != -1 && json_object_set_new(
-            boot_ui, "max_brightness",
-            json_integer(device->tw_options.max_brightness)) < 0) {
-        goto done;
+    auto const max_brightness = device.tw_max_brightness();
+    if (max_brightness != -1) {
+        boot_ui.AddMember("max_brightness", max_brightness, alloc);
     }
 
-    if (device->tw_options.default_brightness != -1 && json_object_set_new(
-            boot_ui, "default_brightness",
-            json_integer(device->tw_options.default_brightness)) < 0) {
-        goto done;
+    auto const default_brightness = device.tw_default_brightness();
+    if (default_brightness != -1) {
+        boot_ui.AddMember("default_brightness", default_brightness, alloc);
     }
 
-    if (device->tw_options.battery_path && json_object_set_new(
-            boot_ui, "battery_path",
-            json_string(device->tw_options.battery_path)) < 0) {
-        goto done;
+    auto const &battery_path = device.tw_battery_path();
+    if (!battery_path.empty()) {
+        boot_ui.AddMember("battery_path", battery_path, alloc);
     }
 
-    if (device->tw_options.cpu_temp_path && json_object_set_new(
-            boot_ui, "cpu_temp_path",
-            json_string(device->tw_options.cpu_temp_path)) < 0) {
-        goto done;
+    auto const &cpu_temp_path = device.tw_cpu_temp_path();
+    if (!cpu_temp_path.empty()) {
+        boot_ui.AddMember("cpu_temp_path", cpu_temp_path, alloc);
     }
 
-    if (device->tw_options.input_blacklist && json_object_set_new(
-            boot_ui, "input_blacklist",
-            json_string(device->tw_options.input_blacklist)) < 0) {
-        goto done;
+    auto const &input_blacklist = device.tw_input_blacklist();
+    if (!input_blacklist.empty()) {
+        boot_ui.AddMember("input_blacklist", input_blacklist, alloc);
     }
 
-    if (device->tw_options.input_whitelist && json_object_set_new(
-            boot_ui, "input_whitelist",
-            json_string(device->tw_options.input_whitelist)) < 0) {
-        goto done;
+    auto const &input_whitelist = device.tw_input_whitelist();
+    if (!input_whitelist.empty()) {
+        boot_ui.AddMember("input_whitelist", input_whitelist, alloc);
     }
 
-    if (device->tw_options.graphics_backends && json_object_set_new(
-            boot_ui, "graphics_backends",
-            json_string_array(device->tw_options.graphics_backends)) < 0) {
-        goto done;
+    auto const &graphics_backends = device.tw_graphics_backends();
+    if (!graphics_backends.empty()) {
+        Value array(kArrayType);
+        for (auto const &b : graphics_backends) {
+            array.PushBack(StringRef(b), alloc);
+        }
+        boot_ui.AddMember("graphics_backends", array, alloc);
     }
 
-    if (device->tw_options.theme && json_object_set_new(
-            boot_ui, "theme", json_string(device->tw_options.theme)) < 0) {
-        goto done;
+    auto const &theme = device.tw_theme();
+    if (!theme.empty()) {
+        boot_ui.AddMember("theme", theme, alloc);
     }
 
-    if (json_object_size(boot_ui) == 0) {
-        json_object_del(root, "boot_ui");
+    if (!boot_ui.ObjectEmpty()) {
+        d.AddMember("boot_ui", boot_ui, alloc);
     }
 
-    result = json_dumps(root, 0);
-
-done:
-    if (root) {
-        json_decref(root);
+    StringBuffer sb;
+    Writer<StringBuffer> writer(sb);
+    DeviceSchemaProvider<> sp;
+    const SchemaDocument *sd = sp.GetSchema("device.json");
+    if (!sd) {
+        assert(false);
+        return false;
     }
-    return result;
+    GenericSchemaValidator<SchemaDocument, decltype(writer)> sv(*sd, writer);
+
+    if (!d.Accept(sv)) {
+        return false;
+    }
+
+    json = {sb.GetString(), sb.GetSize()};
+    return true;
+}
+
 }

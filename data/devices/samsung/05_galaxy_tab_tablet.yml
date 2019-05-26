@@ -1,4 +1,107 @@
 ---
+- name: Samsung Galaxy Tab A6 10.1 Wifi
+  id: gtaxlwifi
+  codenames:
+    - gtaxlwifi
+    - gtaxlwifixx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/13540000.dwmmc0/by-name
+    system:
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p22
+    boot:
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RADIO
+      - /dev/block/mmcblk0p13
+      - /dev/block/platform/13540000.dwmmc0/by-name/CDMA-RADIO
+      - /dev/block/mmcblk0p12
+      - /dev/block/platform/13540000.dwmmc0/by-name/EFS
+      - /dev/block/mmcblk0p3
+      - /dev/block/platform/13540000.dwmmc0/by-name/CPEFS
+      - /dev/block/mmcblk0p4
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs1
+      - /dev/block/mmcblk0p5
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs2
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs3
+      - /dev/block/mmcblk0p7
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Tab A6 10.1 LTE
+  id: gtaxllte
+  codenames:
+    - gtaxllte
+    - gtaxlltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/13540000.dwmmc0/by-name
+    system:
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RADIO
+      - /dev/block/mmcblk0p13
+      - /dev/block/platform/13540000.dwmmc0/by-name/CDMA-RADIO
+      - /dev/block/mmcblk0p12
+      - /dev/block/platform/13540000.dwmmc0/by-name/EFS
+      - /dev/block/mmcblk0p3
+      - /dev/block/platform/13540000.dwmmc0/by-name/CPEFS
+      - /dev/block/mmcblk0p4
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs1
+      - /dev/block/mmcblk0p5
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs2
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs3
+      - /dev/block/mmcblk0p7
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 - name: Samsung Galaxy Tab 2 7.0/10.1 (Wifi/3G)
   id: espresso10
   codenames:
@@ -36,6 +139,16 @@
       - /dev/block/platform/omap/omap_hsmmc.1/by-name/RECOVERY
       - /dev/block/mmcblk0p6
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Tab 3 8.0 (Wifi)
   id: lt01wifi
@@ -63,6 +176,16 @@
       - /dev/block/platform/dw_mmc/by-name/RECOVERY
       - /dev/block/mmcblk0p10
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Tab 3 10.1
   id: santos
@@ -99,6 +222,16 @@
     extra:
       - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/RADIO'
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Tab 4 10.1 (Wifi)
   id: matissewifi
@@ -126,6 +259,62 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Tab A 2016 7.0 (LTE)
+  id: gtexslte
+  codenames:
+    - SM-T285
+    - gtexslte
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdio_emmc/by-num
+      - /dev/block/bootdevice/by-num
+    system:
+      - /dev/block/bootdevice/by-num/system
+      - /dev/block/mmcblk0p25
+      - /dev/block/platform/sdio_emmc/by-name/SYSTEM
+    cache:
+      - /dev/block/bootdevice/by-num/cache
+      - /dev/block/mmcblk0p24
+      - /dev/block/platform/sdio_emmc/by-name/CACHE
+    data:
+      - /dev/block/bootdevice/by-num/userdata
+      - /dev/block/mmcblk0p27
+      - /dev/block/platform/sdio_emmc/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-num/boot
+      - /dev/block/mmcblk0p20
+      - /dev/block/platform/sdio_emmc/by-name/KERNEL
+    recovery:
+      - /dev/block/bootdevice/by-num/recovery
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/sdio_emmc/by-name/RECOVERY
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Tab Pro 8.4 (Wifi)
   id: mondrianwifi
@@ -154,6 +343,18 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Tab Pro 10.1 (Wifi)
   id: picassowifi
@@ -184,6 +385,17 @@
       - /dev/block/platform/dw_mmc.0/by-name/RADIO
       - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/i2c-gpio.24/i2c-24/24-002c/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Tab Pro 10.1 (LTE)
   id: picassolte
@@ -211,6 +423,16 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Tab Pro 12.2 (Wifi)
   id: v2wifi
@@ -240,6 +462,16 @@
       - /dev/block/platform/dw_mmc.0/by-name/RECOVERY
       - /dev/block/mmcblk0p10
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Tab S 8.4/10.5
   id: tab_s
@@ -280,6 +512,17 @@
       - /dev/block/platform/dw_mmc.0/by-name/RADIO
       - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/s5p-mipi-dsim.1/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Tab S2 8.0/9.7
   id: tab_s2
@@ -317,3 +560,158 @@
     extra:
       - /dev/block/platform/15540000.dwmmc0/by-name/RADIO
       - /dev/block/platform/15540000.dwmmc0/by-name/CDMA-RADIO
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13800000.decon_fb/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Tab S2 8.0 Wi-Fi (2016)
+  id: gts28vewifi
+  codenames:
+    - gts28vewifi
+    - gts28vewifixx
+    - SM-T713
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p36
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p37
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p39
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p18
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p19
+    extra:
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/modem
+      - /dev/block/mmcblk0p33
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBA_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 394
+    default_brightness: 190
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Tab Active 8.0 (LTE)
+  id: SM-T365
+  codenames:
+    - rubenslte
+    - rubensltexx
+    - SM-T365
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    brightness_path: /sys/devices/fd922800.qcom,mdss_dsi/lcd/panel/panel/brightness
+    max_brightness: 255
+    default_brightness: 190
+    theme: portrait_hdpi
+    
+- name: Samsung Galaxy Tab S3 9.7 
+  id: tab_s3
+  codenames:
+    - gts3lwifi
+    - gts3lwifixx
+    - gts3llte
+    - gts3lltexx
+    - SM-T820
+    - SM-T825
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/74a4900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/74a4900.sdhci/by-name/system
+      - /dev/block/mmcblk0p44
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/74a4900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p45
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/74a4900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p47
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/74a4900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p28
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/74a4900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p29
+    extra:
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/platform/soc/74a4900.sdhci/by-name/modem
+      - /dev/block/mmcblk0p39
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBA_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 180
+    theme: portrait_hdpi
+    

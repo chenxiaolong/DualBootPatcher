@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,18 +13,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-_prebuilts='https://dbp.noobdev.io/repo/prebuilts'
-_ver_safe_iop=7.1.1_r28-1
+_prebuilts='https://downloads.sourceforge.net/project/dualbootpatcher/prebuilts'
+_ver_safe_iop=8.1.0_r2-2
 
 pkgname=android-system-core
-pkgver=7.1.1_r28
-pkgrel=1
+pkgver=8.1.0_r2
+pkgrel=2
 pkgdesc="Libraries from AOSP's system/core sources"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://android.googlesource.com/platform/system/core"
 license=(Apache)
 source=("git+https://android.googlesource.com/platform/system/core#tag=android-${pkgver}"
-        0001-Make-this-NDK-buildable.patch)
+        0001-Make-this-NDK-buildable.patch
+        0004-libcutils-Fix-missing-includes.patch)
 _source_template=("${_prebuilts}/safe-iop-${_ver_safe_iop}-@ARCH@.pkg.tar.xz"
                   "${_prebuilts}/safe-iop-${_ver_safe_iop}-@ARCH@.pkg.tar.xz.sig")
 source_armv7=("${_source_template[@]/@ARCH@/armv7}")
@@ -36,13 +37,11 @@ validpgpkeys=('2233C479609BDCEC43BE9232F6A3B19090EFF32C')
 
 prepare() {
     cd core
-    patch -p1 -i "${srcdir}/0001-Make-this-NDK-buildable.patch"
+    patch -p1 -i ../0001-Make-this-NDK-buildable.patch
+    patch -p1 -i ../0004-libcutils-Fix-missing-includes.patch
 
-    local abi
-    abi=$(android_get_abi_name)
-
-    mkdir -p "common_${abi}"
-    cd "common_${abi}"
+    mkdir -p common
+    cd common
 
     mkdir -p safe-iop
     bsdtar -xf "${srcdir}/safe-iop-${_ver_safe_iop}-${CARCH}.pkg.tar.xz" -C safe-iop
@@ -65,8 +64,8 @@ build() {
             NDK_TOOLCHAIN_VERSION=clang \
             APP_BUILD_SCRIPT=Android.mk \
             APP_ABI="${abi}" \
-            APP_PLATFORM=android-24 \
-            APP_STL=gnustl_static \
+            APP_PLATFORM=android-28 \
+            APP_STL=c++_static \
             APP_CFLAGS="-DHAVE_ANDROID_OS -DOS_PATH_SEPARATOR=\\'/\\'" \
             "${MAKEFLAGS}"
 
@@ -89,20 +88,21 @@ package() {
         "${pkgdir}"/lib/
     install -dm755 "${pkgdir}"/include/
     cp -a \
-        include/cutils \
-        include/utils \
-        include/log \
+        libcutils/include/cutils \
+        libutils/include/utils \
+        liblog/include/log \
         libpixelflinger/include/pixelflinger \
         "${pkgdir}"/include/
 }
 
 sha512sums=('SKIP'
-            '23fb7d1efc85e7ee379b2bd0d837c7c1409472b3aaf2e55c75818385c62ab9874cd40cf5a7005006b96e20f456957518122ebe1efe0680a040cab888c196c2c8')
-sha512sums_armv7=('3202b5e9b88c1bee4dd5291f43fcd130f3d2335432b9c2fbaa988afa9456c1490c293d04d7bcf4390eb3643000668167f3a79db8b5ed615020eff020fc2dc095'
+            'b89e05cbc9bfb70d62f107e1d62d4ceb099739fd22e49ffbd0072ca9e68991fc4488fe682e61dda5d41799fdfa55fada30541e1c45f6e8c460ed11371973b42b'
+            '9eba042dbd3d060719768b0c2707a8863258498111199e0b90d6ce1d1fe46f11f87d60b89ae809093ea9efdfe3791597f2d7923eea1389ed3827ce418e2b3e0f')
+sha512sums_armv7=('6332d33ce3dae5e5a00e998cfc686778f25802f1852015db2a2438a1a8cd1d4712548b13b36d6e3194405d64a0e02878c5ff12d16e69138f25e97342fe521323'
                   'SKIP')
-sha512sums_aarch64=('d3c3d689d4f14ad239178ecb57e4d4d04568793b20ae34470889d617017237228a58576f3954a6b328153632cb4076b92f0d0cab6e095c329cfce417ada02400'
+sha512sums_aarch64=('4cf43213649fafc166f64540ac30c5c4679082d55946f110b45910fe2eeed6a304626cd674ee2aa0ac7accf87066d6243a6bd7b4b2282e3becdb85367457e84c'
                     'SKIP')
-sha512sums_x86=('d4172e8d253c60bde5586e9de3d591885b8c73de46ef3f6ddabab0519828b20701610daade253699943c0e0b7e4d3378f7e7815a5fd6ca59ee202c590254be55'
+sha512sums_x86=('407def1bbf213798a92bb44cdee9e3100f1b77b927184b8ca0d1b14c1b967956b87f59c67d9ef84fedfe4cdafb73615e242de37b656fe3dcdebc34c6eceeedc5'
                 'SKIP')
-sha512sums_x86_64=('c823420e85ed4919efb3afa38de855e1393a06d81e8fe293d3ae26c098b859b9f7df7fe6e0847027d5628293af4924b04e708d8e01e4d01705a2bdc223740ea3'
+sha512sums_x86_64=('2be8d010913d81a902cca40721398647fe8fea5011213e4f0eebaa1f06abf40b2defe72e47a6ed8cc145b1a59f870cb967b9a084cf2fad65f90f7d3a6c369e3c'
                    'SKIP')

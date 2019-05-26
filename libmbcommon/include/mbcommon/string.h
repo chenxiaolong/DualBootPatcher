@@ -22,13 +22,17 @@
 #include "mbcommon/common.h"
 
 #include <string>
+#include <string_view>
+#include <vector>
 
 #include <cstdarg>
 #include <cstdbool>
 #include <cstddef>
 
+#include "mbcommon/outcome.h"
+
 // zu, zd, etc. are not supported until VS2015
-#ifdef _WIN32
+#if defined(_WIN32) && !__USE_MINGW_ANSI_STDIO
 #  define MB_PRIzd "Id"
 #  define MB_PRIzi "Ii"
 #  define MB_PRIzo "Io"
@@ -48,52 +52,107 @@ namespace mb
 {
 
 // String formatting
-MB_PRINTF(2, 3)
-MB_EXPORT bool format(std::string &out, const char *fmt, ...);
+MB_PRINTF(1, 2)
+MB_EXPORT oc::result<std::string> format_safe(const char *fmt, ...);
 MB_PRINTF(1, 2)
 MB_EXPORT std::string format(const char *fmt, ...);
-MB_EXPORT bool format_v(std::string &out, const char *fmt, va_list ap);
+MB_EXPORT oc::result<std::string> format_v_safe(const char *fmt, va_list ap);
 MB_EXPORT std::string format_v(const char *fmt, va_list ap);
 
 // String starts with
-MB_EXPORT bool starts_with_n(const char *string, size_t len_string,
-                             const char *prefix, size_t len_prefix);
-MB_EXPORT bool starts_with_icase_n(const char *string, size_t len_string,
-                                   const char *prefix, size_t len_prefix);
-MB_EXPORT bool starts_with(const char *string, const char *prefix);
-MB_EXPORT bool starts_with(const std::string &string, const char *prefix);
-MB_EXPORT bool starts_with(const char *string, const std::string &prefix);
-MB_EXPORT bool starts_with(const std::string &string, const std::string &prefix);
-MB_EXPORT bool starts_with_icase(const char *string, const char *prefix);
-MB_EXPORT bool starts_with_icase(const std::string &string, const char *prefix);
-MB_EXPORT bool starts_with_icase(const char *string, const std::string &prefix);
-MB_EXPORT bool starts_with_icase(const std::string &string, const std::string &prefix);
+MB_EXPORT bool starts_with(std::string_view string, std::string_view prefix);
+MB_EXPORT bool starts_with_icase(std::string_view string, std::string_view prefix);
 
 // String ends with
-MB_EXPORT bool ends_with_n(const char *string, size_t len_string,
-                           const char *suffix, size_t len_suffix);
-MB_EXPORT bool ends_with_icase_n(const char *string, size_t len_string,
-                                 const char *suffix, size_t len_suffix);
-MB_EXPORT bool ends_with(const char *string, const char *suffix);
-MB_EXPORT bool ends_with(const std::string &string, const char *suffix);
-MB_EXPORT bool ends_with(const char *string, const std::string &suffix);
-MB_EXPORT bool ends_with(const std::string &string, const std::string &suffix);
-MB_EXPORT bool ends_with_icase(const char *string, const char *suffix);
-MB_EXPORT bool ends_with_icase(const std::string &string, const char *suffix);
-MB_EXPORT bool ends_with_icase(const char *string, const std::string &suffix);
-MB_EXPORT bool ends_with_icase(const std::string &string, const std::string &suffix);
+MB_EXPORT bool ends_with(std::string_view string, std::string_view suffix);
+MB_EXPORT bool ends_with_icase(std::string_view string, std::string_view suffix);
 
-// String insert
-MB_EXPORT int mem_insert(void **mem, size_t *mem_size, size_t pos,
-                         const void *data, size_t data_size);
-MB_EXPORT int str_insert(char **str, size_t pos, const char *s);
+// String trim
+MB_EXPORT void trim_left(std::string &s);
+MB_EXPORT void trim_right(std::string &s);
+MB_EXPORT void trim(std::string &s);
+MB_EXPORT std::string_view trimmed_left(std::string_view s);
+MB_EXPORT std::string_view trimmed_right(std::string_view s);
+MB_EXPORT std::string_view trimmed(std::string_view s);
 
-// String replace
-MB_EXPORT int mem_replace(void **mem, size_t *mem_size,
-                          const void *from, size_t from_size,
-                          const void *to, size_t to_size,
-                          size_t n, size_t *n_replaced);
-MB_EXPORT int str_replace(char **str, const char *from, const char *to,
-                          size_t n, size_t *n_replaced);
+// String split/join
+
+/*!
+ * \brief Split a string by one or more delimiters
+ *
+ * \param str Input string
+ * \param delim `char` delimiter or string of delimiters
+ *
+ * \return Vector of split components. If \p str or \p delim is empty, then
+ *         a vector consisting a single element equal to \p str is returned.
+ */
+template<typename DelimType>
+std::vector<std::string> split(std::string_view str, const DelimType &delim)
+{
+    std::size_t begin = 0;
+    std::size_t end;
+    std::vector<std::string> result;
+
+    while ((end = str.find_first_of(delim, begin)) != std::string::npos) {
+        result.emplace_back(str.substr(begin, end - begin));
+        begin = end + 1;
+    }
+    result.emplace_back(str.substr(begin));
+
+    return result;
+}
+
+/*!
+ * \brief Split a string by one or more delimiters as string views
+ *
+ * \param str Input string
+ * \param delim `char` delimiter or string of delimiters
+ *
+ * \return Vector of split components as string views. If \p str or \p delim is
+ *         empty, then a vector consisting a single element equal to \p str is
+ *         returned.
+ */
+template<typename DelimType>
+std::vector<std::string_view> split_sv(std::string_view str, const DelimType &delim)
+{
+    std::size_t begin = 0;
+    std::size_t end;
+    std::vector<std::string_view> result;
+
+    while ((end = str.find_first_of(delim, begin)) != std::string::npos) {
+        result.push_back(str.substr(begin, end - begin));
+        begin = end + 1;
+    }
+    result.push_back(str.substr(begin));
+
+    return result;
+}
+
+/*!
+ * \brief Join a string from a container of components
+ *
+ * \param list Container of strings or string views
+ * \param delim Delimiter to join the strings. Can be any type accepted by
+ *              `std::string`'s operator+=().
+ *
+ * \return Joined string
+ */
+template<typename Container, typename DelimType>
+std::string join(const Container &list, const DelimType &delim)
+{
+    std::string result;
+    bool first = true;
+
+    for (auto const &str : list) {
+        if (!first) {
+            result += delim;
+        } else {
+            first = false;
+        }
+        result += str;
+    }
+
+    return result;
+}
 
 }

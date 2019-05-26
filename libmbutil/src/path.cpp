@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,64 +19,46 @@
 
 #include "mbutil/path.h"
 
+#include <chrono>
+#include <thread>
 #include <vector>
+
 #include <cerrno>
+#include <climits>
 #include <cstdlib>
 #include <cstring>
+
 #include <libgen.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "mblog/logging.h"
-#include "mbutil/time.h"
+#include "mbcommon/error_code.h"
 
-namespace mb
-{
-namespace util
+
+namespace mb::util
 {
 
-std::string get_cwd()
+oc::result<std::string> get_cwd()
 {
-    char *cwd = nullptr;
-
-    if (!(cwd = getcwd(nullptr, 0))) {
-        LOGE("Failed to get cwd: %s", strerror(errno));
-        return std::string();
+    std::unique_ptr<char, decltype(free) *> cwd(getcwd(nullptr, 0), &free);
+    if (!cwd) {
+        return ec_from_errno();
     }
 
-    std::string ret(cwd);
-    free(cwd);
-    return ret;
+    return cwd.get();
 }
 
-std::string dir_name(const std::string &path)
+std::string dir_name(std::string path)
 {
-    std::vector<char> buf(path.begin(), path.end());
-    buf.push_back('\0');
-
-    char *ptr = dirname(buf.data());
-    return std::string(ptr);
+    return dirname(path.data());
 }
 
-std::string base_name(const std::string &path)
+std::string base_name(std::string path)
 {
-    std::vector<char> buf(path.begin(), path.end());
-    buf.push_back('\0');
-
-    char *ptr = basename(buf.data());
-    return std::string(ptr);
+    return basename(path.data());
 }
 
-std::string real_path(const std::string &path)
-{
-    char actual_path[PATH_MAX + 1];
-    if (!realpath(path.c_str(), actual_path)) {
-        return std::string();
-    }
-    return std::string(actual_path);
-}
-
-bool read_link(const std::string &path, std::string *out)
+oc::result<std::string> read_link(const std::string &path)
 {
     std::vector<char> buf;
     ssize_t len;
@@ -86,35 +68,35 @@ bool read_link(const std::string &path, std::string *out)
     for (;;) {
         len = readlink(path.c_str(), buf.data(), buf.size() - 1);
         if (len < 0) {
-            return false;
-        } else if ((size_t) len == buf.size() - 1) {
+            return ec_from_errno();
+        } else if (static_cast<size_t>(len) == buf.size() - 1) {
             buf.resize(buf.size() << 1);
         } else {
             break;
         }
     }
 
-    buf[len] = '\0';
-    out->assign(buf.data());
-    return true;
+    buf[static_cast<size_t>(len)] = '\0';
+    return buf.data();
 }
 
-bool inodes_equal(const std::string &path1, const std::string &path2)
+/*!
+ * \brief Wrapper around libc's realpath()
+ *
+ * \param path Path to canonicalize
+ *
+ * \return Canonicalized absolute path. Fails if the result woule be longer than
+ *         PATH_MAX bytes.
+ */
+oc::result<std::string> real_path(const std::string &path)
 {
-    struct stat sb1;
-    struct stat sb2;
+    char buf[PATH_MAX];
 
-    if (lstat(path1.c_str(), &sb1) < 0) {
-        LOGE("%s: Failed to stat: %s", path1.c_str(), strerror(errno));
-        return false;
+    if (!realpath(path.c_str(), buf)) {
+        return ec_from_errno();
     }
 
-    if (lstat(path2.c_str(), &sb2) < 0) {
-        LOGE("%s: Failed to stat: %s", path2.c_str(), strerror(errno));
-        return false;
-    }
-
-    return sb1.st_dev == sb2.st_dev && sb1.st_ino == sb2.st_ino;
+    return buf;
 }
 
 /*!
@@ -131,12 +113,10 @@ bool inodes_equal(const std::string &path1, const std::string &path2)
  *
  * \return Split pieces of the path
  */
-std::vector<std::string> path_split(const std::string &path)
+std::vector<std::string> path_split(std::string path)
 {
     char *p;
     char *save_ptr;
-    std::vector<char> copy(path.begin(), path.end());
-    copy.push_back('\0');
 
     std::vector<std::string> split;
 
@@ -145,7 +125,7 @@ std::vector<std::string> path_split(const std::string &path)
         split.push_back(std::string());
     }
 
-    p = strtok_r(copy.data(), "/", &save_ptr);
+    p = strtok_r(path.data(), "/", &save_ptr);
     while (p != nullptr) {
         // Ignore useless references to '.' in the path
         if (strcmp(p, ".") != 0) {
@@ -197,18 +177,18 @@ std::string path_join(const std::vector<std::string> &components)
  *   piece and the '..' (eg. 'a/b/..' -> 'a')
  *
  * \note This function will not treat '.' pieces specially as they should have
- *       been stripped out by \link util::path_split. If the path pieces are
- *       manually created, take care to not add '.'. Otherwise, the result will
- *       be incorrect. For example, '/usr/bin/./..' will become '/usr/bin'.
+ *       been stripped out by path_split(). If the path pieces are manually
+ *       created, take care to not add '.'. Otherwise, the result will be
+ *       incorrect. For example, '/usr/bin/./..' will become '/usr/bin'.
  *
- * \param components Pointer to list of path pieces
+ * \param components Reference to list of path pieces
  */
-void normalize_path(std::vector<std::string> *components)
+void normalize_path(std::vector<std::string> &components)
 {
     std::vector<std::string>::iterator prev_it;
 
-    for (auto it = components->begin(); it != components->end();) {
-        if (it != components->begin()) {
+    for (auto it = components.begin(); it != components.end();) {
+        if (it != components.begin()) {
             prev_it = it - 1;
 
             // After the removal, it will point to the piece after '..'
@@ -217,10 +197,10 @@ void normalize_path(std::vector<std::string> *components)
                 // noop, so just remove the '..'. Otherwise, remove the previous
                 // piece and the '..' piece.
                 if (prev_it->empty()) {
-                    it = components->erase(it);
+                    it = components.erase(it);
                 } else {
-                    it = components->erase(prev_it);
-                    it = components->erase(it);
+                    it = components.erase(prev_it);
+                    it = components.erase(it);
                 }
             } else {
                 ++it;
@@ -251,28 +231,27 @@ void normalize_path(std::vector<std::string> *components)
  * \note This function does not traverse the filesystem at all. It works purely
  *       on the given path strings.
  *
- * \return True if the relative path was successfully computed. False and errno
- *         set to \a EINVAL if:
+ * \return The relative path if it was successfully computed.
+ *         std::errc::invalid_argument if:
  *         - \a path is absolute and \a start is relative or vice versa
  *         - \a path or \a start is empty
  *         - an intermediate path could not be computed
  */
-bool relative_path(const std::string &path, const std::string &start,
-                   std::string *out)
+oc::result<std::string> relative_path(const std::string &path,
+                                      const std::string &start)
 {
     if (path.empty() || start.empty()
             || (path[0] == '/' && start[0] != '/')
             || (path[0] != '/' && start[0] == '/')) {
-        errno = EINVAL;
-        return false;
+        return std::errc::invalid_argument;
     }
 
     std::vector<std::string> path_pieces(path_split(path));
     std::vector<std::string> start_pieces(path_split(start));
     std::vector<std::string> result_pieces;
 
-    normalize_path(&path_pieces);
-    normalize_path(&start_pieces);
+    normalize_path(path_pieces);
+    normalize_path(start_pieces);
 
     // Find the number of common path segments
     size_t common;
@@ -284,8 +263,7 @@ bool relative_path(const std::string &path, const std::string &start,
     // Add '..' for the remaining path segments in 'start'
     for (size_t i = common; i < start_pieces.size(); ++i) {
         if (start_pieces[i] == "..") {
-            errno = EINVAL;
-            return false;
+            return std::errc::invalid_argument;
         }
         result_pieces.push_back("..");
     }
@@ -295,9 +273,7 @@ bool relative_path(const std::string &path, const std::string &start,
         result_pieces.push_back(path_pieces[i]);
     }
 
-    *out = path_join(result_pieces);
-
-    return true;
+    return path_join(result_pieces);
 }
 
 /*!
@@ -323,30 +299,32 @@ int path_compare(const std::string &path1, const std::string &path2)
     std::vector<std::string> path1_pieces(path_split(path1));
     std::vector<std::string> path2_pieces(path_split(path2));
 
-    normalize_path(&path1_pieces);
-    normalize_path(&path2_pieces);
+    normalize_path(path1_pieces);
+    normalize_path(path2_pieces);
 
     return path_join(path1_pieces).compare(path_join(path2_pieces));
 }
 
-bool wait_for_path(const char *path, unsigned int timeout_ms)
+bool wait_for_path(const std::string &path, std::chrono::milliseconds timeout)
 {
-    uint64_t until = util::current_time_ms() + timeout_ms;
+    using namespace std::chrono;
+    using namespace std::chrono_literals;
+
+    auto until = steady_clock::now() + timeout;
     struct stat sb;
     int ret;
 
-    while ((ret = stat(path, &sb)) < 0 && util::current_time_ms() < until) {
-        usleep(10000);
+    while ((ret = stat(path.c_str(), &sb)) < 0 && steady_clock::now() < until) {
+        std::this_thread::sleep_for(10ms);
     }
 
     return ret == 0;
 }
 
-bool path_exists(const char *path, bool follow_symlinks)
+bool path_exists(const std::string &path, bool follow_symlinks)
 {
     struct stat sb;
-    return (follow_symlinks ? stat : lstat)(path, &sb) == 0;
+    return (follow_symlinks ? stat : lstat)(path.c_str(), &sb) == 0;
 }
 
-}
 }

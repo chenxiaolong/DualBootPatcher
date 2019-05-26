@@ -20,12 +20,44 @@ if(MBP_TOP_LEVEL_BUILD)
     # devices' ramdisks.
     if(${MBP_SYSTEM_BUILD_TYPE} STREQUAL debug)
         set(MBP_SYSTEM_CMAKE_BUILD_TYPE Debug)
+        set(system_install_target install)
     else()
         set(MBP_SYSTEM_CMAKE_BUILD_TYPE Release)
+        set(system_install_target install/strip)
     endif()
 
-    # List of ExternalProject directories to run "make clean" in
-    set(RECURSIVE_CLEAN_DIRS)
+    if(${MBP_BUILD_TARGET} STREQUAL android)
+        if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+            set(app_install_target install)
+        else()
+            set(app_install_target install/strip)
+        endif()
+    endif()
+
+    function(create_project_wrapper_script project)
+        ExternalProject_Get_Property("${project}" BINARY_DIR)
+
+        # Create wrapper script for running ExternalProject targets from the
+        # top-level build
+        string(CONCAT script
+               "message(STATUS \"Running \${TARGET} in ${BINARY_DIR}\")\n"
+               "execute_process(COMMAND \${CMAKE_COMMAND} --build \"${BINARY_DIR}\" --target \"\${TARGET}\")\n")
+
+        file(WRITE
+             "${CMAKE_CURRENT_BINARY_DIR}/run_target.${project}.cmake"
+             "${script}")
+    endfunction()
+
+    function(expose_project_target project target)
+        add_custom_target(
+            "${project}_${target}"
+            ${CMAKE_COMMAND}
+                -D "TARGET=${target}"
+                -P "${CMAKE_CURRENT_BINARY_DIR}/run_target.${project}.cmake"
+            VERBATIM
+            USES_TERMINAL
+        )
+    endfunction()
 
     # FIXME: Required until https://github.com/android-ndk/ndk/issues/222 is fixed
     set(ENV{ANDROID_NDK} "${ndk_path}")
@@ -36,13 +68,12 @@ if(MBP_TOP_LEVEL_BUILD)
             #-DCMAKE_TOOLCHAIN_FILE=${ndk_path}/build/cmake/android.toolchain.cmake
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DANDROID_ABI=${abi}
-            -DANDROID_STL=gnustl_static
-            #-DANDROID_STL=c++_static
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
-            -DMBP_ENABLE_TESTS=OFF
+            -DMBP_ENABLE_TESTS=${MBP_ENABLE_TESTS}
             -DMBP_PREBUILTS_BINARY_DIR=${MBP_PREBUILTS_BINARY_DIR}
             -DMBP_SIGN_CONFIG_PATH=${MBP_SIGN_CONFIG_PATH}
             -DJAVA_KEYTOOL=${JAVA_KEYTOOL}
+            -DSCHEMAS2CPP_COMMAND=${SCHEMAS2CPP_COMMAND}
         )
 
         if(MBP_ANDROID_ENABLE_CCACHE)
@@ -60,6 +91,7 @@ if(MBP_TOP_LEVEL_BUILD)
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DANDROID_PIE=ON
             -DANDROID_PLATFORM=android-17
+            -DANDROID_STL=c++_shared
             -DMBP_BUILD_TARGET=android-app
         )
 
@@ -67,9 +99,19 @@ if(MBP_TOP_LEVEL_BUILD)
             ${INTERNAL_COMMON_OPTIONS}
             -DCMAKE_BUILD_TYPE=${MBP_SYSTEM_CMAKE_BUILD_TYPE}
             -DANDROID_PIE=OFF
-            -DANDROID_PLATFORM=android-21
+            -DANDROID_PLATFORM=android-28
+            -DANDROID_STL=c++_static
             -DMBP_BUILD_TARGET=android-system
+            -DMBSYSTRACE_HEADERSGEN_COMMAND=${MBSYSTRACE_HEADERSGEN_COMMAND}
         )
+
+        if(MBP_ENABLE_QEMU)
+            android_abi_to_qemu_arch("${abi}" qemu_arch)
+
+            list(APPEND INTERNAL_ANDROID_SYSTEM_OPTIONS
+                 "-DMBP_ENABLE_QEMU=${MBP_ENABLE_QEMU}"
+                 "-DQEMU_SYSTEM_COMMAND=${QEMU_SYSTEM_${qemu_arch}}")
+        endif()
 
         message(STATUS "Recursive CMake build for Android system components (${abi}):")
         foreach(_option ${INTERNAL_ANDROID_SYSTEM_OPTIONS})
@@ -83,8 +125,13 @@ if(MBP_TOP_LEVEL_BUILD)
             INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/result
             CMAKE_ARGS ${INTERNAL_ANDROID_SYSTEM_OPTIONS}
             BUILD_ALWAYS 1
-            INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
+            INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target ${system_install_target}
             VERBATIM
+        )
+
+        add_dependencies(
+            android-system_${abi}
+            hosttools
         )
 
         set(result_files
@@ -108,8 +155,13 @@ if(MBP_TOP_LEVEL_BUILD)
             android-system_${abi}
         )
 
-        ExternalProject_Get_Property(android-system_${abi} BINARY_DIR)
-        list(APPEND RECURSIVE_CLEAN_DIRS ${BINARY_DIR})
+        create_project_wrapper_script("android-system_${abi}")
+        expose_project_target("android-system_${abi}" clean)
+
+        if(MBP_ENABLE_QEMU)
+            expose_project_target("android-system_${abi}" qemu-shell)
+            expose_project_target("android-system_${abi}" qemu-tests)
+        endif()
 
         install(
             FILES ${result_files} ${sig_files}
@@ -130,12 +182,17 @@ if(MBP_TOP_LEVEL_BUILD)
                 INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/result
                 CMAKE_ARGS ${INTERNAL_ANDROID_APP_OPTIONS}
                 BUILD_ALWAYS 1
-                INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
+                INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target ${app_install_target}
                 VERBATIM
             )
 
-            ExternalProject_Get_Property(android-app_${abi} BINARY_DIR)
-            list(APPEND RECURSIVE_CLEAN_DIRS ${BINARY_DIR})
+            add_dependencies(
+                android-app_${abi}
+                hosttools
+            )
+
+            create_project_wrapper_script("android-app_${abi}")
+            expose_project_target("android-app_${abi}" clean)
         endif()
 
         set(ARCHIVE_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bootui/${abi}/bootui.zip)
@@ -207,23 +264,32 @@ if(MBP_TOP_LEVEL_BUILD)
             COMPONENT Libraries
         )
     endforeach()
+elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
+    # Install libc++. We do this in the android-app target because we have
+    # access to the CMAKE_LINKER variable.
+    set(stl_source "$ENV{ANDROID_NDK}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libc++_shared.so")
+    set(stl_target "${CMAKE_CURRENT_BINARY_DIR}/libc++_shared.stripped.so")
 
-    # Create clean target
-    set(CLEAN_CONTENTS)
-    foreach(_dir ${RECURSIVE_CLEAN_DIRS})
-        string(CONCAT CLEAN_CONTENTS
-               ${CLEAN_CONTENTS}
-               "message(STATUS \"Cleaning ${_dir}\")\n"
-               "execute_process(COMMAND \${CMAKE_COMMAND} --build \"${_dir}\" --target clean)\n")
-    endforeach()
-
-    file(WRITE
-         ${CMAKE_CURRENT_BINARY_DIR}/clean-android.cmake
-         "${CLEAN_CONTENTS}")
+    add_custom_command(
+        OUTPUT "${stl_target}"
+        COMMAND "${CMAKE_STRIP}" -s "${stl_source}" -o "${stl_target}"
+        COMMENT "Strip libc++_shared library"
+        VERBATIM
+    )
 
     add_custom_target(
-        clean-android
-        ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/clean-android.cmake
-        VERBATIM
+        strip_stl_shared
+        ALL
+        DEPENDS "${stl_target}"
+    )
+
+    install(
+        FILES "${stl_target}"
+        DESTINATION ${LIB_INSTALL_DIR}
+        RENAME libc++_shared.so
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+                    GROUP_EXECUTE             GROUP_READ
+                    WORLD_EXECUTE             WORLD_READ
+        COMPONENT Libraries
     )
 endif()

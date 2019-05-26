@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,7 +23,6 @@
 #include <cassert>
 
 #include <mbdevice/json.h>
-#include <mbdevice/validate.h>
 #include <mbpatcher/errors.h>
 
 #include <QtCore/QStringBuilder>
@@ -72,9 +71,8 @@ MainWindow::MainWindow(mb::patcher::PatcherConfig *pc, QWidget *parent)
     QString lastDeviceId = d->settings.value(
             QStringLiteral("last_device"), QString()).toString();
     for (size_t i = 0; i < d->devices.size(); ++i) {
-        if (strcmp(mb_device_id(d->devices[i].get()),
-                   lastDeviceId.toUtf8().data()) == 0) {
-            d->deviceSel->setCurrentIndex(i);
+        if (d->devices[i].id() == lastDeviceId.toStdString()) {
+            d->deviceSel->setCurrentIndex(static_cast<int>(i));
             break;
         }
     }
@@ -119,8 +117,8 @@ MainWindow::~MainWindow()
 void MainWindow::onDeviceSelected(int index)
 {
     Q_D(MainWindow);
-    if (index < d->devices.size()) {
-        d->device = d->devices[index].get();
+    if (index < static_cast<int>(d->devices.size())) {
+        d->device = &d->devices[static_cast<size_t>(index)];
     }
 
     if (d->state == MainWindowPrivate::FinishedPatching) {
@@ -160,9 +158,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     if (!d->devices.empty()) {
         int deviceIndex = d->deviceSel->currentIndex();
-        const char *id = mb_device_id(d->devices[deviceIndex].get());
+        std::string id = d->devices[static_cast<size_t>(deviceIndex)].id();
         d->settings.setValue(QStringLiteral("last_device"),
-                             QString::fromUtf8(id));
+                             QString::fromStdString(id));
     }
 
     QWidget::closeEvent(event);
@@ -226,7 +224,8 @@ void MainWindow::onProgressUpdated(uint64_t bytes, uint64_t maxBytes)
         value = 0;
         max = 0;
     } else {
-        value = (double) bytes / maxBytes * normalize;
+        value = static_cast<int>(static_cast<double>(bytes)
+                / static_cast<double>(maxBytes * normalize));
         max = normalize;
     }
 
@@ -277,7 +276,8 @@ void MainWindow::updateProgressText()
 
     double percentage = 0.0;
     if (d->maxBytes != 0) {
-        percentage = 100.0 * d->bytes / d->maxBytes;
+        percentage = 100.0 * static_cast<double>(d->bytes)
+                / static_cast<double>(d->maxBytes);
     }
 
     d->progressBar->setFormat(tr("%1% - %2 / %3 files")
@@ -433,25 +433,22 @@ void MainWindow::populateDevices()
     if (file.open(QIODevice::ReadOnly)) {
         QByteArray contents = file.readAll();
         file.close();
+        contents.push_back('\0');
 
-        MbDeviceJsonError error;
-        Device **devices =
-                mb_device_new_list_from_json(contents.data(), &error);
+        std::vector<mb::device::Device> devices;
+        mb::device::JsonError error;
 
-        if (devices) {
-            for (Device **iter = devices; *iter; ++iter) {
-                if (mb_device_validate(*iter) == 0) {
+        if (mb::device::device_list_from_json(contents.data(), devices, error)) {
+            for (auto &device : devices) {
+                if (device.validate() == 0) {
                     d->deviceSel->addItem(QStringLiteral("%1 - %2")
-                            .arg(QString::fromUtf8(mb_device_id(*iter)))
-                            .arg(QString::fromUtf8(mb_device_name(*iter))));
-                    d->devices.emplace_back(*iter, mb_device_free);
+                            .arg(QString::fromStdString(device.id()))
+                            .arg(QString::fromStdString(device.name())));
+                    d->devices.push_back(std::move(device));
                 } else {
-                    // Clean up unusable devices
-                    mb_device_free(*iter);
+                    qWarning("Failed validation on a device");
                 }
             }
-            // No need for array anymore
-            free(devices);
         } else {
             qWarning("Failed to load devices");
         }
@@ -467,8 +464,8 @@ void MainWindow::populateInstallationLocations()
 
     d->instLocs << InstallLocation{
         QStringLiteral("primary"),
-        tr("Primary ROM Upgrade"),
-        tr("Update primary ROM without affecting other ROMS")
+        tr("Primary"),
+        tr("Installs ROM to /system")
     };
     d->instLocs << InstallLocation{
         QStringLiteral("dual"),
@@ -620,7 +617,7 @@ void MainWindow::startPatching()
     FileInfoPtr fileInfo = new mb::patcher::FileInfo();
     fileInfo->set_input_path(inputPath.toUtf8().constData());
     fileInfo->set_output_path(outputPath.toUtf8().constData());
-    fileInfo->set_device(d->device);
+    fileInfo->set_device(*d->device);
     fileInfo->set_rom_id(romId.toUtf8().constData());
 
     d->patcher = d->pc->create_patcher(d->patcherId.toStdString());
@@ -691,34 +688,16 @@ PatcherTask::PatcherTask(QWidget *parent)
 {
 }
 
-static void progressUpdatedCbWrapper(uint64_t bytes, uint64_t maxBytes,
-                                     void *userData)
-{
-    PatcherTask *task = static_cast<PatcherTask *>(userData);
-    task->progressUpdatedCb(bytes, maxBytes);
-}
-
-static void filesUpdatedCbWrapper(uint64_t files, uint64_t maxFiles,
-                                  void *userData)
-{
-    PatcherTask *task = static_cast<PatcherTask *>(userData);
-    task->filesUpdatedCb(files, maxFiles);
-}
-
-static void detailsUpdatedCbWrapper(const std::string &text, void *userData)
-{
-    PatcherTask *task = static_cast<PatcherTask *>(userData);
-    task->detailsUpdatedCb(text);
-}
-
 void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
 {
+    using namespace std::placeholders;
+
     patcher->set_file_info(info);
 
-    bool ret = patcher->patch_file(&progressUpdatedCbWrapper,
-                                   &filesUpdatedCbWrapper,
-                                   &detailsUpdatedCbWrapper,
-                                   this);
+    bool ret = patcher->patch_file(
+            std::bind(&PatcherTask::progressUpdatedCb, this, _1, _2),
+            std::bind(&PatcherTask::filesUpdatedCb, this, _1, _2),
+            std::bind(&PatcherTask::detailsUpdatedCb, this, _1));
 
     QString newFile(QString::fromStdString(info->output_path()));
 

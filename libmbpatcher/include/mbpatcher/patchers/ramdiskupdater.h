@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,46 +19,54 @@
 
 #pragma once
 
-#include <memory>
-
 #include "mbpatcher/patcherconfig.h"
 #include "mbpatcher/patcherinterface.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
-class RamdiskUpdaterPrivate;
+struct ZipCtx;
+
 class RamdiskUpdater : public Patcher
 {
-    MB_DECLARE_PRIVATE(RamdiskUpdater)
-
 public:
-    explicit RamdiskUpdater(PatcherConfig * const pc);
-    ~RamdiskUpdater();
+    RamdiskUpdater(PatcherConfig &pc);
+    virtual ~RamdiskUpdater();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(RamdiskUpdater)
+    MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(RamdiskUpdater)
 
     static const std::string Id;
 
-    virtual ErrorCode error() const override;
+    ErrorCode error() const override;
 
     // Patcher info
-    virtual std::string id() const override;
+    std::string id() const override;
 
     // Patching
-    virtual void set_file_info(const FileInfo * const info) override;
+    void set_file_info(const FileInfo * const info) override;
 
-    virtual bool patch_file(ProgressUpdatedCallback progress_cb,
-                            FilesUpdatedCallback files_cb,
-                            DetailsUpdatedCallback details_cb,
-                            void *userdata) override;
+    bool patch_file(const ProgressUpdatedCallback &progress_cb,
+                    const FilesUpdatedCallback &files_cb,
+                    const DetailsUpdatedCallback &details_cb) override;
 
-    virtual void cancel_patching() override;
+    void cancel_patching() override;
 
 private:
-    std::unique_ptr<RamdiskUpdaterPrivate> _priv_ptr;
+    PatcherConfig &m_pc;
+    const FileInfo *m_info;
+
+    volatile bool m_cancelled;
+
+    ErrorCode m_error;
+
+    ZipCtx *m_z_output;
+
+    bool create_zip();
+
+    bool open_output_archive();
+    void close_output_archive();
 };
 
-}
 }

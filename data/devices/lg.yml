@@ -32,6 +32,17 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/wled:backlight/brightness
+    max_brightness: 4095
+    default_brightness: 2067
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: LG G2 (d802)
   id: lgg2_d802
@@ -63,6 +74,17 @@
       - /dev/block/platform/msm_sdcc.1/by-name/aboot
       - /dev/block/platform/msm_sdcc.1/by-name/tz
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/wled:backlight/brightness
+    max_brightness: 4095
+    default_brightness: 2067
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: LG G3
   id: lgg3
@@ -106,7 +128,6 @@
       - fbdev
     theme: portrait_hdpi
 
-
 - name: LG G3 S
   id: lgg3s
   codenames:
@@ -132,6 +153,17 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p17
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: LG G4
   id: lgg4
@@ -165,6 +197,15 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p39
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: LG G4 (T-Mobile)
   id: lgg4_tmo
@@ -198,6 +239,15 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p39
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: LG G5
   id: lgg5
@@ -243,7 +293,6 @@
     default_brightness: 162
     theme: portrait_hdpi
 
-
 - name: LG G5 (T-Mobile)
   id: lgg5_tmo
   codenames:
@@ -288,7 +337,6 @@
     default_brightness: 149
     theme: portrait_hdpi
 
-
 - name: LG V20 (T-Mobile)
   id: elsa_tmo
   codenames:
@@ -320,6 +368,18 @@
       - /dev/block/platform/soc/624000.ufshc/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde2
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/soc/900000.qcom\x2cmdss_mdp/900000.qcom\x2cmdss_mdp:qcom\x2cmdss_fb_primary/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 149
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: LG V20 (Unlocked)
   id: elsa_omni
@@ -353,6 +413,17 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde2
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/soc/900000.qcom\x2cmdss_mdp/900000.qcom\x2cmdss_mdp:qcom\x2cmdss_fb_primary/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 149
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: LG Optimus L5
   id: m4
@@ -397,7 +468,6 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-
 - name: LG Optimus L7
   id: u0
   codenames:
@@ -440,7 +510,6 @@
       - fbdev
     pixel_format: RGBX_8888
     theme: portrait_hdpi
-
 
 - name: LG Optimus L1 II
   id: v1
@@ -488,7 +557,6 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-
 - name: LG Optimus L3 II
   id: vee3
   codenames:
@@ -534,7 +602,6 @@
       - fbdev
     pixel_format: RGBX_8888
     theme: portrait_hdpi
-
 
 - name: LG Optimus L7 II
   id: vee7
@@ -584,4 +651,144 @@
     graphics_backends:
       - fbdev
     pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: LG Stylo 2 Plus (MetroPCS)
+  id: ph2n
+  codenames:
+    - LGMS550
+    - ph2n
+  architecture: armeabi-v7a
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p62
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p63
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p65
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p26
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recoverybak
+      - /dev/block/mmcblk0p29
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p28
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+    extra:
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+   
+- name: LG Stylo 3 Plus (Freedom Mobile)
+  id: sf340n
+  codenames:
+    - sf340n
+  architecture: armeabi-v7a
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p56
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p57
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p59
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p46
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recoverybak
+      - /dev/block/mmcblk0p50
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p49
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+    extra:
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+- name: LG-LS998
+  id: spr
+  codenames:
+    - joan
+    - spr
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/1da4000.ufshc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/system
+      - /dev/block/sda22
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cache
+      - /dev/block/sda23
+    data:
+      - /dev/block/bootdevice/by-name/data
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/data
+      - /dev/block/sda24
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/boot
+      - /dev/block/sde1
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
+      - /dev/block/sde2
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBA_8888
+    brightness_path: /sys/devices/soc/c900000.qcom,mdss_mdp/c900000.qcom,mdss_mdp:qcom,mdss_fb_primary/leds/lcd-backlight/brightness
+    default_brightness: 158
     theme: portrait_hdpi

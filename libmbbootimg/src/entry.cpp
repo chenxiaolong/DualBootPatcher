@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,122 +19,44 @@
 
 #include "mbbootimg/entry.h"
 
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
 
-#include "mbbootimg/defs.h"
-#include "mbbootimg/entry_p.h"
-#include "mbbootimg/macros_p.h"
-
-
-MB_BEGIN_C_DECLS
-
-MbBiEntry * mb_bi_entry_new()
+namespace mb::bootimg
 {
-    MbBiEntry *entry = static_cast<MbBiEntry *>(calloc(1, sizeof(*entry)));
-    return entry;
+
+Entry::Entry(EntryType type) noexcept
+    : m_type(type)
+{
 }
 
-void mb_bi_entry_free(MbBiEntry *entry)
+Entry::~Entry() noexcept = default;
+
+bool Entry::operator==(const Entry &rhs) const noexcept
 {
-    mb_bi_entry_clear(entry);
-    free(entry);
+    return m_type == rhs.m_type
+            && m_size == rhs.m_size;
 }
 
-
-void mb_bi_entry_clear(MbBiEntry *entry)
+bool Entry::operator!=(const Entry &rhs) const noexcept
 {
-    if (entry) {
-        free(entry->field.name);
-        memset(entry, 0, sizeof(*entry));
-    }
-}
-
-MbBiEntry * mb_bi_entry_clone(MbBiEntry *entry)
-{
-    MbBiEntry *dup;
-
-    dup = mb_bi_entry_new();
-    if (!dup) {
-        return nullptr;
-    }
-
-    // Copy global options
-    dup->fields_set = entry->fields_set;
-
-    // Shallow copy trivial field
-    dup->field.type = entry->field.type;
-    dup->field.size = entry->field.size;
-
-    // Deep copy strings
-    bool deep_copy_error =
-            (entry->field.name
-                    && !(dup->field.name = strdup(entry->field.name)));
-
-    if (deep_copy_error) {
-        mb_bi_entry_free(dup);
-        return nullptr;
-    }
-
-    return dup;
+    return !(*this == rhs);
 }
 
 // Fields
 
-int mb_bi_entry_type_is_set(MbBiEntry *entry)
+EntryType Entry::type() const
 {
-    return IS_SET(entry, MB_BI_ENTRY_FIELD_TYPE);
+    return m_type;
 }
 
-int mb_bi_entry_type(MbBiEntry *entry)
+std::optional<uint64_t> Entry::size() const
 {
-    return entry->field.type;
+    return m_size;
 }
 
-int mb_bi_entry_set_type(MbBiEntry *entry, int type)
+void Entry::set_size(std::optional<uint64_t> size)
 {
-    SET_FIELD(entry, MB_BI_ENTRY_FIELD_TYPE, type, type);
-    return MB_BI_OK;
+    m_size = std::move(size);
+
 }
 
-int mb_bi_entry_unset_type(MbBiEntry *entry)
-{
-    UNSET_FIELD(entry, MB_BI_ENTRY_FIELD_TYPE, type, 0);
-    return MB_BI_OK;
 }
-
-const char * mb_bi_entry_name(MbBiEntry *entry)
-{
-    return entry->field.name;
-}
-
-int mb_bi_entry_set_name(MbBiEntry *entry, const char *name)
-{
-    SET_STRING_FIELD(entry, MB_BI_ENTRY_FIELD_NAME, name, name);
-    return MB_BI_OK;
-}
-
-int mb_bi_entry_size_is_set(MbBiEntry *entry)
-{
-    return IS_SET(entry, MB_BI_ENTRY_FIELD_SIZE);
-}
-
-uint64_t mb_bi_entry_size(MbBiEntry *entry)
-{
-    return entry->field.size;
-}
-
-int mb_bi_entry_set_size(MbBiEntry *entry, uint64_t size)
-{
-    SET_FIELD(entry, MB_BI_ENTRY_FIELD_SIZE, size, size);
-    return MB_BI_OK;
-}
-
-int mb_bi_entry_unset_size(MbBiEntry *entry)
-{
-    UNSET_FIELD(entry, MB_BI_ENTRY_FIELD_SIZE, size, 0);
-    return MB_BI_OK;
-}
-
-MB_END_C_DECLS

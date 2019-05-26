@@ -20,13 +20,9 @@
 
 #pragma once
 
-#include "mbsparse/guard_p.h"
-
 #include <cstdint>
 
-namespace mb
-{
-namespace sparse
+namespace mb::sparse::detail
 {
 
 /*! \cond INTERNAL */
@@ -94,67 +90,13 @@ struct ChunkInfo
     uint32_t fill_val;
 };
 
-enum class Seekability
+enum class Seekability : uint8_t
 {
-    CAN_SEEK,
-    CAN_SKIP,
-    CAN_READ,
-};
-
-class SparseFilePrivate
-{
-    MB_DECLARE_PUBLIC(SparseFile)
-
-public:
-    SparseFilePrivate(SparseFile *sf);
-    ~SparseFilePrivate() = default;
-
-    void clear();
-
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SparseFilePrivate)
-
-    bool wread(void *buf, size_t size);
-    bool wseek(int64_t offset);
-    bool skip_bytes(uint64_t bytes);
-
-    bool process_sparse_header(const void *preread_data, size_t preread_size);
-
-    bool process_raw_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                           ChunkInfo &chunk_out);
-    bool process_fill_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                            ChunkInfo &chunk_out);
-    bool process_skip_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                            ChunkInfo &chunk_out);
-    bool process_crc32_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                             ChunkInfo &chunk_out);
-    bool process_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                       ChunkInfo &chunk_out);
-
-    bool move_to_chunk(uint64_t offset);
-
-    File *file;
-    Seekability seekability;
-
-    // Expected CRC32 checksum. We currently do *not* validate this. It would
-    // only work if the entire file was read sequentially anyway.
-    uint32_t expected_crc32;
-    // Relative offset in input file
-    uint64_t cur_src_offset;
-    // Absolute offset in output file
-    uint64_t cur_tgt_offset;
-    // Expected file size
-    uint64_t file_size;
-
-    SparseHeader shdr;
-
-    std::vector<ChunkInfo> chunks;
-    decltype(chunks)::iterator chunk;
-
-private:
-    SparseFile *_pub_ptr;
+    CanSeek,
+    CanSkip,
+    CanRead,
 };
 
 /*! \endcond */
 
-}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,22 +23,20 @@
 
 #include <cstdio>
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 class MB_EXPORT StdioLogger : public BaseLogger
 {
 public:
-    StdioLogger(std::FILE *stream, bool show_timestamps);
+    StdioLogger(std::FILE *stream);
 
-    virtual void log(LogLevel prio, const char *fmt, va_list ap) override;
+    virtual void log(const LogRecord &rec) override;
+
+    virtual bool formatted() override;
 
 private:
     std::FILE *_stream;
-    bool _show_timestamps;
 };
 
-}
 }

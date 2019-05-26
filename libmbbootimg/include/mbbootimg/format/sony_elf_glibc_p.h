@@ -28,52 +28,75 @@
 
 #include "mbbootimg/guard_p.h"
 
-#ifdef __cplusplus
-#  include <cstdint>
-#else
-#  include <stdint.h>
-#endif
+#include <cstddef>
+#include <cstdint>
 
-typedef uint16_t Elf32_Half;
-typedef uint32_t Elf32_Word;
-typedef int32_t  Elf32_Sword;
-typedef uint64_t Elf32_Xword;
-typedef int64_t  Elf32_Sxword;
-typedef uint32_t Elf32_Addr;
-typedef uint32_t Elf32_Off;
-typedef uint16_t Elf32_Section;
-typedef Elf32_Half Elf32_Versym;
+namespace mb::bootimg::sonyelf
+{
 
-#define SONY_E_FLAGS_KERNEL     0x00000000
-#define SONY_E_FLAGS_RAMDISK    0x80000000
-#define SONY_E_FLAGS_IPL        0x40000000
-#define SONY_E_FLAGS_CMDLINE    0x20000000
-#define SONY_E_FLAGS_RPM        0x01000000
-#define SONY_E_FLAGS_APPSBL     0x02000000
+using Elf32_Half    = uint16_t;
+using Elf32_Word    = uint32_t;
+using Elf32_Sword   = int32_t;
+using Elf32_Xword   = uint64_t;
+using Elf32_Sxword  = int64_t;
+using Elf32_Addr    = uint32_t;
+using Elf32_Off     = uint32_t;
+using Elf32_Section = uint16_t;
+using Elf32_Versym  = Elf32_Half;
 
-#define SONY_E_TYPE_KERNEL      SONY_PT_LOAD
-#define SONY_E_TYPE_RAMDISK     SONY_PT_LOAD
-#define SONY_E_TYPE_IPL         SONY_PT_LOAD
-#define SONY_E_TYPE_CMDLINE     SONY_PT_NOTE
-#define SONY_E_TYPE_RPM         SONY_PT_LOAD
-#define SONY_E_TYPE_APPSBL      SONY_PT_LOAD
-#define SONY_E_TYPE_SIN         0x214e4953 // "SIN!"
+/* Legal values for p_type (segment type).  */
 
-#define SONY_E_IDENT            "\x7f" "ELF" "\x01\x01\x01\x61"
-#define SONY_E_TYPE             2
-#define SONY_E_MACHINE          40
-#define SONY_E_VERSION          1
-#define SONY_E_PHOFF            52
-#define SONY_E_SHOFF            0
-#define SONY_E_FLAGS            0
-#define SONY_E_EHSIZE           52
-#define SONY_E_PHENTSIZE        32
-#define SONY_E_SHENTSIZE        0
-#define SONY_E_SHNUM            0
-#define SONY_E_SHSTRNDX         0
+constexpr Elf32_Word SONY_PT_NULL         = 0;          // Program header table entry unused
+constexpr Elf32_Word SONY_PT_LOAD         = 1;          // Loadable program segment
+constexpr Elf32_Word SONY_PT_DYNAMIC      = 2;          // Dynamic linking information
+constexpr Elf32_Word SONY_PT_INTERP       = 3;          // Program interpreter
+constexpr Elf32_Word SONY_PT_NOTE         = 4;          // Auxiliary information
+constexpr Elf32_Word SONY_PT_SHLIB        = 5;          // Reserved
+constexpr Elf32_Word SONY_PT_PHDR         = 6;          // Entry for header table itself
+constexpr Elf32_Word SONY_PT_TLS          = 7;          // Thread-local storage segment
+constexpr Elf32_Word SONY_PT_NUM          = 8;          // Number of defined types
+constexpr Elf32_Word SONY_PT_LOOS         = 0x60000000; // Start of OS-specific
+constexpr Elf32_Word SONY_PT_GNU_EH_FRAME = 0x6474e550; // GCC .eh_frame_hdr segment
+constexpr Elf32_Word SONY_PT_GNU_STACK    = 0x6474e551; // Indicates stack executability
+constexpr Elf32_Word SONY_PT_GNU_RELRO    = 0x6474e552; // Read-only after relocation
+constexpr Elf32_Word SONY_PT_LOSUNW       = 0x6ffffffa;
+constexpr Elf32_Word SONY_PT_SUNWBSS      = 0x6ffffffa; // Sun Specific segment
+constexpr Elf32_Word SONY_PT_SUNWSTACK    = 0x6ffffffb; // Stack segment
+constexpr Elf32_Word SONY_PT_HISUNW       = 0x6fffffff;
+constexpr Elf32_Word SONY_PT_HIOS         = 0x6fffffff; // End of OS-specific
+constexpr Elf32_Word SONY_PT_LOPROC       = 0x70000000; // Start of processor-specific
+constexpr Elf32_Word SONY_PT_HIPROC       = 0x7fffffff; // End of processor-specific
 
-#define SONY_EI_NIDENT  (8)
-#define SONY_PADDING    (8)
+constexpr Elf32_Word SONY_E_FLAGS_KERNEL  = 0x00000000;
+constexpr Elf32_Word SONY_E_FLAGS_RAMDISK = 0x80000000;
+constexpr Elf32_Word SONY_E_FLAGS_IPL     = 0x40000000;
+constexpr Elf32_Word SONY_E_FLAGS_CMDLINE = 0x20000000;
+constexpr Elf32_Word SONY_E_FLAGS_RPM     = 0x01000000;
+constexpr Elf32_Word SONY_E_FLAGS_APPSBL  = 0x02000000;
+
+constexpr Elf32_Word SONY_E_TYPE_KERNEL   = SONY_PT_LOAD;
+constexpr Elf32_Word SONY_E_TYPE_RAMDISK  = SONY_PT_LOAD;
+constexpr Elf32_Word SONY_E_TYPE_IPL      = SONY_PT_LOAD;
+constexpr Elf32_Word SONY_E_TYPE_CMDLINE  = SONY_PT_NOTE;
+constexpr Elf32_Word SONY_E_TYPE_RPM      = SONY_PT_LOAD;
+constexpr Elf32_Word SONY_E_TYPE_APPSBL   = SONY_PT_LOAD;
+constexpr Elf32_Word SONY_E_TYPE_SIN      = 0x214e4953; // "SIN!"
+
+constexpr unsigned char SONY_E_IDENT[]    = "\x7f" "ELF" "\x01\x01\x01\x61";
+constexpr Elf32_Half    SONY_E_TYPE       = 2;
+constexpr Elf32_Half    SONY_E_MACHINE    = 40;
+constexpr Elf32_Word    SONY_E_VERSION    = 1;
+constexpr Elf32_Off     SONY_E_PHOFF      = 52;
+constexpr Elf32_Off     SONY_E_SHOFF      = 0;
+constexpr Elf32_Word    SONY_E_FLAGS      = 0;
+constexpr Elf32_Half    SONY_E_EHSIZE     = 52;
+constexpr Elf32_Half    SONY_E_PHENTSIZE  = 32;
+constexpr Elf32_Half    SONY_E_SHENTSIZE  = 0;
+constexpr Elf32_Half    SONY_E_SHNUM      = 0;
+constexpr Elf32_Half    SONY_E_SHSTRNDX   = 0;
+
+constexpr size_t        SONY_EI_NIDENT    = 8;
+constexpr size_t        SONY_PADDING      = 8;
 
 struct Sony_Elf32_Ehdr
 {
@@ -106,25 +129,4 @@ struct Sony_Elf32_Phdr
     Elf32_Word    p_align;                  // Segment alignment
 };
 
-/* Legal values for p_type (segment type).  */
-
-#define SONY_PT_NULL         0              // Program header table entry unused
-#define SONY_PT_LOAD         1              // Loadable program segment
-#define SONY_PT_DYNAMIC      2              // Dynamic linking information
-#define SONY_PT_INTERP       3              // Program interpreter
-#define SONY_PT_NOTE         4              // Auxiliary information
-#define SONY_PT_SHLIB        5              // Reserved
-#define SONY_PT_PHDR         6              // Entry for header table itself
-#define SONY_PT_TLS          7              // Thread-local storage segment
-#define SONY_PT_NUM          8              // Number of defined types
-#define SONY_PT_LOOS         0x60000000     // Start of OS-specific
-#define SONY_PT_GNU_EH_FRAME 0x6474e550     // GCC .eh_frame_hdr segment
-#define SONY_PT_GNU_STACK    0x6474e551     // Indicates stack executability
-#define SONY_PT_GNU_RELRO    0x6474e552     // Read-only after relocation
-#define SONY_PT_LOSUNW       0x6ffffffa
-#define SONY_PT_SUNWBSS      0x6ffffffa     // Sun Specific segment
-#define SONY_PT_SUNWSTACK    0x6ffffffb     // Stack segment
-#define SONY_PT_HISUNW       0x6fffffff
-#define SONY_PT_HIOS         0x6fffffff     // End of OS-specific
-#define SONY_PT_LOPROC       0x70000000     // Start of processor-specific
-#define SONY_PT_HIPROC       0x7fffffff     // End of processor-specific
+}

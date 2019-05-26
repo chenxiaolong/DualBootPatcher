@@ -1,0 +1,26 @@
+#!/bin/busybox sh
+
+set -u
+
+post_init=''
+
+# Parse command line options
+for x in $(cat /proc/cmdline); do
+    case "${x}" in
+    post-init=*)
+        post_init="${x#post-init=}"
+        ;;
+    esac
+done
+
+if [[ -n "${post_init}" ]]; then
+    "${post_init}"
+else
+    sh
+fi
+
+echo "post-init command exited with status: ${?}"
+
+# Halting doesn't work properly on all arches in qemu, so reboot instead
+# (pass -no-reboot to qemu to exit on reboot)
+reboot

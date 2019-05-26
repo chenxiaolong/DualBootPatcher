@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,86 +19,70 @@
 
 #pragma once
 
-#ifdef __cplusplus
-#  include <cstdarg>
-#  include <cstddef>
-#  include <cwchar>
-#else
-#  include <stdarg.h>
-#  include <stddef.h>
-#  include <wchar.h>
-#endif
+#include <memory>
+#include <optional>
+#include <string>
+
+#include <cstddef>
 
 #include "mbcommon/common.h"
+#include "mbcommon/outcome.h"
 
-#include "mbbootimg/defs.h"
-
-MB_BEGIN_C_DECLS
-
-struct MbBiWriter;
-struct MbBiEntry;
-struct MbBiHeader;
+#include "mbbootimg/entry.h"
+#include "mbbootimg/format.h"
+#include "mbbootimg/header.h"
+#include "mbbootimg/writer_error.h"
+#include "mbbootimg/writer_p.h"
 
 namespace mb
 {
 class File;
+
+namespace bootimg
+{
+
+class MB_EXPORT Writer
+{
+public:
+    Writer() noexcept;
+    ~Writer() noexcept;
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Writer)
+
+    Writer(Writer &&other) noexcept;
+    Writer & operator=(Writer &&rhs) noexcept;
+
+    // Open/close
+    oc::result<void> open_filename(const std::string &filename);
+    oc::result<void> open_filename_w(const std::wstring &filename);
+    oc::result<void> open(std::unique_ptr<File> file);
+    oc::result<void> open(File *file);
+    oc::result<void> close();
+
+    // Operations
+    oc::result<Header> get_header();
+    oc::result<void> write_header(const Header &header);
+    oc::result<Entry> get_entry();
+    oc::result<void> write_entry(const Entry &entry);
+    oc::result<size_t> write_data(const void *buf, size_t size);
+
+    // Format operations
+    std::optional<Format> format();
+    oc::result<void> set_format(Format format);
+
+    // Writer state
+    bool is_open();
+
+private:
+    // Global state
+    detail::WriterState m_state;
+
+    // File
+    std::unique_ptr<File> m_owned_file;
+    File *m_file;
+
+    std::unique_ptr<detail::FormatWriter> m_format;
+};
+
 }
-
-// Construction/destruction
-MB_EXPORT struct MbBiWriter * mb_bi_writer_new(void);
-MB_EXPORT int mb_bi_writer_free(struct MbBiWriter *biw);
-
-// Open/close
-MB_EXPORT int mb_bi_writer_open_filename(struct MbBiWriter *biw,
-                                         const char *filename);
-MB_EXPORT int mb_bi_writer_open_filename_w(struct MbBiWriter *biw,
-                                           const wchar_t *filename);
-MB_EXPORT int mb_bi_writer_open(struct MbBiWriter *biw, mb::File *file,
-                                bool owned);
-MB_EXPORT int mb_bi_writer_close(struct MbBiWriter *biw);
-
-// Operations
-MB_EXPORT int mb_bi_writer_get_header(struct MbBiWriter *biw,
-                                      struct MbBiHeader **header);
-MB_EXPORT int mb_bi_writer_get_header2(struct MbBiWriter *biw,
-                                       struct MbBiHeader *header);
-MB_EXPORT int mb_bi_writer_write_header(struct MbBiWriter *biw,
-                                        struct MbBiHeader *header);
-MB_EXPORT int mb_bi_writer_get_entry(struct MbBiWriter *biw,
-                                     struct MbBiEntry **entry);
-MB_EXPORT int mb_bi_writer_get_entry2(struct MbBiWriter *biw,
-                                      struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_writer_write_entry(struct MbBiWriter *biw,
-                                       struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_writer_write_data(struct MbBiWriter *biw, const void *buf,
-                                      size_t size, size_t *bytes_written);
-
-// Format operations
-MB_EXPORT int mb_bi_writer_format_code(struct MbBiWriter *biw);
-MB_EXPORT const char * mb_bi_writer_format_name(struct MbBiWriter *biw);
-MB_EXPORT int mb_bi_writer_set_format_by_code(struct MbBiWriter *biw,
-                                              int code);
-MB_EXPORT int mb_bi_writer_set_format_by_name(struct MbBiWriter *biw,
-                                              const char *name);
-
-// Specific formats
-MB_EXPORT int mb_bi_writer_set_format_android(struct MbBiWriter *biw);
-MB_EXPORT int mb_bi_writer_set_format_bump(struct MbBiWriter *biw);
-MB_EXPORT int mb_bi_writer_set_format_loki(struct MbBiWriter *biw);
-MB_EXPORT int mb_bi_writer_set_format_mtk(struct MbBiWriter *biw);
-MB_EXPORT int mb_bi_writer_set_format_sony_elf(struct MbBiWriter *biw);
-
-// Error handling functions
-MB_EXPORT int mb_bi_writer_error(struct MbBiWriter *biw);
-MB_EXPORT const char * mb_bi_writer_error_string(struct MbBiWriter *biw);
-MB_PRINTF(3, 4)
-MB_EXPORT int mb_bi_writer_set_error(struct MbBiWriter *biw, int error_code,
-                                     const char *fmt, ...);
-MB_EXPORT int mb_bi_writer_set_error_v(struct MbBiWriter *biw, int error_code,
-                                       const char *fmt, va_list ap);
-
-// TODO TODO TODO
-// SET OPTIONS FUNCTION
-// TODO TODO TODO
-
-MB_END_C_DECLS
+}

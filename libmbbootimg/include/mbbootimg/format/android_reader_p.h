@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,54 +23,55 @@
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_reader_p.h"
-#include "mbbootimg/reader.h"
+#include "mbbootimg/reader_p.h"
 
 
-MB_BEGIN_C_DECLS
-
-struct AndroidReaderCtx
+namespace mb::bootimg::android
 {
+
+class AndroidFormatReader : public detail::FormatReader
+{
+public:
+    AndroidFormatReader(bool is_bump) noexcept;
+    virtual ~AndroidFormatReader() noexcept;
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
+
+    Format type() override;
+
+    oc::result<void> set_option(const char *key, const char *value) override;
+    oc::result<int> open(File &file, int best_bid) override;
+    oc::result<void> close(File &file) override;
+    oc::result<Header> read_header(File &file) override;
+    oc::result<Entry> read_entry(File &file) override;
+    oc::result<Entry> go_to_entry(File &file,
+                                  std::optional<EntryType> entry_type) override;
+    oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
+
+    static oc::result<std::pair<AndroidHeader, uint64_t>>
+    find_header(File &file, uint64_t max_header_offset);
+    static oc::result<uint64_t>
+    find_samsung_seandroid_magic(File &file, const AndroidHeader &ahdr);
+    static oc::result<uint64_t>
+    find_bump_magic(File &file, const AndroidHeader &ahdr);
+    static Header convert_header(const AndroidHeader &hdr);
+
+private:
+    oc::result<int> open_android(File &file, int best_bid);
+    oc::result<int> open_bump(File &file, int best_bid);
+
+    const bool m_is_bump;
+
     // Header values
-    struct AndroidHeader hdr;
+    AndroidHeader m_hdr;
 
     // Offsets
-    bool have_header_offset;
-    uint64_t header_offset;
-    bool have_samsung_offset;
-    uint64_t samsung_offset;
-    bool have_bump_offset;
-    uint64_t bump_offset;
+    std::optional<uint64_t> m_hdr_offset;
 
-    bool allow_truncated_dt;
+    bool m_allow_truncated_dt;
 
-    bool is_bump;
-
-    struct SegmentReaderCtx segctx;
+    std::optional<SegmentReader> m_seg;
 };
 
-int find_android_header(struct MbBiReader *bir, mb::File *file,
-                        uint64_t max_header_offset,
-                        struct AndroidHeader *header_out, uint64_t *offset_out);
-int find_samsung_seandroid_magic(struct MbBiReader *bir, mb::File *file,
-                                 struct AndroidHeader *hdr,
-                                 uint64_t *offset_out);
-int find_bump_magic(struct MbBiReader *bir, mb::File *file,
-                    struct AndroidHeader *hdr, uint64_t *offset_out);
-int android_set_header(struct AndroidHeader *hdr, struct MbBiHeader *header);
-
-int android_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int bump_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int android_reader_set_option(struct MbBiReader *bir, void *userdata,
-                              const char *key, const char *value);
-int android_reader_read_header(struct MbBiReader *bir, void *userdata,
-                               struct MbBiHeader *header);
-int android_reader_read_entry(struct MbBiReader *bir, void *userdata,
-                              struct MbBiEntry *entry);
-int android_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
-                               struct MbBiEntry *entry, int entry_type);
-int android_reader_read_data(struct MbBiReader *bir, void *userdata,
-                             void *buf, size_t buf_size,
-                             size_t &bytes_read);
-int android_reader_free(struct MbBiReader *bir, void *userdata);
-
-MB_END_C_DECLS
+}

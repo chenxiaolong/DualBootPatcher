@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,29 +19,24 @@
 
 #include "mbpio/directory.h"
 
-#include <vector>
-
 #include <cstring>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
 
-#include "mbpio/error.h"
-#include "mbpio/private/common.h"
-#include "mbpio/private/string.h"
-
-#if IO_PLATFORM_WINDOWS
-#include "mbpio/win32/error.h"
+#ifdef _WIN32
+#  include <windows.h>
 #else
-#include <cerrno>
-#include <sys/stat.h>
+#  include <cerrno>
+#  include <sys/stat.h>
 #endif
 
-namespace io
+namespace mb::io
 {
 
-bool createDirectories(const std::string &path)
+oc::result<void> create_directories(const std::string &path)
 {
-#if IO_PLATFORM_WINDOWS
+#ifdef _WIN32
     constexpr char delim[] = "/\\";
     constexpr char pathsep[] = "\\";
 #else
@@ -52,13 +47,12 @@ bool createDirectories(const std::string &path)
     char *save_ptr;
     std::string temp;
     std::string copy = path;
-#if IO_PLATFORM_WINDOWS
-    std::wstring wTemp;
+#ifdef _WIN32
+    std::wstring w_temp;
 #endif
 
     if (path.empty()) {
-        setLastError(Error::InvalidArguments, "Path cannot be empty");
-        return false;
+        return std::errc::invalid_argument;
     }
 
     // Add leading separator if needed
@@ -66,42 +60,31 @@ bool createDirectories(const std::string &path)
         temp += path[0];
     }
 
-    p = strtok_r(&copy[0], delim, &save_ptr);
+    p = strtok_r(copy.data(), delim, &save_ptr);
     while (p != nullptr) {
         temp += p;
         temp += pathsep;
 
-#if IO_PLATFORM_WINDOWS
-        if (!mb::utf8_to_wcs(wTemp, temp)) {
-            setLastError(Error::PlatformError, priv::format(
-                    "%s: Failed to convert UTF-16 to UTF-8: %s",
-                    temp.c_str(), win32::errorToString(GetLastError()).c_str()));
-            return false;
-        }
+#ifdef _WIN32
+        OUTCOME_TRY(w_temp, mb::utf8_to_wcs(temp));
 
-        DWORD dwAttrib = GetFileAttributesW(wTemp.c_str());
-        bool exists = (dwAttrib != INVALID_FILE_ATTRIBUTES)
-                && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
-        if (!exists && !CreateDirectoryW(wTemp.c_str(), nullptr)
+        DWORD dw_attrib = GetFileAttributesW(w_temp.c_str());
+        bool exists = (dw_attrib != INVALID_FILE_ATTRIBUTES)
+                && (dw_attrib & FILE_ATTRIBUTE_DIRECTORY);
+        if (!exists && !CreateDirectoryW(w_temp.c_str(), nullptr)
                 && GetLastError() != ERROR_ALREADY_EXISTS) {
-            setLastError(Error::PlatformError, priv::format(
-                    "%s: Failed to create directory: %s",
-                    temp.c_str(), win32::errorToString(GetLastError()).c_str()));
-            return false;
+            return ec_from_win32();
         }
 #else
         if (mkdir(temp.c_str(), 0755) < 0 && errno != EEXIST) {
-            setLastError(Error::PlatformError, priv::format(
-                    "%s: Failed to create directory: %s",
-                    temp.c_str(), strerror(errno)));
-            return false;
+            return ec_from_errno();
         }
 #endif
 
         p = strtok_r(nullptr, delim, &save_ptr);
     }
 
-    return true;
+    return oc::success();
 }
 
 }

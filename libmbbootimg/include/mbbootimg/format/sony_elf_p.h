@@ -26,35 +26,36 @@
 
 #include "mbbootimg/format/sony_elf_glibc_p.h"
 
-MB_BEGIN_C_DECLS
-
-static inline void sony_elf_fix_ehdr_byte_order(struct Sony_Elf32_Ehdr *header)
+namespace mb::bootimg::sonyelf
 {
-    header->e_type = mb_le16toh(header->e_type);
-    header->e_machine = mb_le16toh(header->e_machine);
-    header->e_version = mb_le32toh(header->e_version);
-    header->e_entry = mb_le32toh(header->e_entry);
-    header->e_phoff = mb_le32toh(header->e_phoff);
-    header->e_shoff = mb_le32toh(header->e_shoff);
-    header->e_flags = mb_le32toh(header->e_flags);
-    header->e_ehsize = mb_le16toh(header->e_ehsize);
-    header->e_phentsize = mb_le16toh(header->e_phentsize);
-    header->e_phnum = mb_le16toh(header->e_phnum);
-    header->e_shentsize = mb_le16toh(header->e_shentsize);
-    header->e_shnum = mb_le16toh(header->e_shnum);
-    header->e_shstrndx = mb_le16toh(header->e_shstrndx);
+
+static inline void sony_elf_fix_ehdr_byte_order(Sony_Elf32_Ehdr &header)
+{
+    header.e_type = mb_le16toh(header.e_type);
+    header.e_machine = mb_le16toh(header.e_machine);
+    header.e_version = mb_le32toh(header.e_version);
+    header.e_entry = mb_le32toh(header.e_entry);
+    header.e_phoff = mb_le32toh(header.e_phoff);
+    header.e_shoff = mb_le32toh(header.e_shoff);
+    header.e_flags = mb_le32toh(header.e_flags);
+    header.e_ehsize = mb_le16toh(header.e_ehsize);
+    header.e_phentsize = mb_le16toh(header.e_phentsize);
+    header.e_phnum = mb_le16toh(header.e_phnum);
+    header.e_shentsize = mb_le16toh(header.e_shentsize);
+    header.e_shnum = mb_le16toh(header.e_shnum);
+    header.e_shstrndx = mb_le16toh(header.e_shstrndx);
 }
 
-static inline void sony_elf_fix_phdr_byte_order(struct Sony_Elf32_Phdr *header)
+static inline void sony_elf_fix_phdr_byte_order(Sony_Elf32_Phdr &header)
 {
-    header->p_type = mb_le32toh(header->p_type);
-    header->p_offset = mb_le32toh(header->p_offset);
-    header->p_vaddr = mb_le32toh(header->p_vaddr);
-    header->p_paddr = mb_le32toh(header->p_paddr);
-    header->p_filesz = mb_le32toh(header->p_filesz);
-    header->p_memsz = mb_le32toh(header->p_memsz);
-    header->p_flags = mb_le32toh(header->p_flags);
-    header->p_align = mb_le32toh(header->p_align);
+    header.p_type = mb_le32toh(header.p_type);
+    header.p_offset = mb_le32toh(header.p_offset);
+    header.p_vaddr = mb_le32toh(header.p_vaddr);
+    header.p_paddr = mb_le32toh(header.p_paddr);
+    header.p_filesz = mb_le32toh(header.p_filesz);
+    header.p_memsz = mb_le32toh(header.p_memsz);
+    header.p_flags = mb_le32toh(header.p_flags);
+    header.p_align = mb_le32toh(header.p_align);
 }
 
-MB_END_C_DECLS
+}

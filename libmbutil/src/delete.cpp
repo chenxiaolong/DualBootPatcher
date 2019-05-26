@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,77 +21,78 @@
 
 #include <cerrno>
 #include <cstdlib>
-#include <cstring>
 #include <sys/stat.h>
 
-#include "mbcommon/string.h"
-#include "mblog/logging.h"
+#include "mbcommon/error_code.h"
 #include "mbutil/fts.h"
-#include "mbutil/string.h"
 
-namespace mb
-{
-namespace util
+
+namespace mb::util
 {
 
-class RecursiveDeleter : public FTSWrapper {
+class RecursiveDeleter : public FtsWrapper {
 public:
+    std::string error_path;
+    std::error_code error;
+
     RecursiveDeleter(std::string path)
-        : FTSWrapper(path, FTS_GroupSpecialFiles)
+        : FtsWrapper(std::move(path), FtsFlag::GroupSpecialFiles)
     {
     }
 
-    virtual int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
         // Do nothing. Need depth-first search, so directories are deleted in
         // on_reached_directory_post()
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
 private:
     bool delete_path()
     {
         if (remove(_curr->fts_accpath) < 0) {
-            mb::format(_error_msg, "%s: Failed to remove: %s",
-                       _curr->fts_path, strerror(errno));
-            LOGE("%s", _error_msg.c_str());
+            error_path = _curr->fts_path;
+            error = ec_from_errno();
             return false;
         }
         return true;
     }
 };
 
-bool delete_recursive(const std::string &path)
+FileOpResult<void> delete_recursive(const std::string &path)
 {
     struct stat sb;
     if (stat(path.c_str(), &sb) < 0 && errno == ENOENT) {
         // Don't fail if directory does not exist
-        return true;
+        return oc::success();
     }
 
     RecursiveDeleter deleter(path);
-    return deleter.run();
+    if (!deleter.run()) {
+        return FileOpErrorInfo{std::move(deleter.error_path), deleter.error};
+    }
+
+    return oc::success();
 }
 
-}
 }

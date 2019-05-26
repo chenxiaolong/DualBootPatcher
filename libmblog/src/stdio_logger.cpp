@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,68 +19,27 @@
 
 #include "mblog/stdio_logger.h"
 
-#include <ctime>
-
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
-#define STDLOG_LEVEL_ERROR   "[E]"
-#define STDLOG_LEVEL_WARNING "[W]"
-#define STDLOG_LEVEL_INFO    "[I]"
-#define STDLOG_LEVEL_DEBUG   "[D]"
-#define STDLOG_LEVEL_VERBOSE "[V]"
-
-StdioLogger::StdioLogger(std::FILE *stream, bool show_timestamps)
-    : _stream(stream), _show_timestamps(show_timestamps)
+StdioLogger::StdioLogger(std::FILE *stream)
+    : _stream(stream)
 {
 }
 
-void StdioLogger::log(LogLevel prio, const char *fmt, va_list ap)
+void StdioLogger::log(const LogRecord &rec)
 {
     if (!_stream) {
         return;
     }
 
-    const char *stdprio = "";
-
-    switch (prio) {
-    case LogLevel::Error:
-        stdprio = STDLOG_LEVEL_ERROR;
-        break;
-    case LogLevel::Warning:
-        stdprio = STDLOG_LEVEL_WARNING;
-        break;
-    case LogLevel::Info:
-        stdprio = STDLOG_LEVEL_INFO;
-        break;
-    case LogLevel::Debug:
-        stdprio = STDLOG_LEVEL_DEBUG;
-        break;
-    case LogLevel::Verbose:
-        stdprio = STDLOG_LEVEL_VERBOSE;
-        break;
-    }
-
-#ifndef _WIN32
-    if (_show_timestamps) {
-        struct timespec res;
-        struct tm tm;
-        clock_gettime(CLOCK_REALTIME, &res);
-        localtime_r(&res.tv_sec, &tm);
-
-        char buf[100];
-        strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S %Z", &tm);
-        fprintf(_stream, "[%s]", buf);
-    }
-#endif
-
-    fprintf(_stream, "%s ", stdprio);
-    vfprintf(_stream, fmt, ap);
-    fprintf(_stream, "\n");
+    fprintf(_stream, "%s\n", rec.fmt_msg.c_str());
     fflush(_stream);
 }
 
+bool StdioLogger::formatted()
+{
+    return true;
 }
+
 }

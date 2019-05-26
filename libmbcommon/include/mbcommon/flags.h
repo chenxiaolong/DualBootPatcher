@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  * Copyright (C) 2016  The Qt Company Ltd.
  *
  * This file is part of DualBootPatcher
@@ -20,15 +20,10 @@
 
 #pragma once
 
+#include <iterator>
 #include <type_traits>
 
 #include <cstdio>
-
-#if defined(__cpp_constexpr) && __cpp_constexpr-0 >= 201304
-#  define MB_DECL_RELAXED_CONSTEXPR constexpr
-#else
-#  define MB_DECL_RELAXED_CONSTEXPR
-#endif
 
 // Based on the QFlags code from Qt5
 
@@ -37,14 +32,63 @@ namespace mb
 {
 
 template<typename Enum>
+class FlagsIterator
+{
+    using Underlying = std::underlying_type_t<Enum>;
+
+public:
+    using difference_type = void;
+    using value_type = Enum;
+    using pointer = void;
+    using reference = value_type;
+    using iterator_category = std::input_iterator_tag;
+
+    constexpr inline FlagsIterator(Underlying remain) noexcept
+        : _remain(remain)
+    {
+    }
+
+    constexpr inline FlagsIterator & operator++() noexcept
+    {
+        _remain &= static_cast<Underlying>(_remain - 1);
+        return *this;
+    }
+
+    constexpr inline FlagsIterator operator++(int) noexcept
+    {
+        FlagsIterator tmp(*this);
+        operator++();
+        return tmp;
+    }
+
+    constexpr inline bool operator==(FlagsIterator other) const noexcept
+    {
+        return _remain == other._remain;
+    }
+
+    constexpr inline bool operator!=(FlagsIterator other) const noexcept
+    {
+        return !(*this == other);
+    }
+
+    constexpr inline reference operator*() const noexcept
+    {
+        return static_cast<Enum>(_remain & -_remain);
+    }
+
+private:
+    Underlying _remain;
+};
+
+template<typename Enum>
 class Flags
 {
-    static_assert(std::is_enum<Enum>::value,
+    static_assert(std::is_enum_v<Enum>,
                   "Flags is only usable on enumeration types.");
 
     struct Private;
     using Zero = int(Private::*);
-    using Underlying = typename std::underlying_type<Enum>::type;
+    using Underlying = std::underlying_type_t<Enum>;
 
 public:
     using enum_type = Enum;
@@ -59,37 +103,37 @@ public:
     {
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator&=(Flags f) noexcept
+    constexpr inline Flags & operator&=(Flags f) noexcept
     {
         _value &= f._value;
         return *this;
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator&=(Enum f) noexcept
+    constexpr inline Flags & operator&=(Enum f) noexcept
     {
         _value &= static_cast<Underlying>(f);
         return *this;
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator|=(Flags f) noexcept
+    constexpr inline Flags & operator|=(Flags f) noexcept
     {
         _value |= f._value;
         return *this;
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator|=(Enum f) noexcept
+    constexpr inline Flags & operator|=(Enum f) noexcept
     {
         _value |= static_cast<Underlying>(f);
         return *this;
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator^=(Flags f) noexcept
+    constexpr inline Flags & operator^=(Flags f) noexcept
     {
         _value ^= f._value;
         return *this;
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator^=(Enum f) noexcept
+    constexpr inline Flags & operator^=(Enum f) noexcept
     {
         _value ^= static_cast<Underlying>(f);
         return *this;
@@ -147,11 +191,20 @@ public:
                         || _value == static_cast<Underlying>(f));
     }
 
-    MB_DECL_RELAXED_CONSTEXPR
-    inline Flags & set_flag(Enum f, bool on = true) noexcept
+    constexpr inline Flags & set_flag(Enum f, bool on = true) noexcept
     {
         return on ? (*this |= f)
                 : (*this &= static_cast<Enum>(~static_cast<Underlying>(f)));
+    }
+
+    constexpr inline FlagsIterator<Enum> begin() const noexcept
+    {
+        return FlagsIterator<Enum>(_value);
+    }
+
+    constexpr inline FlagsIterator<Enum> end() const noexcept
+    {
+        return FlagsIterator<Enum>(static_cast<Underlying>(0));
     }
 
 private:
@@ -159,26 +212,26 @@ private:
 };
 
 #define MB_DECLARE_FLAGS(FLAGS, ENUM)\
-    typedef mb::Flags<ENUM> FLAGS;
+    typedef ::mb::Flags<ENUM> FLAGS;
 
 #define MB_DECLARE_OPERATORS_FOR_FLAGS(FLAGS) \
-    constexpr inline mb::Flags<FLAGS::enum_type> \
+    constexpr inline ::mb::Flags<FLAGS::enum_type> \
     operator|(FLAGS::enum_type f1, FLAGS::enum_type f2) noexcept \
     { \
-        return mb::Flags<FLAGS::enum_type>(f1) | f2; \
+        return ::mb::Flags<FLAGS::enum_type>(f1) | f2; \
     } \
-    constexpr inline mb::Flags<FLAGS::enum_type> \
-    operator|(FLAGS::enum_type f1, mb::Flags<FLAGS::enum_type> f2) noexcept \
+    constexpr inline ::mb::Flags<FLAGS::enum_type> \
+    operator|(FLAGS::enum_type f1, ::mb::Flags<FLAGS::enum_type> f2) noexcept \
     { \
         return f2 | f1; \
     } \
-    constexpr inline mb::Flags<FLAGS::enum_type> \
+    constexpr inline ::mb::Flags<FLAGS::enum_type> \
     operator&(FLAGS::enum_type f1, FLAGS::enum_type f2) noexcept \
     { \
-        return mb::Flags<FLAGS::enum_type>(f1) & f2; \
+        return ::mb::Flags<FLAGS::enum_type>(f1) & f2; \
     } \
-    constexpr inline mb::Flags<FLAGS::enum_type> \
-    operator&(FLAGS::enum_type f1, mb::Flags<FLAGS::enum_type> f2) noexcept \
+    constexpr inline ::mb::Flags<FLAGS::enum_type> \
+    operator&(FLAGS::enum_type f1, ::mb::Flags<FLAGS::enum_type> f2) noexcept \
     { \
         return f2 & f1; \
     }

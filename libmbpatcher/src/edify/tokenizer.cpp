@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -26,230 +26,145 @@
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 
-#include "mbpatcher/private/stringutils.h"
+#define LOG_TAG "mbpatcher/edify/tokenizer"
 
-namespace mb
-{
-namespace patcher
+
+namespace mb::patcher
 {
 
-EdifyToken::~EdifyToken()
+struct EdifyErrorCategory : std::error_category
 {
+    const char * name() const noexcept override;
+
+    std::string message(int ev) const override;
+};
+
+const std::error_category & edify_error_category()
+{
+    static EdifyErrorCategory c;
+    return c;
 }
 
-EdifyToken::EdifyToken(EdifyTokenType type) : m_type(type)
+std::error_code make_error_code(EdifyError e)
 {
+    return {static_cast<int>(e), edify_error_category()};
 }
 
-EdifyTokenType EdifyToken::type() const
+const char * EdifyErrorCategory::name() const noexcept
 {
-    return m_type;
+    return "edify";
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyKeywordToken::EdifyKeywordToken(EdifyTokenType type, std::string keyword)
-    : EdifyToken(type), m_keyword(std::move(keyword))
+std::string EdifyErrorCategory::message(int ev) const
 {
+    switch (static_cast<EdifyError>(ev)) {
+    case EdifyError::UnterminatedQuote:
+        return "unterminated quote";
+    case EdifyError::ValueNotQuoted:
+        return "value not quoted";
+    case EdifyError::InvalidUnquotedCharcter:
+        return "invalid unquoted character";
+    case EdifyError::UnterminatedEscapeCharacter:
+        return "unterminated escape character";
+    case EdifyError::IncompleteEscapeSequence:
+        return "incomplete escape sequence";
+    case EdifyError::InvalidHexEscapeCharacter:
+        return "invalid hex escape character";
+    case EdifyError::InvalidEscapeCharacter:
+        return "invalid escape character";
+    default:
+        return "(unknown edify error)";
+    }
 }
 
-std::string EdifyKeywordToken::generate()
+oc::result<EdifyTokenString>
+EdifyTokenString::from_raw(std::string str, bool quoted)
 {
-    return m_keyword;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenIf::EdifyTokenIf()
-    : EdifyKeywordToken(EdifyTokenType::If, "if")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenThen::EdifyTokenThen()
-    : EdifyKeywordToken(EdifyTokenType::Then, "then")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenElse::EdifyTokenElse()
-    : EdifyKeywordToken(EdifyTokenType::Else, "else")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenEndif::EdifyTokenEndif()
-    : EdifyKeywordToken(EdifyTokenType::Endif, "endif")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenAnd::EdifyTokenAnd()
-    : EdifyKeywordToken(EdifyTokenType::And, "&&")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenOr::EdifyTokenOr()
-    : EdifyKeywordToken(EdifyTokenType::Or, "||")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenEquals::EdifyTokenEquals()
-    : EdifyKeywordToken(EdifyTokenType::Equals, "==")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenNotEquals::EdifyTokenNotEquals()
-    : EdifyKeywordToken(EdifyTokenType::NotEquals, "!=")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenNot::EdifyTokenNot()
-    : EdifyKeywordToken(EdifyTokenType::Not, "!")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenLeftParen::EdifyTokenLeftParen()
-    : EdifyKeywordToken(EdifyTokenType::LeftParen, "(")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenRightParen::EdifyTokenRightParen()
-    : EdifyKeywordToken(EdifyTokenType::RightParen, ")")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenSemicolon::EdifyTokenSemicolon()
-    : EdifyKeywordToken(EdifyTokenType::Semicolon, ";")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenComma::EdifyTokenComma()
-    : EdifyKeywordToken(EdifyTokenType::Comma, ",")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenConcat::EdifyTokenConcat()
-    : EdifyKeywordToken(EdifyTokenType::Concat, "+")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenNewline::EdifyTokenNewline()
-    : EdifyKeywordToken(EdifyTokenType::Newline, "\n")
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenWhitespace::EdifyTokenWhitespace(std::string str)
-    : EdifyToken(EdifyTokenType::Whitespace)
-{
-    assert(!str.empty());
-
-    for (char c MB_UNUSED : str) {
-        // Should never fail
-        assert(std::isspace(c));
+    if (quoted && (str.size() < 2 || str.front() != '"' || str.back() != '"')) {
+        return EdifyError::ValueNotQuoted;
     }
 
-    m_str = std::move(str);
+    EdifyTokenString token;
+    token.m_quoted = quoted;
+    if (quoted) {
+        token.m_str = str.substr(1, str.size() - 2);
+    } else {
+        token.m_str = std::move(str);
+    }
+
+    return std::move(token);
 }
 
-std::string EdifyTokenWhitespace::generate()
+oc::result<EdifyTokenString>
+EdifyTokenString::from_string(std::string str, bool make_quoted)
+{
+    if (!make_quoted) {
+        for (char c : str) {
+            if (!is_valid_unquoted(c)) {
+                return EdifyError::InvalidUnquotedCharcter;
+            }
+        }
+    }
+
+    EdifyTokenString token;
+    token.m_quoted = make_quoted;
+    if (make_quoted) {
+        token.m_str = escape(str);
+    } else {
+        token.m_str = std::move(str);
+    }
+
+    return std::move(token);
+}
+
+std::string EdifyTokenString::generate() const
+{
+    std::string buf;
+    buf.reserve(2 + m_str.size());
+    if (m_quoted) {
+        buf += '"';
+    }
+    buf += m_str;
+    if (m_quoted) {
+        buf += '"';
+    }
+    return buf;
+}
+
+oc::result<std::string> EdifyTokenString::unescaped_string() const
+{
+    if (m_quoted) {
+        return unescape(m_str);
+    } else {
+        return m_str;
+    }
+}
+
+std::string EdifyTokenString::raw_string() const
 {
     return m_str;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenComment::EdifyTokenComment(std::string str)
-    : EdifyToken(EdifyTokenType::Comment), m_str(std::move(str))
+bool EdifyTokenString::quoted() const
 {
+    return m_quoted;
 }
 
-std::string EdifyTokenComment::generate()
+bool EdifyTokenString::is_valid_unquoted(char c)
 {
-    return '#' + m_str;
+    return std::isalnum(c)
+            || c == '_'
+            || c == ':'
+            || c == '/'
+            || c == '.';
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenString::EdifyTokenString(std::string str, Type type)
-    : EdifyToken(EdifyTokenType::String), m_type(type)
+std::string EdifyTokenString::escape(std::string_view str)
 {
-    switch (type) {
-    case AlreadyQuoted:
-        m_quoted = true;
-        assert(str.size() >= 2);
-        assert(str.front() == '"');
-        assert(str.back() == '"');
-        m_str = std::move(str);
-        break;
-    case NotQuoted:
-        m_quoted = false;
-        m_str = std::move(str);
-        break;
-    case MakeQuoted:
-        m_quoted = true;
-        std::string temp;
-        escape(str, &temp);
-        temp.insert(temp.begin(), '"');
-        temp.push_back('"');
-        m_str = std::move(temp);
-        break;
-    }
-}
-
-std::string EdifyTokenString::generate()
-{
-    return m_str;
-}
-
-std::string EdifyTokenString::unescaped_string()
-{
-    std::string out;
-    // TODO: Check return value
-    unescape(m_str, &out);
-    if (m_quoted && out.size() >= 2) {
-        out.pop_back();
-        out.erase(out.begin());
-    }
-    return out;
-}
-
-std::string EdifyTokenString::string()
-{
-    return m_str;
-}
-
-void EdifyTokenString::escape(const std::string &str, std::string *out)
-{
-    static const char digits[] = "0123456789abcdef";
+    static constexpr char digits[] = "0123456789abcdef";
 
     std::string output;
+    output.reserve(2 * str.size());
 
     for (char c : str) {
         if (c == '\a') {
@@ -275,7 +190,7 @@ void EdifyTokenString::escape(const std::string &str, std::string *out)
         }
     }
 
-    out->swap(output);
+    return output;
 }
 
 static int hex_char_to_int(char c)
@@ -291,289 +206,276 @@ static int hex_char_to_int(char c)
     }
 }
 
-bool EdifyTokenString::unescape(const std::string &str, std::string *out)
+oc::result<std::string> EdifyTokenString::unescape(std::string_view str)
 {
     std::string output;
+    output.reserve(str.size());
 
-    for (std::size_t i = 0; i < str.size();) {
-        char c = str[i];
+    for (auto it = str.begin(); it != str.end();) {
+        char c = *it;
 
         if (c == '\\') {
-            if (i == str.size() - 1) {
+            if (str.end() - it == 1) {
                 // Escape character is last character
-                return false;
+                return EdifyError::UnterminatedEscapeCharacter;
             }
 
-            std::size_t new_i = i + 2;
+            char next = *(it + 1);
+            auto new_it = it + 2;
 
-            if (str[i + 1] == 'a') {
+            if (next == 'a') {
                 output += '\a';
-            } else if (str[i + 1] == 'b') {
+            } else if (next == 'b') {
                 output += '\b';
-            } else if (str[i + 1] == 'f') {
+            } else if (next == 'f') {
                 output += '\f';
-            } else if (str[i + 1] == 'n') {
+            } else if (next == 'n') {
                 output += '\n';
-            } else if (str[i + 1] == 'r') {
+            } else if (next == 'r') {
                 output += '\r';
-            } else if (str[i + 1] == 't') {
+            } else if (next == 't') {
                 output += '\t';
-            } else if (str[i + 1] == 'v') {
+            } else if (next == 'v') {
                 output += '\v';
-            } else if (str[i + 1] == '\\') {
+            } else if (next == '\\') {
                 output += '\\';
-            } else if (str[i + 1] == 'x') {
-                if (str.size() - i < 4) {
+            } else if (next == 'x') {
+                if (str.end() - it < 4) {
                     // Need 4 chars: \xYY
-                    return false;
+                    return EdifyError::IncompleteEscapeSequence;
                 }
-                int digit1 = hex_char_to_int(str[i + 2]);
-                int digit2 = hex_char_to_int(str[i + 3]);
+                int digit1 = hex_char_to_int(*(it + 2));
+                int digit2 = hex_char_to_int(*(it + 3));
                 if (digit1 < 0 || digit2 < 0) {
                     // One of the chars is not a valid hex character
-                    return false;
+                    return EdifyError::InvalidHexEscapeCharacter;
                 }
 
-                char val = (digit1 << 4) & digit2;
+                char val = static_cast<char>((digit1 << 4) & digit2);
                 output += val;
 
-                new_i += 2;
+                new_it += 2;
             } else {
                 // Invalid escape char
-                return false;
+                return EdifyError::InvalidEscapeCharacter;
             }
 
-            i = new_i;
+            it = new_it;
         } else {
             output += c;
-            i += 1;
+            ++it;
         }
     }
 
-    out->swap(output);
-
-    return true;
+    return std::move(output);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-EdifyTokenUnknown::EdifyTokenUnknown(char c) : EdifyToken(EdifyTokenType::Unknown), m_char(c)
+static std::string generate_token(const EdifyToken &token)
 {
+    return std::visit([](auto &&t) {
+        return t.generate();
+    }, token);
 }
 
-std::string EdifyTokenUnknown::generate()
+oc::result<EdifyToken> EdifyTokenizer::next_token(std::string_view str,
+                                                  std::size_t &consumed)
 {
-    return std::string(1, m_char);
-}
+    assert(!str.empty());
 
-////////////////////////////////////////////////////////////////////////////////
-
-bool EdifyTokenizer::is_valid_unquoted(char c)
-{
-    return std::isalnum(c)
-            || c == '_'
-            || c == ':'
-            || c == '/'
-            || c == '.';
-}
-
-bool EdifyTokenizer::next_token(const char *data, std::size_t size,
-                                std::size_t *pos, EdifyToken **token)
-{
-    std::size_t p = *pos;
-    assert(p < size);
-
-    if (size - p >= 2 && std::memcmp(data + p, "if", 2) == 0) {
-        *token = new EdifyTokenIf();
-        p += 2;
-    } else if (size - p >= 4 && std::memcmp(data + p, "then", 4) == 0) {
-        *token = new EdifyTokenThen();
-        p += 4;
-    } else if (size - p >= 4 && std::memcmp(data + p, "else", 4) == 0) {
-        *token = new EdifyTokenElse();
-        p += 4;
-    } else if (size - p >= 5 && std::memcmp(data + p, "endif", 5) == 0) {
-        *token = new EdifyTokenEndif();
-        p += 5;
-    } else if (size - p >= 2 && std::memcmp(data + p, "&&", 2) == 0) {
-        *token = new EdifyTokenAnd();
-        p += 2;
-    } else if (size - p >= 2 && std::memcmp(data + p, "||", 2) == 0) {
-        *token = new EdifyTokenOr();
-        p += 2;
-    } else if (size - p >= 2 && std::memcmp(data + p, "==", 2) == 0) {
-        *token = new EdifyTokenEquals();
-        p += 2;
-    } else if (size - p >= 2 && std::memcmp(data + p, "!=", 2) == 0) {
-        *token = new EdifyTokenNotEquals();
-        p += 2;
-    } else if (data[p] == '!') {
-        *token = new EdifyTokenNot();
-        p += 1;
-    } else if (data[p] == '(') {
-        *token = new EdifyTokenLeftParen();
-        p += 1;
-    } else if (data[p] == ')') {
-        *token = new EdifyTokenRightParen();
-        p += 1;
-    } else if (data[p] == ';') {
-        *token = new EdifyTokenSemicolon();
-        p += 1;
-    } else if (data[p] == ',') {
-        *token = new EdifyTokenComma();
-        p += 1;
-    } else if (data[p] == '+') {
-        *token = new EdifyTokenConcat();
-        p += 1;
-    } else if (data[p] == '\n') {
-        *token = new EdifyTokenNewline();
-        p += 1;
-    } else if (data[p] != '\n' && std::isspace(data[p])) {
+    if (mb::starts_with(str, {"if", 2})) {
+        consumed = 2;
+        return EdifyTokenIf();
+    } else if (mb::starts_with(str, {"then", 4})) {
+        consumed = 4;
+        return EdifyTokenThen();
+    } else if (mb::starts_with(str, {"else", 4})) {
+        consumed = 4;
+        return EdifyTokenElse();
+    } else if (mb::starts_with(str, {"endif", 4})) {
+        consumed = 5;
+        return EdifyTokenEndif();
+    } else if (mb::starts_with(str, {"&&", 2})) {
+        consumed = 2;
+        return EdifyTokenAnd();
+    } else if (mb::starts_with(str, {"||", 2})) {
+        consumed = 2;
+        return EdifyTokenOr();
+    } else if (mb::starts_with(str, {"==", 2})) {
+        consumed = 2;
+        return EdifyTokenEquals();
+    } else if (mb::starts_with(str, {"!=", 2})) {
+        consumed = 2;
+        return EdifyTokenNotEquals();
+    } else if (str.front() == '!') {
+        consumed = 1;
+        return EdifyTokenNot();
+    } else if (str.front() == '(') {
+        consumed = 1;
+        return EdifyTokenLeftParen();
+    } else if (str.front() == ')') {
+        consumed = 1;
+        return EdifyTokenRightParen();
+    } else if (str.front() == ';') {
+        consumed = 1;
+        return EdifyTokenSemicolon();
+    } else if (str.front() == ',') {
+        consumed = 1;
+        return EdifyTokenComma();
+    } else if (str.front() == '+') {
+        consumed = 1;
+        return EdifyTokenConcat();
+    } else if (str.front() == '\n') {
+        consumed = 1;
+        return EdifyTokenNewline();
+    } else if (char c = str.front(); c != '\n' && std::isspace(c)) {
         std::string buf;
-        buf += data[p];
-        p += 1;
-        while (size - p >= 1 && data[p] != '\n' && std::isspace(data[p])) {
-            buf += data[p];
-            p += 1;
+        buf += c;
+        consumed = 1;
+        for (auto it = str.begin() + 1;
+                it != str.end() && *it != '\n' && std::isspace(*it); ++it) {
+            buf += *it;
+            consumed += 1;
         }
-        *token = new EdifyTokenWhitespace(std::move(buf));
-    } else if (data[p] == '#') {
+        return EdifyTokenWhitespace(std::move(buf));
+    } else if (str.front() == '#') {
         std::string buf;
         // Omit '#' character
-        p += 1;
-        while (size - p >= 1 && data[p] != '\n') {
-            buf += data[p];
-            p += 1;
+        consumed = 1;
+        for (auto it = str.begin() + 1; it != str.end() && *it != '\n'; ++it) {
+            buf += *it;
+            consumed += 1;
         }
-        *token = new EdifyTokenComment(std::move(buf));
-    } else if (is_valid_unquoted(data[p])) {
+        return EdifyTokenComment(std::move(buf));
+    } else if (char c = str.front(); EdifyTokenString::is_valid_unquoted(c)) {
         std::string buf;
-        buf += data[p];
-        p += 1;
-        while (size - p >= 1 && is_valid_unquoted(data[p])) {
-            buf += data[p];
-            p += 1;
+        buf += c;
+        consumed = 1;
+        for (auto it = str.begin() + 1;
+                it != str.end() && EdifyTokenString::is_valid_unquoted(*it);
+                ++it) {
+            buf += *it;
+            consumed += 1;
         }
-        *token = new EdifyTokenString(std::move(buf), EdifyTokenString::NotQuoted);
-    } else if (data[p] == '"') {
-        std::size_t curPos = p;
+        OUTCOME_TRY(r, EdifyTokenString::from_raw(std::move(buf), false));
+        return std::move(r);
+    } else if (char c = str.front(); c == '"') {
         std::string buf;
-        buf += data[p];
-        p += 1;
+        buf += c;
+        consumed = 1;
         bool escaped = false;
         bool terminated = false;
-        while (size - p >= 1) {
-            if (data[p] == '\\' || escaped) {
+        for (auto it = str.begin() + 1; it != str.end(); ++it) {
+            if (*it == '\\' || escaped) {
                 escaped = !escaped;
-            } else if (!escaped && data[p] == '"') {
-                buf += data[p];
-                p += 1;
+            } else if (!escaped && *it == '"') {
+                buf += *it;
+                consumed += 1;
                 terminated = true;
                 break;
             }
-            buf += data[p];
-            p += 1;
+            buf += *it;
+            consumed += 1;
         }
         if (!terminated) {
-            LOGE("Unterminated quote at position %" MB_PRIzu, curPos);
-            return false;
+            return EdifyError::UnterminatedQuote;
         }
-        *token = new EdifyTokenString(std::move(buf), EdifyTokenString::AlreadyQuoted);
+        OUTCOME_TRY(r,  EdifyTokenString::from_raw(std::move(buf), true));
+        return std::move(r);
     } else {
-        *token = new EdifyTokenUnknown(data[p]);
-        p += 1;
+        consumed = 1;
+        return EdifyTokenUnknown(str.front());
     }
-
-    *pos = p;
-
-    return true;
 }
 
-bool EdifyTokenizer::tokenize(const char *data, std::size_t size,
-                              std::vector<EdifyToken *> *tokens)
+oc::result<std::vector<EdifyToken>>
+EdifyTokenizer::tokenize(std::string_view str)
 {
-    std::vector<EdifyToken *> temp;
-    EdifyToken *token;
-    std::size_t pos = 0;
-    bool fail = false;
+    std::vector<EdifyToken> temp;
 
     while (true) {
-        if (pos > size) {
-            LOGE("Tokenizer position exceeded data size!");
-            fail = true;
-            break;
-        } else if (pos == size) {
-            break;
-        } else if (!next_token(data, size, &pos, &token)) {
-            fail = true;
+        if (str.empty()) {
             break;
         }
-        temp.push_back(token);
+
+        size_t consumed;
+        OUTCOME_TRY(token, next_token(str, consumed));
+
+        str = str.substr(consumed);
+        temp.push_back(std::move(token));
     }
 
-    if (fail) {
-        for (EdifyToken *t : temp) {
-            delete t;
-        }
-        temp.clear();
-        return false;
-    }
-
-    tokens->swap(temp);
-    return true;
+    return std::move(temp);
 }
 
-std::string EdifyTokenizer::untokenize(const std::vector<EdifyToken *> &tokens)
+std::string EdifyTokenizer::untokenize(const std::vector<EdifyToken> &tokens)
 {
-    std::string output;
-    for (EdifyToken *token : tokens) {
-        output += token->generate();
-    }
-    return output;
+    return untokenize(tokens.begin(), tokens.end());
 }
 
-std::string EdifyTokenizer::untokenize(const std::vector<EdifyToken *>::iterator &begin,
-                                       const std::vector<EdifyToken *>::iterator &end)
+std::string EdifyTokenizer::untokenize(std::vector<EdifyToken>::const_iterator begin,
+                                       std::vector<EdifyToken>::const_iterator end)
 {
     std::string output;
     for (auto it = begin; it != end; ++it) {
-        output += (*it)->generate();
+        output += generate_token(*it);
     }
     return output;
 }
 
-void EdifyTokenizer::dump(const std::vector<EdifyToken *> &tokens)
+void EdifyTokenizer::dump(const std::vector<EdifyToken> &tokens)
 {
-    const char *token_name = nullptr;
-
     for (std::size_t i = 0; i < tokens.size(); ++i) {
-        EdifyToken *t = tokens[i];
+        auto const &t = tokens[i];
 
-        switch (t->type()) {
-        case EdifyTokenType::If:         token_name = "If";         break;
-        case EdifyTokenType::Then:       token_name = "Then";       break;
-        case EdifyTokenType::Else:       token_name = "Else";       break;
-        case EdifyTokenType::Endif:      token_name = "Endif";      break;
-        case EdifyTokenType::And:        token_name = "And";        break;
-        case EdifyTokenType::Or:         token_name = "Or";         break;
-        case EdifyTokenType::Equals:     token_name = "Equals";     break;
-        case EdifyTokenType::NotEquals:  token_name = "NotEquals";  break;
-        case EdifyTokenType::Not:        token_name = "Not";        break;
-        case EdifyTokenType::LeftParen:  token_name = "LeftParen";  break;
-        case EdifyTokenType::RightParen: token_name = "RightParen"; break;
-        case EdifyTokenType::Semicolon:  token_name = "Semicolon";  break;
-        case EdifyTokenType::Comma:      token_name = "Comma";      break;
-        case EdifyTokenType::Concat:     token_name = "Concat";     break;
-        case EdifyTokenType::Newline:    token_name = "Newline";    break;
-        case EdifyTokenType::Whitespace: token_name = "Whitespace"; break;
-        case EdifyTokenType::Comment:    token_name = "Comment";    break;
-        case EdifyTokenType::String:     token_name = "String";     break;
-        case EdifyTokenType::Unknown:    token_name = "Unknown";    break;
-        }
+        const char *token_name = std::visit(
+            [](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, EdifyTokenIf>) {
+                    return "If";
+                } else if constexpr (std::is_same_v<T, EdifyTokenThen>) {
+                    return "Then";
+                } else if constexpr (std::is_same_v<T, EdifyTokenElse>) {
+                    return "Else";
+                } else if constexpr (std::is_same_v<T, EdifyTokenEndif>) {
+                    return "Endif";
+                } else if constexpr (std::is_same_v<T, EdifyTokenAnd>) {
+                    return "And";
+                } else if constexpr (std::is_same_v<T, EdifyTokenOr>) {
+                    return "Or";
+                } else if constexpr (std::is_same_v<T, EdifyTokenEquals>) {
+                    return "Equals";
+                } else if constexpr (std::is_same_v<T, EdifyTokenNotEquals>) {
+                    return "NotEquals";
+                } else if constexpr (std::is_same_v<T, EdifyTokenNot>) {
+                    return "Not";
+                } else if constexpr (std::is_same_v<T, EdifyTokenLeftParen>) {
+                    return "LeftParen";
+                } else if constexpr (std::is_same_v<T, EdifyTokenRightParen>) {
+                    return "RightParen";
+                } else if constexpr (std::is_same_v<T, EdifyTokenSemicolon>) {
+                    return "Semicolon";
+                } else if constexpr (std::is_same_v<T, EdifyTokenComma>) {
+                    return "Comma";
+                } else if constexpr (std::is_same_v<T, EdifyTokenConcat>) {
+                    return "Concat";
+                } else if constexpr (std::is_same_v<T, EdifyTokenNewline>) {
+                    return "Newline";
+                } else if constexpr (std::is_same_v<T, EdifyTokenWhitespace>) {
+                    return "Whitespace";
+                } else if constexpr (std::is_same_v<T, EdifyTokenComment>) {
+                    return "Comment";
+                } else if constexpr (std::is_same_v<T, EdifyTokenString>) {
+                    return "String";
+                } else if constexpr (std::is_same_v<T, EdifyTokenUnknown>) {
+                    return "Unknown";
+                }
+            },
+            t
+        );
 
-        LOGD("%" MB_PRIzu ": %-20s: %s", i, token_name, t->generate().c_str());
+        LOGD("%" MB_PRIzu ": %-20s: %s",
+             i, token_name, generate_token(t).c_str());
     }
 }
 
-}
 }

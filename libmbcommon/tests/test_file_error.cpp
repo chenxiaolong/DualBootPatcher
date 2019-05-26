@@ -21,28 +21,33 @@
 
 #include "mbcommon/file_error.h"
 
+#define TEST_EQUALITY(A, B) \
+    do { \
+        ASSERT_EQ((A), (B)); \
+        ASSERT_EQ((B), (A)); \
+    } while (0)
+
+using namespace mb;
 
 TEST(FileErrorTest, CheckErrorCodesComparableToErrorConditions)
 {
-    std::error_code ec;
+    TEST_EQUALITY(make_error_code(FileError::ArgumentOutOfRange),
+                  FileErrorC::InvalidArgument);
+    TEST_EQUALITY(make_error_code(FileError::CannotConvertEncoding),
+                  FileErrorC::InvalidArgument);
 
-    ec = mb::make_error_code(mb::FileError::ArgumentOutOfRange);
-    ASSERT_EQ(ec, mb::FileError::InvalidArgument);
-    ASSERT_EQ(mb::FileError::InvalidArgument, ec);
-    ec = mb::make_error_code(mb::FileError::CannotConvertEncoding);
-    ASSERT_EQ(ec, mb::FileError::InvalidArgument);
-    ASSERT_EQ(mb::FileError::InvalidArgument, ec);
+    TEST_EQUALITY(make_error_code(FileError::InvalidState),
+                  FileErrorC::InvalidState);
 
-    ec = mb::make_error_code(mb::FileError::UnsupportedRead);
-    ASSERT_EQ(ec, mb::FileError::Unsupported);
-    ASSERT_EQ(mb::FileError::Unsupported, ec);
-    ec = mb::make_error_code(mb::FileError::UnsupportedWrite);
-    ASSERT_EQ(ec, mb::FileError::Unsupported);
-    ASSERT_EQ(mb::FileError::Unsupported, ec);
-    ec = mb::make_error_code(mb::FileError::UnsupportedSeek);
-    ASSERT_EQ(ec, mb::FileError::Unsupported);
-    ASSERT_EQ(mb::FileError::Unsupported, ec);
-    ec = mb::make_error_code(mb::FileError::UnsupportedTruncate);
-    ASSERT_EQ(ec, mb::FileError::Unsupported);
-    ASSERT_EQ(mb::FileError::Unsupported, ec);
+    TEST_EQUALITY(make_error_code(FileError::UnsupportedRead),
+                  FileErrorC::Unsupported);
+    TEST_EQUALITY(make_error_code(FileError::UnsupportedWrite),
+                  FileErrorC::Unsupported);
+    TEST_EQUALITY(make_error_code(FileError::UnsupportedSeek),
+                  FileErrorC::Unsupported);
+    TEST_EQUALITY(make_error_code(FileError::UnsupportedTruncate),
+                  FileErrorC::Unsupported);
+
+    TEST_EQUALITY(make_error_code(FileError::IntegerOverflow),
+                  FileErrorC::InternalError);
 }

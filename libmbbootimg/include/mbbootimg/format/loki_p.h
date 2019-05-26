@@ -21,17 +21,16 @@
 
 #include "mbbootimg/guard_p.h"
 
-#ifdef __cplusplus
-#  include <cstdint>
-#else
-#  include <stdint.h>
-#endif
+#include <cstdint>
 
 #include "mbcommon/common.h"
 #include "mbcommon/endian.h"
+#include "mbcommon/file.h"
 
 #include "mbbootimg/format/loki_defs.h"
-#include "mbbootimg/writer.h"
+
+namespace mb::bootimg::loki
+{
 
 struct LokiHeader
 {
@@ -44,17 +43,15 @@ struct LokiHeader
     uint32_t ramdisk_addr;
 };
 
-MB_BEGIN_C_DECLS
-
-static inline void loki_fix_header_byte_order(struct LokiHeader *header)
+static inline void loki_fix_header_byte_order(LokiHeader &header)
 {
-    header->recovery = mb_le32toh(header->recovery);
-    header->orig_kernel_size = mb_le32toh(header->orig_kernel_size);
-    header->orig_ramdisk_size = mb_le32toh(header->orig_ramdisk_size);
-    header->ramdisk_addr = mb_le32toh(header->ramdisk_addr);
+    header.recovery = mb_le32toh(header.recovery);
+    header.orig_kernel_size = mb_le32toh(header.orig_kernel_size);
+    header.orig_ramdisk_size = mb_le32toh(header.orig_ramdisk_size);
+    header.ramdisk_addr = mb_le32toh(header.ramdisk_addr);
 }
 
-int _loki_patch_file(struct MbBiWriter *biw, mb::File *file,
-                     const void *aboot, size_t aboot_size);
+oc::result<void> _loki_patch_file(File &file,
+                                  const void *aboot, size_t aboot_size);
 
-MB_END_C_DECLS
+}
