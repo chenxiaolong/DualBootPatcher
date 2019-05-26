@@ -1,0 +1,46 @@
+- name: HTC 10
+  id: rr_pme
+  codenames:
+    - pme
+    
+  architecture: arm64-v8a,armeabi-v7a,armeabi
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7464900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/7464900.sdhci/by-name/system
+      - /dev/block/mmcblk0p62
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/7464900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p61
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/7464900.sdhci/by-name/data
+      - /dev/block/mmcblk0p63
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/7464900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p59
+    recovery:
+      - /dev/block/bootdevice/recovery
+      - /dev/block/platform/soc/7464900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p60
+    extra:
+      - /dev/block/bootdevice/modem
+      - /dev/block/mmcblk0p44
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
