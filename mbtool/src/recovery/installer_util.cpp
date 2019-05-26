@@ -223,6 +223,13 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
 
     archive_write_set_bytes_per_block(aout.get(), 512);
 
+    // Enable maximum compression for each supported filter
+    if (archive_write_set_filter_option(
+            aout.get(), nullptr, "compression-level", "9") != ARCHIVE_OK) {
+        LOGW("%s: Failed to set compression level: %s",
+             output_file.c_str(), archive_error_string(aout.get()));
+    }
+
     // Open output file
     if (archive_write_open_filename(aout.get(), output_file.c_str())
             != ARCHIVE_OK) {
