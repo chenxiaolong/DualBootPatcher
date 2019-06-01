@@ -1071,3 +1071,40 @@
     default_brightness: 15000
     pixel_format: RGBX_8888
     theme: portrait_hdpi
+
+- name: SM-G950N
+  id: dreamlteks
+  codenames:
+    - dreamlteks
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/11120000.ufs/by-name
+    system:
+      - /dev/block/platform/11120000.ufs/by-name/SYSTEM
+    cache:
+      - /dev/block/platform/11120000.ufs/by-name/CACHE
+    data:
+      - /dev/block/platform/11120000.ufs/by-name/USERDATA
+    boot:
+      - /dev/block/platform/11120000.ufs/by-name/BOOT
+    recovery:
+      - /dev/block/platform/11120000.ufs/by-name/RECOVERY
+    extra:
+      - /dev/block/platform/11120000.ufs/by-name/RADIO
+      - /dev/block/platform/11120000.ufs/by-name/EFS
+      - /dev/block/platform/11120000.ufs/by-name/MISC
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
