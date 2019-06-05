@@ -34,12 +34,11 @@
     pixel_format: BGRA_8888
     theme: portrait_hdpi
 
-- name: Huawei Honor 4X (China Mobile)
-  id: chetl00h
+- name: Huawei Honor 4X (Kirin)
+  id: cherryk
   codenames:
-    - CHE-TL00H
-    - CHE-TL00h
     - hi6210sft
+    - cherryk
   architecture: arm64-v8a
 
   block_devs:
@@ -66,6 +65,47 @@
     graphics_backends:
       - fbdev
     brightness_path: /sys/devices/platform/balong_fb.1/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    battery_path: /sys/devices/battery.0/power_supply/Battery
+    theme: portrait_hdpi
+    
+- name: Huawei Honor 4X (Qualcomm)
+  id: cherry
+  codenames:
+    - cherry
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p24
+    boot:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p18
+    recovery:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p19
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/soc.0/1a00000.qcom,mdss_mdp/qcom,mdss_fb_primary.127/leds/lcd-backlight/brightness
     max_brightness: 255
     default_brightness: 162
     battery_path: /sys/devices/battery.0/power_supply/Battery
