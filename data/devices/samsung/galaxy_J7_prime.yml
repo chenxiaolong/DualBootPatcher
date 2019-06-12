@@ -1,0 +1,87 @@
+---
+- name: Samsung J7 Prime (SM-G610F)
+  id: on7xeltedd
+  codenames:
+
+      - on7xelte
+      - on7xeltedd
+      - on7xeltekl
+      - on7xeltekk
+      - on7xelteks
+      - on7xelteub
+      - on7xeltezt
+  architecture: armeabi-v7a
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/13540000.dwmmc0/by-num
+      - /dev/block/bootdevice/by-num
+    system:
+      - /dev/block/bootdevice/by-num/system
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+    cache:
+      - /dev/block/bootdevice/by-num/cache
+      - /dev/block/mmcblk0p22
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+    data:
+      - /dev/block/bootdevice/by-num/userdata
+      - /dev/block/mmcblk0p25
+      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+    boot:
+      - /dev/block/bootdevice/by-num/boot
+      - /dev/block/mmcblk0p10
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+    recovery:
+      - /dev/block/bootdevice/by-num/recovery
+      - /dev/block/mmcblk0p11
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+    extra:
+      - /dev/block/platform/13540000.dwmmc0/by-name/CDMA-RADIO
+      - /dev/block/platform/13540000.dwmmc0/by-name/CPEFS
+      - /dev/block/platform/13540000.dwmmc0/by-name/CP_DEBUG
+      - /dev/block/platform/13540000.dwmmc0/by-name/EFS
+      - /dev/block/platform/13540000.dwmmc0/by-name/HIDDEN
+      - /dev/block/platform/13540000.dwmmc0/by-name/RADIO
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs1
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs2
+      - /dev/block/platform/13540000.dwmmc0/by-name/m9kefs3
+      - /dev/block/platform/13540000.dwmmc0/by-num/p1
+      - /dev/block/platform/13540000.dwmmc0/by-num/p10
+      - /dev/block/platform/13540000.dwmmc0/by-num/p11
+      - /dev/block/platform/13540000.dwmmc0/by-num/p12
+      - /dev/block/platform/13540000.dwmmc0/by-num/p13
+      - /dev/block/platform/13540000.dwmmc0/by-num/p14
+      - /dev/block/platform/13540000.dwmmc0/by-num/p15
+      - /dev/block/platform/13540000.dwmmc0/by-num/p16
+      - /dev/block/platform/13540000.dwmmc0/by-num/p17
+      - /dev/block/platform/13540000.dwmmc0/by-num/p18
+      - /dev/block/platform/13540000.dwmmc0/by-num/p19
+      - /dev/block/platform/13540000.dwmmc0/by-num/p2
+      - /dev/block/platform/13540000.dwmmc0/by-num/p20
+      - /dev/block/platform/13540000.dwmmc0/by-num/p21
+      - /dev/block/platform/13540000.dwmmc0/by-num/p22
+      - /dev/block/platform/13540000.dwmmc0/by-num/p23
+      - /dev/block/platform/13540000.dwmmc0/by-num/p24
+      - /dev/block/platform/13540000.dwmmc0/by-num/p25
+      - /dev/block/platform/13540000.dwmmc0/by-num/p3
+      - /dev/block/platform/13540000.dwmmc0/by-num/p4
+      - /dev/block/platform/13540000.dwmmc0/by-num/p5
+      - /dev/block/platform/13540000.dwmmc0/by-num/p6
+      - /dev/block/platform/13540000.dwmmc0/by-num/p7
+      - /dev/block/platform/13540000.dwmmc0/by-num/p8
+      - /dev/block/platform/13540000.dwmmc0/by-num/p9
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/devices/14800000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
