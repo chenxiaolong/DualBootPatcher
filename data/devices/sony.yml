@@ -164,6 +164,59 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
+- name: Sony Xperia Z3
+  id: leo
+  codenames:
+    - leo
+    - D6603
+    - D6653
+    - D6616
+    - D6633
+    - D6643
+    - D6708
+  architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+      - /dev/block/bootdevice/by-name/FOTAKernel
+      - /dev/block/mmcblk0p16
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/aboot
+      - /dev/block/platform/msm_sdcc.1/by-name/rpm
+      - /dev/block/platform/msm_sdcc.1/by-name/sbl1
+      - /dev/block/platform/msm_sdcc.1/by-name/tz
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+    
 - name: Sony Xperia T2 Ultra
   id: tianchi
   codenames:
