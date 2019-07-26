@@ -40,10 +40,6 @@
 
 #define DEVICE_JSON_PATH                "/device.json"
 
-// Properties
-#define PROPERTIES_CTX                  "/dev/__properties__"
-#define PROPERTIES_CTX_TWRP_BACKUP      "/dev/__properties_kk__"
-
 #define FILE_CONTEXTS_BIN               "/file_contexts.bin"
 #define FILE_CONTEXTS                   "/file_contexts"
 
@@ -68,7 +64,6 @@
 #define CHROOT_SYSTEM_LOOP_DEV          "/mb/loop.system"
 #define CHROOT_CACHE_LOOP_DEV           "/mb/loop.cache"
 #define CHROOT_DATA_LOOP_DEV            "/mb/loop.data"
-#define CHROOT_PROPERTIES               "/mb/__properties__"
 
 // SELinux context for mbtool utils
 #define MB_EXEC_CONTEXT                 "u:r:mb_exec:s0"

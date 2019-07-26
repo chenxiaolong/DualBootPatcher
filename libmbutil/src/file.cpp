@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2019  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -135,6 +135,22 @@ oc::result<void> file_write_data(const std::string &path,
     }
 
     return oc::success();
+}
+
+/*!
+ * \brief Write string to a file
+ *
+ * \param path File to write
+ * \param contents Data to write
+ *
+ * \return Nothing on success or the error code on failure. Returns
+ *         FileError::UnexpectedEof if EOF is reached before the write
+ *         completes.
+ */
+oc::result<void> file_write_string(const std::string &path,
+                                   std::string_view contents)
+{
+    return file_write_data(path, contents.data(), contents.size());
 }
 
 oc::result<bool> file_find_one_of(const std::string &path,
