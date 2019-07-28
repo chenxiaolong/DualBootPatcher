@@ -27,6 +27,7 @@ set(files
     htc.yml
     homtom.yml
     huawei.yml
+    huyndai.yml
     infinix.yml
     infocus.yml
     jiayu.yml
