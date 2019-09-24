@@ -31,7 +31,7 @@ struct FileSELinuxGetLabelError FLATBUFFERS_FINAL_CLASS : private flatbuffers::T
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
            VerifyOffset(verifier, VT_MSG) &&
-           verifier.Verify(msg()) &&
+           verifier.VerifyString(msg()) &&
            verifier.EndTable();
   }
 };
@@ -140,9 +140,9 @@ struct FileSELinuxGetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
            VerifyOffset(verifier, VT_ERROR_MSG) &&
-           verifier.Verify(error_msg()) &&
+           verifier.VerifyString(error_msg()) &&
            VerifyOffset(verifier, VT_LABEL) &&
-           verifier.Verify(label()) &&
+           verifier.VerifyString(label()) &&
            VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();

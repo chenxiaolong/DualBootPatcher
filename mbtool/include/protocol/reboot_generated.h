@@ -94,7 +94,7 @@ struct RebootRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_ARG) &&
-           verifier.Verify(arg()) &&
+           verifier.VerifyString(arg()) &&
            VerifyField<int16_t>(verifier, VT_TYPE) &&
            VerifyField<uint8_t>(verifier, VT_CONFIRM) &&
            verifier.EndTable();

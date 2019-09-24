@@ -63,7 +63,7 @@ struct SignedExecError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_MSG) &&
-           verifier.Verify(msg()) &&
+           verifier.VerifyString(msg()) &&
            verifier.EndTable();
   }
 };
@@ -124,14 +124,14 @@ struct SignedExecRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_BINARY_PATH) &&
-           verifier.Verify(binary_path()) &&
+           verifier.VerifyString(binary_path()) &&
            VerifyOffset(verifier, VT_SIGNATURE_PATH) &&
-           verifier.Verify(signature_path()) &&
+           verifier.VerifyString(signature_path()) &&
            VerifyOffset(verifier, VT_ARGS) &&
-           verifier.Verify(args()) &&
+           verifier.VerifyVector(args()) &&
            verifier.VerifyVectorOfStrings(args()) &&
            VerifyOffset(verifier, VT_ARG0) &&
-           verifier.Verify(arg0()) &&
+           verifier.VerifyString(arg0()) &&
            verifier.EndTable();
   }
 };
@@ -201,7 +201,7 @@ struct SignedExecOutputResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::T
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_LINE) &&
-           verifier.Verify(line()) &&
+           verifier.VerifyString(line()) &&
            verifier.EndTable();
   }
 };
@@ -267,7 +267,7 @@ struct SignedExecResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyField<int16_t>(verifier, VT_RESULT) &&
            VerifyOffset(verifier, VT_ERROR_MSG) &&
-           verifier.Verify(error_msg()) &&
+           verifier.VerifyString(error_msg()) &&
            VerifyField<int32_t>(verifier, VT_EXIT_STATUS) &&
            VerifyField<int32_t>(verifier, VT_TERM_SIG) &&
            VerifyOffset(verifier, VT_ERROR) &&

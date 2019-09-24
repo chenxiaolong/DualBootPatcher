@@ -46,17 +46,17 @@ struct MbRom FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_ID) &&
-           verifier.Verify(id()) &&
+           verifier.VerifyString(id()) &&
            VerifyOffset(verifier, VT_SYSTEM_PATH) &&
-           verifier.Verify(system_path()) &&
+           verifier.VerifyString(system_path()) &&
            VerifyOffset(verifier, VT_CACHE_PATH) &&
-           verifier.Verify(cache_path()) &&
+           verifier.VerifyString(cache_path()) &&
            VerifyOffset(verifier, VT_DATA_PATH) &&
-           verifier.Verify(data_path()) &&
+           verifier.VerifyString(data_path()) &&
            VerifyOffset(verifier, VT_VERSION) &&
-           verifier.Verify(version()) &&
+           verifier.VerifyString(version()) &&
            VerifyOffset(verifier, VT_BUILD) &&
-           verifier.Verify(build()) &&
+           verifier.VerifyString(build()) &&
            verifier.EndTable();
   }
 };
@@ -168,7 +168,7 @@ struct MbGetInstalledRomsResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers:
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_ROMS) &&
-           verifier.Verify(roms()) &&
+           verifier.VerifyVector(roms()) &&
            verifier.VerifyVectorOfTables(roms()) &&
            verifier.EndTable();
   }

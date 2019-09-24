@@ -101,11 +101,11 @@ struct MbSwitchRomRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_ROM_ID) &&
-           verifier.Verify(rom_id()) &&
+           verifier.VerifyString(rom_id()) &&
            VerifyOffset(verifier, VT_BOOT_BLOCKDEV) &&
-           verifier.Verify(boot_blockdev()) &&
+           verifier.VerifyString(boot_blockdev()) &&
            VerifyOffset(verifier, VT_BLOCKDEV_BASE_DIRS) &&
-           verifier.Verify(blockdev_base_dirs()) &&
+           verifier.VerifyVector(blockdev_base_dirs()) &&
            verifier.VerifyVectorOfStrings(blockdev_base_dirs()) &&
            VerifyField<uint8_t>(verifier, VT_FORCE_UPDATE_CHECKSUMS) &&
            verifier.EndTable();

@@ -31,7 +31,7 @@ struct FileReadError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
            VerifyOffset(verifier, VT_MSG) &&
-           verifier.Verify(msg()) &&
+           verifier.VerifyString(msg()) &&
            verifier.EndTable();
   }
 };
@@ -154,10 +154,10 @@ struct FileReadResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
            VerifyOffset(verifier, VT_ERROR_MSG) &&
-           verifier.Verify(error_msg()) &&
+           verifier.VerifyString(error_msg()) &&
            VerifyField<uint64_t>(verifier, VT_BYTES_READ) &&
            VerifyOffset(verifier, VT_DATA) &&
-           verifier.Verify(data()) &&
+           verifier.VerifyVector(data()) &&
            VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();

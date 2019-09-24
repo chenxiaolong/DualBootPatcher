@@ -66,9 +66,9 @@ struct MbWipeRomRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_ROM_ID) &&
-           verifier.Verify(rom_id()) &&
+           verifier.VerifyString(rom_id()) &&
            VerifyOffset(verifier, VT_TARGETS) &&
-           verifier.Verify(targets()) &&
+           verifier.VerifyVector(targets()) &&
            verifier.EndTable();
   }
 };
@@ -128,9 +128,9 @@ struct MbWipeRomResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_SUCCEEDED) &&
-           verifier.Verify(succeeded()) &&
+           verifier.VerifyVector(succeeded()) &&
            VerifyOffset(verifier, VT_FAILED) &&
-           verifier.Verify(failed()) &&
+           verifier.VerifyVector(failed()) &&
            verifier.EndTable();
   }
 };

@@ -58,9 +58,9 @@ struct MbSetKernelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_ROM_ID) &&
-           verifier.Verify(rom_id()) &&
+           verifier.VerifyString(rom_id()) &&
            VerifyOffset(verifier, VT_BOOT_BLOCKDEV) &&
-           verifier.Verify(boot_blockdev()) &&
+           verifier.VerifyString(boot_blockdev()) &&
            verifier.EndTable();
   }
 };

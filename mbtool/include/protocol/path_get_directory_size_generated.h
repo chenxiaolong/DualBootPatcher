@@ -31,7 +31,7 @@ struct PathGetDirectorySizeError FLATBUFFERS_FINAL_CLASS : private flatbuffers::
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
            VerifyOffset(verifier, VT_MSG) &&
-           verifier.Verify(msg()) &&
+           verifier.VerifyString(msg()) &&
            verifier.EndTable();
   }
 };
@@ -91,9 +91,9 @@ struct PathGetDirectorySizeRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_PATH) &&
-           verifier.Verify(path()) &&
+           verifier.VerifyString(path()) &&
            VerifyOffset(verifier, VT_EXCLUSIONS) &&
-           verifier.Verify(exclusions()) &&
+           verifier.VerifyVector(exclusions()) &&
            verifier.VerifyVectorOfStrings(exclusions()) &&
            verifier.EndTable();
   }
@@ -163,7 +163,7 @@ struct PathGetDirectorySizeResponse FLATBUFFERS_FINAL_CLASS : private flatbuffer
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
            VerifyOffset(verifier, VT_ERROR_MSG) &&
-           verifier.Verify(error_msg()) &&
+           verifier.VerifyString(error_msg()) &&
            VerifyField<uint64_t>(verifier, VT_SIZE) &&
            VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
