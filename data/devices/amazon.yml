@@ -38,6 +38,7 @@
    id: suez
    codenames:
     - suez
+    - KFSUWI
    architecture: aarch64 (arm64)
 
    block_devs:
