@@ -25,6 +25,7 @@ set(files
     google.yml
     gree.yml
     htc.yml
+    htc_d830.yml
     homtom.yml
     huawei.yml
     infinix.yml
