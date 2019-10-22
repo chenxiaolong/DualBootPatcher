@@ -375,6 +375,28 @@
     recovery:
       - /dev/block/platform/sdio_emmc/by-name/RECOVERY
 
+- name: Samsung Galaxy J1 3G
+  id: j13g
+  codenames:
+    - j13g
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sprd-sdhci.3/by-name
+    system:
+      - /dev/block/platform/sprd-sdhci.3/by-name/system
+    cache:
+      - /dev/block/platform/sprd-sdhci.3/by-name/CSC
+    data:
+      - /dev/block/platform/sprd-sdhci.3/by-name/userdata
+    boot:
+      - /dev/block/platform/sprd-sdhci.3/by-name/KERNEL
+    recovery:
+      - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
+    extra:
+      - /dev/block/platform/sprd-sdhci.3/by-name/MODEM
+  
 - name: Samsung Galaxy Core Prime
   id: core33g
   codenames:
@@ -410,4 +432,4 @@
     pixel_format: RGBX_8888
     brightness_path: /sys/class/backlight/panel/brightness
     default_brightness: 255
-    theme: portrait_hdpi
+  theme: portrait_hdpi
