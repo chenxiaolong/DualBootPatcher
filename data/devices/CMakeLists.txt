@@ -63,6 +63,7 @@ set(files
     walton.yml
     wiko.yml
     wileyfox.yml
+    xiaomi.yml
     xiaomi/00_mi.yml
     xiaomi/01_mi_note.yml
     xiaomi/02_mi_max.yml
@@ -73,7 +74,6 @@ set(files
     zoji.yml
     zte.yml
     zuk.yml
-    Xiaomi.ysl
 )
 
 set(target_file "${CMAKE_CURRENT_BINARY_DIR}/devices.json")
