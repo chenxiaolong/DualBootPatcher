@@ -1,9 +1,9 @@
 ---
-- name: Redmi 7a(Pine)
+- name: Redmi 7a
   id: pine
   codenames:
       - pine
-      - mokee
+      - REL
   architecture: armeabi-v7a
   block_devs:
     base_dirs:
