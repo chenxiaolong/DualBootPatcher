@@ -1,0 +1,60 @@
+---
+- name: Samsung Galaxy S7 Flat/Edge (Exynos)
+  id: herolte
+  codenames:
+    # Regular variant
+    - herolte
+    - heroltexx
+    - heroltebmc
+    - heroltektt
+    - heroltelgt
+    - herolteskt
+    # Edge variant
+    - hero2lte
+    - hero2ltexx
+    - hero2ltebmc
+    - hero2ltektt
+    - hero2ltelgt
+    - hero2lteskt
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+      - /dev/block/platform/155a0000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/SYSTEM
+      - /dev/block/platform/155a0000.ufs/by-name/SYSTEM
+      - /dev/block/sda14
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/CACHE
+      - /dev/block/platform/155a0000.ufs/by-name/CACHE
+      - /dev/block/sda15
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/USERDATA
+      - /dev/block/platform/155a0000.ufs/by-name/USERDATA
+      - /dev/block/sda18
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/BOOT
+      - /dev/block/platform/155a0000.ufs/by-name/BOOT
+      - /dev/block/sda5
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/RECOVERY
+      - /dev/block/platform/155a0000.ufs/by-name/RECOVERY
+      - /dev/block/sda6
+    extra:
+      - /dev/block/platform/15570000.ufs/by-name/RADIO
+      - /dev/block/platform/155a0000.ufs/by-name/RADIO
+      - /dev/block/sda8
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
