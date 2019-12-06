@@ -74,6 +74,7 @@ set(files
     zte.yml
     zuk.yml
     s7edge.yml
+    samsung.yml
 )
 
 set(target_file "${CMAKE_CURRENT_BINARY_DIR}/devices.json")
