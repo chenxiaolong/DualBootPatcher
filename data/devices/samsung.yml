@@ -5,7 +5,7 @@
       - SM-N960N
       - crownlte
       - crownlteks
-  architecture: 
+  architecture: arm64-v8a
   block_devs:
     base_dirs:
       - /dev/block/platform/11120000.ufs/by-num
