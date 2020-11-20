@@ -1,0 +1,74 @@
+---
+- name: Samsung Galaxy S10 (Exynos) 
+  id: beyond1lte
+  codenames:
+      - beyond1lte
+  architecture: 
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/13d60000.ufs/by-name
+      - /dev/block/by-name
+    system:
+      - /dev/block/by-name/system
+      - /dev/block/platform/13d60000.ufs/by-name/system
+      - /dev/block/sda25
+    cache:
+      - /dev/block/by-name/cache
+      - /dev/block/platform/13d60000.ufs/by-name/cache
+      - /dev/block/sda28
+    data:
+      - /dev/block/by-name/userdata
+      - /dev/block/platform/13d60000.ufs/by-name/userdata
+      - /dev/block/sda31
+    boot:
+      - /dev/block/by-name/boot
+      - /dev/block/platform/13d60000.ufs/by-name/boot
+      - /dev/block/sda14
+    recovery:
+      - /dev/block/by-name/recovery
+      - /dev/block/platform/13d60000.ufs/by-name/recovery
+      - /dev/block/sda15
+    extra:
+      - /dev/block/mmcblk0p1
+      - /dev/block/platform/13d60000.ufs/by-name/bota0
+      - /dev/block/platform/13d60000.ufs/by-name/bota1
+      - /dev/block/platform/13d60000.ufs/by-name/bota2
+      - /dev/block/platform/13d60000.ufs/by-name/bota3
+      - /dev/block/platform/13d60000.ufs/by-name/cp_debug
+      - /dev/block/platform/13d60000.ufs/by-name/cpefs
+      - /dev/block/platform/13d60000.ufs/by-name/dqmdbg
+      - /dev/block/platform/13d60000.ufs/by-name/dtb
+      - /dev/block/platform/13d60000.ufs/by-name/dtbo
+      - /dev/block/platform/13d60000.ufs/by-name/efs
+      - /dev/block/platform/13d60000.ufs/by-name/keydata
+      - /dev/block/platform/13d60000.ufs/by-name/keyrefuge
+      - /dev/block/platform/13d60000.ufs/by-name/keystorage
+      - /dev/block/platform/13d60000.ufs/by-name/misc
+      - /dev/block/platform/13d60000.ufs/by-name/nad_refer
+      - /dev/block/platform/13d60000.ufs/by-name/omr
+      - /dev/block/platform/13d60000.ufs/by-name/param
+      - /dev/block/platform/13d60000.ufs/by-name/persistent
+      - /dev/block/platform/13d60000.ufs/by-name/product
+      - /dev/block/platform/13d60000.ufs/by-name/radio
+      - /dev/block/platform/13d60000.ufs/by-name/sec_efs
+      - /dev/block/platform/13d60000.ufs/by-name/steady
+      - /dev/block/platform/13d60000.ufs/by-name/uh
+      - /dev/block/platform/13d60000.ufs/by-name/uhcfg
+      - /dev/block/platform/13d60000.ufs/by-name/up_param
+      - /dev/block/platform/13d60000.ufs/by-name/vbmeta
+      - /dev/block/platform/13d60000.ufs/by-name/vendor
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: 
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
